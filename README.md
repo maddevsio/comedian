@@ -19,12 +19,12 @@ This messages should be written with @botusername mention. The comedian will sto
 
 ## The roadmap
 
-- [ ] Build bot architecture
-- [ ] Travis.CI integration
-- [ ] Coveralls integration
-- [ ] Create a Dockerfile for the project
+- [x] Build bot architecture
+- [x] Travis.CI integration
+- [x] Coveralls integration
+- [x] Create a Dockerfile for the project
 - [ ] Create a docker-compose.yml
-- [ ] Write a Makefile to automate things
+- [x] Write a Makefile to automate things
 - [ ] Implement slack RTM message listening
 - [ ] Store accepted stand ups
 - [ ] Build HTTP API for reports
