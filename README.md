@@ -3,6 +3,8 @@
 This is a stand up bot for slack. 
 The main goal of the project is a daily stand up meetings automation. There is a problem with stand up meetings offline way. People talk to each other and often they talk not about their plans, but about task specific things.
 
+![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
+
 ## How can comedian help you to spend less time on the stand up meetings
 
 First things first you need to start do daily meetings in slack. Create a channel for it. Then add this bot and ask your team to write messages with this template
