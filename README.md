@@ -4,6 +4,8 @@ This is a stand up bot for slack.
 The main goal of the project is a daily stand up meetings automation. There is a problem with stand up meetings offline way. People talk to each other and often they talk not about their plans, but about task specific things.
 
 ![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/maddevsio/comedian/badge.svg)](https://coveralls.io/github/maddevsio/comedian)
+
 
 ## How can comedian help you to spend less time on the stand up meetings
 
