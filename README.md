@@ -6,6 +6,9 @@ The main goal of the project is a daily stand up meetings automation. There is a
 ![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/maddevsio/comedian/badge.svg)](https://coveralls.io/github/maddevsio/comedian)
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/maddevsio/comedian)](https://goreportcard.com/report/github.com/maddevsio/comedian)
+[![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
+[![](https://godoc.org/github.com/maddevsio/comedian?status.svg)](https://godoc.org/github.com/maddevsio/comedian)
 
 ## How can comedian help you to spend less time on the stand up meetings
 
