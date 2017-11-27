@@ -2,5 +2,7 @@ package chat
 
 type (
 	// Chat inteface should be implemented for all messengers(facebook, slack, telegram, whatever)
-	Chat interface{}
+	Chat interface {
+		Run() error
+	}
 )
