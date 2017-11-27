@@ -6,6 +6,7 @@ type (
 	// Config struct used for configuration of app with env variables
 	Config struct {
 		SlackToken string `envconfig:"SLACK_TOKEN"`
+		Debug      bool
 	}
 )
 

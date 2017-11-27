@@ -12,4 +12,7 @@ func TestConfig(t *testing.T) {
 	conf, err := Get()
 	assert.NoError(t, err)
 	assert.Equal(t, conf.SlackToken, "Hey_token")
+	os.Setenv("COMEDIAN_DEBUG", "string")
+	conf, err = Get()
+	assert.Error(t, err)
 }
