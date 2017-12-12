@@ -16,5 +16,9 @@ before_install:
   - go get -u github.com/pressly/goose/cmd/goose
   - $HOME/gopath/bin/goose -dir migrations mysql "root@/comedian" up
   - go get github.com/mattn/goveralls
+
 script:
   - $HOME/gopath/bin/goveralls  -service=travis-ci
+
+env:
+  - DATABASE="root@/comedian"
