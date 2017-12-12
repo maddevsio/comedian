@@ -14,7 +14,7 @@ sudo: false
 before_install:
   - mysql -e "CREATE DATABASE comedian DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci"
   - go get -u github.com/pressly/goose/cmd/goose
-  - $HOME/gopath/bin/goose -dir migrations mysql "root@/comedian"
+  - $HOME/gopath/bin/goose -dir migrations mysql "root:@/comedian"
   - go get github.com/mattn/goveralls
 script:
   - $HOME/gopath/bin/goveralls  -service=travis-ci
