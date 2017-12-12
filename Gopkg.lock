@@ -8,6 +8,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/jmoiron/sqlx"
+  packages = [".","reflectx"]
+  revision = "de8647470aafe4854c976707c431dbe1eb2822c6"
+
+[[projects]]
   name = "github.com/kelseyhightower/envconfig"
   packages = ["."]
   revision = "f611eb38b3875cc3bd991ca91c51d06446afa14c"
@@ -40,6 +46,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8117124b407d446e0b03602cb2c45c960355c43c95ac47892f6ce6f3de4c8282"
+  inputs-digest = "fb50841ea547c781ea3a39b5d4be87a5748fd0e1db74c08bdfe95798b147e66a"
   solver-name = "gps-cdcl"
   solver-version = 1

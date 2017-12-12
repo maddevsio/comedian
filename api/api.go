@@ -1,6 +1,10 @@
 package api
 
+import "github.com/maddevsio/comedian/storage"
+
 type (
-	// API interface should be implemented by all http endpoints
-	API interface{}
+	// API struct
+	API struct {
+		db *storage.Storage
+	}
 )
