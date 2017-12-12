@@ -21,4 +21,4 @@ script:
   - $HOME/gopath/bin/goveralls  -service=travis-ci
 
 env:
-  - DATABASE="root@/comedian"
+  - DATABASE="root@/comedian?parseTime=true"
