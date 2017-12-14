@@ -6,12 +6,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/davecgh/go-spew/spew"
+//	"github.com/davecgh/go-spew/spew"
 
 	"log"
 
 	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/model"
+//	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nlopes/slack"
 )
@@ -56,6 +56,7 @@ func (s *Slack) Run() error {
 		select {
 		case msg := <-s.rtm.IncomingEvents:
 
+			//spew.Dump(msg)
 			switch ev := msg.Data.(type) {
 			case *slack.HelloEvent:
 				// Ignore hello
@@ -64,7 +65,6 @@ func (s *Slack) Run() error {
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev.Msg)
-				spew.Dump(ev)
 			case *slack.PresenceChangeEvent:
 				fmt.Printf("Presence Change: %v\n", ev)
 
@@ -93,14 +93,13 @@ func (s *Slack) ManageConnection() {
 }
 func (s *Slack) handleMessage(msg slack.Msg) {
 	userName := s.rtm.GetInfo().GetUserByID(msg.User)
-	spew.Dump(userName)
-	spew.Dump(msg)
-	if msg, ok := s.cleanMessage(msg.Text); ok {
-		fmt.Printf("%s <%s> %s: %s\n", userName.Profile.FirstName, userName.Name, userName.Profile.LastName, msg)
-		_, err := s.db.CreateStandup(model.Standup{
+	if cleanMsg, ok := s.cleanMessage(msg.Text); ok {
+		response := fmt.Sprintf("%s <%s> %s: %s\n", userName.Profile.FirstName, userName.Name, userName.Profile.LastName, cleanMsg)
+		/*_, err := s.db.CreateStandup(model.Standup{
 			Comment:  msg,
 			Username: userName.Name,
-		})
+		})*/
+		err := s.sendMessage(msg.Channel, response)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -115,4 +114,9 @@ func (s *Slack) cleanMessage(message string) (string, bool) {
 		return msg, true
 	}
 	return message, false
+}
+
+func (s *Slack) sendMessage(channel, message string) error {
+	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{})
+	return err
 }
