@@ -6,12 +6,10 @@ import (
 	"strings"
 	"sync"
 
-//	"github.com/davecgh/go-spew/spew"
 
 	"log"
 
 	"github.com/maddevsio/comedian/config"
-//	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nlopes/slack"
 )
@@ -56,7 +54,6 @@ func (s *Slack) Run() error {
 		select {
 		case msg := <-s.rtm.IncomingEvents:
 
-			//spew.Dump(msg)
 			switch ev := msg.Data.(type) {
 			case *slack.HelloEvent:
 				// Ignore hello
@@ -95,10 +92,6 @@ func (s *Slack) handleMessage(msg slack.Msg) {
 	userName := s.rtm.GetInfo().GetUserByID(msg.User)
 	if cleanMsg, ok := s.cleanMessage(msg.Text); ok {
 		response := fmt.Sprintf("%s <%s> %s: %s\n", userName.Profile.FirstName, userName.Name, userName.Profile.LastName, cleanMsg)
-		/*_, err := s.db.CreateStandup(model.Standup{
-			Comment:  msg,
-			Username: userName.Name,
-		})*/
 		err := s.sendMessage(msg.Channel, response)
 		if err != nil {
 			fmt.Println(err)
