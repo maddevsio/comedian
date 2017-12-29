@@ -14,6 +14,11 @@ import (
 	"github.com/nlopes/slack"
 )
 
+var (
+	typeMessage     = ""
+	typeEditMessage = "message_changed"
+)
+
 // Slack struct used for storing and communicating with slack api
 type Slack struct {
 	Chat
@@ -61,7 +66,7 @@ func (s *Slack) Run() error {
 				s.api.PostMessage("#general", "<!channel> Hello world", slack.PostMessageParameters{})
 
 			case *slack.MessageEvent:
-				s.handleMessage(ev.Msg)
+				s.handleMessage(ev)
 			case *slack.PresenceChangeEvent:
 				fmt.Printf("Presence Change: %v\n", ev)
 
@@ -88,22 +93,42 @@ func (s *Slack) ManageConnection() {
 	}()
 
 }
-func (s *Slack) handleMessage(msg slack.Msg) {
-	userName := s.rtm.GetInfo().GetUserByID(msg.User)
-	if cleanMsg, ok := s.cleanMessage(msg.Text); ok {
-		channelName := s.rtm.GetInfo().GetChannelByID(msg.Channel)
-		_, err := s.db.CreateStandup(model.Standup{
-			ChannelID:  msg.Channel,
-			Channel:    channelName.Name,
-			UsernameID: msg.User,
-			Username:   userName.Name,
-			FullName:   fmt.Sprintf("%s %s", userName.Profile.FirstName, userName.Profile.LastName),
-			Comment:    cleanMsg,
-		})
+func (s *Slack) handleMessage(msg *slack.MessageEvent) {
+
+	userName := s.rtm.GetInfo().GetUserByID(msg.Msg.User)
+	switch msg.SubType {
+	case typeMessage:
+		if cleanMsg, ok := s.cleanMessage(msg.Msg.Text); ok {
+			channelName := s.rtm.GetInfo().GetChannelByID(msg.Msg.Channel)
+			_, err := s.db.CreateStandup(model.Standup{
+				ChannelID:  msg.Msg.Channel,
+				Channel:    channelName.Name,
+				UsernameID: msg.Msg.User,
+				Username:   userName.Name,
+				FullName:   fmt.Sprintf("%s %s", userName.Profile.FirstName, userName.Profile.LastName),
+				Comment:    cleanMsg,
+				MessageTS:  msg.Msg.Timestamp,
+			})
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Println("Standup accepted")
+		}
+	case typeEditMessage:
+		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println("Standup accepted")
+		if cleanMsg, ok := s.cleanMessage(msg.SubMessage.Text); ok {
+			standup.Comment = cleanMsg
+			_, err := s.db.UpdateStandup(standup)
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Println("Edited")
+
+		}
+
 	}
 
 }

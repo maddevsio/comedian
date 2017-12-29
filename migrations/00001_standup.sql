@@ -11,6 +11,7 @@ CREATE TABLE `standup` (
     `username` VARCHAR(255) NOT NULL,
     `full_name` VARCHAR(255) NOT NULL,
     `comment` VARCHAR(255) NOT NULL,
+    `message_ts` VARCHAR(255) NOT NULL,
     KEY (`created`, `username`)
 );
 -- +goose Down

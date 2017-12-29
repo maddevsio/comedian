@@ -14,5 +14,6 @@ type (
 		Username   string    `db:"username" json:"userName"`
 		FullName   string    `db:"full_name" json:"fullName"`
 		Comment    string    `db:"comment" json:"comment"`
+		MessageTS  string    `db:"message_ts" json:"message_ts"`
 	}
 )

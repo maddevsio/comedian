@@ -30,8 +30,8 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 // CreateStandup creates standup entry in database
 func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup` (created, modified, username, comment, channel, channel_id, username_id, full_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		time.Now().UTC(), time.Now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.FullName,
+		"INSERT INTO `standup` (created, modified, username, comment, channel, channel_id, username_id, full_name, message_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		time.Now().UTC(), time.Now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.FullName, s.MessageTS,
 	)
 	if err != nil {
 		return s, err
@@ -47,8 +47,8 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 // UpdateStandup updates standup entry in database
 func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `standup` SET modified=?, username=?, username_id=?, comment=?, channel=?, channel_id=?, full_name=? WHERE id=?",
-		time.Now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.FullName, s.ID,
+		"UPDATE `standup` SET modified=?, username=?, username_id=?, comment=?, channel=?, channel_id=?, full_name=?, message_ts=? WHERE id=?",
+		time.Now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.FullName, s.MessageTS, s.ID,
 	)
 	if err != nil {
 		return s, err
@@ -62,6 +62,13 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 func (m *MySQL) SelectStandup(id int64) (model.Standup, error) {
 	var s model.Standup
 	err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE id=?", id)
+	return s, err
+}
+
+// SelectStandupByMessageTS selects standup entry from database
+func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
+	var s model.Standup
+	err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE message_ts=?", messageTS)
 	return s, err
 }
 
