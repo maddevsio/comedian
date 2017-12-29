@@ -5,10 +5,14 @@ import "time"
 type (
 	// Standup model used for serialization/deserialization stored standups
 	Standup struct {
-		ID       int64     `db:"id" json:"id"`
-		Created  time.Time `db:"created" json:"created"`
-		Modified time.Time `db:"modified" json:"modified"`
-		Username string    `db:"username" json:"userName"`
-		Comment  string    `db:"comment" json:"comment"`
+		ID         int64     `db:"id" json:"id"`
+		Created    time.Time `db:"created" json:"created"`
+		Channel    string    `db:"channel" json:"channel"`
+		ChannelID  string    `db:"channel_id" json:"channelId"`
+		Modified   time.Time `db:"modified" json:"modified"`
+		UsernameID string    `db:"username_id" json:"userNameId"`
+		Username   string    `db:"username" json:"userName"`
+		FullName   string    `db:"full_name" json:"fullName"`
+		Comment    string    `db:"comment" json:"comment"`
 	}
 )

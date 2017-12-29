@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nlopes/slack"
 )
@@ -57,7 +58,7 @@ func (s *Slack) Run() error {
 			case *slack.HelloEvent:
 				// Ignore hello
 			case *slack.ConnectedEvent:
-				s.api.PostMessage("#standup", "<!channel> Hello world", slack.PostMessageParameters{})
+				s.api.PostMessage("#general", "<!channel> Hello world", slack.PostMessageParameters{})
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev.Msg)
@@ -90,11 +91,19 @@ func (s *Slack) ManageConnection() {
 func (s *Slack) handleMessage(msg slack.Msg) {
 	userName := s.rtm.GetInfo().GetUserByID(msg.User)
 	if cleanMsg, ok := s.cleanMessage(msg.Text); ok {
-		response := fmt.Sprintf("%s <%s> %s: %s\n", userName.Profile.FirstName, userName.Name, userName.Profile.LastName, cleanMsg)
-		err := s.sendMessage(msg.Channel, response)
+		channelName := s.rtm.GetInfo().GetChannelByID(msg.Channel)
+		_, err := s.db.CreateStandup(model.Standup{
+			ChannelID:  msg.Channel,
+			Channel:    channelName.Name,
+			UsernameID: msg.User,
+			Username:   userName.Name,
+			FullName:   fmt.Sprintf("%s %s", userName.Profile.FirstName, userName.Profile.LastName),
+			Comment:    cleanMsg,
+		})
 		if err != nil {
 			fmt.Println(err)
 		}
+		fmt.Println("Standup accepted")
 	}
 
 }

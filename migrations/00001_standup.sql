@@ -5,7 +5,11 @@ CREATE TABLE `standup` (
     `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `created` DATETIME NOT NULL,
     `modified` DATETIME NOT NULL,
+    `channel` VARCHAR(255) NOT NULL,
+    `channel_id` VARCHAR(255) NOT NULL,
+    `username_id` VARCHAR(255) NOT NULL,
     `username` VARCHAR(255) NOT NULL,
+    `full_name` VARCHAR(255) NOT NULL,
     `comment` VARCHAR(255) NOT NULL,
     KEY (`created`, `username`)
 );
