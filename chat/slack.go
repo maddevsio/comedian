@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-
 	"log"
 
 	"github.com/maddevsio/comedian/config"
