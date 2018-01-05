@@ -19,6 +19,7 @@ First things first you need to start do daily meetings in slack. Create a channe
 3. What problems I've faced.
 
 This messages should be written with @botusername mention. The comedian will store it for you and give a convinient reports for you about stand ups.
+
 ## The roadmap
 
 ### Bot
@@ -53,26 +54,27 @@ This messages should be written with @botusername mention. The comedian will sto
   - [ ] List of users with standup count
   - [ ] List of projects
 - [ ] Project report
-    - [ ] Filter by date range
-    - [ ] List of standups
-      - created date
-      - username
-      - fullname
-      - standup message
+  - [ ] Filter by date range
+  - [ ] List of standups
+    - created date
+    - username
+    - fullname
+    - standup message
 - [ ] User report
-    - [ ] Filter by date range
-    - [ ] List of standups
-      - created date
-      - username
-      - fullname
-      - standup message
-      - project name
+  - [ ] Filter by date range
+  - [ ] List of standups
+    - created date
+    - username
+    - fullname
+    - standup message
+    - project name
 
 ## Issues
 
 Feel free to send pull requests. Also feel free to create issues.
 
-# License
+## License
+
 MIT License
 
 Copyright (c) 2017 Mad Devs
