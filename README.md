@@ -19,25 +19,55 @@ First things first you need to start do daily meetings in slack. Create a channe
 3. What problems I've faced.
 
 This messages should be written with @botusername mention. The comedian will store it for you and give a convinient reports for you about stand ups.
-
 ## The roadmap
 
-- [x] Build bot architecture
-- [x] Travis.CI integration
-- [x] Coveralls integration
-- [x] Create a Dockerfile for the project
+### Bot
+
+- [x] Store accepted messages to bot in the database
+- [ ] Text analysis engine to get standup messages without mentioning bot user
+- [ ] Get all users in slack's organization and sync it with users in database
+- [ ] Configure superusers with config file or env variables
+- [ ] Add user for daily standup reminders with slash command
+- [ ] Remove user from daily standup reminder with slash command
+- [ ] Add standup time with slash command
+- [ ] Remove standup time with slash command
+- [ ] NLP based configuration for standup time adding
+- [ ] Setup reminders when bot starts
+- [ ] Setup reminders when we add new reminder on a channel
+- [ ] Remind user to write standup via private message
+- [ ] 
 - [ ] Create a docker-compose.yml
-- [x] Write a Makefile to automate things
-- [ ] Implement slack RTM message listening
-- [ ] Store accepted stand ups
-- [ ] Build HTTP API for reports
-- [ ] Create a superuser creation tool
-- [ ] Build administration interface for the bot to add managers/teamleads
+- [ ] Build HTTP API for reports with oAuth authentication
 - [ ] Create a simple report interface with React.js
-- [ ] Implement oAuth authentication
-- [ ] Process NLP commands
 - [ ] Get task worklogs from JIRA
-- [ ] How can we know that employee needs help?
+
+### API
+
+- [ ] Endpoint for report by project(channel) in date range
+- [ ] Endpoint for report by user and all his project in date range
+- [ ] Authentication endpoint.
+
+### Web inteface
+
+- [ ] Login screen
+- [ ] Main screen
+  - [ ] List of users with standup count
+  - [ ] List of projects
+- [ ] Project report
+    - [ ] Filter by date range
+    - [ ] List of standups
+      - created date
+      - username
+      - fullname
+      - standup message
+- [ ] User report
+    - [ ] Filter by date range
+    - [ ] List of standups
+      - created date
+      - username
+      - fullname
+      - standup message
+      - project name
 
 ## Issues
 
