@@ -35,7 +35,6 @@ This messages should be written with @botusername mention. The comedian will sto
 - [ ] Setup reminders when bot starts
 - [ ] Setup reminders when we add new reminder on a channel
 - [ ] Remind user to write standup via private message
-- [ ] 
 - [ ] Create a docker-compose.yml
 - [ ] Build HTTP API for reports with oAuth authentication
 - [ ] Create a simple report interface with React.js
