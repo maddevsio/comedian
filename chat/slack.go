@@ -2,16 +2,14 @@ package chat
 
 import (
 	"fmt"
-	"os"
-	"strings"
-	"sync"
-
-	"log"
-
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nlopes/slack"
+	"github.com/sirupsen/logrus"
+	"log"
+	"strings"
+	"sync"
 )
 
 var (
@@ -23,7 +21,7 @@ var (
 type Slack struct {
 	Chat
 	api        *slack.Client
-	logger     *log.Logger
+	logger     *logrus.Logger
 	rtm        *slack.RTM
 	wg         sync.WaitGroup
 	myUsername string
@@ -38,10 +36,15 @@ func NewSlack(conf config.Config) (*Slack, error) {
 	}
 	s := &Slack{}
 	s.api = slack.New(conf.SlackToken)
-	s.logger = log.New(os.Stdout, "comedian: ", log.Lshortfile|log.LstdFlags)
+	s.logger = logrus.New()
 	s.rtm = s.api.NewRTM()
 	s.db = m
-	slack.SetLogger(s.logger)
+
+	logWriter := s.logger.Writer()
+	defer logWriter.Close()
+	//do i have to close it?
+	slack.SetLogger(log.New(logWriter, "", 0))
+
 	return s, nil
 }
 
@@ -68,16 +71,16 @@ func (s *Slack) Run() error {
 			case *slack.MessageEvent:
 				s.handleMessage(ev)
 			case *slack.PresenceChangeEvent:
-				fmt.Printf("Presence Change: %v\n", ev)
+				s.logger.Printf("Presence Change: %v\n", ev)
 
 			case *slack.LatencyReport:
-				fmt.Printf("Current latency: %v\n", ev.Value)
+				s.logger.Printf("Current latency: %v\n", ev.Value)
 
 			case *slack.RTMError:
-				fmt.Printf("Error: %s\n", ev.Error())
+				s.logger.Printf("Error: %s\n", ev.Error())
 
 			case *slack.InvalidAuthEvent:
-				fmt.Printf("Invalid credentials")
+				s.logger.Printf("Invalid credentials")
 				return nil
 			}
 		}
@@ -110,22 +113,22 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 				MessageTS:  msg.Msg.Timestamp,
 			})
 			if err != nil {
-				fmt.Println(err)
+				s.logger.Println(err)
 			}
-			fmt.Println("Standup accepted")
+			s.logger.Println("Standup accepted")
 		}
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
-			fmt.Println(err)
+			s.logger.Println(err)
 		}
 		if cleanMsg, ok := s.cleanMessage(msg.SubMessage.Text); ok {
 			standup.Comment = cleanMsg
 			_, err := s.db.UpdateStandup(standup)
 			if err != nil {
-				fmt.Println(err)
+				s.logger.Println(err)
 			}
-			fmt.Println("Edited")
+			s.logger.Println("Edited")
 
 		}
 
