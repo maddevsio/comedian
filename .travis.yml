@@ -16,6 +16,8 @@ before_install:
   - go get -u github.com/pressly/goose/cmd/goose
   - $HOME/gopath/bin/goose -dir migrations mysql "root@/comedian" up
   - go get github.com/mattn/goveralls
+  - go get github.com/go-chi/chi
+  - go get github.com/sirupsen/logrus
 
 script:
   - $HOME/gopath/bin/goveralls  -service=travis-ci

@@ -7,7 +7,6 @@ import (
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
-	"log"
 	"strings"
 	"sync"
 )
@@ -39,11 +38,6 @@ func NewSlack(conf config.Config) (*Slack, error) {
 	s.logger = logrus.New()
 	s.rtm = s.api.NewRTM()
 	s.db = m
-
-	logWriter := s.logger.Writer()
-	defer logWriter.Close()
-	//do i have to close it?
-	slack.SetLogger(log.New(logWriter, "", 0))
 
 	return s, nil
 }
