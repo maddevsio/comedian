@@ -65,16 +65,16 @@ func (s *Slack) Run() error {
 			case *slack.MessageEvent:
 				s.handleMessage(ev)
 			case *slack.PresenceChangeEvent:
-				s.logger.Printf("Presence Change: %v\n", ev)
+				s.logger.Infof("Presence Change: %v\n", ev)
 
 			case *slack.LatencyReport:
-				s.logger.Printf("Current latency: %v\n", ev.Value)
+				s.logger.Infof("Current latency: %v\n", ev.Value)
 
 			case *slack.RTMError:
-				s.logger.Printf("Error: %s\n", ev.Error())
+				s.logger.Errorf(ev.Error())
 
 			case *slack.InvalidAuthEvent:
-				s.logger.Printf("Invalid credentials")
+				s.logger.Info("Invalid credentials")
 				return nil
 			}
 		}
@@ -107,22 +107,22 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 				MessageTS:  msg.Msg.Timestamp,
 			})
 			if err != nil {
-				s.logger.Println(err)
+				s.logger.Error(err)
 			}
-			s.logger.Println("Standup accepted")
+			s.logger.Info("Standup accepted")
 		}
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
-			s.logger.Println(err)
+			s.logger.Error(err)
 		}
 		if cleanMsg, ok := s.cleanMessage(msg.SubMessage.Text); ok {
 			standup.Comment = cleanMsg
 			_, err := s.db.UpdateStandup(standup)
 			if err != nil {
-				s.logger.Println(err)
+				s.logger.Error(err)
 			}
-			s.logger.Println("Edited")
+			s.logger.Info("Edited")
 
 		}
 

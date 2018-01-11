@@ -11,7 +11,7 @@ import (
 
 func main() {
 	handler := api.GetHandler()
-	http.ListenAndServe(":8080", handler)
+	go http.ListenAndServe(":8080", handler)
 
 	c, err := config.Get()
 	if err != nil {
