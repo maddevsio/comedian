@@ -84,3 +84,19 @@ func (m *MySQL) ListStandups() ([]model.Standup, error) {
 	err := m.conn.Select(&items, "SELECT * FROM `standup`")
 	return items, err
 }
+
+// AddComedian creates comedian entry in database
+func (m *MySQL) AddComedian(c model.Comedian) (model.Comedian, error) {
+	res, err := m.conn.Exec(
+		"INSERT INTO `comedians` (created, modified, slack_name, full_name) VALUES (?, ?, ?, ?)",
+		time.Now().UTC(), time.Now().UTC(), c.SlackName, c.FullName)
+	if err != nil {
+		return c, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return c, err
+	}
+	c.ID = id
+	return c, nil
+}
