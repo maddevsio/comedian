@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/khaiql/dbcleaner.v2"
 	"gopkg.in/khaiql/dbcleaner.v2/engine"
-	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/model"
-	"os"
 	"log"
+	"os"
 )
 
 var (
@@ -58,8 +58,8 @@ func testAddStandup(t *testing.T) {
 	m, err := NewMySQL(c)
 	assert.NoError(t, err)
 	comedian, err := m.AddComedian(model.Comedian{
-		SlackName:  "@test",
-		FullName: "Test Testtt",
+		SlackName: "@test",
+		FullName:  "Test Testtt",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "test", comedian.SlackName)

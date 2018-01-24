@@ -1,11 +1,11 @@
 package api
 
 import (
+	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/maddevsio/comedian/storage"
-	"net/http"
 	"log"
-	"fmt"
+	"net/http"
 	//"github.com/sirupsen/logrus"
 )
 

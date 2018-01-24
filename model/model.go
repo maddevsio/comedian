@@ -18,10 +18,10 @@ type (
 	}
 
 	Comedian struct {
-		ID int64 `db:"id" json:"id"`
-		Created    time.Time `db:"created" json:"created"`
-		Modified   time.Time `db:"modified" json:"modified"`
-		SlackName   string    `db:"slack_name" json:"slackName"`
-		FullName   string    `db:"full_name" json:"fullName"`
+		ID        int64     `db:"id" json:"id"`
+		Created   time.Time `db:"created" json:"created"`
+		Modified  time.Time `db:"modified" json:"modified"`
+		SlackName string    `db:"slack_name" json:"slackName"`
+		FullName  string    `db:"full_name" json:"fullName"`
 	}
 )
