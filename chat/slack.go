@@ -2,13 +2,14 @@ package chat
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
-	"strings"
-	"sync"
 )
 
 var (
@@ -133,8 +134,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 func (s *Slack) cleanMessage(message string) (string, bool) {
 	if strings.Contains(message, fmt.Sprintf("<@%s>", s.myUsername)) {
 		msg := strings.Replace(message, fmt.Sprintf("<@%s>", s.myUsername), "", -1)
-
-		return msg, true
+		return strings.TrimSpace(msg), true
 	}
 	return message, false
 }
