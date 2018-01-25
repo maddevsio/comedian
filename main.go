@@ -10,13 +10,17 @@ import (
 )
 
 func main() {
-	handler := api.GetHandler()
-	go http.ListenAndServe(":8080", handler)
-
 	c, err := config.Get()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	handler, err := api.GetHandler(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	go http.ListenAndServe(":8080", handler)
+
 	slack, err := chat.NewSlack(c)
 	if err != nil {
 		log.Fatal(err)

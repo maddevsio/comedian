@@ -7,21 +7,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/khaiql/dbcleaner.v2"
-	"gopkg.in/khaiql/dbcleaner.v2/engine"
-	"log"
-	"os"
 )
-
-var (
-	cleaner = dbcleaner.New()
-)
-
-func TestMain(m *testing.M) {
-	setup()
-	code := m.Run()
-	os.Exit(code)
-}
 
 func TestCRUDLStandup(t *testing.T) {
 	c, err := config.Get()
@@ -51,30 +37,17 @@ func TestCRUDLStandup(t *testing.T) {
 
 }
 
-func testAddStandup(t *testing.T) {
-	cleanDb()
+func TestCRUDStandupUser(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
 	m, err := NewMySQL(c)
 	assert.NoError(t, err)
-	comedian, err := m.AddComedian(model.Comedian{
+	su, err := m.CreateStandupUser(model.StandupUser{
 		SlackName: "@test",
 		FullName:  "Test Testtt",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, "test", comedian.SlackName)
-	assert.Equal(t, "Test Testtt", comedian.FullName)
-}
-
-func setup() {
-	config, err := config.Get()
-	if err != nil {
-		log.Fatal(err)
-	}
-	db := engine.NewMySQLEngine(config.DatabaseURL)
-	cleaner.SetEngine(db)
-}
-
-func cleanDb() {
-	cleaner.Clean("standup", "comedians")
+	assert.Equal(t, "@test", su.SlackName)
+	assert.Equal(t, "Test Testtt", su.FullName)
+	assert.NoError(t, m.DeleteStandup(su.ID))
 }

@@ -17,7 +17,8 @@ type (
 		MessageTS  string    `db:"message_ts" json:"message_ts"`
 	}
 
-	Comedian struct {
+	// StandupUser model used for serialization/deserialization stored standupUsers
+	StandupUser struct {
 		ID        int64     `db:"id" json:"id"`
 		Created   time.Time `db:"created" json:"created"`
 		Modified  time.Time `db:"modified" json:"modified"`
