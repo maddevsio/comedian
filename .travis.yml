@@ -21,6 +21,6 @@ script:
   - $HOME/gopath/bin/goveralls  -service=travis-ci
 
 env:
-  - DATABASE="root@/comedian?parseTime=true"
-  - HTTP_BIND_ADDR=:8080
-  - SLACK_TOKEN=hello
+  - COMEDIAN_DATABASEURL="root@/comedian?parseTime=true"
+  - COMEDIAN_HTTPBINDADDR=:8080
+  - COMEDIAN_SLACKTOKEN=hello
