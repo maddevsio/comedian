@@ -22,3 +22,5 @@ script:
 
 env:
   - DATABASE="root@/comedian?parseTime=true"
+  - HTTP_BIND_ADDR=":8080"
+  - SLACK_TOKEN="hello"
