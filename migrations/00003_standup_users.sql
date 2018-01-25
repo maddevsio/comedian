@@ -2,12 +2,12 @@
 -- SQL in this section is executed when the migration is applied.
 
 CREATE TABLE `standup_users` (
-`id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-`created` DATETIME NOT NULL,
-`modified` DATETIME NOT NULL,
-`slack_name` VARCHAR(255) NOT NULL,
-`full_name` VARCHAR(255) NOT NULL,
-KEY (`full_name`, `slack_name`)
+    `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `created` DATETIME NOT NULL,
+    `modified` DATETIME NOT NULL,
+    `slack_name` VARCHAR(255) NOT NULL,
+    `full_name` VARCHAR(255) NOT NULL,
+    KEY (`full_name`, `slack_name`)
 );
 
 -- +goose Down

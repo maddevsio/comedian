@@ -15,5 +15,9 @@ type (
 		DeleteStandup(int64) error
 		// ListStandups returns array of standup entries from database
 		ListStandups() ([]model.Standup, error)
+		// CreateStandupUser creates comedian entry in database
+		CreateStandupUser(model.StandupUser) (model.StandupUser, error)
+		// DeleteStandupUser deletes standup_users entry from database
+		DeleteStandupUser(int64) error
 	}
 )

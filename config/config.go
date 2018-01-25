@@ -5,9 +5,10 @@ import "github.com/kelseyhightower/envconfig"
 type (
 	// Config struct used for configuration of app with env variables
 	Config struct {
-		SlackToken  string `envconfig:"SLACK_TOKEN"`
-		DatabaseURL string `envconfig:"DATABASE"`
-		Debug       bool
+		SlackToken   string `envconfig:"SLACK_TOKEN" required:"true"`
+		DatabaseURL  string `envconfig:"DATABASE" required:"true"`
+		HTTPBindAddr string `envconfig:"HTTP_BIND_ADDR" required:"true"`
+		Debug        bool
 	}
 )
 

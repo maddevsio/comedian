@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/maddevsio/comedian/api"
 	"github.com/maddevsio/comedian/chat"
@@ -14,12 +13,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	handler, err := api.GetHandler(c)
+	api, err := api.NewRESTAPI(c)
 	if err != nil {
 		log.Fatal(err)
 	}
-	go http.ListenAndServe(":8080", handler)
+
+	go log.Fatal(api.Start())
 
 	slack, err := chat.NewSlack(c)
 	if err != nil {

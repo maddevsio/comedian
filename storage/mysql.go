@@ -88,7 +88,7 @@ func (m *MySQL) ListStandups() ([]model.Standup, error) {
 // CreateStandupUser creates comedian entry in database
 func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error) {
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup_users` (created, modified, slack_name, full_name) VALUES (?, ?, ?, ?)",
+		"INSERT INTO `standup_users` (created, modified, username, full_name) VALUES (?, ?, ?, ?)",
 		time.Now().UTC(), time.Now().UTC(), c.SlackName, c.FullName)
 	if err != nil {
 		return c, err

@@ -22,7 +22,7 @@ type (
 		ID        int64     `db:"id" json:"id"`
 		Created   time.Time `db:"created" json:"created"`
 		Modified  time.Time `db:"modified" json:"modified"`
-		SlackName string    `db:"slack_name" json:"slackName"`
+		SlackName string    `db:"username" json:"username"`
 		FullName  string    `db:"full_name" json:"fullName"`
 	}
 )
