@@ -16,4 +16,13 @@ type (
 		Comment    string    `db:"comment" json:"comment"`
 		MessageTS  string    `db:"message_ts" json:"message_ts"`
 	}
+
+	// StandupUser model used for serialization/deserialization stored standupUsers
+	StandupUser struct {
+		ID        int64     `db:"id" json:"id"`
+		Created   time.Time `db:"created" json:"created"`
+		Modified  time.Time `db:"modified" json:"modified"`
+		SlackName string    `db:"slack_name" json:"slackName"`
+		FullName  string    `db:"full_name" json:"fullName"`
+	}
 )

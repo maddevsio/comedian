@@ -14,6 +14,7 @@ CREATE TABLE `standup` (
     `message_ts` VARCHAR(255) NOT NULL,
     KEY (`created`, `username`)
 );
+
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
 

@@ -4,10 +4,9 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCRUDLStandup(t *testing.T) {
@@ -36,4 +35,19 @@ func TestCRUDLStandup(t *testing.T) {
 	assert.Equal(t, err, sql.ErrNoRows)
 	assert.Equal(t, s.ID, int64(0))
 
+}
+
+func TestCRUDStandupUser(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	m, err := NewMySQL(c)
+	assert.NoError(t, err)
+	su, err := m.CreateStandupUser(model.StandupUser{
+		SlackName: "@test",
+		FullName:  "Test Testtt",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "@test", su.SlackName)
+	assert.Equal(t, "Test Testtt", su.FullName)
+	assert.NoError(t, m.DeleteStandup(su.ID))
 }

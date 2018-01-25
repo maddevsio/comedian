@@ -84,3 +84,25 @@ func (m *MySQL) ListStandups() ([]model.Standup, error) {
 	err := m.conn.Select(&items, "SELECT * FROM `standup`")
 	return items, err
 }
+
+// CreateStandupUser creates comedian entry in database
+func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error) {
+	res, err := m.conn.Exec(
+		"INSERT INTO `standup_users` (created, modified, slack_name, full_name) VALUES (?, ?, ?, ?)",
+		time.Now().UTC(), time.Now().UTC(), c.SlackName, c.FullName)
+	if err != nil {
+		return c, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return c, err
+	}
+	c.ID = id
+	return c, nil
+}
+
+// DeleteStandupUser deletes standup_users entry from database
+func (m *MySQL) DeleteStandupUser(id int64) error {
+	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE id=?", id)
+	return err
+}
