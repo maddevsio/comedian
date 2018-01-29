@@ -102,7 +102,14 @@ func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error
 }
 
 // DeleteStandupUser deletes standup_users entry from database
-func (m *MySQL) DeleteStandupUser(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE id=?", id)
+func (m *MySQL) DeleteStandupUserByUsername(username string) error {
+	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=?", username)
 	return err
+}
+
+// ListStandupUsers returns array of standup entries from database
+func (m *MySQL) ListStandupUsers() ([]model.StandupUser, error) {
+	items := []model.StandupUser{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup_users`")
+	return items, err
 }

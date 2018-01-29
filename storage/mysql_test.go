@@ -49,5 +49,11 @@ func TestCRUDStandupUser(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "@test", su.SlackName)
 	assert.Equal(t, "Test Testtt", su.FullName)
-	assert.NoError(t, m.DeleteStandup(su.ID))
+	items, err := m.ListStandupUsers()
+	assert.NoError(t, err)
+	assert.Equal(t, items[0].SlackName, su.SlackName)
+	assert.NoError(t, m.DeleteStandupUserByUsername(su.SlackName))
+	items, err = m.ListStandupUsers()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(items))
 }

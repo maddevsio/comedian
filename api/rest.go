@@ -64,9 +64,25 @@ func (r *REST) handleCommands(c echo.Context) error {
 				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
 			}
 			return c.JSON(http.StatusOK, fmt.Sprintf("%s added", username))
-
 		case commandRemove:
+			username := form.Get("text")
+			if username == "" {
+				return c.String(http.StatusBadRequest, "username cannot be empty")
+			}
+			err := r.db.DeleteStandupUserByUsername(username)
+			if err != nil {
+				fmt.Println(err)
+				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
+			}
+			return c.JSON(http.StatusOK, fmt.Sprintf("%s deleted", username))
 		case commandList:
+			users, err := r.db.ListStandupUsers()
+			if err != nil {
+				fmt.Println(err)
+				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))
+			}
+			return c.JSON(http.StatusOK, fmt.Sprintf("Standup users: %s", users[0].SlackName))
+
 		default:
 			return c.String(http.StatusNotImplemented, "Not implemented")
 		}
