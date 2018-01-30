@@ -18,7 +18,7 @@ type (
 		// CreateStandupUser creates standupUser entry in database
 		CreateStandupUser(model.StandupUser) (model.StandupUser, error)
 		// DeleteStandupUser deletes standup_users entry from database
-		DeleteStandupUserByUsername(string) error
+		DeleteStandupUserByUsername(string, string) error
 		// ListStandupUsers returns array of standupUser entries from database
 		ListStandupUsers() ([]model.StandupUser, error)
 	}

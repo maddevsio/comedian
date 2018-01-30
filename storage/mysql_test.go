@@ -45,14 +45,18 @@ func TestCRUDStandupUser(t *testing.T) {
 	su, err := m.CreateStandupUser(model.StandupUser{
 		SlackName: "@test",
 		FullName:  "Test Testtt",
+		ChannelID: "chanid",
+		Channel:   "chanName",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "@test", su.SlackName)
 	assert.Equal(t, "Test Testtt", su.FullName)
+	assert.Equal(t, "chanid", su.ChannelID)
+	assert.Equal(t, "chanName", su.Channel)
 	items, err := m.ListStandupUsers()
 	assert.NoError(t, err)
 	assert.Equal(t, items[0].SlackName, su.SlackName)
-	assert.NoError(t, m.DeleteStandupUserByUsername(su.SlackName))
+	assert.NoError(t, m.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
 	items, err = m.ListStandupUsers()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(items))

@@ -8,6 +8,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
+	log "github.com/sirupsen/logrus"
 )
 
 type REST struct {
@@ -57,11 +58,18 @@ func (r *REST) handleCommands(c echo.Context) error {
 			if username == "" {
 				return c.String(http.StatusBadRequest, "username cannot be empty")
 			}
+			channelID := form.Get("channel_id")
+			channel := form.Get("channel_name")
+			if channelID == "" || channel == "" {
+				return c.String(http.StatusBadRequest, "channel cannot be empty")
+			}
 			_, err := r.db.CreateStandupUser(model.StandupUser{
 				SlackName: username,
+				ChannelID: channelID,
+				Channel:   channel,
 			})
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
 			}
 			return c.String(http.StatusOK, fmt.Sprintf("%s added", username))
@@ -70,16 +78,20 @@ func (r *REST) handleCommands(c echo.Context) error {
 			if username == "" {
 				return c.String(http.StatusBadRequest, "username cannot be empty")
 			}
-			err := r.db.DeleteStandupUserByUsername(username)
+			channelID := form.Get("channel_id")
+			if channelID == "" {
+				return c.String(http.StatusBadRequest, "channel cannot be empty")
+			}
+			err := r.db.DeleteStandupUserByUsername(username, channelID)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
 			}
 			return c.String(http.StatusOK, fmt.Sprintf("%s deleted", username))
 		case commandList:
 			users, err := r.db.ListStandupUsers()
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))
 			}
 

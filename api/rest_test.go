@@ -12,10 +12,9 @@ import (
 )
 
 var (
-	stubCommandAddUser      = "command=/comedianadd&text=@test"
+	stubCommandAddUser      = "command=/comedianadd&text=@test&channel_id=chanid&channel_name=channame"
 	stubCommandAddEmptyText = "command=/comedianadd&text="
-	stubCommandDelUser      = "command=/comedianremove&text=@test"
-	stubCommandDelEmptyText = "command=/comedianremove&text="
+	stubCommandDelUser      = "command=/comedianremove&text=@test&channel_id=chanid"
 	stubCommandListUsers    = "command=/comedianlist"
 )
 
@@ -63,18 +62,6 @@ func TestHandleCommands(t *testing.T) {
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Equal(t, "@test deleted", rec.Body.String())
-	}
-
-	//delete user empty text
-	e = echo.New()
-	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandDelEmptyText))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
-	rec = httptest.NewRecorder()
-	context = e.NewContext(req, rec)
-
-	if assert.NoError(t, rest.handleCommands(context)) {
-		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		assert.Equal(t, "username cannot be empty", rec.Body.String())
 	}
 
 	//list users
