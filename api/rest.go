@@ -36,6 +36,7 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 	r.initEndpoints()
 	return r, nil
 }
+
 func (r *REST) initEndpoints() {
 	r.e.POST("/commands", r.handleCommands)
 }
@@ -63,7 +64,7 @@ func (r *REST) handleCommands(c echo.Context) error {
 				fmt.Println(err)
 				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
 			}
-			return c.JSON(http.StatusOK, fmt.Sprintf("%s added", username))
+			return c.String(http.StatusOK, fmt.Sprintf("%s added", username))
 		case commandRemove:
 			username := form.Get("text")
 			if username == "" {
@@ -74,14 +75,15 @@ func (r *REST) handleCommands(c echo.Context) error {
 				fmt.Println(err)
 				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
 			}
-			return c.JSON(http.StatusOK, fmt.Sprintf("%s deleted", username))
+			return c.String(http.StatusOK, fmt.Sprintf("%s deleted", username))
 		case commandList:
 			users, err := r.db.ListStandupUsers()
 			if err != nil {
 				fmt.Println(err)
 				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))
 			}
-			return c.JSON(http.StatusOK, fmt.Sprintf("Standup users: %s", users[0].SlackName))
+
+			return c.JSON(http.StatusOK, &users)
 
 		default:
 			return c.String(http.StatusNotImplemented, "Not implemented")
