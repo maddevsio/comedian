@@ -113,3 +113,19 @@ func (m *MySQL) ListStandupUsers(channelID string) ([]model.StandupUser, error) 
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=?", channelID)
 	return items, err
 }
+
+// CreateStandupTime creates time entry in database
+func (m *MySQL) CreateStandupTime(c model.StandupTime) (model.StandupTime, error) {
+	res, err := m.conn.Exec(
+		"INSERT INTO `standup_time` (created, channel_id, channel, standuptime) VALUES (?, ?, ?, ?)",
+		time.Now().UTC(), c.ChannelID, c.Channel, c.Time)
+	if err != nil {
+		return c, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return c, err
+	}
+	c.ID = id
+	return c, nil
+}
