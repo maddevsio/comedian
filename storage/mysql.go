@@ -129,3 +129,9 @@ func (m *MySQL) CreateStandupTime(c model.StandupTime) (model.StandupTime, error
 	c.ID = id
 	return c, nil
 }
+
+// DeleteStandupTime deletes standup_time entry for channel from database
+func (m *MySQL) DeleteStandupTime(channelID string) error {
+	_, err := m.conn.Exec("DELETE FROM `standup_time` WHERE channel_id=?", channelID)
+	return err
+}

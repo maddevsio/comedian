@@ -23,6 +23,7 @@ const (
 	commandRemove = "/comedianremove"
 	commandList   = "/comedianlist"
 	commandAddTime = "/standuptimeset"
+	commandRemoveTime = "/standuptimeremove"
 )
 
 func NewRESTAPI(c config.Config) (*REST, error) {
@@ -126,6 +127,19 @@ func (r *REST) handleCommands(c echo.Context) error {
 				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err))
 			}
 			return c.String(http.StatusOK, fmt.Sprintf("standup time at %d added", timeInt))
+		case commandRemoveTime:
+			channelID := form.Get("channel_id")
+			channel := form.Get("channel_name")
+			if channelID == "" || channel == "" {
+				return c.String(http.StatusBadRequest, "channel cannot be empty")
+			}
+			err := r.db.DeleteStandupTime(channelID)
+			if err != nil {
+				log.Println(err)
+				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err))
+			}
+			return c.String(http.StatusOK, fmt.Sprintf("standup time for %s channel deleted", channel))
+
 		default:
 			return c.String(http.StatusNotImplemented, "Not implemented")
 		}
