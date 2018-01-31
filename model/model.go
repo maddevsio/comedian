@@ -24,5 +24,7 @@ type (
 		Modified  time.Time `db:"modified" json:"modified"`
 		SlackName string    `db:"username" json:"username"`
 		FullName  string    `db:"full_name" json:"fullName"`
+		Channel   string    `db:"channel" json:"channel"`
+		ChannelID string    `db:"channel_id" json:"channelId"`
 	}
 )

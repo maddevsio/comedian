@@ -88,8 +88,8 @@ func (m *MySQL) ListStandups() ([]model.Standup, error) {
 // CreateStandupUser creates comedian entry in database
 func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error) {
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup_users` (created, modified, username, full_name) VALUES (?, ?, ?, ?)",
-		time.Now().UTC(), time.Now().UTC(), c.SlackName, c.FullName)
+		"INSERT INTO `standup_users` (created, modified, username, full_name, channel_id, channel) VALUES (?, ?, ?, ?, ?, ?)",
+		time.Now().UTC(), time.Now().UTC(), c.SlackName, c.FullName, c.ChannelID, c.Channel)
 	if err != nil {
 		return c, err
 	}
@@ -102,7 +102,14 @@ func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error
 }
 
 // DeleteStandupUser deletes standup_users entry from database
-func (m *MySQL) DeleteStandupUser(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE id=?", id)
+func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
+	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
 	return err
+}
+
+// ListStandupUsers returns array of standup entries from database
+func (m *MySQL) ListStandupUsers() ([]model.StandupUser, error) {
+	items := []model.StandupUser{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup_users`")
+	return items, err
 }
