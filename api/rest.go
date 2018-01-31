@@ -89,7 +89,11 @@ func (r *REST) handleCommands(c echo.Context) error {
 			}
 			return c.String(http.StatusOK, fmt.Sprintf("%s deleted", username))
 		case commandList:
-			users, err := r.db.ListStandupUsers()
+			channelID := form.Get("channel_id")
+			if channelID == "" {
+				return c.String(http.StatusBadRequest, "channel cannot be empty")
+			}
+			users, err := r.db.ListStandupUsers(channelID)
 			if err != nil {
 				log.Println(err)
 				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))

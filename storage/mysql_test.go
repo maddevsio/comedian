@@ -53,11 +53,11 @@ func TestCRUDStandupUser(t *testing.T) {
 	assert.Equal(t, "Test Testtt", su.FullName)
 	assert.Equal(t, "chanid", su.ChannelID)
 	assert.Equal(t, "chanName", su.Channel)
-	items, err := m.ListStandupUsers()
+	items, err := m.ListStandupUsers(su.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, items[0].SlackName, su.SlackName)
 	assert.NoError(t, m.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
-	items, err = m.ListStandupUsers()
+	items, err = m.ListStandupUsers(su.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(items))
 }
