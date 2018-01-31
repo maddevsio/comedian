@@ -9,6 +9,7 @@ import (
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 )
 
 type REST struct {
@@ -18,9 +19,12 @@ type REST struct {
 }
 
 const (
-	commandAdd    = "/comedianadd"
-	commandRemove = "/comedianremove"
-	commandList   = "/comedianlist"
+	commandAdd        = "/comedianadd"
+	commandRemove     = "/comedianremove"
+	commandList       = "/comedianlist"
+	commandAddTime    = "/standuptimeset"
+	commandRemoveTime = "/standuptimeremove"
+	commandTime       = "/standuptime"
 )
 
 func NewRESTAPI(c config.Config) (*REST, error) {
@@ -100,6 +104,54 @@ func (r *REST) handleCommands(c echo.Context) error {
 			}
 
 			return c.JSON(http.StatusOK, &users)
+		case commandAddTime:
+			timeString := form.Get("text")
+			if timeString == "" {
+				return c.String(http.StatusBadRequest, "standup time cannot be empty")
+			}
+			timeInt, err := strconv.Atoi(timeString)
+			if err != nil {
+				log.Println(err)
+			}
+			channelID := form.Get("channel_id")
+			channel := form.Get("channel_name")
+			if channelID == "" || channel == "" {
+				return c.String(http.StatusBadRequest, "channel cannot be empty")
+			}
+			_, err = r.db.CreateStandupTime(model.StandupTime{
+				ChannelID: channelID,
+				Channel:   channel,
+				Time:      int64(timeInt),
+			})
+			if err != nil {
+				log.Println(err)
+				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err))
+			}
+			return c.String(http.StatusOK, fmt.Sprintf("standup time at %d added", timeInt))
+		case commandRemoveTime:
+			channelID := form.Get("channel_id")
+			channel := form.Get("channel_name")
+			if channelID == "" || channel == "" {
+				return c.String(http.StatusBadRequest, "channel cannot be empty")
+			}
+			err := r.db.DeleteStandupTime(channelID)
+			if err != nil {
+				log.Println(err)
+				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err))
+			}
+			return c.String(http.StatusOK, fmt.Sprintf("standup time for %s channel deleted", channel))
+		case commandTime:
+			channelID := form.Get("channel_id")
+			if channelID == "" {
+				return c.String(http.StatusBadRequest, "channel cannot be empty")
+			}
+			time, err := r.db.ListStandupTime(channelID)
+			if err != nil {
+				log.Println(err)
+				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
+			}
+
+			return c.JSON(http.StatusOK, &time.Time)
 
 		default:
 			return c.String(http.StatusNotImplemented, "Not implemented")

@@ -16,6 +16,10 @@ var (
 	stubCommandAddEmptyText = "command=/comedianadd&text="
 	stubCommandDelUser      = "command=/comedianremove&text=@test&channel_id=chanid"
 	stubCommandListUsers    = "command=/comedianlist&channel_id=chanid"
+	stubCommandAddTime      = "command=/standuptimeset&text=12&channel_id=chanid&channel_name=channame"
+	stubCommandAddEmptyTime = "command=/standuptimeset&text=&channel_id=chanid&channel_name=channame"
+	stubCommandListTime     = "command=/standuptime&channel_id=chanid"
+	stubCommandDelTime      = "command=/standuptimeremove&channel_id=chanid&channel_name=channame"
 )
 
 func TestHandleCommands(t *testing.T) {
@@ -74,5 +78,53 @@ func TestHandleCommands(t *testing.T) {
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Equal(t, "[]", rec.Body.String())
+	}
+
+	//add time
+	e = echo.New()
+	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandAddTime))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+	rec = httptest.NewRecorder()
+	context = e.NewContext(req, rec)
+
+	if assert.NoError(t, rest.handleCommands(context)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "standup time at 12 added", rec.Body.String())
+	}
+
+	//add time empty text
+	e = echo.New()
+	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandAddEmptyTime))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+	rec = httptest.NewRecorder()
+	context = e.NewContext(req, rec)
+
+	if assert.NoError(t, rest.handleCommands(context)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Equal(t, "standup time cannot be empty", rec.Body.String())
+	}
+
+	//list time
+	e = echo.New()
+	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandListTime))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+	rec = httptest.NewRecorder()
+	context = e.NewContext(req, rec)
+
+	if assert.NoError(t, rest.handleCommands(context)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "12", rec.Body.String())
+	}
+
+	//delete time
+	e = echo.New()
+	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandDelTime))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+	rec = httptest.NewRecorder()
+	context = e.NewContext(req, rec)
+
+	if assert.NoError(t, rest.handleCommands(context)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "standup time for channame channel deleted", rec.Body.String())
 	}
 }

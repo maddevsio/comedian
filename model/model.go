@@ -27,4 +27,13 @@ type (
 		Channel   string    `db:"channel" json:"channel"`
 		ChannelID string    `db:"channel_id" json:"channelId"`
 	}
+
+	// StandupTime model used for serialization/deserialization stored standupTime
+	StandupTime struct {
+		ID        int64     `db:"id" json:"id"`
+		Created   time.Time `db:"created" json:"created"`
+		Channel   string    `db:"channel" json:"channel"`
+		ChannelID string    `db:"channel_id" json:"channelId"`
+		Time      int64     `db:"standuptime" json:"time"`
+	}
 )

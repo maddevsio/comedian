@@ -21,5 +21,11 @@ type (
 		DeleteStandupUserByUsername(string, string) error
 		// ListStandupUsers returns array of standupUser entries from database
 		ListStandupUsers(string) ([]model.StandupUser, error)
+		// CreateStandupTime creates standup time entry in database
+		CreateStandupTime(model.StandupTime) (model.StandupTime, error)
+		// DeleteStandupTime deletes time entry from database
+		DeleteStandupTime(string) error
+		// ListStandupTime returns standup time entry from database
+		ListStandupTime(string) (model.StandupTime, error)
 	}
 )

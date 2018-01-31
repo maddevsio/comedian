@@ -61,3 +61,26 @@ func TestCRUDStandupUser(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(items))
 }
+
+func TestCRUDStandupTime(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	m, err := NewMySQL(c)
+	assert.NoError(t, err)
+	st, err := m.CreateStandupTime(model.StandupTime{
+		ChannelID: "chanid",
+		Channel:   "chanName",
+		Time:      int64(12),
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "chanid", st.ChannelID)
+	assert.Equal(t, "chanName", st.Channel)
+	assert.Equal(t, int64(12), st.Time)
+	time, err := m.ListStandupTime(st.ChannelID)
+	assert.NoError(t, err)
+	assert.Equal(t, time.Time, st.Time)
+	assert.NoError(t, m.DeleteStandupTime(st.ChannelID))
+	time, err = m.ListStandupTime(st.ChannelID)
+	assert.Error(t, err)
+	assert.Equal(t, int64(0), time.Time)
+}
