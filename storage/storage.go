@@ -25,5 +25,7 @@ type (
 		CreateStandupTime(model.StandupTime) (model.StandupTime, error)
 		// DeleteStandupTime deletes time entry from database
 		DeleteStandupTime(string) error
+		// ListStandupTime returns standup time entry from database
+		ListStandupTime(string) (model.StandupTime, error)
 	}
 )

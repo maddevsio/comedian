@@ -34,6 +34,6 @@ type (
 		Created   time.Time `db:"created" json:"created"`
 		Channel   string    `db:"channel" json:"channel"`
 		ChannelID string    `db:"channel_id" json:"channelId"`
-		Time      int64     `db:"time" json:"time"`
+		Time      int64     `db:"standuptime" json:"time"`
 	}
 )

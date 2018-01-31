@@ -135,3 +135,14 @@ func (m *MySQL) DeleteStandupTime(channelID string) error {
 	_, err := m.conn.Exec("DELETE FROM `standup_time` WHERE channel_id=?", channelID)
 	return err
 }
+
+// ListStandupTime returns standup time entry from database
+func (m *MySQL) ListStandupTime(channelID string) (model.StandupTime, error) {
+	var time model.StandupTime
+	err := m.conn.Get(&time, "SELECT * FROM `standup_time` WHERE channel_id=?", channelID)
+	return time, err
+/*
+	var s model.Standup
+	err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE id=?", id)
+ */
+	}
