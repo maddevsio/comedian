@@ -19,12 +19,12 @@ type REST struct {
 }
 
 const (
-	commandAdd    = "/comedianadd"
-	commandRemove = "/comedianremove"
-	commandList   = "/comedianlist"
-	commandAddTime = "/standuptimeset"
+	commandAdd        = "/comedianadd"
+	commandRemove     = "/comedianremove"
+	commandList       = "/comedianlist"
+	commandAddTime    = "/standuptimeset"
 	commandRemoveTime = "/standuptimeremove"
-	commandTime = "/standuptime"
+	commandTime       = "/standuptime"
 )
 
 func NewRESTAPI(c config.Config) (*REST, error) {
@@ -121,7 +121,7 @@ func (r *REST) handleCommands(c echo.Context) error {
 			_, err = r.db.CreateStandupTime(model.StandupTime{
 				ChannelID: channelID,
 				Channel:   channel,
-				Time: int64(timeInt),
+				Time:      int64(timeInt),
 			})
 			if err != nil {
 				log.Println(err)
