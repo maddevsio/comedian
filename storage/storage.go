@@ -20,6 +20,6 @@ type (
 		// DeleteStandupUser deletes standup_users entry from database
 		DeleteStandupUserByUsername(string, string) error
 		// ListStandupUsers returns array of standupUser entries from database
-		ListStandupUsers() ([]model.StandupUser, error)
+		ListStandupUsers(string) ([]model.StandupUser, error)
 	}
 )

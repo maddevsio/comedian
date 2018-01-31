@@ -15,7 +15,7 @@ var (
 	stubCommandAddUser      = "command=/comedianadd&text=@test&channel_id=chanid&channel_name=channame"
 	stubCommandAddEmptyText = "command=/comedianadd&text="
 	stubCommandDelUser      = "command=/comedianremove&text=@test&channel_id=chanid"
-	stubCommandListUsers    = "command=/comedianlist"
+	stubCommandListUsers    = "command=/comedianlist&channel_id=chanid"
 )
 
 func TestHandleCommands(t *testing.T) {
