@@ -141,8 +141,4 @@ func (m *MySQL) ListStandupTime(channelID string) (model.StandupTime, error) {
 	var time model.StandupTime
 	err := m.conn.Get(&time, "SELECT * FROM `standup_time` WHERE channel_id=?", channelID)
 	return time, err
-	/*
-		var s model.Standup
-		err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE id=?", id)
-	*/
 }
