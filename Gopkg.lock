@@ -15,6 +15,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/gorilla/schema"
+  packages = ["."]
+  revision = "afe77393c53b66afe9212810d9b2013859d04ae6"
+
+[[projects]]
+  branch = "master"
   name = "github.com/jmoiron/sqlx"
   packages = [".","reflectx"]
   revision = "de8647470aafe4854c976707c431dbe1eb2822c6"
@@ -106,6 +112,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e30e29aa6acb28e6ffa03c91c358807577da230e48a189e9b8c56092937351a4"
+  inputs-digest = "8cda7481f13a0a6a165a1549b760e3a61fbbdd9dc923c17361da3355d2058e5e"
   solver-name = "gps-cdcl"
   solver-version = 1

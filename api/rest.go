@@ -3,19 +3,23 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
+	"strconv"
+
+	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
-	"strconv"
 )
 
 type REST struct {
-	db storage.Storage
-	e  *echo.Echo
-	c  config.Config
+	db      storage.Storage
+	e       *echo.Echo
+	c       config.Config
+	decoder *schema.Decoder
 }
 
 const (
@@ -27,6 +31,7 @@ const (
 	commandTime       = "/standuptime"
 )
 
+// NewRESTAPI creates API for Slack commands
 func NewRESTAPI(c config.Config) (*REST, error) {
 	e := echo.New()
 	conn, err := storage.NewMySQL(c)
@@ -34,9 +39,10 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 		return nil, err
 	}
 	r := &REST{
-		db: conn,
-		e:  e,
-		c:  c,
+		db:      conn,
+		e:       e,
+		c:       c,
+		decoder: schema.NewDecoder(),
 	}
 	r.initEndpoints()
 	return r, nil
@@ -50,6 +56,7 @@ func (r *REST) initEndpoints() {
 func (r *REST) Start() error {
 	return r.e.Start(r.c.HTTPBindAddr)
 }
+
 func (r *REST) handleCommands(c echo.Context) error {
 	form, err := c.FormParams()
 	if err != nil {
@@ -58,104 +65,132 @@ func (r *REST) handleCommands(c echo.Context) error {
 	if command := form.Get("command"); command != "" {
 		switch command {
 		case commandAdd:
-			username := form.Get("text")
-			if username == "" {
-				return c.String(http.StatusBadRequest, "username cannot be empty")
-			}
-			channelID := form.Get("channel_id")
-			channel := form.Get("channel_name")
-			if channelID == "" || channel == "" {
-				return c.String(http.StatusBadRequest, "channel cannot be empty")
-			}
-			_, err := r.db.CreateStandupUser(model.StandupUser{
-				SlackName: username,
-				ChannelID: channelID,
-				Channel:   channel,
-			})
-			if err != nil {
-				log.Println(err)
-				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
-			}
-			return c.String(http.StatusOK, fmt.Sprintf("%s added", username))
+			return r.addCommand(c, form)
 		case commandRemove:
-			username := form.Get("text")
-			if username == "" {
-				return c.String(http.StatusBadRequest, "username cannot be empty")
-			}
-			channelID := form.Get("channel_id")
-			if channelID == "" {
-				return c.String(http.StatusBadRequest, "channel cannot be empty")
-			}
-			err := r.db.DeleteStandupUserByUsername(username, channelID)
-			if err != nil {
-				log.Println(err)
-				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
-			}
-			return c.String(http.StatusOK, fmt.Sprintf("%s deleted", username))
+			return r.removeCommand(c, form)
 		case commandList:
-			channelID := form.Get("channel_id")
-			if channelID == "" {
-				return c.String(http.StatusBadRequest, "channel cannot be empty")
-			}
-			users, err := r.db.ListStandupUsers(channelID)
-			if err != nil {
-				log.Println(err)
-				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))
-			}
-
-			return c.JSON(http.StatusOK, &users)
+			return r.listCommands(c, form)
 		case commandAddTime:
-			timeString := form.Get("text")
-			if timeString == "" {
-				return c.String(http.StatusBadRequest, "standup time cannot be empty")
-			}
-			timeInt, err := strconv.Atoi(timeString)
-			if err != nil {
-				log.Println(err)
-			}
-			channelID := form.Get("channel_id")
-			channel := form.Get("channel_name")
-			if channelID == "" || channel == "" {
-				return c.String(http.StatusBadRequest, "channel cannot be empty")
-			}
-			_, err = r.db.CreateStandupTime(model.StandupTime{
-				ChannelID: channelID,
-				Channel:   channel,
-				Time:      int64(timeInt),
-			})
-			if err != nil {
-				log.Println(err)
-				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err))
-			}
-			return c.String(http.StatusOK, fmt.Sprintf("standup time at %d added", timeInt))
+			return r.addTime(c, form)
 		case commandRemoveTime:
-			channelID := form.Get("channel_id")
-			channel := form.Get("channel_name")
-			if channelID == "" || channel == "" {
-				return c.String(http.StatusBadRequest, "channel cannot be empty")
-			}
-			err := r.db.DeleteStandupTime(channelID)
-			if err != nil {
-				log.Println(err)
-				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err))
-			}
-			return c.String(http.StatusOK, fmt.Sprintf("standup time for %s channel deleted", channel))
+			return r.removeTime(c, form)
 		case commandTime:
-			channelID := form.Get("channel_id")
-			if channelID == "" {
-				return c.String(http.StatusBadRequest, "channel cannot be empty")
-			}
-			time, err := r.db.ListStandupTime(channelID)
-			if err != nil {
-				log.Println(err)
-				return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
-			}
-
-			return c.JSON(http.StatusOK, &time.Time)
-
+			return r.listTime(c, form)
 		default:
 			return c.String(http.StatusNotImplemented, "Not implemented")
 		}
 	}
 	return c.JSON(http.StatusMethodNotAllowed, "Command not allowed")
+}
+
+func (r *REST) addCommand(c echo.Context, f url.Values) error {
+	var ca AddStandup
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.IsValid(); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	_, err := r.db.CreateStandupUser(model.StandupUser{
+		SlackName: ca.Text,
+		ChannelID: ca.ChannelID,
+		Channel:   ca.ChannelName,
+	})
+	if err != nil {
+		log.Errorf("could not create standup user: %v", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
+	}
+	return c.String(http.StatusOK, fmt.Sprintf("%s added", ca.Text))
+}
+
+func (r *REST) removeCommand(c echo.Context, f url.Values) error {
+	var ca Standup
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.IsValid(); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	err := r.db.DeleteStandupUserByUsername(ca.Text, ca.ChannelID)
+	if err != nil {
+		log.Errorf("could not delete standup: %v", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
+	}
+	return c.String(http.StatusOK, fmt.Sprintf("%s deleted", ca.Text))
+}
+
+func (r *REST) listCommands(c echo.Context, f url.Values) error {
+	var ca ChannelForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.IsValid(); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	users, err := r.db.ListStandupUsers(ca.ChannelID)
+	if err != nil {
+		log.Println(err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))
+	}
+
+	return c.JSON(http.StatusOK, &users)
+}
+func (r *REST) addTime(c echo.Context, f url.Values) error {
+	var ca AddStandup
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.IsValid(); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	timeInt, err := strconv.Atoi(ca.Text)
+	if err != nil {
+		log.Errorf("could not conver time: %v", err)
+	}
+	_, err = r.db.CreateStandupTime(model.StandupTime{
+		ChannelID: ca.ChannelID,
+		Channel:   ca.ChannelName,
+		Time:      int64(timeInt),
+	})
+	if err != nil {
+		log.Errorf("could not create standup time: %v", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err))
+	}
+	return c.String(http.StatusOK, fmt.Sprintf("standup time at %d added", timeInt))
+}
+
+func (r *REST) removeTime(c echo.Context, f url.Values) error {
+	var ca ChannelNameForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.IsValid(); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	err := r.db.DeleteStandupTime(ca.ChannelID)
+	if err != nil {
+		log.Errorf("could not delete standup time: %v", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err))
+	}
+	return c.String(http.StatusOK, fmt.Sprintf("standup time for %s channel deleted", ca.ChannelName))
+}
+
+func (r *REST) listTime(c echo.Context, f url.Values) error {
+	var ca ChannelForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.IsValid(); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	time, err := r.db.ListStandupTime(ca.ChannelID)
+	if err != nil {
+		log.Println(err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
+	}
+
+	return c.JSON(http.StatusOK, &time.Time)
 }

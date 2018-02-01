@@ -1,14 +1,15 @@
 package api
 
 import (
-	"github.com/labstack/echo"
-	"github.com/maddevsio/comedian/config"
-	"github.com/stretchr/testify/assert"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/labstack/echo"
+	"github.com/maddevsio/comedian/config"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -53,7 +54,7 @@ func TestHandleCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		assert.Equal(t, "username cannot be empty", rec.Body.String())
+		assert.Equal(t, "`text` cannot be empty", rec.Body.String())
 	}
 
 	//delete user
@@ -101,7 +102,7 @@ func TestHandleCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		assert.Equal(t, "standup time cannot be empty", rec.Body.String())
+		assert.Equal(t, "`text` cannot be empty", rec.Body.String())
 	}
 
 	//list time
