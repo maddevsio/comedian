@@ -119,26 +119,22 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 		if err != nil {
 			s.logger.Error(err)
 		}
-
+		_, err = s.db.AddToStandupHistory(model.StandupEditHistory{
+			StandupID:   standup.ID,
+			StandupText: standup.Comment})
+		if err != nil {
+			s.logger.Error(err)
+		}
 		if cleanMsg, ok := s.cleanMessage(msg.SubMessage.Text); ok {
 			standup.Comment = cleanMsg
 
-			_, err := s.db.AddToStandupHistory(model.StandupEditHistory{
-				StandupID:   standup.ID,
-				StandupText: standup.Comment})
-			if err != nil {
-				s.logger.Error(err)
-			}
 			_, err = s.db.UpdateStandup(standup)
 			if err != nil {
 				s.logger.Error(err)
 			}
 			s.logger.Info("Edited")
-
 		}
-
 	}
-
 }
 
 func (s *Slack) cleanMessage(message string) (string, bool) {
