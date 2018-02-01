@@ -91,7 +91,7 @@ func (r *REST) addCommand(c echo.Context, f url.Values) error {
 	if err := ca.Validate(); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	_, err := r.db.CreateChannelIDTextFormUser(model.ChannelIDTextFormUser{
+	_, err := r.db.CreateStandupUser(model.StandupUser{
 		SlackName: ca.Text,
 		ChannelID: ca.ChannelID,
 		Channel:   ca.ChannelName,
@@ -111,7 +111,7 @@ func (r *REST) removeCommand(c echo.Context, f url.Values) error {
 	if err := ca.Validate(); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	err := r.db.DeleteChannelIDTextFormUserByUsername(ca.Text, ca.ChannelID)
+	err := r.db.DeleteStandupUserByUsername(ca.Text, ca.ChannelID)
 	if err != nil {
 		log.Errorf("could not delete standup: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
@@ -127,7 +127,7 @@ func (r *REST) listCommands(c echo.Context, f url.Values) error {
 	if err := ca.Validate(); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	users, err := r.db.ListChannelIDTextFormUsers(ca.ChannelID)
+	users, err := r.db.ListStandupUsers(ca.ChannelID)
 	if err != nil {
 		log.Println(err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))
@@ -149,7 +149,7 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	if err != nil {
 		log.Errorf("could not conver time: %v", err)
 	}
-	_, err = r.db.CreateChannelIDTextFormTime(model.ChannelIDTextFormTime{
+	_, err = r.db.CreateStandupTime(model.StandupTime{
 		ChannelID: ca.ChannelID,
 		Channel:   ca.ChannelName,
 		Time:      int64(timeInt),
@@ -170,7 +170,7 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	err := r.db.DeleteChannelIDTextFormTime(ca.ChannelID)
+	err := r.db.DeleteStandupTime(ca.ChannelID)
 	if err != nil {
 		log.Errorf("could not delete standup time: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err))
@@ -187,7 +187,7 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	time, err := r.db.ListChannelIDTextFormTime(ca.ChannelID)
+	time, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
 		log.Println(err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
