@@ -3,32 +3,34 @@ package api
 import "errors"
 
 type (
-	// AddStandup struct used for parsing form of add command from slack
-	AddStandup struct {
+	// FullSlackForm struct used for parsing full payload from slack
+	FullSlackForm struct {
 		Command     string `schema:"command"`
 		Text        string `schema:"text"`
 		ChannelID   string `schema:"channel_id"`
 		ChannelName string `schema:"channel_name"`
 	}
-	// Standup struct user for parsing form of list standups
-	Standup struct {
+	// ChannelIDTextForm struct used for parsing text and channel_id param
+	ChannelIDTextForm struct {
 		Command   string `schema:"command"`
 		Text      string `schema:"text"`
 		ChannelID string `schema:"channel_id"`
 	}
-	ChannelForm struct {
+	// ChannelIDForm struct used for parsing channel_id param
+	ChannelIDForm struct {
 		Command   string `schema:"command"`
 		ChannelID string `schema:"channel_id"`
 	}
-	ChannelNameForm struct {
+	// ChannelForm struct used for parsing channel_id and channel_name payload
+	ChannelForm struct {
 		Command     string `schema:"command"`
 		ChannelID   string `schema:"channel_id"`
 		ChannelName string `schema:"channel_name"`
 	}
 )
 
-// IsValid validates struct
-func (c AddStandup) IsValid() error {
+// Validate validates struct
+func (c FullSlackForm) Validate() error {
 	if c.Text == "" {
 		return errors.New("`text` cannot be empty")
 	}
@@ -41,8 +43,8 @@ func (c AddStandup) IsValid() error {
 	return nil
 }
 
-// IsValid validates struct
-func (s Standup) IsValid() error {
+// Validate validates struct
+func (s ChannelIDTextForm) Validate() error {
 	if s.Text == "" {
 		return errors.New("`text` cannot be empty")
 	}
@@ -53,8 +55,8 @@ func (s Standup) IsValid() error {
 	return nil
 }
 
-// IsValid validates struct
-func (s ChannelForm) IsValid() error {
+// Validate validates struct
+func (s ChannelIDForm) Validate() error {
 	if s.ChannelID == "" {
 		return errors.New("`channel_id` cannot be empty")
 	}
@@ -62,8 +64,8 @@ func (s ChannelForm) IsValid() error {
 	return nil
 }
 
-// IsValid validates struct
-func (s ChannelNameForm) IsValid() error {
+// Validate validates struct
+func (s ChannelForm) Validate() error {
 	if s.ChannelID == "" {
 		return errors.New("`channel_id` cannot be empty")
 	}
