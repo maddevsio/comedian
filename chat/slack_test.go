@@ -11,6 +11,7 @@ func TestCleanMessage(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
+	assert.NoError(t, err)
 	s.myUsername = "comedian"
 	assert.NoError(t, err)
 	text, ok := s.cleanMessage("<@comedian> hey there")
