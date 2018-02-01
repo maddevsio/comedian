@@ -36,4 +36,12 @@ type (
 		ChannelID string    `db:"channel_id" json:"channelId"`
 		Time      int64     `db:"standuptime" json:"time"`
 	}
+
+	// StandupEditHistory model used for serialization/deserialization stored standup edit history
+	StandupEditHistory struct {
+		ID          int64     `db:"id" json:"id"`
+		Created     time.Time `db:"created" json:"created"`
+		StandupID   int64     `db:"standup_id" json:"standupId"`
+		StandupText string    `db:"standuptext" json:"standuptext"`
+	}
 )

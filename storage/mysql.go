@@ -142,3 +142,19 @@ func (m *MySQL) ListStandupTime(channelID string) (model.StandupTime, error) {
 	err := m.conn.Get(&time, "SELECT * FROM `standup_time` WHERE channel_id=?", channelID)
 	return time, err
 }
+
+//AddToStandupHistory creates backup standup entry in standup_edit_history database
+func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEditHistory, error) {
+	res, err := m.conn.Exec(
+		"INSERT INTO `standup_edit_time` (created, standup_id, standup_text) VALUES (?, ?, ?)",
+		time.Now().UTC(), s.StandupID, s.StandupText)
+	if err != nil {
+		return s, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return s, err
+	}
+	s.ID = id
+	return s, nil
+}

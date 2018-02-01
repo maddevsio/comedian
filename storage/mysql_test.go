@@ -20,6 +20,16 @@ func TestCRUDLStandup(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, s.Comment, "work hard")
+	upd := model.StandupEditHistory{
+		Created:     s.Modified,
+		StandupID:   s.ID,
+		StandupText: s.Comment,
+	}
+	upd, err = m.AddToStandupHistory(upd)
+	assert.NoError(t, err)
+	assert.Equal(t, s.ID, upd.StandupID)
+	assert.Equal(t, s.Modified, upd.Created)
+	assert.Equal(t, s.Comment, upd.StandupText)
 	s.Comment = "Rest"
 	s, err = m.UpdateStandup(s)
 	assert.NoError(t, err)
