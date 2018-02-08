@@ -7,6 +7,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
+	"fmt"
 )
 
 func TestCRUDLStandup(t *testing.T) {
@@ -89,6 +90,11 @@ func TestCRUDStandupTime(t *testing.T) {
 	time, err := m.ListStandupTime(st.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, time.Time, st.Time)
+	st.ChannelID = "'"
+	time, err = m.ListStandupTime(st.ChannelID)
+	fmt.Printf("DATABASE ERROR: %v", err)
+	assert.Error(t, err)
+	st.ChannelID = "chanid"
 	assert.NoError(t, m.DeleteStandupTime(st.ChannelID))
 	time, err = m.ListStandupTime(st.ChannelID)
 	assert.Error(t, err)
