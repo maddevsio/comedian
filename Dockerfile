@@ -8,4 +8,4 @@ ENV LANG en_US.utf8
 
 COPY comedian /
 
-ENTRYPOINT ["comedian"]
+ENTRYPOINT ["/comedian"]
