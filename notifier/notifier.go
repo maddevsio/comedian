@@ -30,7 +30,7 @@ func (n *Notifier) Start() error {
 
 func taskWithParams(chat chat.Chat) {
 	currTime := time.Now()
-	err := chat.SendMessage("D8DTA18UA", fmt.Sprintf("TEST MESSAGE! TIME: %s"))
+	err := chat.SendMessage("D8DTA18UA", fmt.Sprintf("TEST MESSAGE! TIME: "))
 	if err != nil {
 		log.Printf("ERROR: %s", err.Error())
 	}
