@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"testing"
 
+	"fmt"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
-	"fmt"
 )
 
 func TestCRUDLStandup(t *testing.T) {

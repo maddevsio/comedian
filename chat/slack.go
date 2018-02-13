@@ -145,7 +145,7 @@ func (s *Slack) cleanMessage(message string) (string, bool) {
 	return message, false
 }
 
-func (s *Slack) sendMessage(channel, message string) error {
+func (s *Slack) SendMessage(channel, message string) error {
 	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{})
 	return err
 }
