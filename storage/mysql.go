@@ -143,7 +143,7 @@ func (m *MySQL) ListStandupTime(channelID string) (model.StandupTime, error) {
 	return time, err
 }
 
-//AddToStandupHistory creates backup standup entry in standup_edit_history database
+// AddToStandupHistory creates backup standup entry in standup_edit_history database
 func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEditHistory, error) {
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_edit_history` (created, standup_id, standup_text) VALUES (?, ?, ?)",

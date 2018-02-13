@@ -38,11 +38,13 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 	if err != nil {
 		return nil, err
 	}
+	decoder := schema.NewDecoder()
+	decoder.IgnoreUnknownKeys(true)
 	r := &REST{
 		db:      conn,
 		e:       e,
 		c:       c,
-		decoder: schema.NewDecoder(),
+		decoder: decoder,
 	}
 	r.initEndpoints()
 	return r, nil
@@ -120,6 +122,7 @@ func (r *REST) removeCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) listCommands(c echo.Context, f url.Values) error {
+	log.Printf("%+v\n", f)
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -135,6 +138,7 @@ func (r *REST) listCommands(c echo.Context, f url.Values) error {
 
 	return c.JSON(http.StatusOK, &users)
 }
+
 func (r *REST) addTime(c echo.Context, f url.Values) error {
 
 	var ca FullSlackForm

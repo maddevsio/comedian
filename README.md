@@ -23,23 +23,34 @@ This messages should be written with @botusername mention. The comedian will sto
 ## The roadmap
 
 ### Bot
-
 - [x] Store accepted messages to bot in the database
-- [ ] Text analysis engine to get standup messages without mentioning bot user
-- [ ] Get all users in slack's organization and sync it with users in database
+- [x] Add user for daily standup reminders with slash command
+- [x] Remove user from daily standup reminder with slash command
+- [x] Add standup time with slash command
+- [x] Remove standup time with slash command
+- [x] Remind user to write standup via private message 
+	- [ ] add a check when adding a user, if the stand-up time is not specified, write that you need to specify it 
+	- [ ] add a check when adding a stand-up time, that no one has yet been added 
+	- [ ] when deleting stand-up time, notify that in this chat there are users who write standups 
+- [ ] Remind all users in channel to write standup with user's tag
+	- [ ] duplicate the message about the standup in 30 minutes with tagging users who did not write standup
+	- [ ] send a message to the manager at 5 pm that someone did not write the standup 
+- [ ] Standup reports
+	- [ ] all standups key username
+	- [ ] all standups key project
+	- [ ] all standups key username+project
 - [ ] Configure superusers with config file or env variables
-- [ ] Add user for daily standup reminders with slash command
-- [ ] Remove user from daily standup reminder with slash command
-- [ ] Add standup time with slash command
-- [ ] Remove standup time with slash command
+- [ ] Get all users in slack's organization and sync it with users in database
+	- [ ] Make research: is it possible to show the certain commands to the certain user
+	- [ ] Setup reminders when bot starts
+	- [ ] Setup reminders when we add new reminder on a channel
+	- [ ] Text analysis engine to get standup messages without mentioning bot user
+- [ ] Get task worklogs from JIRA
 - [ ] NLP based configuration for standup time adding
-- [ ] Setup reminders when bot starts
-- [ ] Setup reminders when we add new reminder on a channel
-- [ ] Remind user to write standup via private message
 - [ ] Create a docker-compose.yml
 - [ ] Build HTTP API for reports with oAuth authentication
 - [ ] Create a simple report interface with React.js
-- [ ] Get task worklogs from JIRA
+
 
 ### API
 
