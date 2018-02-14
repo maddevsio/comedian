@@ -194,11 +194,14 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	time, err := r.db.ListStandupTime(ca.ChannelID)
+	suTime, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
 		log.Println(err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
 	}
+	//todo test print
+	fmt.Printf("LIST TIME: %v", &suTime.Time)
 
-	return c.JSON(http.StatusOK, &time.Time)
+	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC)",
+		time.Unix(suTime.Time, 0).Format("15:04")))
 }

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/jasonlvhit/gocron"
 	"github.com/maddevsio/comedian/chat"
-	"github.com/maddevsio/comedian/storage"
 	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
