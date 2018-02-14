@@ -26,7 +26,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	notifier := notifier.NewNotifier(c, slack)
+	notifier, err := notifier.NewNotifier(c, slack)
+	if err != nil {
+		log.Fatal(err)
+	}
 	go func() { log.Fatal(notifier.Start()) }()
 
 	slack.Run()

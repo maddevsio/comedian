@@ -5,14 +5,13 @@ import (
 	"net/http"
 	"net/url"
 
-	"strconv"
-
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 type REST struct {
@@ -149,20 +148,24 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	timeInt, err := strconv.Atoi(ca.Text)
+	t, err := time.Parse("15:04", ca.Text)
 	if err != nil {
-		log.Errorf("could not conver time: %v", err)
+		log.Println("ERR:", err.Error())
+		return c.String(http.StatusBadRequest, fmt.Sprintf("could not convert time: %v", err))
 	}
+	timeInt := t.Unix()
+
 	_, err = r.db.CreateStandupTime(model.StandupTime{
 		ChannelID: ca.ChannelID,
 		Channel:   ca.ChannelName,
-		Time:      int64(timeInt),
+		Time:      timeInt,
 	})
 	if err != nil {
 		log.Errorf("could not create standup time: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf("standup time at %d added", timeInt))
+	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC) added",
+		time.Unix(timeInt, 0).Format("15:04")))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {

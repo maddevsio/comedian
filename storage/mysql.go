@@ -158,3 +158,10 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 	s.ID = id
 	return s, nil
 }
+
+// ListAllStandupTime returns standup time entry for all channels from database
+func (m *MySQL) ListAllStandupTime() ([]model.StandupTime, error) {
+	reminders := []model.StandupTime{}
+	err := m.conn.Select(&reminders, "SELECT * FROM `standup_time`")
+	return reminders, err
+}
