@@ -17,7 +17,7 @@ var (
 	stubCommandAddEmptyText = "command=/comedianadd&text="
 	stubCommandDelUser      = "command=/comedianremove&text=@test&channel_id=chanid"
 	stubCommandListUsers    = "command=/comedianlist&channel_id=chanid"
-	stubCommandAddTime      = "command=/standuptimeset&text=12&channel_id=chanid&channel_name=channame"
+	stubCommandAddTime      = "command=/standuptimeset&text=12:10&channel_id=chanid&channel_name=channame"
 	stubCommandAddEmptyTime = "command=/standuptimeset&text=&channel_id=chanid&channel_name=channame"
 	stubCommandListTime     = "command=/standuptime&channel_id=chanid"
 	stubCommandDelTime      = "command=/standuptimeremove&channel_id=chanid&channel_name=channame"
@@ -90,7 +90,7 @@ func TestHandleCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "standup time at 12 added", rec.Body.String())
+		assert.Equal(t, "standup time at 12:10 (UTC) added", rec.Body.String())
 	}
 
 	//add time empty text
@@ -114,7 +114,7 @@ func TestHandleCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "12", rec.Body.String())
+		assert.Equal(t, "-62167175400", rec.Body.String())
 	}
 
 	//delete time

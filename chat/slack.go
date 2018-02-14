@@ -62,8 +62,8 @@ func (s *Slack) Run() error {
 			switch ev := msg.Data.(type) {
 			case *slack.HelloEvent:
 				// Ignore hello
-			case *slack.ConnectedEvent:
-				s.api.PostMessage("#general", "<!channel> Hello world", slack.PostMessageParameters{})
+			//case *slack.ConnectedEvent:
+			//	s.api.PostMessage("#general", "<!channel> Hello world", slack.PostMessageParameters{})
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev)

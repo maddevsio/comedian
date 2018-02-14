@@ -28,7 +28,7 @@ This messages should be written with @botusername mention. The comedian will sto
 - [x] Remove user from daily standup reminder with slash command
 - [x] Add standup time with slash command
 - [x] Remove standup time with slash command
-- [x] Remind user to write standup via private message 
+- [ ] Remind user to write standup via private message 
 	- [ ] add a check when adding a user, if the stand-up time is not specified, write that you need to specify it 
 	- [ ] add a check when adding a stand-up time, that no one has yet been added 
 	- [ ] when deleting stand-up time, notify that in this chat there are users who write standups 
