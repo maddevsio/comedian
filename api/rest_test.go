@@ -114,7 +114,7 @@ func TestHandleCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "standup time at 12:10 (UTC) added", rec.Body.String())
+		assert.Equal(t, "standup time at 12:10 (UTC)", rec.Body.String())
 	}
 
 	//delete time
