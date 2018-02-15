@@ -7,6 +7,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
+	"strings"
 	"time"
 )
 
@@ -25,7 +26,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 
 func (n *Notifier) Start() error {
 	log.Println("Starting notifier...")
-	gocron.Every(10).Seconds().Do(taskWithParams, n.Chat, n.DB)
+	gocron.Every(1).Minutes().Do(taskWithParams, n.Chat, n.DB)
 	channel := gocron.Start()
 	for {
 		report := <-channel
@@ -37,19 +38,32 @@ func (n *Notifier) Start() error {
 func taskWithParams(chat chat.Chat, db storage.Storage) {
 	standupTimes, err := db.ListAllStandupTime()
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 	for _, standupTime := range standupTimes {
 		channelID := standupTime.ChannelID
 		standupTime := time.Unix(standupTime.Time, 0)
 
 		log.Printf("CHANNEL: %s, TIME: %v\n", channelID, standupTime)
+
 		currTime := time.Now()
 		if standupTime.Hour() == currTime.Hour() && standupTime.Minute() == currTime.Minute() {
-			err := chat.SendMessage(channelID,
-				fmt.Sprintf("TEST MESSAGE! CURRTIME: %v, STANDUPTIME: %v", currTime, standupTime))
+			standupUsers, err := db.ListStandupUsers(channelID)
 			if err != nil {
-				log.Printf("ERROR: %s", err.Error())
+				log.Error(err)
+			}
+			var list []string
+			for _, standupUser := range standupUsers {
+				user := standupUser.SlackName
+				list = append(list, user)
+			}
+			fmt.Printf("USERS HUYUZERS : %s", list)
+
+			err = chat.SendMessage(channelID,
+				fmt.Sprintf("TEST MESSAGE! CURRTIME: %v, STANDUPTIME: %v, standupers: %s", currTime, standupTime,
+					strings.Join(list, ", ")))
+			if err != nil {
+				log.Errorf("ERROR: %s", err.Error())
 			}
 		}
 	}
