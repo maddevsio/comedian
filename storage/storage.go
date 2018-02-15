@@ -11,6 +11,10 @@ type (
 		UpdateStandup(model.Standup) (model.Standup, error)
 		// SelectStandup selects standup entry from database
 		SelectStandup(int64) (model.Standup, error)
+		// SelectStandupByMessageTS selects standup entry by messageTS from database
+		SelectStandupByMessageTS(messageTS string) (model.Standup, error)
+		// SelectStandupByChannelID selects standup entry by channel ID from database
+		SelectStandupByChannelID(channelID string) (model.Standup, error)
 		// DeleteStandup deletes standup entry from database
 		DeleteStandup(int64) error
 		// ListStandups returns array of standup entries from database
