@@ -199,8 +199,6 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 		log.Println(err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
 	}
-	//todo test print
-	fmt.Printf("LIST TIME: %v", &suTime.Time)
 
 	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC)",
 		time.Unix(suTime.Time, 0).Format("15:04")))
