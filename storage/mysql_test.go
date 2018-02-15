@@ -16,8 +16,16 @@ func TestCRUDLStandup(t *testing.T) {
 	m, err := NewMySQL(c)
 	assert.NoError(t, err)
 	s, err := m.CreateStandup(model.Standup{
-		Comment:  "work hard",
-		Username: "user",
+		ChannelID: "QWERTY123",
+		Comment:   "work hard",
+		Username:  "user",
+		MessageTS: "qweasdzxc",
+	})
+	s2, err := m.CreateStandup(model.Standup{
+		ChannelID: "ASDF098",
+		Comment:   "stubComment",
+		Username:  "illidan",
+		MessageTS: "you are not prepared",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, s.Comment, "work hard")
@@ -41,11 +49,27 @@ func TestCRUDLStandup(t *testing.T) {
 	selected, err := m.SelectStandup(s.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, s, selected)
+	selectedByChannelID, err := m.SelectStandupByChannelID(s2.ChannelID)
+	assert.NoError(t, err)
+	assert.Equal(t, s2.Comment, selectedByChannelID.Comment)
+	assert.Equal(t, s2.Username, selectedByChannelID.Username)
+	selectedByChannelID, err = m.SelectStandupByChannelID(s.ChannelID)
+	assert.NoError(t, err)
+	assert.Equal(t, s.Comment, selectedByChannelID.Comment)
+	assert.Equal(t, s.Username, selectedByChannelID.Username)
+	selectedByMessageTS, err := m.SelectStandupByMessageTS(s2.MessageTS)
+	assert.NoError(t, err)
+	assert.Equal(t, s2.MessageTS, selectedByMessageTS.MessageTS)
+	assert.Equal(t, s2.Username, selectedByMessageTS.Username)
+	selectedByMessageTS, err = m.SelectStandupByMessageTS(s.MessageTS)
+	assert.NoError(t, err)
+	assert.Equal(t, s.MessageTS, selectedByMessageTS.MessageTS)
+	assert.Equal(t, s.Username, selectedByMessageTS.Username)
 	assert.NoError(t, m.DeleteStandup(s.ID))
+	assert.NoError(t, m.DeleteStandup(s2.ID))
 	s, err = m.SelectStandup(s.ID)
 	assert.Equal(t, err, sql.ErrNoRows)
 	assert.Equal(t, s.ID, int64(0))
-
 }
 
 func TestCRUDStandupUser(t *testing.T) {
@@ -90,6 +114,16 @@ func TestCRUDStandupTime(t *testing.T) {
 	time, err := m.ListStandupTime(st.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, time.Time, st.Time)
+	st2, err := m.CreateStandupTime(model.StandupTime{
+		ChannelID: "chanid222",
+		Channel:   "chanName2",
+		Time:      int64(13),
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(13), st2.Time)
+	_, err = m.ListAllStandupTime()
+	assert.NoError(t, err)
+
 	st.ChannelID = "'"
 	time, err = m.ListStandupTime(st.ChannelID)
 	fmt.Printf("DATABASE ERROR: %v", err)
