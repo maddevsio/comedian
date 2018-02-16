@@ -26,7 +26,8 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 
 func (n *Notifier) Start() error {
 	log.Println("Starting notifier...")
-	gocron.Every(1).Minutes().Do(taskWithParams, n.Chat, n.DB)
+	gocron.Every(15).Seconds().Do(taskWithParams, n.Chat, n.DB)
+	gocron.Every(15).Seconds().Do(managerStandupReport, n.Chat, n.DB)
 	channel := gocron.Start()
 	for {
 		report := <-channel
@@ -66,5 +67,53 @@ func taskWithParams(chat chat.Chat, db storage.Storage) {
 				log.Errorf("ERROR: %s", err.Error())
 			}
 		}
+	}
+}
+
+func managerStandupReport(chat chat.Chat, db storage.Storage) {
+	directManagerChannelID := "D8DTA18UA"
+	reportTime := "09:00"
+	reportTimeParsed, err := time.Parse("15:04", reportTime)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Printf("CHANNEL: %s, TIME: %v\n", directManagerChannelID, reportTime)
+	currTime := time.Now()
+	if reportTimeParsed.Hour() == currTime.Hour() && reportTimeParsed.Minute() == currTime.Minute() {
+		standupUsersRaw, err := db.ListStandupUsers(directManagerChannelID)
+		if err != nil {
+			log.Error(err)
+		}
+		var standupUsersList []string
+		for _, standupUser := range standupUsersRaw {
+			user := standupUser.SlackName
+			standupUsersList = append(standupUsersList, user)
+		}
+
+		userStandupRaw, err := db.SelectStandupByChannelID(directManagerChannelID)
+		if err != nil {
+			log.Error(err)
+		}
+		var usersWhoCreatedStandup []string
+		for _, userStandup := range userStandupRaw {
+			user := userStandup.Username
+			usersWhoCreatedStandup = append(usersWhoCreatedStandup, user)
+		}
+
+		var nonReporters []string
+		for _, user := range standupUsersList {
+			found := false
+			for _, standupCreator := range usersWhoCreatedStandup {
+				if user == standupCreator {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				nonReporters = append(nonReporters, user)
+			}
+		}
+
 	}
 }
