@@ -58,7 +58,7 @@ func taskWithParams(chat chat.Chat, db storage.Storage) {
 				user := standupUser.SlackName
 				list = append(list, user)
 			}
-			fmt.Printf("USERS HUYUZERS : %s", list)
+			fmt.Printf("USERS : %s", list)
 
 			err = chat.SendMessage(channelID,
 				fmt.Sprintf("TEST MESSAGE! CURRTIME: %v, STANDUPTIME: %v, standupers: %s", currTime, standupTime,
@@ -71,8 +71,10 @@ func taskWithParams(chat chat.Chat, db storage.Storage) {
 }
 
 func managerStandupReport(chat chat.Chat, db storage.Storage) {
+	manager := "@managerName"
 	directManagerChannelID := "D8DTA18UA"
-	reportTime := "09:00"
+	directManagerChannelName := "Space Y"
+	reportTime := "09:35"
 	reportTimeParsed, err := time.Parse("15:04", reportTime)
 	if err != nil {
 		log.Error(err)
@@ -89,7 +91,6 @@ func managerStandupReport(chat chat.Chat, db storage.Storage) {
 			user := standupUser.SlackName
 			standupUsersList = append(standupUsersList, user)
 		}
-
 		userStandupRaw, err := db.SelectStandupByChannelID(directManagerChannelID)
 		if err != nil {
 			log.Error(err)
@@ -99,7 +100,6 @@ func managerStandupReport(chat chat.Chat, db storage.Storage) {
 			user := userStandup.Username
 			usersWhoCreatedStandup = append(usersWhoCreatedStandup, user)
 		}
-
 		var nonReporters []string
 		for _, user := range standupUsersList {
 			found := false
@@ -109,11 +109,26 @@ func managerStandupReport(chat chat.Chat, db storage.Storage) {
 					break
 				}
 			}
-
 			if !found {
 				nonReporters = append(nonReporters, user)
 			}
 		}
-
+		nonReportersCheck := len(nonReporters)
+		if nonReportersCheck == 0 {
+			err = chat.SendMessage(directManagerChannelID,
+				fmt.Sprintf("%v, in channel %s all standupers have written standup today", manager,
+					directManagerChannelName))
+			if err != nil {
+				log.Errorf("ERROR: %s", err.Error())
+			}
+		} else {
+			err = chat.SendMessage(directManagerChannelID,
+				fmt.Sprintf("%v, in channel '%s' not all standupers wrote standup today, "+
+					"this users ignored standup today: %v.",
+					manager, directManagerChannelName, strings.Join(nonReporters, ", ")))
+			if err != nil {
+				log.Errorf("ERROR: %s", err.Error())
+			}
+		}
 	}
 }
