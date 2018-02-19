@@ -72,6 +72,13 @@ func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error
 	return s, err
 }
 
+// SelectStandupByChannelID selects standup entry by channel ID from database
+func (m *MySQL) SelectStandupByChannelID(channelID string) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=?", channelID)
+	return items, err
+}
+
 // DeleteStandup deletes standup entry from database
 func (m *MySQL) DeleteStandup(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `standup` WHERE id=?", id)
