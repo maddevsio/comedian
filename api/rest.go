@@ -22,12 +22,12 @@ type REST struct {
 }
 
 const (
-	commandAdd        = "/comedianadd"
-	commandRemove     = "/comedianremove"
-	commandList       = "/comedianlist"
+	commandAddUser    = "/comedianadd"
+	commandRemoveUser = "/comedianremove"
+	commandListUsers  = "/comedianlist"
 	commandAddTime    = "/standuptimeset"
 	commandRemoveTime = "/standuptimeremove"
-	commandTime       = "/standuptime"
+	commandListTime   = "/standuptime"
 )
 
 // NewRESTAPI creates API for Slack commands
@@ -65,17 +65,17 @@ func (r *REST) handleCommands(c echo.Context) error {
 	}
 	if command := form.Get("command"); command != "" {
 		switch command {
-		case commandAdd:
-			return r.addCommand(c, form)
-		case commandRemove:
-			return r.removeCommand(c, form)
-		case commandList:
-			return r.listCommands(c, form)
+		case commandAddUser:
+			return r.addUserCommand(c, form)
+		case commandRemoveUser:
+			return r.removeUserCommand(c, form)
+		case commandListUsers:
+			return r.listUsersCommand(c, form)
 		case commandAddTime:
 			return r.addTime(c, form)
 		case commandRemoveTime:
 			return r.removeTime(c, form)
-		case commandTime:
+		case commandListTime:
 			return r.listTime(c, form)
 		default:
 			return c.String(http.StatusNotImplemented, "Not implemented")
@@ -84,7 +84,7 @@ func (r *REST) handleCommands(c echo.Context) error {
 	return c.JSON(http.StatusMethodNotAllowed, "Command not allowed")
 }
 
-func (r *REST) addCommand(c echo.Context, f url.Values) error {
+func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -111,7 +111,7 @@ func (r *REST) addCommand(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, fmt.Sprintf("%s added", ca.Text))
 }
 
-func (r *REST) removeCommand(c echo.Context, f url.Values) error {
+func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -127,7 +127,7 @@ func (r *REST) removeCommand(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, fmt.Sprintf("%s deleted", ca.Text))
 }
 
-func (r *REST) listCommands(c echo.Context, f url.Values) error {
+func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 	log.Printf("%+v\n", f)
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
@@ -171,6 +171,14 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		log.Errorf("could not create standup time: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err))
 	}
+	st, err := r.db.ListStandupUsers(ca.ChannelID)
+	if err != nil {
+		log.Errorf("could not list standup time: %v", err)
+	}
+	if len(st) == 0 {
+		return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC) added, but there is no standup "+
+			"users for this channel", ca.Text))
+	}
 	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC) added",
 		time.Unix(timeInt, 0).Format("15:04")))
 }
@@ -206,7 +214,6 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 		log.Println(err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
 	}
-
 	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC)",
 		time.Unix(suTime.Time, 0).Format("15:04")))
 }

@@ -33,12 +33,37 @@ func TestHandleCommands(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	//add user
+	//add time (no users)
 	e := echo.New()
-	req := httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandAddUser))
+	req := httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandAddTime))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
 	rec := httptest.NewRecorder()
 	context := e.NewContext(req, rec)
+
+	if assert.NoError(t, rest.handleCommands(context)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "standup time at 12:10 (UTC) added, but there is no standup "+
+			"users for this channel", rec.Body.String())
+	}
+
+	//delete time
+	e = echo.New()
+	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandDelTime))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+	rec = httptest.NewRecorder()
+	context = e.NewContext(req, rec)
+
+	if assert.NoError(t, rest.handleCommands(context)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "standup time for channame channel deleted", rec.Body.String())
+	}
+
+	//add user
+	e = echo.New()
+	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandAddUser))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+	rec = httptest.NewRecorder()
+	context = e.NewContext(req, rec)
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
