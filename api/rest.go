@@ -197,6 +197,14 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 		log.Errorf("could not delete standup time: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err))
 	}
+	st, err := r.db.ListStandupUsers(ca.ChannelID)
+	if err != nil {
+		log.Errorf("could not list standup time: %v", err)
+	}
+	if len(st) != 0 {
+		return c.String(http.StatusOK, fmt.Sprintf("standup time for this channel removed, but there are "+
+			"people marked as a standuper."))
+	}
 	return c.String(http.StatusOK, fmt.Sprintf("standup time for %s channel deleted", ca.ChannelName))
 }
 

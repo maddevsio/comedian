@@ -70,6 +70,31 @@ func TestHandleCommands(t *testing.T) {
 		assert.Equal(t, "@test added, but there is no standup time for this channel", rec.Body.String())
 	}
 
+	//add time
+	e = echo.New()
+	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandAddTime))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+	rec = httptest.NewRecorder()
+	context = e.NewContext(req, rec)
+
+	if assert.NoError(t, rest.handleCommands(context)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "standup time at 12:10 (UTC) added", rec.Body.String())
+	}
+
+	//delete time (with users)
+	e = echo.New()
+	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandDelTime))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+	rec = httptest.NewRecorder()
+	context = e.NewContext(req, rec)
+
+	if assert.NoError(t, rest.handleCommands(context)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "standup time for this channel removed, but there are "+
+			"people marked as a standuper.", rec.Body.String())
+	}
+
 	//add user empty text
 	e = echo.New()
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandAddEmptyText))
@@ -115,7 +140,7 @@ func TestHandleCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "standup time at 12:10 (UTC) added, but there is no standup users " +
+		assert.Equal(t, "standup time at 12:10 (UTC) added, but there is no standup users "+
 			"for this channel", rec.Body.String())
 	}
 
