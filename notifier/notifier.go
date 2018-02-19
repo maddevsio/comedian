@@ -26,7 +26,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 
 func (n *Notifier) Start() error {
 	log.Println("Starting notifier...")
-	gocron.Every(15).Seconds().Do(taskWithParams, n.Chat, n.DB)
+	gocron.Every(15).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
 	gocron.Every(15).Seconds().Do(managerStandupReport, n.Chat, n.DB)
 	channel := gocron.Start()
 	for {
@@ -36,7 +36,7 @@ func (n *Notifier) Start() error {
 	return nil
 }
 
-func taskWithParams(chat chat.Chat, db storage.Storage) {
+func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 	standupTimes, err := db.ListAllStandupTime()
 	if err != nil {
 		log.Error(err)
@@ -49,25 +49,36 @@ func taskWithParams(chat chat.Chat, db storage.Storage) {
 
 		currTime := time.Now()
 		if standupTime.Hour() == currTime.Hour() && standupTime.Minute() == currTime.Minute() {
-			standupUsers, err := db.ListStandupUsers(channelID)
-			if err != nil {
-				log.Error(err)
-			}
-			var list []string
-			for _, standupUser := range standupUsers {
-				user := standupUser.SlackName
-				list = append(list, user)
-			}
-			fmt.Printf("USERS : %s", list)
-
-			err = chat.SendMessage(channelID,
-				fmt.Sprintf("TEST MESSAGE! CURRTIME: %v, STANDUPTIME: %v, standupers: %s", currTime, standupTime,
-					strings.Join(list, ", ")))
-			if err != nil {
-				log.Errorf("ERROR: %s", err.Error())
+			notifyStandupStart(chat, db, channelID)
+		}
+		pauseTime := time.Minute * 30
+		repeatCount := 3
+		for i := 1; i <= repeatCount; i++ {
+			notifyTime := standupTime.Add(pauseTime * time.Duration(i))
+			if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
 			}
 		}
 	}
+}
+
+func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
+	standupUsers, err := db.ListStandupUsers(channelID)
+	if err != nil {
+		log.Error(err)
+	}
+	var list []string
+	for _, standupUser := range standupUsers {
+		user := standupUser.SlackName
+		list = append(list, user)
+	}
+	fmt.Printf("USERS : %s", list)
+
+	err = chat.SendMessage(channelID,
+		fmt.Sprintf("Hey! We are still waiting standup from you: %s", strings.Join(list, ", ")))
+	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
+	}
+
 }
 
 func managerStandupReport(chat chat.Chat, db storage.Storage) {

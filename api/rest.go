@@ -101,6 +101,13 @@ func (r *REST) addCommand(c echo.Context, f url.Values) error {
 		log.Errorf("could not create standup user: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
 	}
+	st, err := r.db.ListStandupTime(ca.ChannelID)
+	if err != nil {
+		log.Errorf("could not list standup time: %v", err)
+	}
+	if st.Time == int64(0) {
+		return c.String(http.StatusOK, fmt.Sprintf("%s added, but there is no standup time for this channel", ca.Text))
+	}
 	return c.String(http.StatusOK, fmt.Sprintf("%s added", ca.Text))
 }
 

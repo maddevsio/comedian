@@ -42,7 +42,7 @@ func TestHandleCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "@test added", rec.Body.String())
+		assert.Equal(t, "@test added, but there is no standup time for this channel", rec.Body.String())
 	}
 
 	//add user empty text
