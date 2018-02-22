@@ -12,8 +12,9 @@ import (
 )
 
 type Notifier struct {
-	Chat chat.Chat
-	DB   storage.Storage
+	Chat          chat.Chat
+	DB            storage.Storage
+	CheckInterval uint64
 }
 
 func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
@@ -21,13 +22,13 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Notifier{Chat: chat, DB: conn}, nil
+	return &Notifier{Chat: chat, DB: conn, CheckInterval: c.NotifierCheckInterval}, nil
 }
 
 func (n *Notifier) Start() error {
 	log.Println("Starting notifier...")
-	gocron.Every(15).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
-	gocron.Every(15).Seconds().Do(managerStandupReport, n.Chat, n.DB)
+	gocron.Every(n.CheckInterval).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
+	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, n.DB)
 	channel := gocron.Start()
 	for {
 		report := <-channel
@@ -56,6 +57,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 		for i := 1; i <= repeatCount; i++ {
 			notifyTime := standupTime.Add(pauseTime * time.Duration(i))
 			if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
+				//periodic remind
 			}
 		}
 	}
