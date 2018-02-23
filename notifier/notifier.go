@@ -58,6 +58,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 			notifyTime := standupTime.Add(pauseTime * time.Duration(i))
 			if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
 				//periodic remind
+				notifyNonReporters(chat, db, channelID)
 			}
 		}
 	}
@@ -142,6 +143,54 @@ func managerStandupReport(chat chat.Chat, db storage.Storage) {
 			if err != nil {
 				log.Errorf("ERROR: %s", err.Error())
 			}
+		}
+	}
+}
+
+func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) {
+	standupUsersRaw, err := db.ListStandupUsers(channelID)
+	if err != nil {
+		log.Error(err)
+	}
+	var standupUsersList []string
+	for _, standupUser := range standupUsersRaw {
+		user := standupUser.SlackName
+		standupUsersList = append(standupUsersList, user)
+	}
+	userStandupRaw, err := db.SelectStandupByChannelID(channelID)
+	if err != nil {
+		log.Error(err)
+	}
+	var usersWhoCreatedStandup []string
+	for _, userStandup := range userStandupRaw {
+		user := userStandup.Username
+		usersWhoCreatedStandup = append(usersWhoCreatedStandup, user)
+	}
+	var nonReporters []string
+	for _, user := range standupUsersList {
+		found := false
+		for _, standupCreator := range usersWhoCreatedStandup {
+			if user == standupCreator {
+				found = true
+				break
+			}
+		}
+		if !found {
+			nonReporters = append(nonReporters, user)
+		}
+	}
+	nonReportersCheck := len(nonReporters)
+	if nonReportersCheck == 0 {
+		err = chat.SendMessage(channelID, "Hey, in this channel all standupers have written standup today")
+		if err != nil {
+			log.Errorf("ERROR: %s", err.Error())
+		}
+	} else {
+		err = chat.SendMessage(channelID,
+			fmt.Sprintf("In this channel not all standupers wrote standup today, "+
+				"shame on you: %v.", strings.Join(nonReporters, ", ")))
+		if err != nil {
+			log.Errorf("ERROR: %s", err.Error())
 		}
 	}
 }
