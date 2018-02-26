@@ -1,6 +1,9 @@
 package storage
 
-import "github.com/maddevsio/comedian/model"
+import (
+	"github.com/maddevsio/comedian/model"
+	"time"
+)
 
 type (
 	// Storage is interface for all supported storages(e.g. MySQL, Postgresql)
@@ -15,6 +18,8 @@ type (
 		SelectStandupByMessageTS(messageTS string) (model.Standup, error)
 		// SelectStandupByChannelID selects standup entry by channel ID from database
 		SelectStandupByChannelID(channelID string) ([]model.Standup, error)
+		// SelectStandupByChannelID selects standup entry by channel ID and time period from database
+		SelectStandupByChannelIDForPeriod(channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error)
 		// DeleteStandup deletes standup entry from database
 		DeleteStandup(int64) error
 		// ListStandups returns array of standup entries from database

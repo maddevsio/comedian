@@ -21,6 +21,12 @@ type Notifier struct {
 	CheckInterval uint64
 }
 
+func init() {
+	nowFunc = func() time.Time {
+		return time.Now()
+	}
+}
+
 func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
@@ -30,12 +36,22 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 }
 
 func (n *Notifier) Start() error {
-	nowFunc = func() time.Time {
-		return time.Now()
-	}
 	log.Println("Starting notifier...")
+
+	//todo: refactor and delete
+	manager := "@managerName"
+	directManagerChannelID := "D8DTA18UA"
+	reportTime := "09:35"
+	reportTimeParsed, err := time.Parse("15:04", reportTime)
+	if err != nil {
+		log.Error(err)
+	}
+	fmt.Println("REPORT TIME PARSED", reportTimeParsed)
+	//todo: end
+
 	gocron.Every(n.CheckInterval).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
-	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, n.DB)
+	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, n.DB, manager,
+		directManagerChannelID, reportTime)
 	channel := gocron.Start()
 	for {
 		report := <-channel
@@ -93,15 +109,8 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 
 }
 
-func managerStandupReport(chat chat.Chat, db storage.Storage) {
-	manager := "@managerName"
-	directManagerChannelID := "D8DTA18UA"
-	reportTime := "09:35"
-	reportTimeParsed, err := time.Parse("15:04", reportTime)
-	if err != nil {
-		log.Error(err)
-	}
-	log.Printf("CHANNEL: %s, TIME: %v\n", managerStandupChannelID, reportTime)
+func managerStandupReport(chat chat.Chat, db storage.Storage, manager, directManagerChannelID string, reportTimeParsed time.Time) {
+	log.Printf("CHANNEL: %s, TIME: %v\n", managerStandupChannelID, reportTimeParsed)
 	currTime := now()
 	if reportTimeParsed.Hour() == currTime.Hour() && reportTimeParsed.Minute() == currTime.Minute() {
 		standupUsersRaw, err := db.ListStandupUsers(managerStandupChannelID)
@@ -126,7 +135,6 @@ func managerStandupReport(chat chat.Chat, db storage.Storage) {
 		for _, user := range standupUsersList {
 			found := false
 			for _, standupCreator := range usersWhoCreatedStandup {
-				fmt.Printf("\nUSERS: >>%s<< %s\n\n", user, standupCreator)
 				if user == standupCreator {
 					found = true
 					break
@@ -166,11 +174,15 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 		user := standupUser.SlackName
 		standupUsersList = append(standupUsersList, user)
 	}
-	userStandupRaw, err := db.SelectStandupByChannelID(channelID)
-	// TODO: filter by current date
+	currentTime := now()
+	dateStart := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
+	dateEnd := dateStart.Add(time.Hour * 24)
+	userStandupRaw, err := db.SelectStandupByChannelIDForPeriod(channelID, dateStart, dateEnd)
+
 	if err != nil {
 		return err
 	}
+
 	var usersWhoCreatedStandup []string
 	for _, userStandup := range userStandupRaw {
 		user := userStandup.Username
