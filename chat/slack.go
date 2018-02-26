@@ -96,6 +96,7 @@ func (s *Slack) ManageConnection() {
 func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 
 	userName := s.rtm.GetInfo().GetUserByID(msg.Msg.User)
+	// TODO: check if channel message (not direct)
 	switch msg.SubType {
 	case typeMessage:
 		if cleanMsg, ok := s.cleanMessage(msg.Msg.Text); ok {
