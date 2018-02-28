@@ -40,7 +40,7 @@ func (n *Notifier) Start() error {
 
 	//todo: refactor and delete
 	manager := "@managerName"
-	directManagerChannelID := "D8DTA18UA"
+	directManagerChannelID := "C8D7EMU64"
 	reportTime := "09:35"
 	reportTimeParsed, err := time.Parse("15:04", reportTime)
 	if err != nil {
