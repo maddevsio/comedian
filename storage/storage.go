@@ -15,11 +15,13 @@ type (
 		// SelectStandup selects standup entry from database
 		SelectStandup(int64) (model.Standup, error)
 		// SelectStandupByMessageTS selects standup entry by messageTS from database
-		SelectStandupByMessageTS(messageTS string) (model.Standup, error)
+		SelectStandupByMessageTS(string) (model.Standup, error)
 		// SelectStandupByChannelID selects standup entry by channel ID from database
-		SelectStandupByChannelID(channelID string) ([]model.Standup, error)
+		SelectStandupByChannelID(string) ([]model.Standup, error)
+		// SelectStandupByChannelID selects standup entry by channel name and time period from database
+		SelectStandupByChannelNameForPeriod(string, time.Time, time.Time) ([]model.Standup, error)
 		// SelectStandupByChannelID selects standup entry by channel ID and time period from database
-		SelectStandupByChannelIDForPeriod(channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error)
+		SelectStandupByChannelIDForPeriod(string, time.Time, time.Time) ([]model.Standup, error)
 		// DeleteStandup deletes standup entry from database
 		DeleteStandup(int64) error
 		// ListStandups returns array of standup entries from database
@@ -30,6 +32,8 @@ type (
 		DeleteStandupUserByUsername(string, string) error
 		// ListStandupUsers returns array of standupUser entries from database
 		ListStandupUsers(string) ([]model.StandupUser, error)
+		// ListStandupUsers returns array of standupUser entries from database filtered by channel name
+		ListStandupUsersByChannelName(string) ([]model.StandupUser, error)
 		// CreateStandupTime creates standup time entry in database
 		CreateStandupTime(model.StandupTime) (model.StandupTime, error)
 		// DeleteStandupTime deletes time entry from database

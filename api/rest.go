@@ -9,8 +9,10 @@ import (
 	"github.com/labstack/echo"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/reporting"
 	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
+	"strings"
 	"time"
 )
 
@@ -22,12 +24,13 @@ type REST struct {
 }
 
 const (
-	commandAddUser    = "/comedianadd"
-	commandRemoveUser = "/comedianremove"
-	commandListUsers  = "/comedianlist"
-	commandAddTime    = "/standuptimeset"
-	commandRemoveTime = "/standuptimeremove"
-	commandListTime   = "/standuptime"
+	commandAddUser         = "/comedianadd"
+	commandRemoveUser      = "/comedianremove"
+	commandListUsers       = "/comedianlist"
+	commandAddTime         = "/standuptimeset"
+	commandRemoveTime      = "/standuptimeremove"
+	commandListTime        = "/standuptime"
+	commandReportByProject = "/comedian_report_by_project"
 )
 
 // NewRESTAPI creates API for Slack commands
@@ -77,6 +80,8 @@ func (r *REST) handleCommands(c echo.Context) error {
 			return r.removeTime(c, form)
 		case commandListTime:
 			return r.listTime(c, form)
+		case commandReportByProject:
+			return r.reportByProject(c, form)
 		default:
 			return c.String(http.StatusNotImplemented, "Not implemented")
 		}
@@ -224,4 +229,29 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 	}
 	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC)",
 		time.Unix(suTime.Time, 0).Format("15:04")))
+}
+
+func (r *REST) reportByProject(c echo.Context, f url.Values) error {
+	var ca ChannelIDTextForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	commandParams := strings.Fields(ca.Text)
+	if len(commandParams) != 3 {
+		return c.String(http.StatusOK, "Wrong number of arguments")
+	}
+	channelID := commandParams[0]
+	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	dateTo, err := time.Parse("2006-01-02", commandParams[2])
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	report, err := reporting.ManagerReportByProject(r.db, channelID, dateFrom, dateTo)
+	return c.String(http.StatusOK, report)
 }

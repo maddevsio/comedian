@@ -80,12 +80,29 @@ func (m *MySQL) SelectStandupByChannelID(channelID string) ([]model.Standup, err
 	return items, err
 }
 
-// SelectStandupByChannelIDForPeriod selects standup entry by channel ID and time period from database
+// SelectStandupByChannelID selects standup entry by channel ID from database
+func (m *MySQL) SelectStandupByChannelNameForPeriod(channelName string, dateStart,
+	dateEnd time.Time) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel=?", channelName)
+	return items, err
+}
+
+// SelectStandupByChannelIDForPeriod selects standup entrys by channel ID and time period from database
 func (m *MySQL) SelectStandupByChannelIDForPeriod(channelID string, dateStart,
 	dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND created BETWEEN ? AND ? ",
 		channelID, dateStart, dateEnd)
+	return items, err
+}
+
+// SelectStandupByUserNameForPeriod selects standup entrys by username and time period from database
+func (m *MySQL) SelectStandupByUserNameForPeriod(username string, dateStart,
+	dateEnd time.Time) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE username =? AND created BETWEEN ? AND ? ",
+		username, dateStart, dateEnd)
 	return items, err
 }
 
@@ -128,6 +145,13 @@ func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
 func (m *MySQL) ListStandupUsers(channelID string) ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=?", channelID)
+	return items, err
+}
+
+// ListStandupUsers returns array of standup entries from database filtered by channel name
+func (m *MySQL) ListStandupUsersByChannelName(channelName string) ([]model.StandupUser, error) {
+	items := []model.StandupUser{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel=?", channelName)
 	return items, err
 }
 

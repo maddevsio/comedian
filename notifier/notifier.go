@@ -51,7 +51,7 @@ func (n *Notifier) Start() error {
 
 	gocron.Every(n.CheckInterval).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
 	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, n.DB, manager,
-		directManagerChannelID, reportTime)
+		directManagerChannelID, reportTimeParsed)
 	channel := gocron.Start()
 	for {
 		report := <-channel
