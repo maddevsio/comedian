@@ -4,6 +4,7 @@ services:
 
   db:
     image: mysql
+    restart: on-failure
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
@@ -12,6 +13,7 @@ services:
 
   comedian:
     build: .
+    restart: on-failure
     ports:
       - 8080:8080
     links:
