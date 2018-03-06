@@ -252,6 +252,6 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	if err != nil {
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := reporting.ManagerReportByProject(r.db, channelID, dateFrom, dateTo)
+	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
 	return c.String(http.StatusOK, report)
 }
