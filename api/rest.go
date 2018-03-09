@@ -97,8 +97,9 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	if err := ca.Validate(); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+	cleanName := strings.TrimLeft(ca.Text, "@")
 	_, err := r.db.CreateStandupUser(model.StandupUser{
-		SlackName: ca.Text,
+		SlackName: cleanName,
 		ChannelID: ca.ChannelID,
 		Channel:   ca.ChannelName,
 	})
@@ -253,5 +254,8 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
 	return c.String(http.StatusOK, report)
 }

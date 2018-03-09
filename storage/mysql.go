@@ -84,7 +84,8 @@ func (m *MySQL) SelectStandupByChannelID(channelID string) ([]model.Standup, err
 func (m *MySQL) SelectStandupByChannelNameForPeriod(channelName string, dateStart,
 	dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel=?", channelName)
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel=? AND created BETWEEN ? AND ?",
+		channelName, dateStart, dateEnd)
 	return items, err
 }
 
@@ -92,7 +93,7 @@ func (m *MySQL) SelectStandupByChannelNameForPeriod(channelName string, dateStar
 func (m *MySQL) SelectStandupByChannelIDForPeriod(channelID string, dateStart,
 	dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND created BETWEEN ? AND ? ",
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND created BETWEEN ? AND ?",
 		channelID, dateStart, dateEnd)
 	return items, err
 }
@@ -101,7 +102,7 @@ func (m *MySQL) SelectStandupByChannelIDForPeriod(channelID string, dateStart,
 func (m *MySQL) SelectStandupByUserNameForPeriod(username string, dateStart,
 	dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE username =? AND created BETWEEN ? AND ? ",
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE username=? AND created BETWEEN ? AND ? ",
 		username, dateStart, dateEnd)
 	return items, err
 }
