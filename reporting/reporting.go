@@ -9,13 +9,14 @@ import (
 	"time"
 )
 
-type ReportEntry struct {
+type reportEntry struct {
 	DateFrom     time.Time
 	DateTo       time.Time
-	Standups     []model.Standup
+	Standups     []model.Standup ``
 	NonReporters []model.StandupUser
 }
 
+// StandupReportByProject creates a standup report for a specified period of time
 func StandupReportByProject(db storage.Storage, channelName string, dateFrom, dateTo time.Time) (string, error) {
 	log.Infof("Making standup report for channel: %q, period: %s - %s",
 		channelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
@@ -27,7 +28,7 @@ func StandupReportByProject(db storage.Storage, channelName string, dateFrom, da
 	return report, nil
 }
 
-func getNonReportersForPeriod(db storage.Storage, channelName string, dateFrom, dateTo time.Time) ([]ReportEntry, error) {
+func getNonReportersForPeriod(db storage.Storage, channelName string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
 	if dateTo.Before(dateFrom) {
 		return nil, errors.New("starting date is bigger than end date")
 	}
@@ -44,7 +45,7 @@ func getNonReportersForPeriod(db storage.Storage, channelName string, dateFrom, 
 	dateDiff := dateToRounded.Sub(dateFromRounded)
 	numberOfDays := int(dateDiff.Hours() / 24)
 
-	reportEntries := make([]ReportEntry, 0, numberOfDays)
+	reportEntries := make([]reportEntry, 0, numberOfDays)
 	for day := 0; day <= numberOfDays; day++ {
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
@@ -78,7 +79,7 @@ func getNonReportersForPeriod(db storage.Storage, channelName string, dateFrom, 
 		}
 		if len(currentDayNonReporters) > 0 || len(currentDayStandups) > 0 {
 			reportEntries = append(reportEntries,
-				ReportEntry{
+				reportEntry{
 					DateFrom:     currentDateFrom,
 					DateTo:       currentDateTo,
 					Standups:     currentDayStandups,
@@ -88,7 +89,7 @@ func getNonReportersForPeriod(db storage.Storage, channelName string, dateFrom, 
 	return reportEntries, nil
 }
 
-func printNonReportersToString(reportEntries []ReportEntry) string {
+func printNonReportersToString(reportEntries []reportEntry) string {
 	report := "Report:\n\n"
 	if len(reportEntries) == 0 {
 		return report + "No one ignored standups in this period"

@@ -15,6 +15,7 @@ var nowFunc func() time.Time
 
 var managerStandupChannelID = "PUT REAL CHANNEL ID HERE"
 
+// Notifier struct is used to notify users about upcoming or skipped standups
 type Notifier struct {
 	Chat          chat.Chat
 	DB            storage.Storage
@@ -27,6 +28,7 @@ func init() {
 	}
 }
 
+// NewNotifier creates a new notifier
 func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
@@ -35,6 +37,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	return &Notifier{Chat: chat, DB: conn, CheckInterval: c.NotifierCheckInterval}, nil
 }
 
+// Start starts all notifier treads
 func (n *Notifier) Start() error {
 	log.Println("Starting notifier...")
 
@@ -204,11 +207,10 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 	nonReportersCheck := len(nonReporters)
 	if nonReportersCheck == 0 {
 		return chat.SendMessage(channelID, "Hey, in this channel all standupers have written standup today")
-	} else {
-		return chat.SendMessage(channelID,
-			fmt.Sprintf("In this channel not all standupers wrote standup today, "+
-				"shame on you: %v.", strings.Join(nonReporters, ", ")))
 	}
+	return chat.SendMessage(channelID,
+		fmt.Sprintf("In this channel not all standupers wrote standup today, "+
+			"shame on you: %v.", strings.Join(nonReporters, ", ")))
 }
 
 func now() time.Time {

@@ -80,7 +80,7 @@ func (m *MySQL) SelectStandupByChannelID(channelID string) ([]model.Standup, err
 	return items, err
 }
 
-// SelectStandupByChannelID selects standup entry by channel ID from database
+// SelectStandupByChannelNameForPeriod selects standup entry by channel name and time period from database
 func (m *MySQL) SelectStandupByChannelNameForPeriod(channelName string, dateStart,
 	dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
@@ -136,7 +136,7 @@ func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error
 	return c, nil
 }
 
-// DeleteStandupUser deletes standup_users entry from database
+// DeleteStandupUserByUsername deletes standup_users entry from database
 func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
 	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
 	return err
@@ -149,7 +149,7 @@ func (m *MySQL) ListStandupUsers(channelID string) ([]model.StandupUser, error) 
 	return items, err
 }
 
-// ListStandupUsers returns array of standup entries from database filtered by channel name
+// ListStandupUsersByChannelName returns array of standup entries from database filtered by channel name
 func (m *MySQL) ListStandupUsersByChannelName(channelName string) ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel=?", channelName)
@@ -208,15 +208,15 @@ func (m *MySQL) ListAllStandupTime() ([]model.StandupTime, error) {
 	return reminders, err
 }
 
-var NowFunc func() time.Time
+var nowFunc func() time.Time
 
 func init() {
-	NowFunc = func() time.Time {
+	nowFunc = func() time.Time {
 		return time.Now()
 	}
 }
 
 func now() time.Time {
-	fmt.Println(NowFunc().Format(time.UnixDate))
-	return NowFunc().UTC()
+	fmt.Println(nowFunc().Format(time.UnixDate))
+	return nowFunc().UTC()
 }

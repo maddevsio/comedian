@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// REST struct used to handle slack requests (slash commands)
 type REST struct {
 	db      storage.Storage
 	e       *echo.Echo
