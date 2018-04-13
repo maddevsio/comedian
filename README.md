@@ -20,6 +20,56 @@ First things first you need to start do daily meetings in slack. Create a channe
 
 This messages should be written with @botusername mention. The comedian will store it for you and give a convinient reports for you about stand ups.
 
+## Getting started
+
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. 
+```
+mkdir -p $GOPATH/src/github.com/maddevsio/
+cd $GOPATH/src/github.com/maddevsio/
+git clone https://github.com/maddevsio/comedian
+```
+
+Create "app" in slack workspace: https://api.slack.com/apps
+In the drop-down list at the top select the created "app"
+In the menu, select "Slash Commands".
+
+Create the following commands (Request URL for all "http: // <comedian_address> / commands"):
+| Name | Hint | Description |
+| --- | --- |
+| /comedianadd | @user | Adds a new comedian |
+| /comedianremove | @user | Removes a comedian |
+| /comedianlist | - | Lists all comedians |
+| /standuptimeset | hh:mm | Set standup time |
+| /standuptime | - | Show standup time in current channel |
+| /standuptimeremove | - | Delete standup time in current channel |
+| /comedian_report_by_project | projectName 2017-01-01 2017-01-31 | gets all standups for specified project for time period |
+
+Select "Bot users" in the menu.
+Create a new bot user.
+
+Go to "OAuth & Permissions"
+Copy Bot User OAuth Access Token
+"xoxb-___________________"
+
+Add to env:
+DB_PASS=testpass
+DB_NAME=testname
+DB_USER=testuser
+COMEDIAN_SLACK_TOKEN=xoxb-___________________
+COMEDIAN_NOTIFIER_CHECK_INTERVAL=15
+COMEDIAN_MANAGER="@managerName"
+COMEDIAN_DIRECT_MANAGER_CHANNEL_ID="QWE123ASD"
+COMEDIAN_REPORT_TIME="09:35"
+URL to DB:
+COMEDIAN_DATABASE=comedian:comedian@(127.0.0.1:0000)/comedian?parseTime=true
+COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
+
+Run the script:
+```
+./run.sh
+```
+
+
 ## The roadmap
 
 ### Bot
@@ -29,15 +79,15 @@ This messages should be written with @botusername mention. The comedian will sto
 - [x] Add standup time with slash command
 - [x] Remove standup time with slash command
 - [ ] Remind user to write standup via private message 
-	- [ ] add a check when adding a user, if the stand-up time is not specified, write that you need to specify it 
-	- [ ] add a check when adding a stand-up time, that no one has yet been added 
-	- [ ] when deleting stand-up time, notify that in this chat there are users who write standups 
-- [ ] Remind all users in channel to write standup with user's tag
-	- [ ] duplicate the message about the standup in 30 minutes with tagging users who did not write standup
-	- [ ] send a message to the manager at 5 pm that someone did not write the standup 
+	- [x] add a check when adding a user, if the stand-up time is not specified, write that you need to specify it 
+	- [x] add a check when adding a stand-up time, that no one has yet been added 
+	- [x] when deleting stand-up time, notify that in this chat there are users who write standups 
+- [x] Remind all users in channel to write standup with user's tag
+	- [x] duplicate the message about the standup in 30 minutes with tagging users who did not write standup
+	- [x] send a message to the manager at 5 pm that someone did not write the standup 
 - [ ] Standup reports
 	- [ ] all standups key username
-	- [ ] all standups key project
+	- [x] all standups key project
 	- [ ] all standups key username+project
 - [ ] Configure superusers with config file or env variables
 - [ ] Get all users in slack's organization and sync it with users in database
@@ -47,7 +97,7 @@ This messages should be written with @botusername mention. The comedian will sto
 	- [ ] Text analysis engine to get standup messages without mentioning bot user
 - [ ] Get task worklogs from JIRA
 - [ ] NLP based configuration for standup time adding
-- [ ] Create a docker-compose.yml
+- [x] Create a docker-compose.yml
 - [ ] Build HTTP API for reports with oAuth authentication
 - [ ] Create a simple report interface with React.js
 
