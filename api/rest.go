@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"strings"
+	"time"
+
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
 	"github.com/maddevsio/comedian/config"
@@ -12,8 +15,6 @@ import (
 	"github.com/maddevsio/comedian/reporting"
 	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
 
 // REST struct used to handle slack requests (slash commands)
@@ -164,7 +165,7 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 
 	t, err := time.Parse("15:04", ca.Text)
 	if err != nil {
-		log.Println("ERR:", err.Error())
+		log.Error(err.Error())
 		return c.String(http.StatusBadRequest, fmt.Sprintf("could not convert time: %v", err))
 	}
 	timeInt := t.Unix()
@@ -186,8 +187,9 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC) added, but there is no standup "+
 			"users for this channel", ca.Text))
 	}
+
 	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC) added",
-		time.Unix(timeInt, 0).Format("15:04")))
+		time.Unix(timeInt, 0).In(time.UTC).Format("15:04")))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
@@ -230,7 +232,7 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
 	}
 	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC)",
-		time.Unix(suTime.Time, 0).Format("15:04")))
+		time.Unix(suTime.Time, 0).In(time.UTC).Format("15:04")))
 }
 
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {

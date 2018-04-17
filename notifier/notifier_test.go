@@ -2,12 +2,13 @@ package notifier
 
 import (
 	"fmt"
-	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/model"
-	"github.com/maddevsio/comedian/storage"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/bouk/monkey"
+	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/model"
+	"github.com/stretchr/testify/assert"
 )
 
 type ChatStub struct {
@@ -30,15 +31,11 @@ func TestNotifier(t *testing.T) {
 	n, err := NewNotifier(c, ch)
 	assert.NoError(t, err)
 
-	stubDate := time.Date(2000, 12, 15, 17, 8, 00, 0, time.UTC)
 	channelID := "QWERTY123"
 	managerStandupChannelID = channelID
 	stubManagerName := "managerName"
-	nowFunc = func() time.Time {
-		return stubDate
-	}
-	storage.NowFunc = nowFunc
-
+	d := time.Date(2000, 12, 15, 17, 8, 00, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
 	su, err := n.DB.CreateStandupUser(model.StandupUser{
 		SlackName: "@test",
 		FullName:  "Test Testtt",
@@ -57,7 +54,7 @@ func TestNotifier(t *testing.T) {
 	_, err = n.DB.CreateStandupTime(model.StandupTime{
 		ChannelID: channelID,
 		Channel:   "chanName",
-		Time:      stubDate.Unix(),
+		Time:      d.Unix(),
 	})
 	assert.NoError(t, err)
 
@@ -82,7 +79,7 @@ func TestNotifier(t *testing.T) {
 		"shame on you: @shmest.", ch.LastMessage)
 
 	// check that manager report prints @shmest
-	managerStandupReport(ch, n.DB, stubManagerName, managerStandupChannelID, stubDate)
+	managerStandupReport(ch, n.DB, stubManagerName, managerStandupChannelID, d)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: managerName, in channel 'QWERTY123' not all standupers "+
 		"wrote standup today, this users ignored standup today: @shmest.", ch.LastMessage)
 
@@ -101,7 +98,7 @@ func TestNotifier(t *testing.T) {
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, in this channel all standupers have "+
 		"written standup today", ch.LastMessage)
 
-	managerStandupReport(ch, n.DB, stubManagerName, managerStandupChannelID, stubDate)
+	managerStandupReport(ch, n.DB, stubManagerName, managerStandupChannelID, d)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: managerName, in channel QWERTY123 all standupers "+
 		"have written standup today", ch.LastMessage)
 

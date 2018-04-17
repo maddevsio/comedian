@@ -9,9 +9,9 @@ type (
 		DatabaseURL            string `envconfig:"DATABASE" required:"true"`
 		HTTPBindAddr           string `envconfig:"HTTP_BIND_ADDR" required:"true"`
 		NotifierCheckInterval  uint64 `envconfig:"NOTIFIER_CHECK_INTERVAL" required:"true"`
-		Manager                string `envconfig: "MANAGER" required:"true"`
-		DirectManagerChannelID string `envconfig: "DIRECT_MANAGER_CHANNEL_ID" required:"true"`
-		ReportTime             string `envconfig: "REPORT_TIME" required:"true"`
+		Manager                string `envconfig:"MANAGER" required:"true"`
+		DirectManagerChannelID string `envconfig:"DIRECT_MANAGER_CHANNEL_ID" required:"true"`
+		ReportTime             string `envconfig:"REPORT_TIME" required:"true"`
 		Debug                  bool
 	}
 )

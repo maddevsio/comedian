@@ -2,16 +2,15 @@ package notifier
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/jasonlvhit/gocron"
 	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
-
-var nowFunc func() time.Time
 
 var managerStandupChannelID = "PUT REAL CHANNEL ID HERE"
 
@@ -20,12 +19,6 @@ type Notifier struct {
 	Chat          chat.Chat
 	DB            storage.Storage
 	CheckInterval uint64
-}
-
-func init() {
-	nowFunc = func() time.Time {
-		return time.Now()
-	}
 }
 
 // NewNotifier creates a new notifier
@@ -60,7 +53,6 @@ func (n *Notifier) Start() error {
 		report := <-channel
 		log.Println(report)
 	}
-	return nil
 }
 
 func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
@@ -74,7 +66,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 
 		log.Printf("CHANNEL: %s, TIME: %v\n", channelID, standupTime)
 
-		currTime := now()
+		currTime := time.Now()
 		if standupTime.Hour() == currTime.Hour() && standupTime.Minute() == currTime.Minute() {
 			notifyStandupStart(chat, db, channelID)
 		}
@@ -114,7 +106,7 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 
 func managerStandupReport(chat chat.Chat, db storage.Storage, manager, directManagerChannelID string, reportTimeParsed time.Time) {
 	log.Printf("CHANNEL: %s, TIME: %v\n", managerStandupChannelID, reportTimeParsed)
-	currTime := now()
+	currTime := time.Now()
 	if reportTimeParsed.Hour() == currTime.Hour() && reportTimeParsed.Minute() == currTime.Minute() {
 		standupUsersRaw, err := db.ListStandupUsers(managerStandupChannelID)
 		if err != nil {
@@ -177,7 +169,7 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 		user := standupUser.SlackName
 		standupUsersList = append(standupUsersList, user)
 	}
-	currentTime := now()
+	currentTime := time.Now()
 	dateStart := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
 	dateEnd := dateStart.Add(time.Hour * 24)
 	userStandupRaw, err := db.SelectStandupByChannelIDForPeriod(channelID, dateStart, dateEnd)
@@ -211,8 +203,4 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 	return chat.SendMessage(channelID,
 		fmt.Sprintf("In this channel not all standupers wrote standup today, "+
 			"shame on you: %v.", strings.Join(nonReporters, ", ")))
-}
-
-func now() time.Time {
-	return nowFunc().UTC()
 }
