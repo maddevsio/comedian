@@ -34,8 +34,9 @@ In the drop-down list at the top select the created "app"
 In the menu, select "Slash Commands".
 
 Create the following commands (Request URL for all "http: // <comedian_address> / commands"):
+
 | Name | Hint | Description |
-| --- | --- |
+| --- | --- | --- |
 | /comedianadd | @user | Adds a new comedian |
 | /comedianremove | @user | Removes a comedian |
 | /comedianlist | - | Lists all comedians |
@@ -52,6 +53,8 @@ Copy Bot User OAuth Access Token
 "xoxb-___________________"
 
 Add to env:
+
+```
 DB_PASS=testpass
 DB_NAME=testname
 DB_USER=testuser
@@ -63,6 +66,7 @@ COMEDIAN_REPORT_TIME="09:35"
 URL to DB:
 COMEDIAN_DATABASE=comedian:comedian@(127.0.0.1:0000)/comedian?parseTime=true
 COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
+```
 
 Run the script:
 ```
