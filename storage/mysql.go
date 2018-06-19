@@ -6,6 +6,7 @@ import (
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
 
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
@@ -31,7 +32,7 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup` (created, modified, username, comment, channel, channel_id, username_id, full_name, message_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		time.Now().UTC(), time.Now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.FullName, s.MessageTS,
+		now().UTC(), now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.FullName, s.MessageTS,
 	)
 	if err != nil {
 		return s, err
@@ -48,7 +49,7 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 	_, err := m.conn.Exec(
 		"UPDATE `standup` SET modified=?, username=?, username_id=?, comment=?, channel=?, channel_id=?, full_name=?, message_ts=? WHERE id=?",
-		time.Now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.FullName, s.MessageTS, s.ID,
+		now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.FullName, s.MessageTS, s.ID,
 	)
 	if err != nil {
 		return s, err
@@ -72,6 +73,40 @@ func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error
 	return s, err
 }
 
+// SelectStandupByChannelID selects standup entry by channel ID from database
+func (m *MySQL) SelectStandupByChannelID(channelID string) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=?", channelID)
+	return items, err
+}
+
+// SelectStandupByChannelNameForPeriod selects standup entry by channel name and time period from database
+func (m *MySQL) SelectStandupByChannelNameForPeriod(channelName string, dateStart,
+	dateEnd time.Time) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel=? AND created BETWEEN ? AND ?",
+		channelName, dateStart, dateEnd)
+	return items, err
+}
+
+// SelectStandupByChannelIDForPeriod selects standup entrys by channel ID and time period from database
+func (m *MySQL) SelectStandupByChannelIDForPeriod(channelID string, dateStart,
+	dateEnd time.Time) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND created BETWEEN ? AND ?",
+		channelID, dateStart, dateEnd)
+	return items, err
+}
+
+// SelectStandupByUserNameForPeriod selects standup entrys by username and time period from database
+func (m *MySQL) SelectStandupByUserNameForPeriod(username string, dateStart,
+	dateEnd time.Time) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE username=? AND created BETWEEN ? AND ? ",
+		username, dateStart, dateEnd)
+	return items, err
+}
+
 // DeleteStandup deletes standup entry from database
 func (m *MySQL) DeleteStandup(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `standup` WHERE id=?", id)
@@ -89,7 +124,7 @@ func (m *MySQL) ListStandups() ([]model.Standup, error) {
 func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error) {
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_users` (created, modified, username, full_name, channel_id, channel) VALUES (?, ?, ?, ?, ?, ?)",
-		time.Now().UTC(), time.Now().UTC(), c.SlackName, c.FullName, c.ChannelID, c.Channel)
+		now().UTC(), now().UTC(), c.SlackName, c.FullName, c.ChannelID, c.Channel)
 	if err != nil {
 		return c, err
 	}
@@ -101,7 +136,7 @@ func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error
 	return c, nil
 }
 
-// DeleteStandupUser deletes standup_users entry from database
+// DeleteStandupUserByUsername deletes standup_users entry from database
 func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
 	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
 	return err
@@ -114,11 +149,18 @@ func (m *MySQL) ListStandupUsers(channelID string) ([]model.StandupUser, error) 
 	return items, err
 }
 
+// ListStandupUsersByChannelName returns array of standup entries from database filtered by channel name
+func (m *MySQL) ListStandupUsersByChannelName(channelName string) ([]model.StandupUser, error) {
+	items := []model.StandupUser{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel=?", channelName)
+	return items, err
+}
+
 // CreateStandupTime creates time entry in database
 func (m *MySQL) CreateStandupTime(c model.StandupTime) (model.StandupTime, error) {
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_time` (created, channel_id, channel, standuptime) VALUES (?, ?, ?, ?)",
-		time.Now().UTC(), c.ChannelID, c.Channel, c.Time)
+		now().UTC(), c.ChannelID, c.Channel, c.Time)
 	if err != nil {
 		return c, err
 	}
@@ -147,7 +189,7 @@ func (m *MySQL) ListStandupTime(channelID string) (model.StandupTime, error) {
 func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEditHistory, error) {
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_edit_history` (created, standup_id, standup_text) VALUES (?, ?, ?)",
-		time.Now().UTC(), s.StandupID, s.StandupText)
+		now().UTC(), s.StandupID, s.StandupText)
 	if err != nil {
 		return s, err
 	}
@@ -164,4 +206,17 @@ func (m *MySQL) ListAllStandupTime() ([]model.StandupTime, error) {
 	reminders := []model.StandupTime{}
 	err := m.conn.Select(&reminders, "SELECT * FROM `standup_time`")
 	return reminders, err
+}
+
+var nowFunc func() time.Time
+
+func init() {
+	nowFunc = func() time.Time {
+		return time.Now()
+	}
+}
+
+func now() time.Time {
+	fmt.Println(nowFunc().Format(time.UnixDate))
+	return nowFunc().UTC()
 }

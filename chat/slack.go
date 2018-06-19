@@ -62,8 +62,8 @@ func (s *Slack) Run() error {
 			switch ev := msg.Data.(type) {
 			case *slack.HelloEvent:
 				// Ignore hello
-			//case *slack.ConnectedEvent:
-			//	s.api.PostMessage("#general", "<!channel> Hello world", slack.PostMessageParameters{})
+			case *slack.ConnectedEvent:
+				s.api.PostMessage("D8DTA18UA", "<!channel> Hello world", slack.PostMessageParameters{})
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev)
@@ -96,6 +96,7 @@ func (s *Slack) ManageConnection() {
 func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 
 	userName := s.rtm.GetInfo().GetUserByID(msg.Msg.User)
+	// TODO: check if channel message (not direct)
 	switch msg.SubType {
 	case typeMessage:
 		if cleanMsg, ok := s.cleanMessage(msg.Msg.Text); ok {
@@ -145,6 +146,7 @@ func (s *Slack) cleanMessage(message string) (string, bool) {
 	return message, false
 }
 
+// SendMessage posts a message in a specified channel
 func (s *Slack) SendMessage(channel, message string) error {
 	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{})
 	return err

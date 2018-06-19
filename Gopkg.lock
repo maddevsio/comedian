@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/bouk/monkey"
+  packages = ["."]
+  revision = "5df1f207ff77e025801505ae4d903133a0b4353f"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -28,10 +34,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/jmoiron/sqlx"
-  packages = [
-    ".",
-    "reflectx"
-  ]
+  packages = [".","reflectx"]
   revision = "de8647470aafe4854c976707c431dbe1eb2822c6"
 
 [[projects]]
@@ -48,10 +51,7 @@
 
 [[projects]]
   name = "github.com/labstack/gommon"
-  packages = [
-    "color",
-    "log"
-  ]
+  packages = ["color","log"]
   revision = "57409ada9da0f2afad6664c49502f8c50fbd8476"
   version = "0.2.3"
 
@@ -106,11 +106,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = [
-    "acme",
-    "acme/autocert",
-    "ssh/terminal"
-  ]
+  packages = ["acme","acme/autocert","ssh/terminal"]
   revision = "b3c9a1d25cfbbbab0ff4780b71c4f54e6e92a0de"
 
 [[projects]]
@@ -122,15 +118,12 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = [
-    "unix",
-    "windows"
-  ]
+  packages = ["unix","windows"]
   revision = "810d7000345868fc619eb81f46307107118f4ae1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "394bb42653dbb35d436471460d25d31f36cf3cdfbb656fefcf883567ee6091e0"
+  inputs-digest = "1bf27b5851c0fc5aead1ce03e24b64b2aa86bdf867800e671136e96732cda25f"
   solver-name = "gps-cdcl"
   solver-version = 1

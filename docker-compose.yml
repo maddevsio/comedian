@@ -4,6 +4,7 @@ services:
 
   db:
     image: mysql
+    restart: on-failure
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
@@ -12,11 +13,16 @@ services:
 
   comedian:
     build: .
+    restart: on-failure
     ports:
       - 8080:8080
     links:
       - db:db
     environment:
-      COMEDIAN_DATABASE: ${DB_USER}:${DB_PASS}@(db:3306)/${DB_NAME}?parseTime=true
-      COMEDIAN_HTTP_BIND_ADDR: 0.0.0.0:8080
-      COMEDIAN_SLACK_TOKEN: ${COMEDIAN_SLACK_TOKEN}
+      - COMEDIAN_DATABASE=${DB_USER}:${DB_PASS}@(db:3306)/${DB_NAME}?parseTime=true
+      - COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
+      - COMEDIAN_SLACK_TOKEN
+      - COMEDIAN_NOTIFIER_CHECK_INTERVAL
+      - COMEDIAN_MANAGER
+      - COMEDIAN_DIRECT_MANAGER_CHANNEL_ID
+      - COMEDIAN_REPORT_TIME
