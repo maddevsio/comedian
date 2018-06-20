@@ -55,17 +55,13 @@ Copy Bot User OAuth Access Token
 Add to env:
 
 ```
-DB_PASS=testpass
-DB_NAME=testname
-DB_USER=testuser
-COMEDIAN_SLACK_TOKEN=xoxb-___________________
-COMEDIAN_NOTIFIER_CHECK_INTERVAL=15
-COMEDIAN_MANAGER="@managerName"
-COMEDIAN_DIRECT_MANAGER_CHANNEL_ID="QWE123ASD"
-COMEDIAN_REPORT_TIME="09:35"
-URL to DB:
-COMEDIAN_DATABASE=comedian:comedian@(127.0.0.1:0000)/comedian?parseTime=true
-COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
+SLACK_TOKEN=xoxb-__________________________
+DATABASE=comedian:comedian@(127.0.0.1:0000)/comedian?parseTime=true
+HTTP_BIND_ADDR=0.0.0.0:8080
+NOTIFIER_CHECK_INTERVAL=15
+MANAGER=yourUserName
+DIRECT_MANAGER_CHANNEL_ID=
+REPORT_TIME="09:35"
 ```
 
 Run the script:
