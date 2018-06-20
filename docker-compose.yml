@@ -3,7 +3,7 @@ version: '3'
 services:
 
   db:
-    image: mysql
+    image: percona/percona-server:5.7 
     restart: on-failure
     environment:
       MYSQL_DATABASE: ${DB_NAME}

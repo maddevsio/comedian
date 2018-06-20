@@ -55,6 +55,9 @@ Copy Bot User OAuth Access Token
 Add to env:
 
 ```
+DB_NAME=comedian
+DB_USER=comedian
+DB_PASS=123qweAS!
 SLACK_TOKEN=xoxb-__________________________
 DATABASE=comedian:comedian@(127.0.0.1:0000)/comedian?parseTime=true
 HTTP_BIND_ADDR=0.0.0.0:8080

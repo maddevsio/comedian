@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var managerStandupChannelID = "PUT REAL CHANNEL ID HERE"
+var managerStandupChannelID = "CHANNEL ID"
 
 // Notifier struct is used to notify users about upcoming or skipped standups
 type Notifier struct {
