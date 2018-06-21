@@ -1,8 +1,9 @@
 package storage
 
 import (
-	"github.com/maddevsio/comedian/model"
 	"time"
+
+	"github.com/maddevsio/comedian/model"
 )
 
 type (
@@ -28,6 +29,8 @@ type (
 		ListStandups() ([]model.Standup, error)
 		// CreateStandupUser creates standupUser entry in database
 		CreateStandupUser(model.StandupUser) (model.StandupUser, error)
+		// FindStandupUser finds standupUser entry in database
+		FindStandupUserByUsername(model.StandupUser) (model.StandupUser, error)
 		// DeleteStandupUser deletes standup_users entry from database
 		DeleteStandupUserByUsername(string, string) error
 		// ListStandupUsers returns array of standupUser entries from database

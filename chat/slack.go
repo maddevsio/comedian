@@ -60,10 +60,8 @@ func (s *Slack) Run() error {
 		case msg := <-s.rtm.IncomingEvents:
 
 			switch ev := msg.Data.(type) {
-			case *slack.HelloEvent:
-				// Ignore hello
 			case *slack.ConnectedEvent:
-				s.api.PostMessage("CBAP453GV", "<!channel> Hello world", slack.PostMessageParameters{})
+				s.api.PostMessage("CBAP453GV", "<!channel> Hey! I am alive!", slack.PostMessageParameters{})
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev)

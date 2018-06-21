@@ -7,6 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"fmt"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
@@ -134,6 +135,15 @@ func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error
 	}
 	c.ID = id
 	return c, nil
+}
+
+func (m *MySQL) FindStandupUserByUsername(c model.StandupUser) (model.StandupUser, error) {
+	standupUser := model.StandupUser{}
+	err := m.conn.Select(&standupUser, "SELECT * FROM `standup_users` WHERE username=? AND channel_id=?", c.SlackName, c.ChannelID)
+	if err != nil {
+		return c, err
+	}
+	return standupUser, err
 }
 
 // DeleteStandupUserByUsername deletes standup_users entry from database

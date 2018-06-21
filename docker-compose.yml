@@ -10,6 +10,10 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASS}
       MYSQL_RANDOM_ROOT_PASSWORD: 1
+    healthcheck:
+      test: "/etc/init.d/mysql status"
+      interval: 1s
+      retries: 120
 
   comedian:
     build: .
@@ -26,3 +30,5 @@ services:
       - COMEDIAN_MANAGER
       - COMEDIAN_DIRECT_MANAGER_CHANNEL_ID
       - COMEDIAN_REPORT_TIME
+    depends_on:
+      - "db"
