@@ -12,8 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var managerStandupChannelID = "CHANNEL ID"
-
 // Notifier struct is used to notify users about upcoming or skipped standups
 type Notifier struct {
 	Chat          chat.Chat
@@ -31,23 +29,18 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 }
 
 // Start starts all notifier treads
-func (n *Notifier) Start() error {
+func (n *Notifier) Start(c config.Config) error {
 	log.Println("Starting notifier...")
 
-	//todo: refactor and delete
-	manager := "@managerName"
-	directManagerChannelID := "C8D7EMU64"
-	reportTime := "09:35"
-	reportTimeParsed, err := time.Parse("15:04", reportTime)
+	reportTimeParsed, err := time.Parse("15:04", c.ReportTime)
 	if err != nil {
 		log.Error(err)
 	}
 	fmt.Println("REPORT TIME PARSED", reportTimeParsed)
-	//todo: end
 
 	gocron.Every(n.CheckInterval).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
-	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, n.DB, manager,
-		directManagerChannelID, reportTimeParsed)
+	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, n.DB, c.Manager,
+		c.DirectManagerChannelID, reportTimeParsed)
 	channel := gocron.Start()
 	for {
 		report := <-channel
@@ -104,11 +97,11 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 
 }
 
-func managerStandupReport(chat chat.Chat, db storage.Storage, manager, directManagerChannelID string, reportTimeParsed time.Time) {
-	log.Printf("CHANNEL: %s, TIME: %v\n", managerStandupChannelID, reportTimeParsed)
+func managerStandupReport(c config.Config, chat chat.Chat, db storage.Storage, reportTimeParsed time.Time) {
+	log.Printf("CHANNEL: %s, TIME: %v\n", c.DirectManagerChannelID, reportTimeParsed)
 	currTime := time.Now()
 	if reportTimeParsed.Hour() == currTime.Hour() && reportTimeParsed.Minute() == currTime.Minute() {
-		standupUsersRaw, err := db.ListStandupUsers(managerStandupChannelID)
+		standupUsersRaw, err := db.ListStandupUsers(c.DirectManagerChannelID)
 		if err != nil {
 			log.Error(err)
 		}
@@ -117,7 +110,7 @@ func managerStandupReport(chat chat.Chat, db storage.Storage, manager, directMan
 			user := standupUser.SlackName
 			standupUsersList = append(standupUsersList, user)
 		}
-		userStandupRaw, err := db.SelectStandupByChannelID(managerStandupChannelID)
+		userStandupRaw, err := db.SelectStandupByChannelID(c.DirectManagerChannelID)
 		if err != nil {
 			log.Error(err)
 		}
@@ -141,17 +134,17 @@ func managerStandupReport(chat chat.Chat, db storage.Storage, manager, directMan
 		}
 		nonReportersCheck := len(nonReporters)
 		if nonReportersCheck == 0 {
-			err = chat.SendMessage(directManagerChannelID,
-				fmt.Sprintf("%v, in channel %s all standupers have written standup today", manager,
-					managerStandupChannelID))
+			err = chat.SendMessage(c.DirectManagerChannelID,
+				fmt.Sprintf("%v, in channel %s all standupers have written standup today", c.Manager,
+					c.DirectManagerChannelID))
 			if err != nil {
 				log.Errorf("ERROR: %s", err.Error())
 			}
 		} else {
-			err = chat.SendMessage(directManagerChannelID,
+			err = chat.SendMessage(c.DirectManagerChannelID,
 				fmt.Sprintf("%v, in channel '%s' not all standupers wrote standup today, "+
 					"this users ignored standup today: %v.",
-					manager, managerStandupChannelID, strings.Join(nonReporters, ", ")))
+					c.Manager, c.DirectManagerChannelID, strings.Join(nonReporters, ", ")))
 			if err != nil {
 				log.Errorf("ERROR: %s", err.Error())
 			}

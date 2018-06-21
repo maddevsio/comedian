@@ -20,7 +20,7 @@ build_docker:
 docker: build_linux build_docker
 
 migrate:
-	goose -dir migrations mysql "root:root@tcp(localhost:3306)/comedian"  up
+	goose -dir migrations mysql "comedian:comedian@tcp(172.18.0.3:3306)/comedian"  up
 
 c_migration:
 	goose -dir migrations create migration_name sql
