@@ -32,8 +32,6 @@ func TestNotifier(t *testing.T) {
 	assert.NoError(t, err)
 
 	channelID := "QWERTY123"
-	managerStandupChannelID = channelID
-	stubManagerName := "managerName"
 	d := time.Date(2000, 12, 15, 17, 8, 00, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 	su, err := n.DB.CreateStandupUser(model.StandupUser{
@@ -79,7 +77,7 @@ func TestNotifier(t *testing.T) {
 		"shame on you: @shmest.", ch.LastMessage)
 
 	// check that manager report prints @shmest
-	managerStandupReport(ch, n.DB, stubManagerName, managerStandupChannelID, d)
+	managerStandupReport(c, ch, n.DB, d)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: managerName, in channel 'QWERTY123' not all standupers "+
 		"wrote standup today, this users ignored standup today: @shmest.", ch.LastMessage)
 
@@ -98,7 +96,7 @@ func TestNotifier(t *testing.T) {
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, in this channel all standupers have "+
 		"written standup today", ch.LastMessage)
 
-	managerStandupReport(ch, n.DB, stubManagerName, managerStandupChannelID, d)
+	managerStandupReport(c, ch, n.DB, d)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: managerName, in channel QWERTY123 all standupers "+
 		"have written standup today", ch.LastMessage)
 
