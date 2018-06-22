@@ -111,7 +111,10 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 			if err != nil {
 				s.logger.Error(err)
 			}
-			s.logger.Info("Standup accepted")
+			msg := "Good job! Standup accepted! Keep it up!"
+			s.logger.Info(msg)
+			s.SendMessage(channelName.Name, msg)
+
 		}
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
