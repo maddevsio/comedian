@@ -137,13 +137,11 @@ func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error
 	return c, nil
 }
 
-func (m *MySQL) FindStandupUserByUsername(c model.StandupUser) (model.StandupUser, error) {
-	standupUser := model.StandupUser{}
-	err := m.conn.Select(&standupUser, "SELECT * FROM `standup_users` WHERE username=? AND channel_id=?", c.SlackName, c.ChannelID)
-	if err != nil {
-		return c, err
-	}
-	return standupUser, err
+//FindStandupUserInChannel finds user in channel
+func (m *MySQL) FindStandupUserInChannel(username, channelID string) (model.StandupUser, error) {
+	var u model.StandupUser
+	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
+	return u, err
 }
 
 // DeleteStandupUserByUsername deletes standup_users entry from database

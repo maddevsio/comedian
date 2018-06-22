@@ -100,14 +100,22 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	cleanName := strings.TrimLeft(ca.Text, "@")
-	_, err := r.db.CreateStandupUser(model.StandupUser{
-		SlackName: cleanName,
-		ChannelID: ca.ChannelID,
-		Channel:   ca.ChannelName,
-	})
+
+	user, err := r.db.FindStandupUserInChannel(cleanName, ca.ChannelID)
 	if err != nil {
-		log.Errorf("could not create standup user: %v", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
+		_, err = r.db.CreateStandupUser(model.StandupUser{
+			SlackName: cleanName,
+			ChannelID: ca.ChannelID,
+			Channel:   ca.ChannelName,
+		})
+		if err != nil {
+			log.Errorf("could not create standup user: %v", err)
+			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
+		}
+
+	}
+	if user.SlackName == cleanName && user.ChannelID == ca.ChannelID {
+		return c.String(http.StatusOK, fmt.Sprintf("User already exists!"))
 	}
 	st, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
