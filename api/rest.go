@@ -127,9 +127,11 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 	if err := ca.Validate(); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	err := r.db.DeleteStandupUserByUsername(ca.Text, ca.ChannelID)
+
+	cleanName := strings.TrimLeft(ca.Text, "@")
+	err := r.db.DeleteStandupUserByUsername(cleanName, ca.ChannelID)
 	if err != nil {
-		log.Errorf("could not delete standup: %v", err)
+		log.Errorf("could not delete standup user: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
 	}
 	return c.String(http.StatusOK, fmt.Sprintf("%s deleted", ca.Text))
