@@ -231,7 +231,11 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 	suTime, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
 		log.Println(err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
+		if err.Error() == "sql: no rows in result set" {
+			return c.String(http.StatusOK, fmt.Sprintf("No standup time set for this channel yet! Please, add a standup time using `/standuptimeset` command!"))
+		} else {
+			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
+		}
 	}
 	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC)",
 		time.Unix(suTime.Time, 0).In(time.UTC).Format("15:04")))
