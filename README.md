@@ -87,7 +87,7 @@ Run the script:
 - [x] when deleting stand-up time, notify that in this chat there are users who write standups 
 - [x] Remind all users in channel to write standup with user's tag
 - [x] duplicate the message about the standup in 30 minutes with tagging users who did not write standup
-- [] send a message to the manager at 5 pm that someone did not write the standup 
+- [x] send a message to the manager at 5 pm that someone did not write the standup 
 - [ ] Standup reports
 	- [ ] all standups key username
 	- [x] all standups key project
