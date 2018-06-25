@@ -140,14 +140,14 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 			nonReportersCheck := len(nonReporters)
 			if nonReportersCheck == 0 {
 				err = chat.SendMessage(c.DirectManagerChannelID,
-					fmt.Sprintf("<@%v>, in channel %s all standupers have written standup today", c.Manager,
+					fmt.Sprintf("<@%v>, in channel <#%s> all standupers have written standup today", c.Manager,
 						channel))
 				if err != nil {
 					log.Errorf("ERROR: %s", err.Error())
 				}
 			} else {
 				err = chat.SendMessage(c.DirectManagerChannelID,
-					fmt.Sprintf("<@%v>, in channel '%s' not all standupers wrote standup today, "+
+					fmt.Sprintf("<@%v>, in channel <#%s> not all standupers wrote standup today, "+
 						"this users ignored standup today: %v.",
 						c.Manager, channel, strings.Join(nonReporters, ", ")))
 				if err != nil {

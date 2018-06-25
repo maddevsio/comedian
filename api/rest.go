@@ -122,9 +122,9 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		log.Errorf("could not list standup time: %v", err)
 	}
 	if st.Time == int64(0) {
-		return c.String(http.StatusOK, fmt.Sprintf("%s added, but there is no standup time for this channel", ca.Text))
+		return c.String(http.StatusOK, fmt.Sprintf("<@%s> added, but there is no standup time for this channel", ca.Text))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf("%s added", ca.Text))
+	return c.String(http.StatusOK, fmt.Sprintf("<@%s> added", ca.Text))
 }
 
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
