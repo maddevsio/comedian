@@ -30,7 +30,6 @@ func TestNotifier(t *testing.T) {
 	ch := &ChatStub{LastMessage: "test initial"}
 	n, err := NewNotifier(c, ch)
 	assert.NoError(t, err)
-
 	channelID := "QWERTY123"
 	d := time.Date(2000, 12, 15, 17, 8, 00, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
@@ -78,7 +77,7 @@ func TestNotifier(t *testing.T) {
 
 	// check that manager report prints @shmest
 	managerStandupReport(ch, c, n.DB, d)
-	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@shmest>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@shmest>.", ch.LastMessage)
 
 	// add standup for user @shmest
 	s2, err := n.DB.CreateStandup(model.Standup{
@@ -95,7 +94,7 @@ func TestNotifier(t *testing.T) {
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, in this channel all standupers have written standup today", ch.LastMessage)
 
 	managerStandupReport(ch, c, n.DB, d)
-	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
+	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
 
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))
