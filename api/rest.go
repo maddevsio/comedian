@@ -160,7 +160,12 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))
 	}
 
-	return c.JSON(http.StatusOK, &users)
+	var userNames []string
+	for _, user := range users {
+		userNames = append(userNames, "<@"+user.SlackName+">")
+	}
+
+	return c.String(http.StatusOK, fmt.Sprintf("Standupers in this channel: %v", strings.Join(userNames, ", ")))
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {

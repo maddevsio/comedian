@@ -64,7 +64,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 			notifyStandupStart(chat, db, channelID)
 		}
 		pauseTime := time.Minute * 30
-		repeatCount := 3
+		repeatCount := 10
 		for i := 1; i <= repeatCount; i++ {
 			notifyTime := standupTime.Add(pauseTime * time.Duration(i))
 			if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
@@ -86,7 +86,7 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 	var list []string
 	for _, standupUser := range standupUsers {
 		user := standupUser.SlackName
-		list = append(list, user)
+		list = append(list, "<@"+user+">")
 	}
 
 	err = chat.SendMessage(channelID,
@@ -129,7 +129,7 @@ func managerStandupReport(c config.Config, chat chat.Chat, db storage.Storage, r
 				}
 			}
 			if !found {
-				nonReporters = append(nonReporters, user)
+				nonReporters = append(nonReporters, "<@"+user+">")
 			}
 		}
 		nonReportersCheck := len(nonReporters)
@@ -186,7 +186,7 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 			}
 		}
 		if !found {
-			nonReporters = append(nonReporters, user)
+			nonReporters = append(nonReporters, "<@"+user+">")
 		}
 	}
 	nonReportersCheck := len(nonReporters)
@@ -194,6 +194,5 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 		return chat.SendMessage(channelID, "Hey, in this channel all standupers have written standup today")
 	}
 	return chat.SendMessage(channelID,
-		fmt.Sprintf("In this channel not all standupers wrote standup today, "+
-			"shame on you: %v.", strings.Join(nonReporters, ", ")))
+		fmt.Sprintf("In this channel not all standupers wrote standup today, shame on you: %v.", strings.Join(nonReporters, ", ")))
 }
