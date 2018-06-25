@@ -151,6 +151,13 @@ func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
 }
 
 // ListStandupUsers returns array of standup entries from database
+func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
+	items := []model.StandupUser{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup_users`")
+	return items, err
+}
+
+// ListStandupUsers returns array of standup entries from database
 func (m *MySQL) ListStandupUsers(channelID string) ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=?", channelID)

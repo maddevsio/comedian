@@ -35,6 +35,8 @@ type (
 		DeleteStandupUserByUsername(string, string) error
 		// ListStandupUsers returns array of standupUser entries from database
 		ListStandupUsers(string) ([]model.StandupUser, error)
+		// ListStandupUsers returns array of standupUser entries from database
+		ListAllStandupUsers() ([]model.StandupUser, error)
 		// ListStandupUsers returns array of standupUser entries from database filtered by channel name
 		ListStandupUsersByChannelName(string) ([]model.StandupUser, error)
 		// CreateStandupTime creates standup time entry in database
