@@ -157,8 +157,8 @@ func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	return items, err
 }
 
-// ListStandupUsers returns array of standup entries from database
-func (m *MySQL) ListStandupUsers(channelID string) ([]model.StandupUser, error) {
+// ListStandupUsersByChannelID returns array of standup entries from database
+func (m *MySQL) ListStandupUsersByChannelID(channelID string) ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=?", channelID)
 	return items, err

@@ -33,9 +33,9 @@ type (
 		FindStandupUserInChannel(string, string) (model.StandupUser, error)
 		// DeleteStandupUser deletes standup_users entry from database
 		DeleteStandupUserByUsername(string, string) error
-		// ListStandupUsers returns array of standupUser entries from database
-		ListStandupUsers(string) ([]model.StandupUser, error)
-		// ListStandupUsers returns array of standupUser entries from database
+		// ListStandupUsersByChannelID returns array of standupUser entries from database
+		ListStandupUsersByChannelID(string) ([]model.StandupUser, error)
+		// ListAllStandupUsers returns array of standupUser entries from database
 		ListAllStandupUsers() ([]model.StandupUser, error)
 		// ListStandupUsers returns array of standupUser entries from database filtered by channel name
 		ListStandupUsersByChannelName(string) ([]model.StandupUser, error)

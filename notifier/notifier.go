@@ -164,7 +164,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 
 // notifyStandupStart reminds users about upcoming standups
 func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
-	standupUsers, err := db.ListStandupUsers(channelID)
+	standupUsers, err := db.ListStandupUsersByChannelID(channelID)
 	if err != nil {
 		log.Error(err)
 	}
@@ -184,7 +184,7 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 
 // notifyNonReporters reminds users who missed deadlines about upcoming standups
 func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) error {
-	standupUsersRaw, err := db.ListStandupUsers(channelID)
+	standupUsersRaw, err := db.ListStandupUsersByChannelID(channelID)
 	if err != nil {
 		return err
 	}
