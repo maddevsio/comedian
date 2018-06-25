@@ -35,14 +35,14 @@ func TestNotifier(t *testing.T) {
 	d := time.Date(2000, 12, 15, 17, 8, 00, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 	su, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackName: "@test",
+		SlackName: "test",
 		FullName:  "Test Testtt",
 		ChannelID: channelID,
 		Channel:   "chanName",
 	})
 	assert.NoError(t, err)
 	su2, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackName: "@shmest",
+		SlackName: "shmest",
 		FullName:  "Test Testtt",
 		ChannelID: channelID,
 		Channel:   "chanName",
@@ -60,45 +60,42 @@ func TestNotifier(t *testing.T) {
 	assert.Equal(t, "test initial", ch.LastMessage)
 	notifyStandupStart(ch, n.DB, channelID)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup from you: "+
-		"@test, @shmest", ch.LastMessage)
+		"<@test>, <@shmest>", ch.LastMessage)
 
 	// add standup for user @test
 	s, err := n.DB.CreateStandup(model.Standup{
 		ChannelID:  channelID,
 		Comment:    "work hard",
 		UsernameID: "QWE345asd",
-		Username:   "@test",
+		Username:   "test",
 		MessageTS:  "qweasdzxc",
 	})
 	assert.NoError(t, err)
 
 	notifyNonReporters(ch, n.DB, channelID)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: In this channel not all standupers wrote standup today, "+
-		"shame on you: @shmest.", ch.LastMessage)
+		"shame on you: <@shmest>.", ch.LastMessage)
 
 	// check that manager report prints @shmest
-	managerStandupReport(c, ch, n.DB, d)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: managerName, in channel 'QWERTY123' not all standupers "+
-		"wrote standup today, this users ignored standup today: @shmest.", ch.LastMessage)
+	managerStandupReport(ch, c, n.DB, d)
+	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@shmest>.", ch.LastMessage)
 
 	// add standup for user @shmest
 	s2, err := n.DB.CreateStandup(model.Standup{
 		ChannelID:  channelID,
 		Comment:    "hello world",
 		UsernameID: "QWE345asd",
-		Username:   "@shmest",
+		Username:   "shmest",
 		MessageTS:  "qweasd",
 	})
 	assert.NoError(t, err)
 
 	//nonreporters check
 	notifyNonReporters(ch, n.DB, channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, in this channel all standupers have "+
-		"written standup today", ch.LastMessage)
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, in this channel all standupers have written standup today", ch.LastMessage)
 
-	managerStandupReport(c, ch, n.DB, d)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: managerName, in channel QWERTY123 all standupers "+
-		"have written standup today", ch.LastMessage)
+	managerStandupReport(ch, c, n.DB, d)
+	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
 
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))

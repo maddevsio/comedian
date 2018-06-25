@@ -37,8 +37,10 @@ func (n *Notifier) Start(c config.Config) error {
 		log.Error(err)
 	}
 	fmt.Println("REPORT TIME PARSED", reportTimeParsed)
-	config, _ := config.Get()
-
+	config, err := config.Get()
+	if err != nil {
+		log.Error(err)
+	}
 	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, config, n.DB, reportTimeParsed)
 	gocron.Every(n.CheckInterval).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
 	channel := gocron.Start()
@@ -48,6 +50,7 @@ func (n *Notifier) Start(c config.Config) error {
 	}
 }
 
+// standupReminderForChannel reminds users of channels about upcoming or missing standups
 func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 	standupTimes, err := db.ListAllStandupTime()
 	if err != nil {
@@ -78,6 +81,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 	}
 }
 
+// managerStandupReport reminds manager about missing or completed standups from channels
 func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, reportTimeParsed time.Time) {
 
 	log.Printf("MANAGER CHANNEL: %s, REPORTING TIME: %v\n", c.DirectManagerChannelID, reportTimeParsed)
@@ -158,6 +162,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 	}
 }
 
+// notifyStandupStart reminds users about upcoming standups
 func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 	standupUsers, err := db.ListStandupUsers(channelID)
 	if err != nil {
@@ -177,6 +182,7 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 
 }
 
+// notifyNonReporters reminds users who missed deadlines about upcoming standups
 func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) error {
 	standupUsersRaw, err := db.ListStandupUsers(channelID)
 	if err != nil {
