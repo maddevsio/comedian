@@ -82,22 +82,22 @@ Run the script:
 - [x] Add standup time with slash command
 - [x] Remove standup time with slash command
 - [ ] Remind user to write standup via private message 
-	- [x] add a check when adding a user, if the stand-up time is not specified, write that you need to specify it 
-	- [x] add a check when adding a stand-up time, that no one has yet been added 
-	- [x] when deleting stand-up time, notify that in this chat there are users who write standups 
+- [x] add a check when adding a user, if the stand-up time is not specified, write that you need to specify it 
+- [x] add a check when adding a stand-up time, that no one has yet been added 
+- [x] when deleting stand-up time, notify that in this chat there are users who write standups 
 - [x] Remind all users in channel to write standup with user's tag
-	- [x] duplicate the message about the standup in 30 minutes with tagging users who did not write standup
-	- [x] send a message to the manager at 5 pm that someone did not write the standup 
+- [x] duplicate the message about the standup in 30 minutes with tagging users who did not write standup
+- [] send a message to the manager at 5 pm that someone did not write the standup 
 - [ ] Standup reports
 	- [ ] all standups key username
 	- [x] all standups key project
 	- [ ] all standups key username+project
-- [ ] Configure superusers with config file or env variables
+- [x] Configure superusers with config file or env variables
 - [ ] Get all users in slack's organization and sync it with users in database
-	- [ ] Make research: is it possible to show the certain commands to the certain user
-	- [ ] Setup reminders when bot starts
-	- [ ] Setup reminders when we add new reminder on a channel
-	- [ ] Text analysis engine to get standup messages without mentioning bot user
+- [ ] Make research: is it possible to show the certain commands to the certain user
+- [ ] Setup reminders when bot starts
+- [ ] Setup reminders when we add new reminder on a channel
+- [ ] Text analysis engine to get standup messages without mentioning bot user
 - [ ] Get task worklogs from JIRA
 - [ ] NLP based configuration for standup time adding
 - [x] Create a docker-compose.yml
@@ -110,28 +110,6 @@ Run the script:
 - [ ] Endpoint for report by project(channel) in date range
 - [ ] Endpoint for report by user and all his project in date range
 - [ ] Authentication endpoint.
-
-### Web inteface
-
-- [ ] Login screen
-- [ ] Main screen
-  - [ ] List of users with standup count
-  - [ ] List of projects
-- [ ] Project report
-  - [ ] Filter by date range
-  - [ ] List of standups
-    - created date
-    - username
-    - fullname
-    - standup message
-- [ ] User report
-  - [ ] Filter by date range
-  - [ ] List of standups
-    - created date
-    - username
-    - fullname
-    - standup message
-    - project name
 
 ## Issues
 
