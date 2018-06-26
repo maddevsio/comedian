@@ -30,6 +30,9 @@ func TestNotifier(t *testing.T) {
 	ch := &ChatStub{LastMessage: "test initial"}
 	n, err := NewNotifier(c, ch)
 	assert.NoError(t, err)
+
+	// assert.NoError(t, n.Start(c))
+
 	channelID := "QWERTY123"
 	d := time.Date(2000, 12, 15, 17, 8, 00, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })

@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	stubCommandAddUser      = "command=/comedianadd&text=@test&channel_id=chanid&channel_name=channame"
+	stubCommandAddUser      = "command=/comedianadd&text=test&channel_id=chanid&channel_name=channame"
 	stubCommandAddEmptyText = "command=/comedianadd&text="
 	stubCommandDelUser      = "command=/comedianremove&text=@test&channel_id=chanid"
 	stubCommandListUsers    = "command=/comedianlist&channel_id=chanid"
@@ -67,7 +67,7 @@ func TestHandleCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "@test added, but there is no standup time for this channel", rec.Body.String())
+		assert.Equal(t, "<@test> added, but there is no standup time for this channel", rec.Body.String())
 	}
 
 	//add time
@@ -128,7 +128,7 @@ func TestHandleCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "[]", rec.Body.String())
+		assert.Equal(t, "No standupers in this channel! To add one, please, use /comedianadd slash command", rec.Body.String())
 	}
 
 	//add time

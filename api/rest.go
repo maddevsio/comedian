@@ -165,6 +165,9 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 		userNames = append(userNames, "<@"+user.SlackName+">")
 	}
 
+	if len(userNames) < 1 {
+		return c.String(http.StatusOK, "No standupers in this channel! To add one, please, use /comedianadd slash command")
+	}
 	return c.String(http.StatusOK, fmt.Sprintf("Standupers in this channel: %v", strings.Join(userNames, ", ")))
 }
 
