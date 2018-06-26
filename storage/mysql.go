@@ -6,8 +6,6 @@ import (
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
 
-	"fmt"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
@@ -108,17 +106,17 @@ func (m *MySQL) SelectStandupByUserNameForPeriod(username string, dateStart,
 	return items, err
 }
 
-// DeleteStandup deletes standup entry from database
-func (m *MySQL) DeleteStandup(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `standup` WHERE id=?", id)
-	return err
-}
-
 // ListStandups returns array of standup entries from database
 func (m *MySQL) ListStandups() ([]model.Standup, error) {
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup`")
 	return items, err
+}
+
+// DeleteStandup deletes standup entry from database
+func (m *MySQL) DeleteStandup(id int64) error {
+	_, err := m.conn.Exec("DELETE FROM `standup` WHERE id=?", id)
+	return err
 }
 
 // CreateStandupUser creates comedian entry in database
@@ -144,12 +142,6 @@ func (m *MySQL) FindStandupUserInChannel(username, channelID string) (model.Stan
 	return u, err
 }
 
-// DeleteStandupUserByUsername deletes standup_users entry from database
-func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
-	return err
-}
-
 // ListStandupUsers returns array of standup entries from database
 func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
@@ -171,6 +163,12 @@ func (m *MySQL) ListStandupUsersByChannelName(channelName string) ([]model.Stand
 	return items, err
 }
 
+// DeleteStandupUserByUsername deletes standup_users entry from database
+func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
+	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
+	return err
+}
+
 // CreateStandupTime creates time entry in database
 func (m *MySQL) CreateStandupTime(c model.StandupTime) (model.StandupTime, error) {
 	res, err := m.conn.Exec(
@@ -187,17 +185,24 @@ func (m *MySQL) CreateStandupTime(c model.StandupTime) (model.StandupTime, error
 	return c, nil
 }
 
-// DeleteStandupTime deletes standup_time entry for channel from database
-func (m *MySQL) DeleteStandupTime(channelID string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_time` WHERE channel_id=?", channelID)
-	return err
-}
-
 // ListStandupTime returns standup time entry from database
 func (m *MySQL) ListStandupTime(channelID string) (model.StandupTime, error) {
 	var time model.StandupTime
 	err := m.conn.Get(&time, "SELECT * FROM `standup_time` WHERE channel_id=?", channelID)
 	return time, err
+}
+
+// ListAllStandupTime returns standup time entry for all channels from database
+func (m *MySQL) ListAllStandupTime() ([]model.StandupTime, error) {
+	reminders := []model.StandupTime{}
+	err := m.conn.Select(&reminders, "SELECT * FROM `standup_time`")
+	return reminders, err
+}
+
+// DeleteStandupTime deletes standup_time entry for channel from database
+func (m *MySQL) DeleteStandupTime(channelID string) error {
+	_, err := m.conn.Exec("DELETE FROM `standup_time` WHERE channel_id=?", channelID)
+	return err
 }
 
 // AddToStandupHistory creates backup standup entry in standup_edit_history database
@@ -216,13 +221,6 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 	return s, nil
 }
 
-// ListAllStandupTime returns standup time entry for all channels from database
-func (m *MySQL) ListAllStandupTime() ([]model.StandupTime, error) {
-	reminders := []model.StandupTime{}
-	err := m.conn.Select(&reminders, "SELECT * FROM `standup_time`")
-	return reminders, err
-}
-
 var nowFunc func() time.Time
 
 func init() {
@@ -232,6 +230,5 @@ func init() {
 }
 
 func now() time.Time {
-	fmt.Println(nowFunc().Format(time.UnixDate))
 	return nowFunc().UTC()
 }
