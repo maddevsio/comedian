@@ -199,7 +199,7 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if err != nil {
-		log.Errorf("could not list standup time: %v", err)
+		log.Errorf("could not list standup users: %v", err)
 	}
 	if len(st) == 0 {
 		return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC) added, but there is no standup "+
@@ -226,7 +226,7 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if err != nil {
-		log.Errorf("could not list standup time: %v", err)
+		log.Errorf("could not list standup users: %v", err)
 	}
 	if len(st) != 0 {
 		return c.String(http.StatusOK, fmt.Sprintf("standup time for this channel removed, but there are "+
