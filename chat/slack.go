@@ -2,6 +2,7 @@ package chat
 
 import (
 	"fmt"
+	"log"
 
 	"sync"
 
@@ -157,7 +158,12 @@ func (s *Slack) SendMessage(channel, message string) error {
 
 // SendUserMessage posts a message to a specific user
 func (s *Slack) SendUserMessage(user, message string) error {
-	_, _, channelID, err := s.api.OpenIMChannel(user)
+	member, err := s.api.GetUserInfo(user)
+	log.Println(member.ID)
+	if err != nil {
+		return err
+	}
+	_, _, channelID, err := s.api.OpenIMChannel(member.ID)
 	if err != nil {
 		return err
 	}

@@ -19,13 +19,14 @@ type (
 
 	// StandupUser model used for serialization/deserialization stored standupUsers
 	StandupUser struct {
-		ID        int64     `db:"id" json:"id"`
-		Created   time.Time `db:"created" json:"created"`
-		Modified  time.Time `db:"modified" json:"modified"`
-		SlackName string    `db:"username" json:"username"`
-		FullName  string    `db:"full_name" json:"fullName"`
-		Channel   string    `db:"channel" json:"channel"`
-		ChannelID string    `db:"channel_id" json:"channelId"`
+		ID          int64     `db:"id" json:"id"`
+		Created     time.Time `db:"created" json:"created"`
+		Modified    time.Time `db:"modified" json:"modified"`
+		SlackUserID string    `db:"slack_user_id" json:"slack_user_id"`
+		SlackName   string    `db:"username" json:"username"`
+		FullName    string    `db:"full_name" json:"fullName"`
+		Channel     string    `db:"channel" json:"channel"`
+		ChannelID   string    `db:"channel_id" json:"channelId"`
 	}
 
 	// StandupTime model used for serialization/deserialization stored standupTime
