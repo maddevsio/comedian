@@ -62,6 +62,7 @@ func (s *Slack) Run() error {
 			switch ev := msg.Data.(type) {
 			case *slack.ConnectedEvent:
 				s.api.PostMessage("CBAP453GV", "Hey! I am alive!", slack.PostMessageParameters{})
+				s.SendUserMessage("UB9AE7CL9", "Hello, dear Manager!")
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev)
@@ -91,6 +92,7 @@ func (s *Slack) ManageConnection() {
 	}()
 
 }
+
 func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 
 	userName := s.rtm.GetInfo().GetUserByID(msg.Msg.User)
@@ -150,5 +152,15 @@ func (s *Slack) cleanMessage(message string) (string, bool) {
 // SendMessage posts a message in a specified channel
 func (s *Slack) SendMessage(channel, message string) error {
 	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{})
+	return err
+}
+
+// SendUserMessage posts a message to a specific user
+func (s *Slack) SendUserMessage(user, message string) error {
+	_, _, channelID, err := s.api.OpenIMChannel(user)
+	if err != nil {
+		return err
+	}
+	err = s.SendMessage(channelID, message)
 	return err
 }

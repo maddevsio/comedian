@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/maddevsio/comedian/model"
+
 	"github.com/jasonlvhit/gocron"
 	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
@@ -65,6 +67,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 		currTime := time.Now()
 		if standupTime.Hour() == currTime.Hour() && standupTime.Minute() == currTime.Minute() {
 			notifyStandupStart(chat, db, channelID)
+			notifyStandupers(chat, db, channelID)
 		}
 		pauseTime := time.Minute * 5 //repeats after n minutes
 		repeatCount := 3             //repeat n times
@@ -179,7 +182,6 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
 	}
-
 }
 
 // notifyNonReporters reminds users who missed deadlines about upcoming standups
@@ -226,4 +228,49 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 	}
 	return chat.SendMessage(channelID,
 		fmt.Sprintf("In this channel not all standupers wrote standup today, shame on you: %v.", strings.Join(nonReporters, ", ")))
+}
+
+func notifyStandupers(chat chat.Chat, db storage.Storage, channelID string) error {
+
+	standupUsers, err := db.ListStandupUsersByChannelID(channelID)
+	if err != nil {
+		return err
+	}
+
+	currentTime := time.Now()
+	dateStart := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
+	dateEnd := dateStart.Add(time.Hour * 24)
+
+	standups, err := db.SelectStandupByChannelIDForPeriod(channelID, dateStart, dateEnd)
+	if err != nil {
+		return err
+	}
+
+	var usersWhoCreatedStandup []string
+	for _, userStandup := range standups {
+		user := userStandup.Username
+		usersWhoCreatedStandup = append(usersWhoCreatedStandup, user)
+	}
+	var nonReporters []model.StandupUser
+	for _, user := range standupUsers {
+		found := false
+		for _, standupCreator := range usersWhoCreatedStandup {
+			if user.SlackName == standupCreator {
+				found = true
+				break
+			}
+		}
+		if !found {
+			nonReporters = append(nonReporters, user)
+		}
+	}
+	// for _, motherFucker := range nonReporters {
+
+	// 	// userTeamID, err := api.GetUserInfo(motherFucker.SlackName)
+	// 	// if err != nil {
+	// 	// 	return err
+	// 	// }
+	// 	// return chat.SendUserMessage(userTeamID, "Hello, dear Manager!")
+	// }
+	return nil
 }
