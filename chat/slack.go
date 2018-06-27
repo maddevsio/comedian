@@ -62,6 +62,7 @@ func (s *Slack) Run() error {
 
 			switch ev := msg.Data.(type) {
 			case *slack.ConnectedEvent:
+				s.GetAllUsersToDB()
 				s.api.PostMessage("CBAP453GV", "Hey! I am alive!", slack.PostMessageParameters{})
 				s.SendUserMessage("UB9AE7CL9", "Hello, dear Manager!")
 
@@ -111,12 +112,14 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 				Comment:    cleanMsg,
 				MessageTS:  msg.Msg.Timestamp,
 			})
+			var text string
 			if err != nil {
 				s.logger.Error(err)
+				text = err.Error()
+			} else {
+				text = "Good job! Standup accepted! Keep it up!"
 			}
-			msg := "Good job! Standup accepted! Keep it up!"
-			s.logger.Info(msg)
-			s.SendMessage(channelName.Name, msg)
+			s.SendMessage(channelName.Name, text)
 
 		}
 	case typeEditMessage:
@@ -169,4 +172,40 @@ func (s *Slack) SendUserMessage(user, message string) error {
 	}
 	err = s.SendMessage(channelID, message)
 	return err
+}
+
+// GetAllUsersToDB selects all the users in the organization and sync them to db
+func (s *Slack) GetAllUsersToDB() error {
+	users, err := s.api.GetUsers()
+	if err != nil {
+		return err
+	}
+
+	chans, err := s.api.GetChannels(false)
+	if err != nil {
+		return err
+	}
+	var channelID string
+	var channelName string
+	for _, channel := range chans {
+		if channel.Name == "general" {
+			channelName = channel.Name
+			channelID = channel.ID
+		}
+	}
+
+	for _, user := range users {
+		_, err := s.db.FindStandupUserInChannel(user.Name, channelID)
+		if err != nil {
+			s.db.CreateStandupUser(model.StandupUser{
+				SlackUserID: user.ID,
+				SlackName:   user.Name,
+				FullName:    user.RealName,
+				ChannelID:   channelID,
+				Channel:     channelName,
+			})
+		}
+
+	}
+	return nil
 }

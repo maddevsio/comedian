@@ -6,5 +6,6 @@ type (
 		Run() error
 		SendMessage(string, string) error
 		SendUserMessage(string, string) error
+		GetAllUsersToDB() error
 	}
 )
