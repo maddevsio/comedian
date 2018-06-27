@@ -214,6 +214,8 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 
 	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC) added",
 		time.Unix(timeInt, 0).In(time.UTC).Format("15:04")))
+
+	// need to add fmt.Sprintf("<!date^%v^Standup time set at {time_secs}|Standup time set at 15:39:42 >", time.Now().Unix())
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {

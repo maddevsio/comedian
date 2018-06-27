@@ -232,6 +232,7 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 
 func notifyStandupers(chat chat.Chat, db storage.Storage, channelID string) error {
 	standupUsers, err := db.ListStandupUsersByChannelID(channelID)
+	log.Printf("Standup users: %v ", standupUsers)
 	if err != nil {
 		return err
 	}
@@ -243,12 +244,13 @@ func notifyStandupers(chat chat.Chat, db storage.Storage, channelID string) erro
 	if err != nil {
 		return err
 	}
-
+	log.Printf("Standups: %v ", standups)
 	var usersWhoCreatedStandup []string
 	for _, userStandup := range standups {
 		user := userStandup.Username
 		usersWhoCreatedStandup = append(usersWhoCreatedStandup, user)
 	}
+	log.Printf("Users who created standups: %v ", usersWhoCreatedStandup)
 	var nonReporters []model.StandupUser
 	for _, user := range standupUsers {
 		found := false
@@ -262,8 +264,10 @@ func notifyStandupers(chat chat.Chat, db storage.Storage, channelID string) erro
 			nonReporters = append(nonReporters, user)
 		}
 	}
+	log.Printf("NonReporters: %v ", nonReporters)
 	for _, motherFucker := range nonReporters {
-		return chat.SendUserMessage(motherFucker.SlackUserID, fmt.Sprintf("Hello, <@%s>! You missed the standup deadline in <#%s> channel. Please, write you standup ASAP!", motherFucker.SlackName, motherFucker.ChannelID))
+		log.Println(motherFucker.SlackUserID)
+		chat.SendUserMessage(motherFucker.SlackUserID, fmt.Sprintf("Hello, <@%s>! You missed the standup deadline in <#%s> channel. Please, write you standup ASAP!", motherFucker.SlackName, motherFucker.ChannelID))
 	}
 	return nil
 }

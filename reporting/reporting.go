@@ -3,10 +3,11 @@ package reporting
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 type reportEntry struct {
@@ -22,7 +23,7 @@ func StandupReportByProject(db storage.Storage, channelName string, dateFrom, da
 		channelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	reportEntries, err := getNonReportersForPeriod(db, channelName, dateFrom, dateTo)
 	if err != nil {
-		return "", err
+		return "Error!!!", err
 	}
 	report := printNonReportersToString(reportEntries)
 	return report, nil

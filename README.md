@@ -81,7 +81,7 @@ Run the script:
 - [x] Remove user from daily standup reminder with slash command
 - [x] Add standup time with slash command
 - [x] Remove standup time with slash command
-- [ ] Remind user to write standup via private message 
+- [x] Remind user to write standup via private message 
 - [x] add a check when adding a user, if the stand-up time is not specified, write that you need to specify it 
 - [x] add a check when adding a stand-up time, that no one has yet been added 
 - [x] when deleting stand-up time, notify that in this chat there are users who write standups 
@@ -94,7 +94,7 @@ Run the script:
 	- [ ] all standups key username+project
 - [x] Configure superusers with config file or env variables
 - [ ] Get all users in slack's organization and sync it with users in database
-- [ ] Make research: is it possible to show the certain commands to the certain user
+- [x] Make research: is it possible to show the certain commands to the certain user
 - [ ] Setup reminders when bot starts
 - [ ] Setup reminders when we add new reminder on a channel
 - [ ] Text analysis engine to get standup messages without mentioning bot user
