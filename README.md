@@ -93,7 +93,7 @@ Run the script:
 	- [x] all standups key project
 	- [ ] all standups key username+project
 - [x] Configure superusers with config file or env variables
-- [ ] Get all users in slack's organization and sync it with users in database
+- [x] Get all users in slack's organization and sync it with users in database
 - [x] Make research: is it possible to show the certain commands to the certain user
 - [ ] Setup reminders when bot starts
 - [ ] Setup reminders when we add new reminder on a channel
