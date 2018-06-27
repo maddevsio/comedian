@@ -142,8 +142,7 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	result := strings.Split(ca.Text, "|")
-	userName := strings.Replace(result[1], ">", "", -1)
+	userName := strings.Replace(ca.Text, "@", "", -1)
 	err := r.db.DeleteStandupUserByUsername(userName, ca.ChannelID)
 	if err != nil {
 		log.Errorf("could not delete standup user: %v", err)

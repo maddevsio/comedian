@@ -95,36 +95,42 @@ func TestCRUDStandupUser(t *testing.T) {
 	db, err := NewMySQL(c)
 	assert.NoError(t, err)
 	su1, err := db.CreateStandupUser(model.StandupUser{
-		SlackName: "user1",
-		FullName:  "John Doe",
-		ChannelID: "123qwe",
-		Channel:   "channel1",
+		SlackUserID: "userID1",
+		SlackName:   "user1",
+		FullName:    "John Doe",
+		ChannelID:   "123qwe",
+		Channel:     "channel1",
 	})
 	assert.NoError(t, err)
+	assert.Equal(t, "userID1", su1.SlackUserID)
 	assert.Equal(t, "user1", su1.SlackName)
 	assert.Equal(t, "John Doe", su1.FullName)
 	assert.Equal(t, "123qwe", su1.ChannelID)
 	assert.Equal(t, "channel1", su1.Channel)
 
 	su2, err := db.CreateStandupUser(model.StandupUser{
-		SlackName: "user2",
-		FullName:  "Doe John",
-		ChannelID: "qwe123",
-		Channel:   "channel2",
+		SlackUserID: "userID2",
+		SlackName:   "user2",
+		FullName:    "Doe John",
+		ChannelID:   "qwe123",
+		Channel:     "channel2",
 	})
 	assert.NoError(t, err)
+	assert.Equal(t, "userID2", su2.SlackUserID)
 	assert.Equal(t, "user2", su2.SlackName)
 	assert.Equal(t, "Doe John", su2.FullName)
 	assert.Equal(t, "qwe123", su2.ChannelID)
 	assert.Equal(t, "channel2", su2.Channel)
 
 	su3, err := db.CreateStandupUser(model.StandupUser{
-		SlackName: "user3",
-		FullName:  "John",
-		ChannelID: "123qwe",
-		Channel:   "channel1",
+		SlackUserID: "userID3",
+		SlackName:   "user3",
+		FullName:    "John",
+		ChannelID:   "123qwe",
+		Channel:     "channel1",
 	})
 	assert.NoError(t, err)
+	assert.Equal(t, "userID3", su3.SlackUserID)
 	assert.Equal(t, "user3", su3.SlackName)
 	assert.Equal(t, "John", su3.FullName)
 	assert.Equal(t, "123qwe", su3.ChannelID)

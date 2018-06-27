@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	stubCommandAddUser                    = "command=/comedianadd&text=test&channel_id=chanid&channel_name=channame"
+	stubCommandAddUser                    = "command=/comedianadd&text=<@userid|test>&channel_id=chanid&channel_name=channame"
 	stubCommandAddUserEmptyChannelID      = "command=/comedianadd&text=test&channel_id=&channel_name=channame"
 	stubCommandAddUserEmptyChannelName    = "command=/comedianadd&text=test&channel_id=chanid&channel_name="
 	stubCommandAddEmptyText               = "command=/comedianadd&text="
@@ -164,7 +164,7 @@ func TestHandleCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "@test deleted", rec.Body.String())
+	assert.Equal(t, "<@test> deleted", rec.Body.String())
 
 	//add user with time set
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandAddUser))
@@ -206,7 +206,7 @@ func TestHandleCommands(t *testing.T) {
 
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "@test deleted", rec.Body.String())
+	assert.Equal(t, "<@test> deleted", rec.Body.String())
 
 	//list users
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(stubCommandListUsers))

@@ -24,6 +24,11 @@ func (c *ChatStub) SendMessage(chatID, message string) error {
 	return nil
 }
 
+func (c *ChatStub) SendUserMessage(userID, message string) error {
+	c.LastMessage = fmt.Sprintf("CHAT: %s, MESSAGE: %s", userID, message)
+	return nil
+}
+
 func TestNotifier(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
@@ -37,17 +42,19 @@ func TestNotifier(t *testing.T) {
 	d := time.Date(2000, 12, 15, 17, 8, 00, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 	su, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackName: "test",
-		FullName:  "Test Testtt",
-		ChannelID: channelID,
-		Channel:   "chanName",
+		SlackUserID: "userID1",
+		SlackName:   "test",
+		FullName:    "Test Testtt",
+		ChannelID:   channelID,
+		Channel:     "chanName",
 	})
 	assert.NoError(t, err)
 	su2, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackName: "shmest",
-		FullName:  "Test Testtt",
-		ChannelID: channelID,
-		Channel:   "chanName",
+		SlackUserID: "userID2",
+		SlackName:   "shmest",
+		FullName:    "Test Testtt",
+		ChannelID:   channelID,
+		Channel:     "chanName",
 	})
 	assert.NoError(t, err)
 
