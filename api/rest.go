@@ -103,12 +103,22 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	slackUserID := strings.Replace(result[0], "<@", "", -1)
 	userName := strings.Replace(result[1], ">", "", -1)
 
-	_, err := r.db.CreateStandupUser(model.StandupUser{
-		SlackUserID: slackUserID,
-		SlackName:   userName,
-		ChannelID:   ca.ChannelID,
-		Channel:     ca.ChannelName,
-	})
+	user, err := r.db.FindStandupUserInChannel(userName, ca.ChannelID)
+	if err != nil {
+		_, err = r.db.CreateStandupUser(model.StandupUser{
+			SlackUserID: slackUserID,
+			SlackName:   userName,
+			ChannelID:   ca.ChannelID,
+			Channel:     ca.ChannelName,
+		})
+		if err != nil {
+			log.Errorf("could not create standup user: %v", err)
+			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
+		}
+	}
+	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
+		return c.String(http.StatusOK, fmt.Sprintf("User already exists!"))
+	}
 	if err != nil {
 		log.Errorf("could not create standup user: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
@@ -118,9 +128,9 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		log.Errorf("could not list standup time: %v", err)
 	}
 	if st.Time == int64(0) {
-		return c.String(http.StatusOK, fmt.Sprintf("<@%s> added, but there is no standup time for this channel", ca.Text))
+		return c.String(http.StatusOK, fmt.Sprintf("<@%s> added, but there is no standup time for this channel", userName))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf("<@%s> added", ca.Text))
+	return c.String(http.StatusOK, fmt.Sprintf("<@%s> added", userName))
 }
 
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
@@ -132,13 +142,14 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	cleanName := strings.TrimLeft(ca.Text, "@")
-	err := r.db.DeleteStandupUserByUsername(cleanName, ca.ChannelID)
+	result := strings.Split(ca.Text, "|")
+	userName := strings.Replace(result[1], ">", "", -1)
+	err := r.db.DeleteStandupUserByUsername(userName, ca.ChannelID)
 	if err != nil {
 		log.Errorf("could not delete standup user: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf("%s deleted", ca.Text))
+	return c.String(http.StatusOK, fmt.Sprintf("<@%s> deleted", userName))
 }
 
 func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
