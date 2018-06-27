@@ -27,7 +27,14 @@ func TestSendMessage(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
-	channel := "AnychannelID"
-	err = s.SendMessage(channel, "yoooo!")
+	s.Run()
+	assert.NoError(t, s.SendMessage("CBAP453GV", "Hey!"))
+}
+
+func TestSendUserMessage(t *testing.T) {
+	c, err := config.Get()
 	assert.NoError(t, err)
+	s, err := NewSlack(c)
+	assert.NoError(t, err)
+	assert.NoError(t, s.SendUserMessage("UB9AE7CL9", "Hey!"))
 }
