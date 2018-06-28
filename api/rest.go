@@ -26,14 +26,15 @@ type REST struct {
 }
 
 const (
-	commandAddUser         = "/comedianadd"
-	commandRemoveUser      = "/comedianremove"
-	commandListUsers       = "/comedianlist"
-	commandAddTime         = "/standuptimeset"
-	commandRemoveTime      = "/standuptimeremove"
-	commandListTime        = "/standuptime"
-	commandReportByProject = "/comedian_report_by_project"
-	commandReportByUser    = "/comedian_report_by_user"
+	commandAddUser                = "/comedianadd"
+	commandRemoveUser             = "/comedianremove"
+	commandListUsers              = "/comedianlist"
+	commandAddTime                = "/standuptimeset"
+	commandRemoveTime             = "/standuptimeremove"
+	commandListTime               = "/standuptime"
+	commandReportByProject        = "/report_by_project"
+	commandReportByUser           = "/report_by_user"
+	commandReportByProjectAndUser = "/report_by_project_and_user"
 )
 
 // NewRESTAPI creates API for Slack commands
@@ -87,6 +88,8 @@ func (r *REST) handleCommands(c echo.Context) error {
 			return r.reportByProject(c, form)
 		case commandReportByUser:
 			return r.reportByUser(c, form)
+		case commandReportByProjectAndUser:
+			return r.reportByProjectAndUser(c, form)
 		default:
 			return c.String(http.StatusNotImplemented, "Not implemented")
 		}
@@ -298,7 +301,6 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 
 func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
-	log.Println(ca)
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		return c.String(http.StatusOK, err.Error())
 	}
@@ -328,6 +330,43 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo)
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	return c.String(http.StatusOK, report)
+}
+
+func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
+	var ca FullSlackForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	log.Println(ca)
+	commandParams := strings.Fields(ca.Text)
+	if len(commandParams) != 4 {
+		return c.String(http.StatusOK, "Wrong number of arguments")
+	}
+	channelID := commandParams[0]
+	userfull := commandParams[1]
+	userName := strings.Replace(userfull, "@", "", -1)
+	log.Println("Did not search for Standup User")
+	user, err := r.db.FindStandupUser(userName)
+	if err != nil {
+		return err
+	}
+	log.Println("Found Standup User")
+	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	dateTo, err := time.Parse("2006-01-02", commandParams[3])
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
 	if err != nil {
 		return c.String(http.StatusOK, err.Error())
 	}

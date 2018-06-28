@@ -14,21 +14,21 @@ import (
 type reportEntry struct {
 	DateFrom     time.Time
 	DateTo       time.Time
-	Standups     []model.Standup ``
+	Standups     []model.Standup
 	NonReporters []model.StandupUser
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
-func StandupReportByProject(db storage.Storage, channelName string, dateFrom, dateTo time.Time) (string, error) {
+func StandupReportByProject(db storage.Storage, channelID string, dateFrom, dateTo time.Time) (string, error) {
 	log.Infof("Making standup report for channel: %q, period: %s - %s",
-		channelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
-	reportEntries, err := getNonReportersForPeriod(db, channelName, dateFrom, dateTo)
+		channelID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+	reportEntries, err := getReportEntriesForPeriodByChannel(db, channelID, dateFrom, dateTo)
 	if err != nil {
 		return "Error!!!", err
 	}
-	report := fmt.Sprintf("Full Standup Report %v:\n\n", channelName)
+	report := fmt.Sprintf("Full Standup Report %v:\n\n", channelID)
 	//log.Println("REPORT ENTRIES!!!", reportEntries)
-	report += printNonReportersToString(reportEntries)
+	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
 
@@ -36,97 +36,32 @@ func StandupReportByProject(db storage.Storage, channelName string, dateFrom, da
 func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
 	log.Infof("Making standup report for channel: %q, period: %s - %s",
 		user, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
-	reportEntries, err := getReportEntriesForPeriod(db, user, dateFrom, dateTo)
+	reportEntries, err := getReportEntriesForPeriodbyUser(db, user, dateFrom, dateTo)
 	if err != nil {
 		return "Error!!!", err
 	}
 	report := fmt.Sprintf("Full Standup Report for user <@%s>:\n\n", user.SlackName)
 	//log.Println("REPORT ENTRIES!!!", reportEntries)
-	report += ReportEntriesToString(reportEntries)
+	report += ReportEntriesByUserToString(reportEntries)
 	return report, nil
 }
 
-func getReportEntriesForPeriod(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
-	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
+// StandupReportByProjectAndUser creates a standup report for a specified period of time
+func StandupReportByProjectAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
+	log.Infof("Making standup report for channel: %q, period: %s - %s",
+		channelID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+	reportEntries, err := getReportEntriesForPeriodByChannelAndUser(db, channelID, user, dateFrom, dateTo)
 	if err != nil {
-		return nil, err
+		return "Error!!!", err
 	}
-
-	reportEntries := make([]reportEntry, 0, numberOfDays)
-	for day := 0; day <= numberOfDays; day++ {
-		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
-		currentDateTo := currentDateFrom.Add(24 * time.Hour)
-
-		standupUser, err := db.FindStandupUser(user.SlackName)
-		if err != nil {
-			return nil, err
-		}
-		log.Println("Standup User", standupUser)
-		createdStandups, err := db.SelectStandupsForPeriod(currentDateFrom, currentDateTo)
-		if err != nil {
-			return nil, err
-		}
-		log.Println("Created Standups", createdStandups)
-		currentDayStandups := make([]model.Standup, 0, 1)
-		currentDayNonReporter := make([]model.StandupUser, 0, 1)
-
-		if standupUser.Created.After(currentDateTo) {
-			log.Println("User is created after current date!")
-			continue
-		}
-		log.Println("Entered standup users loop!")
-		found := false
-		for _, standup := range createdStandups {
-			log.Println("User Slack Name: ", standupUser.SlackName)
-			log.Println("Standup UserName: ", standup.Username)
-			if standupUser.SlackName == standup.Username {
-				found = true
-				currentDayStandups = append(currentDayStandups, standup)
-				break
-			}
-		}
-		if !found {
-			currentDayNonReporter = append(currentDayNonReporter, standupUser)
-		}
-
-		log.Println("Current Day Standups", currentDayStandups)
-		log.Println("Current Day NON reporter", currentDayNonReporter)
-		if len(currentDayNonReporter) > 0 || len(currentDayStandups) > 0 {
-			reportEntries = append(reportEntries,
-				reportEntry{
-					DateFrom:     currentDateFrom,
-					DateTo:       currentDateTo,
-					Standups:     currentDayStandups,
-					NonReporters: currentDayNonReporter})
-		}
-	}
-	return reportEntries, nil
+	report := fmt.Sprintf("Full Standup Report %v:\n\n", channelID)
+	//log.Println("REPORT ENTRIES!!!", reportEntries)
+	report += ReportEntriesForPeriodByChannelToString(reportEntries)
+	return report, nil
 }
 
-//ReportEntriesToString provides reporting entries in selected time period
-func ReportEntriesToString(reportEntries []reportEntry) string {
-	var report string
-	if len(reportEntries) == 0 {
-		return report + "No data for this period"
-	}
-
-	for _, value := range reportEntries {
-		currentDateFrom := value.DateFrom
-		currentDateTo := value.DateTo
-		report += fmt.Sprintf("\n\nReport from %s to %s:\n", currentDateFrom.Format("2006-01-02"),
-			currentDateTo.Format("2006-01-02"))
-		for _, standup := range value.Standups {
-			report += fmt.Sprintf("\nOn project: <#%s>\n%s\n", standup.ChannelID, standup.Comment)
-		}
-		for _, user := range value.NonReporters {
-			report += fmt.Sprintf("\n<@%s>: ignored standup\n", user.SlackName)
-		}
-	}
-
-	return report
-}
-
-func getNonReportersForPeriod(db storage.Storage, channelName string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+//getReportEntriesForPeriodByChannel returns report entries by channel
+func getReportEntriesForPeriodByChannel(db storage.Storage, channelName string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
 	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
 	if err != nil {
 		return nil, err
@@ -186,7 +121,8 @@ func getNonReportersForPeriod(db storage.Storage, channelName string, dateFrom, 
 	return reportEntries, nil
 }
 
-func printNonReportersToString(reportEntries []reportEntry) string {
+//ReportEntriesForPeriodByChannelToString returns report entries by channel in text
+func ReportEntriesForPeriodByChannelToString(reportEntries []reportEntry) string {
 	var report string
 	if len(reportEntries) == 0 {
 		return report + "No data for this period"
@@ -201,6 +137,86 @@ func printNonReportersToString(reportEntries []reportEntry) string {
 			report += fmt.Sprintf("\nStandup from <@%s>:\n%s\n", standup.Username, standup.Comment)
 		}
 		for _, user := range value.NonReporters {
+			report += fmt.Sprintf("\n<@%s> ignored standup! Peace of shit!\n", user.SlackName)
+		}
+	}
+
+	return report
+}
+
+func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
+	if err != nil {
+		return nil, err
+	}
+
+	reportEntries := make([]reportEntry, 0, numberOfDays)
+	for day := 0; day <= numberOfDays; day++ {
+		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
+		currentDateTo := currentDateFrom.Add(24 * time.Hour)
+
+		standupUser, err := db.FindStandupUser(user.SlackName)
+		if err != nil {
+			return nil, err
+		}
+		log.Println("Standup User", standupUser)
+		createdStandups, err := db.SelectStandupsForPeriod(currentDateFrom, currentDateTo)
+		if err != nil {
+			return nil, err
+		}
+		log.Println("Created Standups", createdStandups)
+		currentDayStandups := make([]model.Standup, 0, 1)
+		currentDayNonReporter := make([]model.StandupUser, 0, 1)
+
+		if standupUser.Created.After(currentDateTo) {
+			log.Println("User is created after current date!")
+			continue
+		}
+		log.Println("Entered standup users loop!")
+		found := false
+		for _, standup := range createdStandups {
+			log.Println("User Slack Name: ", standupUser.SlackName)
+			log.Println("Standup UserName: ", standup.Username)
+			if standupUser.SlackName == standup.Username {
+				found = true
+				currentDayStandups = append(currentDayStandups, standup)
+				break
+			}
+		}
+		if !found {
+			currentDayNonReporter = append(currentDayNonReporter, standupUser)
+		}
+
+		log.Println("Current Day Standups", currentDayStandups)
+		log.Println("Current Day NON reporter", currentDayNonReporter)
+		if len(currentDayNonReporter) > 0 || len(currentDayStandups) > 0 {
+			reportEntries = append(reportEntries,
+				reportEntry{
+					DateFrom:     currentDateFrom,
+					DateTo:       currentDateTo,
+					Standups:     currentDayStandups,
+					NonReporters: currentDayNonReporter})
+		}
+	}
+	return reportEntries, nil
+}
+
+//ReportEntriesByUserToString provides reporting entries in selected time period
+func ReportEntriesByUserToString(reportEntries []reportEntry) string {
+	var report string
+	if len(reportEntries) == 0 {
+		return report + "No data for this period"
+	}
+
+	for _, value := range reportEntries {
+		currentDateFrom := value.DateFrom
+		currentDateTo := value.DateTo
+		report += fmt.Sprintf("\n\nReport from %s to %s:\n", currentDateFrom.Format("2006-01-02"),
+			currentDateTo.Format("2006-01-02"))
+		for _, standup := range value.Standups {
+			report += fmt.Sprintf("\nOn project: <#%s>\n%s\n", standup.ChannelID, standup.Comment)
+		}
+		for _, user := range value.NonReporters {
 			report += fmt.Sprintf("\n<@%s>: ignored standup\n", user.SlackName)
 		}
 	}
@@ -208,6 +224,12 @@ func printNonReportersToString(reportEntries []reportEntry) string {
 	return report
 }
 
+//getReportEntriesForPeriodByChannelAndUser returns report entries by channel
+func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelName string, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+	return nil, nil
+}
+
+//setupDays gets dates and returns their differense in days
 func setupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
 	if dateTo.Before(dateFrom) {
 		return time.Now(), 0, errors.New("starting date is bigger than end date")
