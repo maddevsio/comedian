@@ -103,6 +103,7 @@ func getReportEntriesForPeriod(db storage.Storage, user model.StandupUser, dateF
 	return reportEntries, nil
 }
 
+//ReportEntriesToString provides reporting entries in selected time period
 func ReportEntriesToString(reportEntries []reportEntry) string {
 	var report string
 	if len(reportEntries) == 0 {
