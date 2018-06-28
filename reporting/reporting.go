@@ -32,6 +32,24 @@ func StandupReportByProject(db storage.Storage, channelName string, dateFrom, da
 	return report, nil
 }
 
+// StandupReportByUser creates a standup report for a specified period of time
+func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
+	log.Infof("Making standup report for channel: %q, period: %s - %s",
+		user, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+	reportEntries, err := getReportEntriesForPeriod(db, user, dateFrom, dateTo)
+	if err != nil {
+		return "Error!!!", err
+	}
+	report := fmt.Sprintf("Full Standup Report for user <@%s>:\n\n", user.SlackName)
+	//log.Println("REPORT ENTRIES!!!", reportEntries)
+	report += printNonReportersToString(reportEntries)
+	return report, nil
+}
+
+func getReportEntriesForPeriod(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+	return nil, nil
+}
+
 func getNonReportersForPeriod(db storage.Storage, channelName string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
 	if dateTo.Before(dateFrom) {
 		return nil, errors.New("starting date is bigger than end date")

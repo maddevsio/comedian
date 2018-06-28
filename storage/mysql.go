@@ -142,7 +142,14 @@ func (m *MySQL) FindStandupUserInChannel(username, channelID string) (model.Stan
 	return u, err
 }
 
-// ListStandupUsers returns array of standup entries from database
+//FindStandupUser finds user in
+func (m *MySQL) FindStandupUser(username string) (model.StandupUser, error) {
+	var u model.StandupUser
+	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=?", username)
+	return u, err
+}
+
+// ListAllStandupUsers returns array of standup entries from database
 func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users`")

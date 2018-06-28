@@ -33,6 +33,7 @@ const (
 	commandRemoveTime      = "/standuptimeremove"
 	commandListTime        = "/standuptime"
 	commandReportByProject = "/comedian_report_by_project"
+	commandReportByUser    = "/comedian_report_by_user"
 )
 
 // NewRESTAPI creates API for Slack commands
@@ -84,6 +85,8 @@ func (r *REST) handleCommands(c echo.Context) error {
 			return r.listTime(c, form)
 		case commandReportByProject:
 			return r.reportByProject(c, form)
+		case commandReportByUser:
+			return r.reportByUser(c, form)
 		default:
 			return c.String(http.StatusNotImplemented, "Not implemented")
 		}
@@ -287,6 +290,44 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	return c.String(http.StatusOK, report)
+}
+
+func (r *REST) reportByUser(c echo.Context, f url.Values) error {
+	var ca FullSlackForm
+	log.Println(ca)
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	log.Println(ca)
+	commandParams := strings.Fields(ca.Text)
+	if len(commandParams) != 3 {
+		return c.String(http.StatusOK, "Wrong number of arguments")
+	}
+	userfull := commandParams[0]
+	result := strings.Split(userfull, "|")
+	userName := strings.Replace(result[1], ">", "", -1)
+	log.Println("Did not search for Standup User")
+	user, err := r.db.FindStandupUser(userName)
+	if err != nil {
+		return err
+	}
+	log.Println("Found Standup User")
+	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	dateTo, err := time.Parse("2006-01-02", commandParams[2])
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo)
 	if err != nil {
 		return c.String(http.StatusOK, err.Error())
 	}
