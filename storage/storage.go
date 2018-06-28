@@ -23,6 +23,8 @@ type (
 		SelectStandupByChannelNameForPeriod(string, time.Time, time.Time) ([]model.Standup, error)
 		// SelectStandupByChannelID selects standup entry by channel ID and time period from database
 		SelectStandupByChannelIDForPeriod(string, time.Time, time.Time) ([]model.Standup, error)
+		// SelectStandupsForPeriod selects standup entrys for time period from database
+		SelectStandupsForPeriod(dateStart, dateEnd time.Time) ([]model.Standup, error)
 		// DeleteStandup deletes standup entry from database
 		DeleteStandup(int64) error
 		// ListStandups returns array of standup entries from database

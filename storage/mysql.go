@@ -113,6 +113,14 @@ func (m *MySQL) ListStandups() ([]model.Standup, error) {
 	return items, err
 }
 
+// SelectStandupsForPeriod selects standup entrys for time period from database
+func (m *MySQL) SelectStandupsForPeriod(dateStart, dateEnd time.Time) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE created BETWEEN ? AND ?",
+		dateStart, dateEnd)
+	return items, err
+}
+
 // DeleteStandup deletes standup entry from database
 func (m *MySQL) DeleteStandup(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `standup` WHERE id=?", id)
