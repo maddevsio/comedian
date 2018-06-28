@@ -41,7 +41,6 @@ func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, d
 		return "Error!!!", err
 	}
 	report := fmt.Sprintf("Full Standup Report for user <@%s>:\n\n", user.SlackName)
-	//log.Println("REPORT ENTRIES!!!", reportEntries)
 	report += ReportEntriesByUserToString(reportEntries)
 	return report, nil
 }
@@ -54,7 +53,7 @@ func StandupReportByProjectAndUser(db storage.Storage, channelID string, user mo
 	if err != nil {
 		return "Error!!!", err
 	}
-	report := fmt.Sprintf("Standup Report For Project: %v, limited to <@%s>\n\n", channelID, user.SlackName)
+	report := fmt.Sprintf("Standup Report Project: %v, User: <@%s>\n\n", channelID, user.SlackName)
 	//log.Println("REPORT ENTRIES!!!", reportEntries)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
@@ -172,7 +171,6 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 			log.Println("User is created after current date!")
 			continue
 		}
-		log.Println("Entered standup users loop!")
 		found := false
 		for _, standup := range createdStandups {
 			log.Println("User Slack Name: ", standupUser.SlackName)
@@ -254,13 +252,13 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 		currentDayStandups := make([]model.Standup, 0, 1)
 		currentDayNonReporters := make([]model.StandupUser, 0, 1)
 
-		if user.Created.After(currentDateTo) {
-			log.Println("User is created after current date to!!!")
+		if standupUser.Created.After(currentDateTo) {
+			log.Println("User is created after current date!!!")
 			continue
 		}
 		found := false
 		for _, standup := range createdStandups {
-			log.Println("User Slack Name: ", user.SlackName)
+			log.Println("User Slack Name: ", standupUser.SlackName)
 			log.Println("Standup UserName: ", standup.Username)
 			if user.SlackName == standup.Username {
 				found = true
@@ -269,7 +267,7 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 			}
 		}
 		if !found {
-			currentDayNonReporters = append(currentDayNonReporters, user)
+			currentDayNonReporters = append(currentDayNonReporters, standupUser)
 		}
 		log.Println("Current Day Standups", currentDayStandups)
 		log.Println("Current Day NON reporters", currentDayNonReporters)

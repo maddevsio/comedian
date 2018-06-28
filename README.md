@@ -88,10 +88,10 @@ Run the script:
 - [x] Remind all users in channel to write standup with user's tag
 - [x] duplicate the message about the standup in 30 minutes with tagging users who did not write standup
 - [x] send a message to the manager at 5 pm that someone did not write the standup 
-- [ ] Standup reports
-	- [ ] all standups key username
+- [x] Standup reports
+	- [x] all standups key username
 	- [x] all standups key project
-	- [ ] all standups key username+project
+	- [x] all standups key username+project
 - [x] Configure superusers with config file or env variables
 - [x] Get all users in slack's organization and sync it with users in database
 - [x] Make research: is it possible to show the certain commands to the certain user
