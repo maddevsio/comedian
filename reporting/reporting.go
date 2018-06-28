@@ -26,8 +26,9 @@ func StandupReportByProject(db storage.Storage, channelName string, dateFrom, da
 	if err != nil {
 		return "Error!!!", err
 	}
-	log.Println("REPORT ENTRIES!!!", reportEntries)
-	report := printNonReportersToString(reportEntries)
+	report := fmt.Sprintf("Full Standup Report %v:\n\n", channelName)
+	//log.Println("REPORT ENTRIES!!!", reportEntries)
+	report += printNonReportersToString(reportEntries)
 	return report, nil
 }
 
@@ -103,7 +104,7 @@ func getNonReportersForPeriod(db storage.Storage, channelName string, dateFrom, 
 }
 
 func printNonReportersToString(reportEntries []reportEntry) string {
-	report := "Full Standup Report:\n\n"
+	var report string
 	if len(reportEntries) == 0 {
 		return report + "No one ignored standups in this period"
 	}
