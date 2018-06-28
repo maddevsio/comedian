@@ -150,6 +150,13 @@ func (m *MySQL) FindStandupUserInChannel(username, channelID string) (model.Stan
 	return u, err
 }
 
+//FindStandupUserInChannelName finds user in channel
+func (m *MySQL) FindStandupUserInChannelName(username, channel string) (model.StandupUser, error) {
+	var u model.StandupUser
+	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=? AND channel=?", username, channel)
+	return u, err
+}
+
 //FindStandupUser finds user in
 func (m *MySQL) FindStandupUser(username string) (model.StandupUser, error) {
 	var u model.StandupUser

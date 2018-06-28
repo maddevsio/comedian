@@ -54,21 +54,21 @@ func StandupReportByProjectAndUser(db storage.Storage, channelID string, user mo
 	if err != nil {
 		return "Error!!!", err
 	}
-	report := fmt.Sprintf("Full Standup Report %v:\n\n", channelID)
+	report := fmt.Sprintf("Standup Report For Project: %v, limited to <@%s>\n\n", channelID, user.SlackName)
 	//log.Println("REPORT ENTRIES!!!", reportEntries)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
 
 //getReportEntriesForPeriodByChannel returns report entries by channel
-func getReportEntriesForPeriodByChannel(db storage.Storage, channelName string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
 	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
 	if err != nil {
 		return nil, err
 	}
-	channel := strings.Replace(channelName, "#", "", -1)
+	channel := strings.Replace(channelID, "#", "", -1)
 	log.Println("Number of days", numberOfDays)
-	log.Println("ChannelName:", channel)
+	log.Println("ChannelID:", channel)
 
 	reportEntries := make([]reportEntry, 0, numberOfDays)
 	for day := 0; day <= numberOfDays; day++ {
@@ -137,7 +137,7 @@ func ReportEntriesForPeriodByChannelToString(reportEntries []reportEntry) string
 			report += fmt.Sprintf("\nStandup from <@%s>:\n%s\n", standup.Username, standup.Comment)
 		}
 		for _, user := range value.NonReporters {
-			report += fmt.Sprintf("\n<@%s> ignored standup! Peace of shit!\n", user.SlackName)
+			report += fmt.Sprintf("\n<@%s> ignored standup!\n", user.SlackName)
 		}
 	}
 
@@ -225,8 +225,64 @@ func ReportEntriesByUserToString(reportEntries []reportEntry) string {
 }
 
 //getReportEntriesForPeriodByChannelAndUser returns report entries by channel
-func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelName string, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
-	return nil, nil
+func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
+	if err != nil {
+		return nil, err
+	}
+	channel := strings.Replace(channelID, "#", "", -1)
+	log.Println("Number of days", numberOfDays)
+	log.Println("ChannelID:", channel)
+
+	reportEntries := make([]reportEntry, 0, numberOfDays)
+	for day := 0; day <= numberOfDays; day++ {
+		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
+		currentDateTo := currentDateFrom.Add(24 * time.Hour)
+
+		log.Println("Standup User Slack Name:", user.SlackName)
+		log.Println("ChannelID:", channel)
+		standupUser, err := db.FindStandupUserInChannelName(user.SlackName, channel)
+		if err != nil {
+			return nil, err
+		}
+		log.Println("Standup Users", standupUser)
+		createdStandups, err := db.SelectStandupByChannelNameForPeriod(channel, currentDateFrom, currentDateTo)
+		if err != nil {
+			return nil, err
+		}
+		log.Println("Created Standups", createdStandups)
+		currentDayStandups := make([]model.Standup, 0, 1)
+		currentDayNonReporters := make([]model.StandupUser, 0, 1)
+
+		if user.Created.After(currentDateTo) {
+			log.Println("User is created after current date to!!!")
+			continue
+		}
+		found := false
+		for _, standup := range createdStandups {
+			log.Println("User Slack Name: ", user.SlackName)
+			log.Println("Standup UserName: ", standup.Username)
+			if user.SlackName == standup.Username {
+				found = true
+				currentDayStandups = append(currentDayStandups, standup)
+				break
+			}
+		}
+		if !found {
+			currentDayNonReporters = append(currentDayNonReporters, user)
+		}
+		log.Println("Current Day Standups", currentDayStandups)
+		log.Println("Current Day NON reporters", currentDayNonReporters)
+		if len(currentDayNonReporters) > 0 || len(currentDayStandups) > 0 {
+			reportEntries = append(reportEntries,
+				reportEntry{
+					DateFrom:     currentDateFrom,
+					DateTo:       currentDateTo,
+					Standups:     currentDayStandups,
+					NonReporters: currentDayNonReporters})
+		}
+	}
+	return reportEntries, nil
 }
 
 //setupDays gets dates and returns their differense in days

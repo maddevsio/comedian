@@ -35,6 +35,8 @@ type (
 		FindStandupUser(username string) (model.StandupUser, error)
 		//FindStandupUserInChannel finds standup user in channel
 		FindStandupUserInChannel(string, string) (model.StandupUser, error)
+		//FindStandupUserInChannelName finds standup user in channel
+		FindStandupUserInChannelName(string, string) (model.StandupUser, error)
 		// DeleteStandupUser deletes standup_users entry from database
 		DeleteStandupUserByUsername(string, string) error
 		// ListStandupUsersByChannelID returns array of standupUser entries from database
