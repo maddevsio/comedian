@@ -108,7 +108,6 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 				Channel:    channelName.Name,
 				UsernameID: msg.Msg.User,
 				Username:   userName.Name,
-				FullName:   fmt.Sprintf("%s %s", userName.Profile.FirstName, userName.Profile.LastName),
 				Comment:    cleanMsg,
 				MessageTS:  msg.Msg.Timestamp,
 			})
@@ -200,7 +199,6 @@ func (s *Slack) GetAllUsersToDB() error {
 			s.db.CreateStandupUser(model.StandupUser{
 				SlackUserID: user.ID,
 				SlackName:   user.Name,
-				FullName:    user.RealName,
 				ChannelID:   channelID,
 				Channel:     channelName,
 			})

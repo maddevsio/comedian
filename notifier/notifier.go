@@ -25,7 +25,7 @@ type Notifier struct {
 func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
-		return nil, err
+		log.Errorf("ERROR: %s", err.Error())
 	}
 	return &Notifier{Chat: chat, DB: conn, CheckInterval: c.NotifierCheckInterval}, nil
 }
@@ -36,12 +36,12 @@ func (n *Notifier) Start(c config.Config) error {
 
 	reportTimeParsed, err := time.Parse("15:04", c.ReportTime)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("ERROR: %s", err.Error())
 	}
 	fmt.Println("REPORT TIME PARSED", reportTimeParsed)
 	config, err := config.Get()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("ERROR: %s", err.Error())
 	}
 	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, config, n.DB, reportTimeParsed)
 	gocron.Every(n.CheckInterval).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
@@ -56,45 +56,43 @@ func (n *Notifier) Start(c config.Config) error {
 func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 	standupTimes, err := db.ListAllStandupTime()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("ERROR: %s", err.Error())
 	}
 	for _, standupTime := range standupTimes {
 		channelID := standupTime.ChannelID
 		standupTime := time.Unix(standupTime.Time, 0)
-
-		log.Printf("STANDUP TIME FOR CHANNEL: %s, IS: %v\n", channelID, standupTime)
-
 		currTime := time.Now()
 		if standupTime.Hour() == currTime.Hour() && standupTime.Minute() == currTime.Minute() {
 			notifyStandupStart(chat, db, channelID)
-			notifyStandupers(chat, db, channelID)
+			directRemindStandupers(chat, db, channelID)
 		}
-		pauseTime := time.Minute * 1 //repeats after n minutes
-		repeatCount := 1             //repeat n times
-		for i := 1; i <= repeatCount; i++ {
-			notifyTime := standupTime.Add(pauseTime * time.Duration(i))
-			if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
-				//periodic remind
-				err = notifyNonReporters(chat, db, channelID)
-				if err != nil {
-					log.Error(err)
+		nonReporters, err := getNonReporters(chat, db, channelID)
+		if err != nil {
+			log.Errorf("ERROR: %s", err.Error())
+		}
+		if len(nonReporters) > 0 {
+			pauseTime := time.Minute * 1 //repeats after n minutes
+			repeatCount := 5             //repeat n times
+			for i := 1; i <= repeatCount; i++ {
+				notifyTime := standupTime.Add(pauseTime * time.Duration(i))
+				if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
+					//periodic reminder for non reporters!
+					chat.SendMessage(channelID, fmt.Sprintf("In this channel not all standupers wrote standup today, shame on you: %v.", strings.Join(nonReporters, ", ")))
 				}
 			}
 		}
+
 	}
 }
 
 // managerStandupReport reminds manager about missing or completed standups from channels
 func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, reportTimeParsed time.Time) {
-
-	log.Printf("MANAGER CHANNEL: %s, REPORTING TIME: %v\n", c.DirectManagerChannelID, reportTimeParsed)
 	currTime := time.Now()
-	log.Printf("REPORT TIME H: %v, CURRENT TIME H: %v, REPORT TIME M: %v, CURRENT TIME M %v\n", reportTimeParsed.Hour(), currTime.Hour(), reportTimeParsed.Minute(), currTime.Minute())
 	if reportTimeParsed.Hour() == currTime.Hour() && reportTimeParsed.Minute() == currTime.Minute() {
 		// selects all users that have to do standup
 		standupUsers, err := db.ListAllStandupUsers()
 		if err != nil {
-			log.Error(err)
+			log.Errorf("ERROR: %s", err.Error())
 		}
 
 		// list usernames
@@ -118,13 +116,11 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 				standupChannelsList = append(standupChannelsList, channel)
 			}
 		}
-		log.Printf("STANDUP CHANNELS: %v\n", strings.Join(standupChannelsList, ", "))
-
 		// for each unique channel, create a separate msg report to manager
 		for _, channel := range standupChannelsList {
 			userStandupRaw, err := db.SelectStandupsByChannelID(channel)
 			if err != nil {
-				log.Error(err)
+				log.Errorf("ERROR: %s", err.Error())
 			}
 			var usersWhoCreatedStandup []string
 			for _, userStandup := range userStandupRaw {
@@ -167,28 +163,29 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 
 // notifyStandupStart reminds users about upcoming standups
 func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
-	standupUsers, err := db.ListStandupUsersByChannelID(channelID)
-	if err != nil {
-		log.Error(err)
-	}
-	var list []string
-	for _, standupUser := range standupUsers {
-		user := standupUser.SlackName
-		list = append(list, "<@"+user+">")
-	}
-
-	err = chat.SendMessage(channelID,
-		fmt.Sprintf("Hey! We are still waiting standup from you: %s", strings.Join(list, ", ")))
+	list, err := getNonReporters(chat, db, channelID)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
 	}
+	if len(list) > 0 {
+		err = chat.SendMessage(channelID,
+			fmt.Sprintf("Hey! We are still waiting standup for today from you: %s", strings.Join(list, ", ")))
+		if err != nil {
+			log.Errorf("ERROR: %s", err.Error())
+		}
+	} else {
+		err = chat.SendMessage(channelID, "Congradulations! Everybody wrote their standups today!")
+		if err != nil {
+			log.Errorf("ERROR: %s", err.Error())
+		}
+	}
+
 }
 
-// notifyNonReporters reminds users who missed deadlines about upcoming standups
-func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) error {
+func getNonReporters(chat chat.Chat, db storage.Storage, channelID string) ([]string, error) {
 	standupUsersRaw, err := db.ListStandupUsersByChannelID(channelID)
 	if err != nil {
-		return err
+		log.Errorf("ERROR: %s", err.Error())
 	}
 	var standupUsersList []string
 	for _, standupUser := range standupUsersRaw {
@@ -201,7 +198,7 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 	userStandupRaw, err := db.SelectStandupsByChannelIDForPeriod(channelID, dateStart, dateEnd)
 
 	if err != nil {
-		return err
+		log.Errorf("ERROR: %s", err.Error())
 	}
 
 	var usersWhoCreatedStandup []string
@@ -222,19 +219,13 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 			nonReporters = append(nonReporters, "<@"+user+">")
 		}
 	}
-	nonReportersCheck := len(nonReporters)
-	if nonReportersCheck == 0 {
-		return chat.SendMessage(channelID, "Hey, in this channel all standupers have written standup today! Congradulations!")
-	}
-	return chat.SendMessage(channelID,
-		fmt.Sprintf("In this channel not all standupers wrote standup today, shame on you: %v.", strings.Join(nonReporters, ", ")))
+	return nonReporters, nil
 }
 
-func notifyStandupers(chat chat.Chat, db storage.Storage, channelID string) error {
+func directRemindStandupers(chat chat.Chat, db storage.Storage, channelID string) error {
 	standupUsers, err := db.ListStandupUsersByChannelID(channelID)
-	log.Printf("Standup users: %v ", standupUsers)
 	if err != nil {
-		return err
+		log.Errorf("ERROR: %s", err.Error())
 	}
 	currentTime := time.Now()
 	dateStart := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
@@ -242,15 +233,13 @@ func notifyStandupers(chat chat.Chat, db storage.Storage, channelID string) erro
 
 	standups, err := db.SelectStandupsByChannelIDForPeriod(channelID, dateStart, dateEnd)
 	if err != nil {
-		return err
+		log.Errorf("ERROR: %s", err.Error())
 	}
-	log.Printf("Standups: %v ", standups)
 	var usersWhoCreatedStandup []string
 	for _, userStandup := range standups {
 		user := userStandup.Username
 		usersWhoCreatedStandup = append(usersWhoCreatedStandup, user)
 	}
-	log.Printf("Users who created standups: %v ", usersWhoCreatedStandup)
 	var nonReporters []model.StandupUser
 	for _, user := range standupUsers {
 		found := false
@@ -264,9 +253,7 @@ func notifyStandupers(chat chat.Chat, db storage.Storage, channelID string) erro
 			nonReporters = append(nonReporters, user)
 		}
 	}
-	log.Printf("NonReporters: %v ", nonReporters)
 	for _, motherFucker := range nonReporters {
-		log.Println(motherFucker.SlackUserID)
 		chat.SendUserMessage(motherFucker.SlackUserID, fmt.Sprintf("Hello, <@%s>! You missed the standup deadline in <#%s> channel. Please, write you standup ASAP!", motherFucker.SlackName, motherFucker.ChannelID))
 	}
 	return nil
