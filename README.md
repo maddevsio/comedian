@@ -102,7 +102,6 @@ Run the script:
 - [ ] NLP based configuration for standup time adding
 - [x] Create a docker-compose.yml
 - [ ] Build HTTP API for reports with oAuth authentication
-- [ ] Create a simple report interface with React.js
 
 
 ### API
