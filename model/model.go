@@ -12,7 +12,6 @@ type (
 		Modified   time.Time `db:"modified" json:"modified"`
 		UsernameID string    `db:"username_id" json:"userNameId"`
 		Username   string    `db:"username" json:"userName"`
-		FullName   string    `db:"full_name" json:"fullName"`
 		Comment    string    `db:"comment" json:"comment"`
 		MessageTS  string    `db:"message_ts" json:"message_ts"`
 	}
@@ -24,7 +23,6 @@ type (
 		Modified    time.Time `db:"modified" json:"modified"`
 		SlackUserID string    `db:"slack_user_id" json:"slack_user_id"`
 		SlackName   string    `db:"username" json:"username"`
-		FullName    string    `db:"full_name" json:"fullName"`
 		Channel     string    `db:"channel" json:"channel"`
 		ChannelID   string    `db:"channel_id" json:"channelId"`
 	}
