@@ -17,12 +17,12 @@ type (
 		SelectStandup(int64) (model.Standup, error)
 		// SelectStandupByMessageTS selects standup entry by messageTS from database
 		SelectStandupByMessageTS(string) (model.Standup, error)
-		// SelectStandupByChannelID selects standup entry by channel ID from database
-		SelectStandupByChannelID(string) ([]model.Standup, error)
-		// SelectStandupByChannelID selects standup entry by channel name and time period from database
+		// SelectStandupsByChannelID selects standup entry by channel ID from database
+		SelectStandupsByChannelID(string) ([]model.Standup, error)
+		// SelectStandupsByChannelID selects standup entry by channel name and time period from database
 		SelectStandupByChannelNameForPeriod(string, time.Time, time.Time) ([]model.Standup, error)
-		// SelectStandupByChannelID selects standup entry by channel ID and time period from database
-		SelectStandupByChannelIDForPeriod(string, time.Time, time.Time) ([]model.Standup, error)
+		// SelectStandupsByChannelID selects standup entry by channel ID and time period from database
+		SelectStandupsByChannelIDForPeriod(string, time.Time, time.Time) ([]model.Standup, error)
 		// SelectStandupsForPeriod selects standup entrys for time period from database
 		SelectStandupsForPeriod(dateStart, dateEnd time.Time) ([]model.Standup, error)
 		// DeleteStandup deletes standup entry from database

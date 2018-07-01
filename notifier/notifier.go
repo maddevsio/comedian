@@ -122,7 +122,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 
 		// for each unique channel, create a separate msg report to manager
 		for _, channel := range standupChannelsList {
-			userStandupRaw, err := db.SelectStandupByChannelID(channel)
+			userStandupRaw, err := db.SelectStandupsByChannelID(channel)
 			if err != nil {
 				log.Error(err)
 			}
@@ -198,7 +198,7 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 	currentTime := time.Now()
 	dateStart := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
 	dateEnd := dateStart.Add(time.Hour * 24)
-	userStandupRaw, err := db.SelectStandupByChannelIDForPeriod(channelID, dateStart, dateEnd)
+	userStandupRaw, err := db.SelectStandupsByChannelIDForPeriod(channelID, dateStart, dateEnd)
 
 	if err != nil {
 		return err
@@ -240,7 +240,7 @@ func notifyStandupers(chat chat.Chat, db storage.Storage, channelID string) erro
 	dateStart := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
 	dateEnd := dateStart.Add(time.Hour * 24)
 
-	standups, err := db.SelectStandupByChannelIDForPeriod(channelID, dateStart, dateEnd)
+	standups, err := db.SelectStandupsByChannelIDForPeriod(channelID, dateStart, dateEnd)
 	if err != nil {
 		return err
 	}
