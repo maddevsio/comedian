@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"strings"
 	"time"
@@ -193,18 +194,18 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	t, err := time.Parse("15:04", ca.Text)
-	if err != nil {
-		log.Error(err.Error())
-		return c.String(http.StatusBadRequest, fmt.Sprintf("could not convert time: %v", err))
-	}
-	timeInt := t.Unix()
+	result := strings.Split(ca.Text, ":")
+	hours, _ := strconv.Atoi(result[0])
+	munites, _ := strconv.Atoi(result[1])
+	currentTime := time.Now()
+	timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), hours, munites, 0, 0, time.Local).Unix()
 
-	_, err = r.db.CreateStandupTime(model.StandupTime{
+	standupTime, err := r.db.CreateStandupTime(model.StandupTime{
 		ChannelID: ca.ChannelID,
 		Channel:   ca.ChannelName,
 		Time:      timeInt,
 	})
+	log.Println("Standup time set for :", standupTime.Time)
 	if err != nil {
 		log.Errorf("could not create standup time: %v", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err))
@@ -214,14 +215,10 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		log.Errorf("could not list standup users: %v", err)
 	}
 	if len(st) == 0 {
-		return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC) added, but there is no standup "+
-			"users for this channel", ca.Text))
+		return c.String(http.StatusOK, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel>", standupTime.Time))
 	}
 
-	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC) added",
-		time.Unix(timeInt, 0).In(time.UTC).Format("15:04")))
-
-	// need to add fmt.Sprintf("<!date^%v^Standup time set at {time_secs}|Standup time set at 15:39:42 >", time.Now().Unix())
+	return c.String(http.StatusOK, fmt.Sprintf("<!date^%v^Standup time set at {time}|Standup time set at 12:00>", standupTime.Time))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
