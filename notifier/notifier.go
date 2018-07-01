@@ -69,8 +69,8 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 			notifyStandupStart(chat, db, channelID)
 			notifyStandupers(chat, db, channelID)
 		}
-		pauseTime := time.Minute * 5 //repeats after n minutes
-		repeatCount := 3             //repeat n times
+		pauseTime := time.Minute * 1 //repeats after n minutes
+		repeatCount := 1             //repeat n times
 		for i := 1; i <= repeatCount; i++ {
 			notifyTime := standupTime.Add(pauseTime * time.Duration(i))
 			if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
@@ -224,7 +224,7 @@ func notifyNonReporters(chat chat.Chat, db storage.Storage, channelID string) er
 	}
 	nonReportersCheck := len(nonReporters)
 	if nonReportersCheck == 0 {
-		return chat.SendMessage(channelID, "Hey, in this channel all standupers have written standup today")
+		return chat.SendMessage(channelID, "Hey, in this channel all standupers have written standup today! Congradulations!")
 	}
 	return chat.SendMessage(channelID,
 		fmt.Sprintf("In this channel not all standupers wrote standup today, shame on you: %v.", strings.Join(nonReporters, ", ")))
