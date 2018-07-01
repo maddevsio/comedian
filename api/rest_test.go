@@ -28,9 +28,9 @@ var (
 	stubCommandDelTime                    = "command=/standuptimeremove&channel_id=chanid&channel_name=channame"
 	stubCommandDelTimeNoChanID            = "command=/standuptimeremove&channel_id=&channel_name=channame"
 	stubCommandDelTimeNoChanName          = "command=/standuptimeremove&channel_id=chanid&channel_name="
-	stubCommandReportByProjectEmptyText   = "command=/comedian_report_by_project&channel_id=chanid&text="
-	stubCommandReportByProjectEmptyChanID = "command=/comedian_report_by_project&channel_id=&text=2018-06-25 2018-06-26"
-	stubCommandReportByProject            = "command=/comedian_report_by_project&channel_id=chanid&text="
+	stubCommandReportByProjectEmptyText   = "command=/report_by_project&channel_id=chanid&text="
+	stubCommandReportByProjectEmptyChanID = "command=/report_by_project&channel_id=&text=2018-06-25 2018-06-26"
+	stubCommandReportByProject            = "command=/report_by_project&channel_id=chanid&text="
 )
 
 func TestHandleCommands(t *testing.T) {
@@ -263,7 +263,6 @@ func TestHandleCommands(t *testing.T) {
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
 	rec = httptest.NewRecorder()
 	context = e.NewContext(req, rec)
-
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "`text` cannot be empty", rec.Body.String())

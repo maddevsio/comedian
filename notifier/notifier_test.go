@@ -29,6 +29,10 @@ func (c *ChatStub) SendUserMessage(userID, message string) error {
 	return nil
 }
 
+func (c *ChatStub) GetAllUsersToDB() error {
+	return nil
+}
+
 func TestNotifier(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
