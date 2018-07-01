@@ -6,4 +6,4 @@ ALTER TABLE `standup_users` ADD (
 
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
-ALTER TABLE `standup_users` DROP `channel`, DROP `channel_id`;
+ALTER TABLE `standup_users` DROP `slack_user_id`;
