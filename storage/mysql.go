@@ -130,7 +130,7 @@ func (m *MySQL) DeleteStandup(id int64) error {
 // CreateStandupUser creates comedian entry in database
 func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error) {
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel) VALUES (?, ?, ?, ?, ?, ?)",
 		now().UTC(), now().UTC(), c.SlackUserID, c.SlackName, c.ChannelID, c.Channel)
 	if err != nil {
 		return c, err

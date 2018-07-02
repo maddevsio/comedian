@@ -96,7 +96,7 @@ Run the script:
 - [x] Get all users in slack's organization and sync it with users in database
 - [x] Make research: is it possible to show the certain commands to the certain user
 - [ ] Setup reminders when bot starts
-- [ ] Setup reminders when we add new reminder on a channel
+- [x] Setup reminders when we add new reminder on a channel
 - [ ] Text analysis engine to get standup messages without mentioning bot user
 - [ ] Get task worklogs from JIRA
 - [ ] NLP based configuration for standup time adding

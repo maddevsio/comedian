@@ -15,20 +15,25 @@ func TestCRUDLStandup(t *testing.T) {
 	assert.NoError(t, err)
 	db, err := NewMySQL(c)
 	assert.NoError(t, err)
+	assert.NoError(t, err)
 	s, err := db.CreateStandup(model.Standup{
+		Channel:   "First Channel",
 		ChannelID: "QWERTY123",
 		Comment:   "work hard",
 		Username:  "user",
 		MessageTS: "qweasdzxc",
 	})
+	assert.NoError(t, err)
+	assert.Equal(t, s.Comment, "work hard")
 	s2, err := db.CreateStandup(model.Standup{
+		Channel:   "Second Channel",
 		ChannelID: "ASDF098",
 		Comment:   "stubComment",
 		Username:  "illidan",
 		MessageTS: "you are not prepared",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, s.Comment, "work hard")
+	assert.Equal(t, s2.Comment, "stubComment")
 	upd := model.StandupEditHistory{
 		Created:     s.Modified,
 		StandupID:   s.ID,
@@ -70,9 +75,13 @@ func TestCRUDLStandup(t *testing.T) {
 	dateTo := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), timeNow.Minute(), timeNow.Second(), 0, time.UTC)
 	dateFrom := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 0, 0, 0, 0, time.UTC)
 
+	SelectStandupsForPeriod, err := db.SelectStandupsForPeriod(dateFrom, dateTo)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(SelectStandupsForPeriod))
+
 	SelectStandupByChannelNameForPeriod, err := db.SelectStandupByChannelNameForPeriod(s.Channel, dateFrom, dateTo)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(SelectStandupByChannelNameForPeriod))
+	assert.Equal(t, 1, len(SelectStandupByChannelNameForPeriod))
 
 	SelectStandupsByChannelIDForPeriod, err := db.SelectStandupsByChannelIDForPeriod(s.ChannelID, dateFrom, dateTo)
 	assert.NoError(t, err)
@@ -97,61 +106,59 @@ func TestCRUDStandupUser(t *testing.T) {
 	su1, err := db.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID1",
 		SlackName:   "user1",
-		FullName:    "John Doe",
 		ChannelID:   "123qwe",
 		Channel:     "channel1",
 	})
+
 	assert.NoError(t, err)
-	assert.Equal(t, "userID1", su1.SlackUserID)
-	assert.Equal(t, "user1", su1.SlackName)
-	assert.Equal(t, "John Doe", su1.FullName)
-	assert.Equal(t, "123qwe", su1.ChannelID)
+
 	assert.Equal(t, "channel1", su1.Channel)
 
 	su2, err := db.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID2",
 		SlackName:   "user2",
-		FullName:    "Doe John",
 		ChannelID:   "qwe123",
 		Channel:     "channel2",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, "userID2", su2.SlackUserID)
 	assert.Equal(t, "user2", su2.SlackName)
-	assert.Equal(t, "Doe John", su2.FullName)
-	assert.Equal(t, "qwe123", su2.ChannelID)
-	assert.Equal(t, "channel2", su2.Channel)
 
 	su3, err := db.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID3",
 		SlackName:   "user3",
-		FullName:    "John",
 		ChannelID:   "123qwe",
 		Channel:     "channel1",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "userID3", su3.SlackUserID)
-	assert.Equal(t, "user3", su3.SlackName)
-	assert.Equal(t, "John", su3.FullName)
-	assert.Equal(t, "123qwe", su3.ChannelID)
-	assert.Equal(t, "channel1", su3.Channel)
 
-	user, err := db.FindStandupUserInChannel(su1.SlackName, su1.ChannelID)
+	user, err := db.FindStandupUser(su1.SlackName)
+	assert.NoError(t, err)
+	assert.Equal(t, "user1", user.SlackName)
+
+	user, err = db.FindStandupUserInChannel(su1.SlackName, su1.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, "user1", user.SlackName)
 	assert.Equal(t, "123qwe", user.ChannelID)
+
 	user, err = db.FindStandupUserInChannel(su2.SlackName, su1.ChannelID)
+	assert.Error(t, err)
+
+	user, err = db.FindStandupUserInChannelName(su2.SlackName, su1.Channel)
 	assert.Error(t, err)
 
 	users, err := db.ListStandupUsersByChannelID(su1.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, users[0].SlackName, su1.SlackName)
+
 	users, err = db.ListAllStandupUsers()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(users))
+
 	users, err = db.ListStandupUsersByChannelID(su1.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(users))
+
 	users, err = db.ListStandupUsersByChannelName(su2.Channel)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(users))
