@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type (
 	// Standup model used for serialization/deserialization stored standups
@@ -44,3 +47,38 @@ type (
 		StandupText string    `db:"standuptext" json:"standuptext"`
 	}
 )
+
+// Validate validates Standup struct
+func (c Standup) Validate() error {
+	if c.Channel == "" && c.ChannelID == "" {
+		return errors.New("Channel cannot be empty")
+	}
+	if c.Comment == "" {
+		return errors.New("Standup cannot be empty")
+	}
+	return nil
+}
+
+// Validate validates StandupUser struct
+func (c StandupUser) Validate() error {
+	if c.SlackName == "" && c.SlackUserID == "" {
+		return errors.New("User cannot be empty")
+	}
+	return nil
+}
+
+// Validate validates StandupTime struct
+func (c StandupTime) Validate() error {
+	if c.Time == 0 {
+		return errors.New("Time cannot be empty")
+	}
+	return nil
+}
+
+// Validate validates StandupTimeHistory struct
+func (c StandupEditHistory) Validate() error {
+	if c.StandupText == "" {
+		return errors.New("Text cannot be empty")
+	}
+	return nil
+}
