@@ -1,8 +1,5 @@
 language: go
 go:
-  - 1.7.x
-  - 1.8.x
-  - 1.9.x
   - master
 
 services:
@@ -20,11 +17,4 @@ script:
   - $HOME/gopath/bin/goveralls  -service=travis-ci
 
 env:
-  - COMEDIAN_DATABASE="comedian:comedian@/comedian?parseTime=true" 
-  - COMEDIAN_HTTP_BIND_ADDR=":8080" 
-  - COMEDIAN_SLACK_TOKEN="hello"
-  - COMEDIAN_NOTIFIER_CHECK_INTERVAL=15
-  - COMEDIAN_MANAGER=manager
-  - COMEDIAN_DIRECT_MANAGER_CHANNEL_ID=someID
-  - COMEDIAN_REPORT_TIME=17:00
-  - COMEDIAN_DEBUG=true
+  - COMEDIAN_DATABASE="comedian:comedian@/comedian?parseTime=true"  COMEDIAN_HTTP_BIND_ADDR=":8080"  COMEDIAN_SLACK_TOKEN="hello" COMEDIAN_NOTIFIER_CHECK_INTERVAL=15 COMEDIAN_MANAGER=manager COMEDIAN_DIRECT_MANAGER_CHANNEL_ID=someID COMEDIAN_REPORT_TIME=17:00 COMEDIAN_DEBUG=true
