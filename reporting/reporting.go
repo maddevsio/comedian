@@ -132,7 +132,7 @@ func ReportEntriesForPeriodByChannelToString(reportEntries []reportEntry) string
 			report += fmt.Sprintf("\nStandup from <@%s>:\n%s\n", standup.Username, standup.Comment)
 		}
 		for _, user := range value.NonReporters {
-			report += fmt.Sprintf("\n<@%s> ignored standup!\n", user.SlackName)
+			report += fmt.Sprintf("\n<@%s>: ignored standup!\n", user.SlackName)
 		}
 	}
 
@@ -219,18 +219,17 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 		log.Errorf("ERROR: %s", err.Error())
 		return nil, err
 	}
-	channel := strings.Replace(channelID, "#", "", -1)
 
 	reportEntries := make([]reportEntry, 0, numberOfDays)
 	for day := 0; day <= numberOfDays; day++ {
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
-		standupUser, err := db.FindStandupUserInChannelName(user.SlackName, channel)
+		standupUser, err := db.FindStandupUserInChannel(user.SlackName, channelID)
 		if err != nil {
 			log.Errorf("ERROR: %s", err.Error())
 			return nil, err
 		}
-		createdStandups, err := db.SelectStandupByChannelNameForPeriod(channel, currentDateFrom, currentDateTo)
+		createdStandups, err := db.SelectStandupsByChannelIDForPeriod(channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			log.Errorf("ERROR: %s", err.Error())
 			return nil, err
@@ -269,12 +268,8 @@ func setupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
 	if dateTo.Before(dateFrom) {
 		return time.Now(), 0, errors.New("starting date is bigger than end date")
 	}
-	if dateFrom.After(time.Now()) {
-		return time.Now(), 0, errors.New("starting date can't be in the future")
-	}
 	if dateTo.After(time.Now()) {
-		log.Info("Report end time was in the future, time range was truncated")
-		dateTo = time.Now()
+		return time.Now(), 0, errors.New("Report end time was in the future, time range was truncated")
 	}
 
 	dateFromRounded := time.Date(dateFrom.Year(), dateFrom.Month(), dateFrom.Day(), 0, 0, 0, 0, time.UTC)
