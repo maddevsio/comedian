@@ -40,72 +40,66 @@ func TestNotifier(t *testing.T) {
 	n, err := NewNotifier(c, ch)
 	assert.NoError(t, err)
 
-	// assert.NoError(t, n.Start(c))
+	standupReminderForChannel(ch, n.DB)
+	assert.NoError(t, err)
+	assert.Equal(t, "test initial", ch.LastMessage) // херня какая-то
 
 	channelID := "QWERTY123"
+
 	d := time.Date(2000, 12, 15, 17, 8, 00, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
+
 	su, err := n.DB.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID1",
-		SlackName:   "test",
-		FullName:    "Test Testtt",
+		SlackName:   "user1",
 		ChannelID:   channelID,
 		Channel:     "chanName",
 	})
 	assert.NoError(t, err)
 	su2, err := n.DB.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID2",
-		SlackName:   "shmest",
-		FullName:    "Test Testtt",
+		SlackName:   "user2",
 		ChannelID:   channelID,
 		Channel:     "chanName",
 	})
 	assert.NoError(t, err)
 
-	_, err = n.DB.CreateStandupTime(model.StandupTime{
-		ChannelID: channelID,
-		Channel:   "chanName",
-		Time:      d.Unix(),
-	})
-	assert.NoError(t, err)
-
 	standupReminderForChannel(ch, n.DB)
-	assert.Equal(t, "test initial", ch.LastMessage)
-	notifyStandupStart(ch, n.DB, channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup from you: "+
-		"<@test>, <@shmest>", ch.LastMessage)
+	assert.NoError(t, err)
+	assert.Equal(t, "test initial", ch.LastMessage) // херня какая-то
+
+	managerStandupReport(ch, c, n.DB, d)
+	assert.NoError(t, err)
+	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
 
 	// add standup for user @test
 	s, err := n.DB.CreateStandup(model.Standup{
 		ChannelID:  channelID,
 		Comment:    "work hard",
-		UsernameID: "QWE345asd",
-		Username:   "test",
+		UsernameID: "userID1",
+		Username:   "user1",
 		MessageTS:  "qweasdzxc",
 	})
 	assert.NoError(t, err)
 
-	notifyNonReporters(ch, n.DB, channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: In this channel not all standupers wrote standup today, "+
-		"shame on you: <@shmest>.", ch.LastMessage)
+	standupReminderForChannel(ch, n.DB)
+	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
 
-	// check that manager report prints @shmest
 	managerStandupReport(ch, c, n.DB, d)
-	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@shmest>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user2>.", ch.LastMessage)
 
-	// add standup for user @shmest
+	// add standup for user @user2
 	s2, err := n.DB.CreateStandup(model.Standup{
 		ChannelID:  channelID,
 		Comment:    "hello world",
-		UsernameID: "QWE345asd",
-		Username:   "shmest",
+		UsernameID: "userID2",
+		Username:   "user2",
 		MessageTS:  "qweasd",
 	})
 	assert.NoError(t, err)
 
-	//nonreporters check
-	notifyNonReporters(ch, n.DB, channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, in this channel all standupers have written standup today", ch.LastMessage)
+	standupReminderForChannel(ch, n.DB)
+	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user2>.", ch.LastMessage)
 
 	managerStandupReport(ch, c, n.DB, d)
 	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
