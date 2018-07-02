@@ -268,7 +268,7 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	suTime, err := r.db.ListStandupTime(ca.ChannelID)
+	standupTime, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
 		if err.Error() == "sql: no rows in result set" {
@@ -277,8 +277,7 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err.Error()))
 		}
 	}
-	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC)",
-		time.Unix(suTime.Time, 0).In(time.UTC).Format("15:04")))
+	return c.String(http.StatusOK, fmt.Sprintf("<!date^%v^Standup time is {time}|Standup time set at 12:00>", standupTime.Time))
 }
 
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
@@ -388,6 +387,9 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	}
 	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
 	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return c.String(http.StatusOK, fmt.Sprintf("This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command"))
+		}
 		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
