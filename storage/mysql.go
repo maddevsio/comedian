@@ -5,6 +5,7 @@ import (
 
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/labstack/gommon/log"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
@@ -29,6 +30,11 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 
 // CreateStandup creates standup entry in database
 func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
+	err := s.Validate()
+	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
+		return s, err
+	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup` (created, modified, username, comment, channel, channel_id, username_id, message_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		now().UTC(), now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.MessageTS,
@@ -46,7 +52,12 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 
 // UpdateStandup updates standup entry in database
 func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
-	_, err := m.conn.Exec(
+	err := s.Validate()
+	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
+		return s, err
+	}
+	_, err = m.conn.Exec(
 		"UPDATE `standup` SET modified=?, username=?, username_id=?, comment=?, channel=?, channel_id=?, message_ts=? WHERE id=?",
 		now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.MessageTS, s.ID,
 	)
@@ -128,19 +139,24 @@ func (m *MySQL) DeleteStandup(id int64) error {
 }
 
 // CreateStandupUser creates comedian entry in database
-func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error) {
+func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error) {
+	err := s.Validate()
+	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
+		return s, err
+	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel) VALUES (?, ?, ?, ?, ?, ?)",
-		now().UTC(), now().UTC(), c.SlackUserID, c.SlackName, c.ChannelID, c.Channel)
+		now().UTC(), now().UTC(), s.SlackUserID, s.SlackName, s.ChannelID, s.Channel)
 	if err != nil {
-		return c, err
+		return s, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return c, err
+		return s, err
 	}
-	c.ID = id
-	return c, nil
+	s.ID = id
+	return s, nil
 }
 
 //FindStandupUserInChannel finds user in channel
@@ -192,19 +208,24 @@ func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
 }
 
 // CreateStandupTime creates time entry in database
-func (m *MySQL) CreateStandupTime(c model.StandupTime) (model.StandupTime, error) {
+func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error) {
+	err := s.Validate()
+	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
+		return s, err
+	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_time` (created, channel_id, channel, standuptime) VALUES (?, ?, ?, ?)",
-		now().UTC(), c.ChannelID, c.Channel, c.Time)
+		now().UTC(), s.ChannelID, s.Channel, s.Time)
 	if err != nil {
-		return c, err
+		return s, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return c, err
+		return s, err
 	}
-	c.ID = id
-	return c, nil
+	s.ID = id
+	return s, nil
 }
 
 // ListStandupTime returns standup time entry from database
@@ -229,6 +250,11 @@ func (m *MySQL) DeleteStandupTime(channelID string) error {
 
 // AddToStandupHistory creates backup standup entry in standup_edit_history database
 func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEditHistory, error) {
+	err := s.Validate()
+	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
+		return s, err
+	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_edit_history` (created, standup_id, standup_text) VALUES (?, ?, ?)",
 		now().UTC(), s.StandupID, s.StandupText)

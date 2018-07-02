@@ -54,7 +54,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/maddevsio/comedian/storage/mysql.go (90.1%)</option>
+				<option value="file0">github.com/maddevsio/comedian/storage/mysql.go (83.5%)</option>
 				
 				</select>
 			</div>
@@ -75,6 +75,7 @@ import (
 
         // This line is must for working MySQL database
         _ "github.com/go-sql-driver/mysql"
+        "github.com/labstack/gommon/log"
 
         "github.com/jmoiron/sqlx"
         "github.com/maddevsio/comedian/config"
@@ -99,7 +100,12 @@ func NewMySQL(c config.Config) (*MySQL, error) <span class="cov8" title="1">{
 
 // CreateStandup creates standup entry in database
 func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) <span class="cov8" title="1">{
-        res, err := m.conn.Exec(
+        err := s.Validate()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Errorf("ERROR: %s", err.Error())
+                return s, err
+        }</span>
+        <span class="cov8" title="1">res, err := m.conn.Exec(
                 "INSERT INTO `standup` (created, modified, username, comment, channel, channel_id, username_id, message_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 now().UTC(), now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.MessageTS,
         )
@@ -116,7 +122,12 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) <span clas
 
 // UpdateStandup updates standup entry in database
 func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) <span class="cov8" title="1">{
-        _, err := m.conn.Exec(
+        err := s.Validate()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Errorf("ERROR: %s", err.Error())
+                return s, err
+        }</span>
+        <span class="cov8" title="1">_, err = m.conn.Exec(
                 "UPDATE `standup` SET modified=?, username=?, username_id=?, comment=?, channel=?, channel_id=?, message_ts=? WHERE id=?",
                 now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.MessageTS, s.ID,
         )
@@ -198,19 +209,24 @@ func (m *MySQL) DeleteStandup(id int64) error <span class="cov8" title="1">{
 }</span>
 
 // CreateStandupUser creates comedian entry in database
-func (m *MySQL) CreateStandupUser(c model.StandupUser) (model.StandupUser, error) <span class="cov8" title="1">{
-        res, err := m.conn.Exec(
-                "INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel) VALUES (?, ?, ?, ?, ?, ?)",
-                now().UTC(), now().UTC(), c.SlackUserID, c.SlackName, c.ChannelID, c.Channel)
+func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error) <span class="cov8" title="1">{
+        err := s.Validate()
         if err != nil </span><span class="cov0" title="0">{
-                return c, err
+                log.Errorf("ERROR: %s", err.Error())
+                return s, err
+        }</span>
+        <span class="cov8" title="1">res, err := m.conn.Exec(
+                "INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel) VALUES (?, ?, ?, ?, ?, ?)",
+                now().UTC(), now().UTC(), s.SlackUserID, s.SlackName, s.ChannelID, s.Channel)
+        if err != nil </span><span class="cov0" title="0">{
+                return s, err
         }</span>
         <span class="cov8" title="1">id, err := res.LastInsertId()
         if err != nil </span><span class="cov0" title="0">{
-                return c, err
+                return s, err
         }</span>
-        <span class="cov8" title="1">c.ID = id
-        return c, nil</span>
+        <span class="cov8" title="1">s.ID = id
+        return s, nil</span>
 }
 
 //FindStandupUserInChannel finds user in channel
@@ -262,19 +278,24 @@ func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error <s
 }</span>
 
 // CreateStandupTime creates time entry in database
-func (m *MySQL) CreateStandupTime(c model.StandupTime) (model.StandupTime, error) <span class="cov8" title="1">{
-        res, err := m.conn.Exec(
-                "INSERT INTO `standup_time` (created, channel_id, channel, standuptime) VALUES (?, ?, ?, ?)",
-                now().UTC(), c.ChannelID, c.Channel, c.Time)
+func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error) <span class="cov8" title="1">{
+        err := s.Validate()
         if err != nil </span><span class="cov0" title="0">{
-                return c, err
+                log.Errorf("ERROR: %s", err.Error())
+                return s, err
+        }</span>
+        <span class="cov8" title="1">res, err := m.conn.Exec(
+                "INSERT INTO `standup_time` (created, channel_id, channel, standuptime) VALUES (?, ?, ?, ?)",
+                now().UTC(), s.ChannelID, s.Channel, s.Time)
+        if err != nil </span><span class="cov0" title="0">{
+                return s, err
         }</span>
         <span class="cov8" title="1">id, err := res.LastInsertId()
         if err != nil </span><span class="cov0" title="0">{
-                return c, err
+                return s, err
         }</span>
-        <span class="cov8" title="1">c.ID = id
-        return c, nil</span>
+        <span class="cov8" title="1">s.ID = id
+        return s, nil</span>
 }
 
 // ListStandupTime returns standup time entry from database
@@ -299,7 +320,12 @@ func (m *MySQL) DeleteStandupTime(channelID string) error <span class="cov8" tit
 
 // AddToStandupHistory creates backup standup entry in standup_edit_history database
 func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEditHistory, error) <span class="cov8" title="1">{
-        res, err := m.conn.Exec(
+        err := s.Validate()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Errorf("ERROR: %s", err.Error())
+                return s, err
+        }</span>
+        <span class="cov8" title="1">res, err := m.conn.Exec(
                 "INSERT INTO `standup_edit_history` (created, standup_id, standup_text) VALUES (?, ?, ?)",
                 now().UTC(), s.StandupID, s.StandupText)
         if err != nil </span><span class="cov0" title="0">{
