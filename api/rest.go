@@ -291,6 +291,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 	commandParams := strings.Fields(ca.Text)
+	log.Println(len(commandParams))
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, "Wrong number of arguments")
 	}
@@ -368,11 +369,14 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, "Wrong number of arguments")
 	}
 	channelID := commandParams[0]
+	log.Println("0" + channelID)
 	userfull := commandParams[1]
+	log.Println("1" + userfull)
 	userName := strings.Replace(userfull, "@", "", -1)
+	log.Println("1" + userName)
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		log.Errorf("FIND STANDUP USER ERROR: %s", err.Error())
 		return err
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
