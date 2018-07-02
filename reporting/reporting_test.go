@@ -48,7 +48,6 @@ func TestStandupReportByProject(t *testing.T) {
 	user1, err := db.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID1",
 		SlackName:   "user1",
-		FullName:    "",
 		ChannelID:   channelID,
 		Channel:     channelName,
 	})
@@ -87,7 +86,6 @@ func TestStandupReportByProject(t *testing.T) {
 	user2, err := db.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID2",
 		SlackName:   "user2",
-		FullName:    "",
 		ChannelID:   channelID,
 		Channel:     channelName,
 	})

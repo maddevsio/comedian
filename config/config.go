@@ -1,6 +1,9 @@
 package config
 
-import "github.com/kelseyhightower/envconfig"
+import (
+	"github.com/kelseyhightower/envconfig"
+	log "github.com/sirupsen/logrus"
+)
 
 type (
 	// Config struct used for configuration of app with env variables
@@ -20,6 +23,7 @@ type (
 func Get() (Config, error) {
 	var c Config
 	if err := envconfig.Process("comedian", &c); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c, err
 	}
 	return c, nil

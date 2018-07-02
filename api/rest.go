@@ -43,6 +43,7 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 	e := echo.New()
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return nil, err
 	}
 	decoder := schema.NewDecoder()
@@ -69,6 +70,7 @@ func (r *REST) Start() error {
 func (r *REST) handleCommands(c echo.Context) error {
 	form, err := c.FormParams()
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.JSON(http.StatusBadRequest, nil)
 	}
 	if command := form.Get("command"); command != "" {
@@ -101,9 +103,11 @@ func (r *REST) handleCommands(c echo.Context) error {
 func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	result := strings.Split(ca.Text, "|")
@@ -119,20 +123,20 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 			Channel:     ca.ChannelName,
 		})
 		if err != nil {
-			log.Errorf("could not create standup user: %v", err)
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
+			log.Errorf("could not create standup user: %v", err.Error())
+			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err.Error()))
 		}
 	}
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
 		return c.String(http.StatusOK, fmt.Sprintf("User already exists!"))
 	}
 	if err != nil {
-		log.Errorf("could not create standup user: %v", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
+		log.Errorf("could not create standup user: %v", err.Error())
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err.Error()))
 	}
 	st, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
-		log.Errorf("could not list standup time: %v", err)
+		log.Errorf("could not list standup time: %v", err.Error())
 	}
 	if st.Time == int64(0) {
 		return c.String(http.StatusOK, fmt.Sprintf("<@%s> added, but there is no standup time for this channel", userName))
@@ -143,17 +147,19 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	userName := strings.Replace(ca.Text, "@", "", -1)
 	err := r.db.DeleteStandupUserByUsername(userName, ca.ChannelID)
 	if err != nil {
-		log.Errorf("could not delete standup user: %v", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
+		log.Errorf("could not delete standup user: %v", err.Error())
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err.Error()))
 	}
 	return c.String(http.StatusOK, fmt.Sprintf("<@%s> deleted", userName))
 }
@@ -162,15 +168,17 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 	log.Printf("%+v\n", f)
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	users, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if err != nil {
-		log.Println(err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))
+		log.Errorf("ERROR: %s", err.Error())
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err.Error()))
 	}
 
 	var userNames []string
@@ -188,9 +196,11 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
@@ -205,14 +215,13 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		Channel:   ca.ChannelName,
 		Time:      timeInt,
 	})
-	log.Println("Standup time set for :", standupTime.Time)
 	if err != nil {
-		log.Errorf("could not create standup time: %v", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err))
+		log.Errorf("could not create standup time: %v", err.Error())
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err.Error()))
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if err != nil {
-		log.Errorf("could not list standup users: %v", err)
+		log.Errorf("could not list standup users: %v", err.Error())
 	}
 	if len(st) == 0 {
 		return c.String(http.StatusOK, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel>", standupTime.Time))
@@ -224,20 +233,22 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	var ca ChannelForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	err := r.db.DeleteStandupTime(ca.ChannelID)
 	if err != nil {
-		log.Errorf("could not delete standup time: %v", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err))
+		log.Errorf("could not delete standup time: %v", err.Error())
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err.Error()))
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if err != nil {
-		log.Errorf("could not list standup users: %v", err)
+		log.Errorf("could not list standup users: %v", err.Error())
 	}
 	if len(st) != 0 {
 		return c.String(http.StatusOK, fmt.Sprintf("standup time for this channel removed, but there are "+
@@ -249,19 +260,21 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 func (r *REST) listTime(c echo.Context, f url.Values) error {
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	suTime, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
-		log.Println(err)
+		log.Errorf("ERROR: %s", err.Error())
 		if err.Error() == "sql: no rows in result set" {
 			return c.String(http.StatusOK, fmt.Sprintf("No standup time set for this channel yet! Please, add a standup time using `/standuptimeset` command!"))
 		} else {
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
+			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err.Error()))
 		}
 	}
 	return c.String(http.StatusOK, fmt.Sprintf("standup time at %s (UTC)",
@@ -271,9 +284,11 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	commandParams := strings.Fields(ca.Text)
@@ -283,14 +298,17 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	channelID := commandParams[0]
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	dateTo, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	return c.String(http.StatusOK, report)
@@ -299,12 +317,13 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
-	log.Println(ca)
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, "Wrong number of arguments")
@@ -312,22 +331,24 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	userfull := commandParams[0]
 	result := strings.Split(userfull, "|")
 	userName := strings.Replace(result[1], ">", "", -1)
-	log.Println("Did not search for Standup User")
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return err
 	}
-	log.Println("Found Standup User")
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	dateTo, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo)
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	return c.String(http.StatusOK, report)
@@ -336,12 +357,13 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
-	log.Println(ca)
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 4 {
 		return c.String(http.StatusOK, "Wrong number of arguments")
@@ -349,22 +371,24 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	channelID := commandParams[0]
 	userfull := commandParams[1]
 	userName := strings.Replace(userfull, "@", "", -1)
-	log.Println("Did not search for Standup User")
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return err
 	}
-	log.Println("Found Standup User")
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	dateTo, err := time.Parse("2006-01-02", commandParams[3])
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
 	if err != nil {
+		log.Errorf("ERROR: %s", err.Error())
 		return c.String(http.StatusOK, err.Error())
 	}
 	return c.String(http.StatusOK, report)

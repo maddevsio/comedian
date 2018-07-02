@@ -35,6 +35,7 @@ type Slack struct {
 func NewSlack(conf config.Config) (*Slack, error) {
 	m, err := storage.NewMySQL(conf)
 	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
 		return nil, err
 	}
 	s := &Slack{}
@@ -75,7 +76,7 @@ func (s *Slack) Run() error {
 				s.logger.Infof("Current latency: %v\n", ev.Value)
 
 			case *slack.RTMError:
-				s.logger.Errorf(ev.Error())
+				logrus.Errorf("ERROR: %s", ev.Error())
 
 			case *slack.InvalidAuthEvent:
 				s.logger.Info("Invalid credentials")
@@ -113,7 +114,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 			})
 			var text string
 			if err != nil {
-				s.logger.Error(err)
+				logrus.Errorf("ERROR: %s", err.Error())
 				text = err.Error()
 			} else {
 				text = "Good job! Standup accepted! Keep it up!"
@@ -124,20 +125,20 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
-			s.logger.Error(err)
+			logrus.Errorf("ERROR: %s", err.Error())
 		}
 		_, err = s.db.AddToStandupHistory(model.StandupEditHistory{
 			StandupID:   standup.ID,
 			StandupText: standup.Comment})
 		if err != nil {
-			s.logger.Error(err)
+			logrus.Errorf("ERROR: %s", err.Error())
 		}
 		if cleanMsg, ok := s.cleanMessage(msg.SubMessage.Text); ok {
 			standup.Comment = cleanMsg
 
 			_, err = s.db.UpdateStandup(standup)
 			if err != nil {
-				s.logger.Error(err)
+				logrus.Errorf("ERROR: %s", err.Error())
 			}
 			s.logger.Info("Edited")
 		}
@@ -163,10 +164,12 @@ func (s *Slack) SendUserMessage(user, message string) error {
 	member, err := s.api.GetUserInfo(user)
 	log.Println(member.ID)
 	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
 		return err
 	}
 	_, _, channelID, err := s.api.OpenIMChannel(member.ID)
 	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
 		return err
 	}
 	err = s.SendMessage(channelID, message)
@@ -177,11 +180,13 @@ func (s *Slack) SendUserMessage(user, message string) error {
 func (s *Slack) GetAllUsersToDB() error {
 	users, err := s.api.GetUsers()
 	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
 		return err
 	}
 
 	chans, err := s.api.GetChannels(false)
 	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
 		return err
 	}
 	var channelID string
