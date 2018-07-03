@@ -24,6 +24,17 @@ func TestCRUDLStandup(t *testing.T) {
 		MessageTS: "qweasdzxc",
 	})
 	assert.NoError(t, err)
+
+	nots, err := db.CreateStandup(model.Standup{
+		Channel:   "First Channel",
+		ChannelID: "QWERTY123",
+		Comment:   "",
+		Username:  "user",
+		MessageTS: "",
+	})
+	assert.Error(t, err)
+	assert.NoError(t, db.DeleteStandupUserByUsername(nots.Username, nots.ChannelID))
+
 	assert.Equal(t, s.Comment, "work hard")
 	s2, err := db.CreateStandup(model.Standup{
 		Channel:   "Second Channel",
@@ -41,6 +52,15 @@ func TestCRUDLStandup(t *testing.T) {
 	}
 	upd, err = db.AddToStandupHistory(upd)
 	assert.NoError(t, err)
+
+	upd1 := model.StandupEditHistory{
+		Created:     s.Modified,
+		StandupID:   s.ID,
+		StandupText: "",
+	}
+	upd1, err = db.AddToStandupHistory(upd1)
+	assert.Error(t, err)
+
 	assert.Equal(t, s.ID, upd.StandupID)
 	assert.Equal(t, s.Modified, upd.Created)
 	assert.Equal(t, s.Comment, upd.StandupText)
@@ -130,6 +150,16 @@ func TestCRUDStandupUser(t *testing.T) {
 		Channel:     "channel1",
 	})
 	assert.NoError(t, err)
+
+	su4, err := db.CreateStandupUser(model.StandupUser{
+		SlackUserID: "",
+		SlackName:   "",
+		ChannelID:   "",
+		Channel:     "",
+	})
+	assert.Error(t, err)
+	assert.NoError(t, db.DeleteStandupUserByUsername(su4.SlackName, su4.ChannelID))
+
 	assert.Equal(t, "userID3", su3.SlackUserID)
 
 	user, err := db.FindStandupUser(su1.SlackName)
@@ -180,6 +210,15 @@ func TestCRUDStandupTime(t *testing.T) {
 		Time:      int64(12),
 	})
 	assert.NoError(t, err)
+
+	nost, err := db.CreateStandupTime(model.StandupTime{
+		ChannelID: "",
+		Channel:   "",
+		Time:      0,
+	})
+	assert.Error(t, err)
+	assert.NoError(t, db.DeleteStandupTime(nost.ChannelID))
+
 	assert.Equal(t, "chanid", st.ChannelID)
 	assert.Equal(t, "chanName", st.Channel)
 	assert.Equal(t, int64(12), st.Time)

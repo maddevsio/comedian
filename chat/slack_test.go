@@ -93,9 +93,27 @@ func TestHandleEditMessage(t *testing.T) {
 	// assert.NoError(t, err)
 	// s, err := NewSlack(c)
 	// assert.NoError(t, err)
-	// msg := &slack.MessageEvent{}
+
+	// su1, err := s.db.CreateStandupUser(model.StandupUser{
+	// 	SlackUserID: "userID1",
+	// 	SlackName:   "user1",
+	// 	ChannelID:   "123qwe",
+	// 	Channel:     "channel1",
+	// })
+	// assert.NoError(t, err)
+
+	// msg := &slack.MessageEvent{
+	// 	Msg: slack.Msg{
+	// 		Channel:   su1.ChannelID,
+	// 		Text:      "<@comedian>, this is my standup!",
+	// 		User:      su1.SlackUserID,
+	// 		Timestamp: "",
+	// 	},
+	// }
 	// err = s.handleMessage(msg)
 	// assert.NoError(t, err)
+	// assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+
 }
 
 func TestSendMessage(t *testing.T) {
