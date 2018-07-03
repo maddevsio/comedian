@@ -2,7 +2,6 @@ package chat
 
 import (
 	"fmt"
-	"log"
 
 	"sync"
 
@@ -160,14 +159,8 @@ func (s *Slack) SendMessage(channel, message string) error {
 }
 
 // SendUserMessage posts a message to a specific user
-func (s *Slack) SendUserMessage(user, message string) error {
-	member, err := s.api.GetUserInfo(user)
-	log.Println(member.ID)
-	if err != nil {
-		logrus.Errorf("ERROR: %s", err.Error())
-		return err
-	}
-	_, _, channelID, err := s.api.OpenIMChannel(member.ID)
+func (s *Slack) SendUserMessage(userID, message string) error {
+	_, _, channelID, err := s.api.OpenIMChannel(userID)
 	if err != nil {
 		logrus.Errorf("ERROR: %s", err.Error())
 		return err
@@ -183,7 +176,6 @@ func (s *Slack) GetAllUsersToDB() error {
 		logrus.Errorf("ERROR: %s", err.Error())
 		return err
 	}
-
 	chans, err := s.api.GetChannels(false)
 	if err != nil {
 		logrus.Errorf("ERROR: %s", err.Error())
@@ -197,7 +189,6 @@ func (s *Slack) GetAllUsersToDB() error {
 			channelID = channel.ID
 		}
 	}
-
 	for _, user := range users {
 		_, err := s.db.FindStandupUserInChannel(user.Name, channelID)
 		if err != nil {
