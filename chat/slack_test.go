@@ -70,4 +70,8 @@ func TestGetAllUsersToDB(t *testing.T) {
 
 	assert.True(t, len(usersInChan) > 0)
 
+	for _, user := range usersInChan {
+		assert.NoError(t, s.db.DeleteStandupUserByUsername(user.SlackName, user.ChannelID))
+	}
+
 }
