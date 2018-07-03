@@ -52,12 +52,12 @@ Go to "OAuth & Permissions"
 Copy Bot User OAuth Access Token
 "xoxb-___________________"
 
-Add to env:
+Add to .env:
 
 ```
 DB_NAME=comedian
 DB_USER=comedian
-DB_PASS=123qweAS!
+DB_PASS=comedian
 SLACK_TOKEN=xoxb-__________________________
 DATABASE=comedian:comedian@(127.0.0.1:0000)/comedian?parseTime=true
 HTTP_BIND_ADDR=0.0.0.0:8080
@@ -67,9 +67,10 @@ DIRECT_MANAGER_CHANNEL_ID=
 REPORT_TIME="09:35"
 ```
 
-Run the script:
+Run:
 ```
-./run.sh
+docker-compose build
+docker-compose up
 ```
 
 
