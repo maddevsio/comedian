@@ -1,20 +1,20 @@
-language: go
-go:
-  - master
-
-services:
-  - mysql
-
-sudo: false
+env:
+  DOCKER_COMPOSE_VERSION: 3
 
 before_install:
-  - mysql -e "CREATE DATABASE comedian DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci"
-  - go get -u github.com/pressly/goose/cmd/goose
-  - $GOPATH/bin/goose -dir migrations mysql "comedian:comedian@(localhost:3306)/comedian?parseTime=true" up
-  - go get github.com/mattn/goveralls
+  - sudo apt-get update
+  - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
+  - docker-compose --version
 
-script:
-  - $GOPATH/bin/goveralls  -service=travis-ci
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
 
-env:
-  - COMEDIAN_DATABASE="comedian:comedian@(localhost:3306)/comedian?parseTime=true"  COMEDIAN_HTTP_BIND_ADDR=":8080"  COMEDIAN_SLACK_TOKEN="hello" COMEDIAN_NOTIFIER_CHECK_INTERVAL=15 COMEDIAN_MANAGER=manager COMEDIAN_DIRECT_MANAGER_CHANNEL_ID=someID COMEDIAN_REPORT_TIME=17:00 COMEDIAN_DEBUG=true
+  - docker-compose --version
+
+  - docker-compose pull
+  - docker-compose build
+  - docker-compose start
+
+  - docker ps

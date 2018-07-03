@@ -5,11 +5,7 @@ services:
   db:
     image: percona/percona-server:5.7 
     restart: on-failure
-    environment:
-      MYSQL_DATABASE: comedian
-      MYSQL_USER: comedian
-      MYSQL_PASSWORD: comedian
-      MYSQL_RANDOM_ROOT_PASSWORD: 1
+    env_file: .env
     healthcheck:
       test: "/etc/init.d/mysql status"
       interval: 1s
