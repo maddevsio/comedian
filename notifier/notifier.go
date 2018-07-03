@@ -37,13 +37,9 @@ func (n *Notifier) Start(c config.Config) error {
 	reportTimeParsed, err := time.Parse("15:04", c.ReportTime)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
+		return err
 	}
-	fmt.Println("REPORT TIME PARSED", reportTimeParsed)
-	config, err := config.Get()
-	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
-	}
-	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, config, n.DB, reportTimeParsed)
+	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, c, n.DB, reportTimeParsed)
 	gocron.Every(n.CheckInterval).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
 	channel := gocron.Start()
 	for {

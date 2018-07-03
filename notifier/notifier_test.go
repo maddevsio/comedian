@@ -40,6 +40,13 @@ func TestNotifier(t *testing.T) {
 	n, err := NewNotifier(c, ch)
 	assert.NoError(t, err)
 
+	c.ReportTime = "random time"
+	err = n.Start(c)
+	assert.Error(t, err)
+
+	c, err = config.Get()
+	assert.NoError(t, err)
+
 	standupReminderForChannel(ch, n.DB)
 	assert.NoError(t, err)
 	assert.Equal(t, "test initial", ch.LastMessage) // херня какая-то
@@ -115,6 +122,10 @@ func TestNotifier(t *testing.T) {
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
 
 	managerStandupReport(ch, c, n.DB, d)
+	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
+
+	err = directRemindStandupers(ch, n.DB, channelID)
+	assert.NoError(t, err)
 	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
 
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
