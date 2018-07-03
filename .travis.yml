@@ -13,11 +13,11 @@ sudo: false
 before_install:
   - mysql -e "CREATE DATABASE comedian DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci"
   - go get -u github.com/pressly/goose/cmd/goose
-  - $HOME/gopath/bin/goose -dir migrations mysql "comedian:comedian@tcp(localhost:3306)/comedian" up
+  - $HOME/gopath/bin/goose -dir migrations mysql "root@/comedian" up
   - go get github.com/mattn/goveralls
 
 script:
   - $HOME/gopath/bin/goveralls  -service=travis-ci
 
 env:
-- DATABASE="comedian:comedian@tcp(localhost:3306)/comedian?parseTime=true" HTTP_BIND_ADDR=":8080" SLACK_TOKEN="hello"
+- DATABASE="root@/comedian?parseTime=true" HTTP_BIND_ADDR=":8080" SLACK_TOKEN="hello"
