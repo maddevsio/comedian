@@ -15,10 +15,6 @@ func TestConfig(t *testing.T) {
 	os.Setenv("COMEDIAN_DIRECT_MANAGER_CHANNEL_ID", "someID")
 	os.Setenv("COMEDIAN_REPORT_TIME", "17:00")
 	os.Setenv("COMEDIAN_DEBUG", "true")
-
-	conf, err := Get()
-	assert.Error(t, err)
-
 	os.Setenv("COMEDIAN_SLACK_TOKEN", "token")
 
 	conf, err = Get()
