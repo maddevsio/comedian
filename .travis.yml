@@ -1,24 +1,10 @@
 sudo: required
 
-services:
-  - docker-compose
+language: go
 
-env:
-  DOCKER_COMPOSE_VERSION: 3
+services:
+  - docker
 
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-ce
-  - docker-compose --version
+  - docker build -t comedian .
 
-  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-  - chmod +x docker-compose
-  - sudo mv docker-compose /usr/local/bin
-
-  - docker-compose build
-  - docker-compose start
-
-  - docker ps
-
-env:
-  - COMEDIAN_DATABASE="comedian:comedian@tcp(db:3306)/comedian?parseTime=true"  COMEDIAN_HTTP_BIND_ADDR=":8080"  COMEDIAN_SLACK_TOKEN="hello" COMEDIAN_NOTIFIER_CHECK_INTERVAL=15 COMEDIAN_MANAGER=manager COMEDIAN_DIRECT_MANAGER_CHANNEL_ID=someID COMEDIAN_REPORT_TIME=17:00 COMEDIAN_DEBUG=true
