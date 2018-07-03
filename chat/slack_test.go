@@ -8,6 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type MessageEvent struct {
+}
+
 func TestCleanMessage(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
@@ -21,6 +24,78 @@ func TestCleanMessage(t *testing.T) {
 	text, ok = s.cleanMessage("What's up?")
 	assert.Equal(t, "What's up?", text)
 	assert.False(t, ok)
+}
+
+func TestHandleMessage(t *testing.T) {
+	// c, err := config.Get()
+	// assert.NoError(t, err)
+	// s, err := NewSlack(c)
+	// assert.NoError(t, err)
+
+	// edited := &slack.Edited{
+	// 	User:      "",
+	// 	Timestamp: "",
+	// }
+
+	// icon := &slack.Icon{
+	// 	// IconURL:   "",
+	// 	// IconEmoji: "",
+	// }
+
+	// file := &slack.File{}
+
+	// comment := &slack.Comment{}
+
+	// msg := &slack.MessageEvent{
+	// 	slack.Msg{
+	// 		Type:             "",
+	// 		Channel:          "",
+	// 		User:             "",
+	// 		Text:             "",
+	// 		Timestamp:        "",
+	// 		ThreadTimestamp:  "",
+	// 		IsStarred:        false,
+	// 		PinnedTo:         make([]string, 1),
+	// 		Attachments:      make([]slack.Attachment, 1),
+	// 		Edited:           edited,
+	// 		SubType:          "",
+	// 		Hidden:           false,
+	// 		DeletedTimestamp: "",
+	// 		EventTimestamp:   "",
+	// 		BotID:            "",
+	// 		Username:         "",
+	// 		Icons:            icon,
+	// 		Inviter:          "",
+	// 		Topic:            "",
+	// 		Purpose:          "",
+	// 		Name:             "",
+	// 		OldName:          "",
+	// 		Members:          make([]string, 1),
+	// 		ReplyCount:       0,
+	// 		Replies:          make([]slack.Reply, 1),
+	// 		ParentUserId:     "",
+	// 		File:             file,
+	// 		Upload:           false,
+	// 		Comment:          comment,
+	// 		ItemType:         "",
+	// 		ReplyTo:          0,
+	// 		Team:             "",
+	// 		Reactions:        make([]slack.ItemReaction, 1),
+	// 	},
+	// }
+	// msg := &slack.MessageEvent{}
+	// err = s.handleMessage(msg)
+	// assert.NoError(t, err)
+}
+
+func TestHandleEditMessage(t *testing.T) {
+	// c, err := config.Get()
+	// assert.NoError(t, err)
+	// s, err := NewSlack(c)
+	// assert.NoError(t, err)
+	// msg := &slack.MessageEvent{}
+	// err = s.handleMessage(msg)
+	// assert.NoError(t, err)
 }
 
 func TestSendMessage(t *testing.T) {

@@ -95,7 +95,7 @@ func (s *Slack) ManageConnection() {
 
 }
 
-func (s *Slack) handleMessage(msg *slack.MessageEvent) {
+func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 
 	userName := s.rtm.GetInfo().GetUserByID(msg.Msg.User)
 	// TODO: check if channel message (not direct)
@@ -115,22 +115,25 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 			if err != nil {
 				logrus.Errorf("ERROR: %s", err.Error())
 				text = err.Error()
+				return err
 			} else {
 				text = "Good job! Standup accepted! Keep it up!"
 			}
-			s.SendMessage(channelName.Name, text)
+			return s.SendMessage(channelName.Name, text)
 
 		}
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
 			logrus.Errorf("ERROR: %s", err.Error())
+			return err
 		}
 		_, err = s.db.AddToStandupHistory(model.StandupEditHistory{
 			StandupID:   standup.ID,
 			StandupText: standup.Comment})
 		if err != nil {
 			logrus.Errorf("ERROR: %s", err.Error())
+			return err
 		}
 		if cleanMsg, ok := s.cleanMessage(msg.SubMessage.Text); ok {
 			standup.Comment = cleanMsg
@@ -138,10 +141,12 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) {
 			_, err = s.db.UpdateStandup(standup)
 			if err != nil {
 				logrus.Errorf("ERROR: %s", err.Error())
+				return err
 			}
 			s.logger.Info("Edited")
 		}
 	}
+	return nil
 }
 
 func (s *Slack) cleanMessage(message string) (string, bool) {
