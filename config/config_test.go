@@ -17,7 +17,7 @@ func TestConfig(t *testing.T) {
 	os.Setenv("COMEDIAN_DEBUG", "true")
 	os.Setenv("COMEDIAN_SLACK_TOKEN", "token")
 
-	conf, err = Get()
+	conf, err := Get()
 	assert.NoError(t, err)
 	assert.Equal(t, conf.SlackToken, "token")
 	assert.Equal(t, conf.DatabaseURL, "DB")
