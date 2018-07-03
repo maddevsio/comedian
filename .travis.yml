@@ -1,10 +1,23 @@
-sudo: required
-
 language: go
 
 services:
-  - docker
+  - mysql
+
+go:
+  - 1.8.x
+  - 1.9.x
+  - master
+
+sudo: false
 
 before_install:
-  - docker-compose build
+  - mysql -e "CREATE DATABASE comedian DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci"
+  - go get -u github.com/pressly/goose/cmd/goose
+  - $HOME/gopath/bin/goose -dir migrations mysql "comedian@/comedian" up
+  - go get github.com/mattn/goveralls
 
+script:
+  - $HOME/gopath/bin/goveralls  -service=travis-ci
+
+env:
+- DATABASE="comedian@/comedian?parseTime=true" HTTP_BIND_ADDR=":8080" SLACK_TOKEN="hello"
