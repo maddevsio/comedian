@@ -70,7 +70,7 @@ func TestNotifier(t *testing.T) {
 
 	managerStandupReport(ch, c, n.DB, d)
 	assert.NoError(t, err)
-	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
 
 	// add standup for user @test
 	s, err := n.DB.CreateStandup(model.Standup{
@@ -83,10 +83,10 @@ func TestNotifier(t *testing.T) {
 	assert.NoError(t, err)
 
 	standupReminderForChannel(ch, n.DB)
-	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
 
 	managerStandupReport(ch, c, n.DB, d)
-	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user2>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user2>.", ch.LastMessage)
 
 	// add standup for user @user2
 	s2, err := n.DB.CreateStandup(model.Standup{
@@ -99,10 +99,10 @@ func TestNotifier(t *testing.T) {
 	assert.NoError(t, err)
 
 	standupReminderForChannel(ch, n.DB)
-	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user2>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user2>.", ch.LastMessage)
 
 	managerStandupReport(ch, c, n.DB, d)
-	assert.Equal(t, "CHAT: someID, MESSAGE: <@manager>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
+	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
 
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))
