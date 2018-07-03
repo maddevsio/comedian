@@ -8,6 +8,10 @@ import (
 )
 
 func TestConfig(t *testing.T) {
+	os.Clearenv()
+	conf, err := Get()
+	assert.Error(t, err)
+
 	os.Setenv("COMEDIAN_DATABASE", "DB")
 	os.Setenv("COMEDIAN_HTTP_BIND_ADDR", "0.0.0.0:8080")
 	os.Setenv("COMEDIAN_NOTIFIER_CHECK_INTERVAL", "15")
@@ -17,7 +21,7 @@ func TestConfig(t *testing.T) {
 	os.Setenv("COMEDIAN_DEBUG", "true")
 	os.Setenv("COMEDIAN_SLACK_TOKEN", "token")
 
-	conf, err := Get()
+	conf, err = Get()
 	assert.NoError(t, err)
 	assert.Equal(t, conf.SlackToken, "token")
 	assert.Equal(t, conf.DatabaseURL, "DB")
