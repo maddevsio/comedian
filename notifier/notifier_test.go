@@ -64,6 +64,16 @@ func TestNotifier(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	st, err := n.DB.CreateStandupTime(model.StandupTime{
+		ChannelID: channelID,
+		Channel:   "chanName",
+		Time:      int64(12),
+	})
+
+	nonReporters, err := getNonReporters(ch, n.DB, channelID)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(nonReporters))
+
 	standupReminderForChannel(ch, n.DB)
 	assert.NoError(t, err)
 	assert.Equal(t, "test initial", ch.LastMessage) // херня какая-то
@@ -98,14 +108,19 @@ func TestNotifier(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	notifyStandupStart(ch, n.DB, channelID)
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
+
 	standupReminderForChannel(ch, n.DB)
-	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user2>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
 
 	managerStandupReport(ch, c, n.DB, d)
 	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
 
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))
+
+	assert.NoError(t, n.DB.DeleteStandupTime(st.ChannelID))
 
 	assert.NoError(t, n.DB.DeleteStandup(s.ID))
 	assert.NoError(t, n.DB.DeleteStandup(s2.ID))
