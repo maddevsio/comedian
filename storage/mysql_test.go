@@ -75,19 +75,19 @@ func TestCRUDLStandup(t *testing.T) {
 	dateTo := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), timeNow.Minute(), timeNow.Second(), 0, time.UTC)
 	dateFrom := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 0, 0, 0, 0, time.UTC)
 
-	SelectStandupsForPeriod, err := db.SelectStandupsForPeriod(dateFrom, dateTo)
+	_, err := db.SelectStandupsForPeriod(dateFrom, dateTo)
 	assert.NoError(t, err)
 	//assert.Equal(t, 2, len(SelectStandupsForPeriod))
 
-	SelectStandupByChannelNameForPeriod, err := db.SelectStandupByChannelNameForPeriod(s.Channel, dateFrom, dateTo)
+	_, err := db.SelectStandupByChannelNameForPeriod(s.Channel, dateFrom, dateTo)
 	assert.NoError(t, err)
 	//assert.Equal(t, 1, len(SelectStandupByChannelNameForPeriod))
 
-	SelectStandupsByChannelIDForPeriod, err := db.SelectStandupsByChannelIDForPeriod(s.ChannelID, dateFrom, dateTo)
+	_, err := db.SelectStandupsByChannelIDForPeriod(s.ChannelID, dateFrom, dateTo)
 	assert.NoError(t, err)
 	//assert.Equal(t, 1, len(SelectStandupsByChannelIDForPeriod))
 
-	SelectStandupByUserNameForPeriod, err := db.SelectStandupByUserNameForPeriod(s.Username, dateFrom, dateTo)
+	_, err := db.SelectStandupByUserNameForPeriod(s.Username, dateFrom, dateTo)
 	assert.NoError(t, err)
 	//assert.Equal(t, 1, len(SelectStandupByUserNameForPeriod))
 
