@@ -37,12 +37,12 @@ func TestHandleMessage(t *testing.T) {
 		SlackUserID: "userID1",
 		SlackName:   "user1",
 		ChannelID:   "123qwe",
-		Channel:     "channel1",
+		Channel:     "general",
 	})
 	assert.NoError(t, err)
 
 	msg := &slack.MessageEvent{}
-	msg.Text = "<@comedian> some message"
+	msg.Text = "<@> some message"
 	msg.Channel = su1.Channel
 	msg.Username = su1.SlackName
 

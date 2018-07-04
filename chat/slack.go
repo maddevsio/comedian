@@ -101,9 +101,9 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	switch msg.SubType {
 	case typeMessage:
 		if cleanMsg, ok := s.cleanMessage(msg.Msg.Text); ok {
-			logrus.Println("Create Standup!")
 			_, err := s.db.CreateStandup(model.Standup{
 				ChannelID:  msg.Msg.Channel,
+				Channel:    msg.Msg.Channel,
 				UsernameID: msg.Msg.User,
 				Username:   msg.Msg.Username,
 				Comment:    cleanMsg,
