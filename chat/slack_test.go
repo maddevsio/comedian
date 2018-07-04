@@ -48,6 +48,7 @@ func TestHandleMessage(t *testing.T) {
 
 	err = s.handleMessage(msg)
 	assert.NoError(t, err)
+	assert.NoError(t, s.db.DeleteStandupByUsername(su1.SlackName))
 	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 
 }

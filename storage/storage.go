@@ -27,6 +27,8 @@ type (
 		SelectStandupsForPeriod(dateStart, dateEnd time.Time) ([]model.Standup, error)
 		// DeleteStandup deletes standup entry from database
 		DeleteStandup(int64) error
+		// DeleteStandupByUsername deletes standup entry from database
+		DeleteStandupByUsername(username string) error
 		// ListStandups returns array of standup entries from database
 		ListStandups() ([]model.Standup, error)
 		// CreateStandupUser creates standupUser entry in database

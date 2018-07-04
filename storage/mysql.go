@@ -138,6 +138,12 @@ func (m *MySQL) DeleteStandup(id int64) error {
 	return err
 }
 
+// DeleteStandupByUsername deletes standup_users entry from database
+func (m *MySQL) DeleteStandupByUsername(username string) error {
+	_, err := m.conn.Exec("DELETE FROM `standup` WHERE username=?", username)
+	return err
+}
+
 // CreateStandupUser creates comedian entry in database
 func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error) {
 	err := s.Validate()

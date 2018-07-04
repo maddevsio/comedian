@@ -112,7 +112,7 @@ func TestCRUDLStandup(t *testing.T) {
 	//assert.Equal(t, 1, len(SelectStandupByUserNameForPeriod))
 
 	assert.NoError(t, db.DeleteStandup(s.ID))
-	assert.NoError(t, db.DeleteStandup(s2.ID))
+	assert.NoError(t, db.DeleteStandupByUsername(s2.Username))
 	s, err = db.SelectStandup(s.ID)
 	assert.Equal(t, err, sql.ErrNoRows)
 	assert.Equal(t, s.ID, int64(0))
