@@ -36,7 +36,7 @@ func (c *ChatStub) GetAllUsersToDB() error {
 func TestNotifier(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	ch := &ChatStub{LastMessage: "test initial"}
+	ch := &ChatStub{}
 	n, err := NewNotifier(c, ch)
 	assert.NoError(t, err)
 
@@ -46,10 +46,6 @@ func TestNotifier(t *testing.T) {
 
 	c, err = config.Get()
 	assert.NoError(t, err)
-
-	standupReminderForChannel(ch, n.DB)
-	assert.NoError(t, err)
-	assert.Equal(t, "test initial", ch.LastMessage) // херня какая-то
 
 	channelID := "QWERTY123"
 
@@ -77,13 +73,16 @@ func TestNotifier(t *testing.T) {
 		Time:      int64(12),
 	})
 
+	notifyStandupStart(ch, n.DB, channelID)
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@user1>, <@user2>", ch.LastMessage)
+
 	nonReporters, err := getNonReporters(ch, n.DB, channelID)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(nonReporters))
 
 	standupReminderForChannel(ch, n.DB)
 	assert.NoError(t, err)
-	assert.Equal(t, "test initial", ch.LastMessage) // херня какая-то
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@user1>, <@user2>", ch.LastMessage) // херня какая-то
 
 	managerStandupReport(ch, c, n.DB, d)
 	assert.NoError(t, err)

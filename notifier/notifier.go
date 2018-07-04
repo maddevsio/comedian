@@ -164,16 +164,9 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 		log.Errorf("ERROR: %s", err.Error())
 	}
 	if len(list) > 0 {
-		err = chat.SendMessage(channelID,
-			fmt.Sprintf("Hey! We are still waiting standup for today from you: %s", strings.Join(list, ", ")))
-		if err != nil {
-			log.Errorf("ERROR: %s", err.Error())
-		}
+		err = chat.SendMessage(channelID, fmt.Sprintf("Hey! We are still waiting standup for today from you: %s", strings.Join(list, ", ")))
 	} else {
 		err = chat.SendMessage(channelID, "Congradulations! Everybody wrote their standups today!")
-		if err != nil {
-			log.Errorf("ERROR: %s", err.Error())
-		}
 	}
 
 }
