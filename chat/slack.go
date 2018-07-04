@@ -162,7 +162,12 @@ func (s *Slack) SendMessage(channel, message string) error {
 
 // SendUserMessage posts a message to a specific user
 func (s *Slack) SendUserMessage(userID, message string) error {
+	users, _ := s.rtm.GetUsers()
+	for _, user := range users {
+		logrus.Println(user.ID, user.Name)
+	}
 	_, _, channelID, err := s.api.OpenIMChannel(userID)
+	logrus.Println(channelID)
 	if err != nil {
 		logrus.Errorf("ERROR: %s", err.Error())
 		return err

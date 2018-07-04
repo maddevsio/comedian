@@ -91,16 +91,17 @@ func TestSendUserMessage(t *testing.T) {
 	assert.NoError(t, err)
 
 	su1, err := s.db.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
+		SlackUserID: "UBA5V5W9K",
 		SlackName:   "user1",
 		ChannelID:   "123qwe",
 		Channel:     "channel1",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "user1", su1.SlackName)
+	assert.NotEqual(t, "userID1", su1.SlackUserID)
 
-	// err = s.SendUserMessage(su1.SlackName, "MSG to User!")
-	// assert.NoError(t, err)
+	err = s.SendUserMessage("USLACKBOT", "MSG to User!")
+	assert.NoError(t, err)
 
 	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 
