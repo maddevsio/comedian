@@ -130,10 +130,6 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
 		return c.String(http.StatusOK, fmt.Sprintf("User already exists!"))
 	}
-	if err != nil {
-		log.Errorf("could not create standup user: %v", err.Error())
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err.Error()))
-	}
 	st, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
 		log.Errorf("could not list standup time: %v", err.Error())
@@ -210,19 +206,12 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	currentTime := time.Now()
 	timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), hours, munites, 0, 0, time.Local).Unix()
 
-	standupTime, err := r.db.CreateStandupTime(model.StandupTime{
+	standupTime, _ := r.db.CreateStandupTime(model.StandupTime{
 		ChannelID: ca.ChannelID,
 		Channel:   ca.ChannelName,
 		Time:      timeInt,
 	})
-	if err != nil {
-		log.Errorf("could not create standup time: %v", err.Error())
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to add standup time :%v", err.Error()))
-	}
-	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
-	if err != nil {
-		log.Errorf("could not list standup users: %v", err.Error())
-	}
+	st, _ := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if len(st) == 0 {
 		return c.String(http.StatusOK, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel>", standupTime.Time))
 	}
@@ -247,9 +236,6 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err.Error()))
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
-	if err != nil {
-		log.Errorf("could not list standup users: %v", err.Error())
-	}
 	if len(st) != 0 {
 		return c.String(http.StatusOK, fmt.Sprintf("standup time for this channel removed, but there are "+
 			"people marked as a standuper."))
@@ -334,7 +320,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
-		return err
+		return c.String(http.StatusOK, err.Error())
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
@@ -376,8 +362,8 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	log.Println("1" + userName)
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
-		log.Errorf("FIND STANDUP USER ERROR: %s", err.Error())
-		return err
+		log.Errorf("ERROR: %s", err.Error())
+		return c.String(http.StatusOK, err.Error())
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
@@ -394,8 +380,6 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		if err.Error() == "sql: no rows in result set" {
 			return c.String(http.StatusOK, fmt.Sprintf("This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command"))
 		}
-		log.Errorf("ERROR: %s", err.Error())
-		return c.String(http.StatusOK, err.Error())
 	}
 	return c.String(http.StatusOK, report)
 }

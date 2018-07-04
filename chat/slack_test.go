@@ -14,7 +14,11 @@ type MessageEvent struct {
 func TestCleanMessage(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
+	c.DatabaseURL = ""
 	s, err := NewSlack(c)
+	assert.Error(t, err)
+	c, err = config.Get()
+	s, err = NewSlack(c)
 	assert.NoError(t, err)
 	s.myUsername = "comedian"
 	assert.NoError(t, err)
