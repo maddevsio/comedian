@@ -5,6 +5,7 @@ import (
 
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,94 +28,51 @@ func TestCleanMessage(t *testing.T) {
 }
 
 func TestHandleMessage(t *testing.T) {
-	// c, err := config.Get()
-	// assert.NoError(t, err)
-	// s, err := NewSlack(c)
-	// assert.NoError(t, err)
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := NewSlack(c)
+	assert.NoError(t, err)
 
-	// edited := &slack.Edited{
-	// 	User:      "",
-	// 	Timestamp: "",
-	// }
+	su1, err := s.db.CreateStandupUser(model.StandupUser{
+		SlackUserID: "userID1",
+		SlackName:   "user1",
+		ChannelID:   "123qwe",
+		Channel:     "channel1",
+	})
+	assert.NoError(t, err)
 
-	// icon := &slack.Icon{
-	// 	// IconURL:   "",
-	// 	// IconEmoji: "",
-	// }
+	msg := &slack.MessageEvent{}
+	msg.Text = "<@comedian> some message"
+	msg.Channel = su1.Channel
+	msg.Username = su1.SlackName
 
-	// file := &slack.File{}
-
-	// comment := &slack.Comment{}
-
-	// msg := &slack.MessageEvent{
-	// 	slack.Msg{
-	// 		Type:             "",
-	// 		Channel:          "",
-	// 		User:             "",
-	// 		Text:             "",
-	// 		Timestamp:        "",
-	// 		ThreadTimestamp:  "",
-	// 		IsStarred:        false,
-	// 		PinnedTo:         make([]string, 1),
-	// 		Attachments:      make([]slack.Attachment, 1),
-	// 		Edited:           edited,
-	// 		SubType:          "",
-	// 		Hidden:           false,
-	// 		DeletedTimestamp: "",
-	// 		EventTimestamp:   "",
-	// 		BotID:            "",
-	// 		Username:         "",
-	// 		Icons:            icon,
-	// 		Inviter:          "",
-	// 		Topic:            "",
-	// 		Purpose:          "",
-	// 		Name:             "",
-	// 		OldName:          "",
-	// 		Members:          make([]string, 1),
-	// 		ReplyCount:       0,
-	// 		Replies:          make([]slack.Reply, 1),
-	// 		ParentUserId:     "",
-	// 		File:             file,
-	// 		Upload:           false,
-	// 		Comment:          comment,
-	// 		ItemType:         "",
-	// 		ReplyTo:          0,
-	// 		Team:             "",
-	// 		Reactions:        make([]slack.ItemReaction, 1),
-	// 	},
-	// }
-	// msg := &slack.MessageEvent{}
-	// err = s.handleMessage(msg)
-	// assert.NoError(t, err)
-}
-
-func TestHandleEditMessage(t *testing.T) {
-	// c, err := config.Get()
-	// assert.NoError(t, err)
-	// s, err := NewSlack(c)
-	// assert.NoError(t, err)
-
-	// su1, err := s.db.CreateStandupUser(model.StandupUser{
-	// 	SlackUserID: "userID1",
-	// 	SlackName:   "user1",
-	// 	ChannelID:   "123qwe",
-	// 	Channel:     "channel1",
-	// })
-	// assert.NoError(t, err)
-
-	// msg := &slack.MessageEvent{
-	// 	Msg: slack.Msg{
-	// 		Channel:   su1.ChannelID,
-	// 		Text:      "<@comedian>, this is my standup!",
-	// 		User:      su1.SlackUserID,
-	// 		Timestamp: "",
-	// 	},
-	// }
-	// err = s.handleMessage(msg)
-	// assert.NoError(t, err)
-	// assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	err = s.handleMessage(msg)
+	assert.NoError(t, err)
+	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 
 }
+
+// func TestHandleEditMessage(t *testing.T) {
+// 	c, err := config.Get()
+// 	assert.NoError(t, err)
+// 	s, err := NewSlack(c)
+// 	assert.NoError(t, err)
+
+// 	su1, err := s.db.CreateStandupUser(model.StandupUser{
+// 		SlackUserID: "userID1",
+// 		SlackName:   "user1",
+// 		ChannelID:   "123qwe",
+// 		Channel:     "channel1",
+// 	})
+// 	assert.NoError(t, err)
+
+// 	msg := &slack.MessageEvent{}
+// 	msg.SubMessage.Text = "This standup is edited"
+// 	err = s.handleMessage(msg)
+// 	assert.NoError(t, err)
+// 	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+
+// }
 
 func TestSendMessage(t *testing.T) {
 	c, err := config.Get()
@@ -140,7 +98,7 @@ func TestSendUserMessage(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "user1", su1.SlackName)
 
-	// err = s.SendUserMessage(su1.SlackUserID, "MSG to User!")
+	// err = s.SendUserMessage(su1.SlackName, "MSG to User!")
 	// assert.NoError(t, err)
 
 	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))

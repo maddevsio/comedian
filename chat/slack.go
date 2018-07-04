@@ -97,17 +97,15 @@ func (s *Slack) ManageConnection() {
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 
-	userName := s.rtm.GetInfo().GetUserByID(msg.Msg.User)
 	// TODO: check if channel message (not direct)
 	switch msg.SubType {
 	case typeMessage:
 		if cleanMsg, ok := s.cleanMessage(msg.Msg.Text); ok {
-			channelName := s.rtm.GetInfo().GetChannelByID(msg.Msg.Channel)
+			logrus.Println("Create Standup!")
 			_, err := s.db.CreateStandup(model.Standup{
 				ChannelID:  msg.Msg.Channel,
-				Channel:    channelName.Name,
 				UsernameID: msg.Msg.User,
-				Username:   userName.Name,
+				Username:   msg.Msg.Username,
 				Comment:    cleanMsg,
 				MessageTS:  msg.Msg.Timestamp,
 			})
@@ -119,7 +117,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			} else {
 				text = "Good job! Standup accepted! Keep it up!"
 			}
-			return s.SendMessage(channelName.Name, text)
+			return s.SendMessage(msg.Msg.Channel, text)
 
 		}
 	case typeEditMessage:
