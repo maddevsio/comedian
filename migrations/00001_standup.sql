@@ -10,7 +10,7 @@ CREATE TABLE `standup` (
     `username_id` VARCHAR(255) NOT NULL,
     `username` VARCHAR(255) NOT NULL,
     `full_name` VARCHAR(255) NOT NULL,
-    `comment` VARCHAR(255) NOT NULL,
+    `comment` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
     `message_ts` VARCHAR(255) NOT NULL,
     KEY (`created`, `username`)
 );
