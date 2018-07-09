@@ -162,10 +162,6 @@ func (s *Slack) SendMessage(channel, message string) error {
 
 // SendUserMessage posts a message to a specific user
 func (s *Slack) SendUserMessage(userID, message string) error {
-	users, _ := s.rtm.GetUsers()
-	for _, user := range users {
-		logrus.Println(user.ID, user.Name)
-	}
 	_, _, channelID, err := s.api.OpenIMChannel(userID)
 	logrus.Println(channelID)
 	if err != nil {
@@ -189,10 +185,8 @@ func (s *Slack) GetAllUsersToDB() error {
 		return err
 	}
 	var channelID string
-	var channelName string
 	for _, channel := range chans {
 		if channel.Name == "general" {
-			channelName = channel.Name
 			channelID = channel.ID
 		}
 	}
@@ -202,8 +196,8 @@ func (s *Slack) GetAllUsersToDB() error {
 			s.db.CreateStandupUser(model.StandupUser{
 				SlackUserID: user.ID,
 				SlackName:   user.Name,
-				ChannelID:   channelID,
-				Channel:     channelName,
+				ChannelID:   "",
+				Channel:     "",
 			})
 		}
 
