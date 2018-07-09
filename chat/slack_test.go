@@ -113,12 +113,12 @@ func TestGetAllUsersToDB(t *testing.T) {
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 
-	usersInChan, err := s.db.ListStandupUsersByChannelName("general")
+	usersInChan, err := s.db.ListAllStandupUsers()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(usersInChan))
 
 	err = s.GetAllUsersToDB()
-	usersInChan, err = s.db.ListStandupUsersByChannelName("general")
+	usersInChan, err = s.db.ListAllStandupUsers()
 	assert.NoError(t, err)
 
 	assert.True(t, len(usersInChan) > 0)
