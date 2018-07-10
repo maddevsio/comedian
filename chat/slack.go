@@ -1,8 +1,6 @@
 package chat
 
 import (
-	"fmt"
-
 	"sync"
 
 	"github.com/maddevsio/comedian/config"
@@ -100,12 +98,12 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	// TODO: check if channel message (not direct)
 	switch msg.SubType {
 	case typeMessage:
-		if cleanMsg, ok := s.cleanMessage(msg.Msg.Text); ok {
+		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
 			_, err := s.db.CreateStandup(model.Standup{
 				Channel:    msg.Msg.Channel,
 				UsernameID: msg.Msg.User,
 				Username:   msg.Msg.Username,
-				Comment:    cleanMsg,
+				Comment:    standupText,
 				MessageTS:  msg.Msg.Timestamp,
 			})
 			var text string
@@ -132,8 +130,8 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			logrus.Errorf("ERROR: %s", err.Error())
 			return err
 		}
-		if cleanMsg, ok := s.cleanMessage(msg.SubMessage.Text); ok {
-			standup.Comment = cleanMsg
+		if standupText, ok := s.isStandup(msg.SubMessage.Text); ok {
+			standup.Comment = standupText
 
 			_, err = s.db.UpdateStandup(standup)
 			if err != nil {
@@ -146,10 +144,9 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	return nil
 }
 
-func (s *Slack) cleanMessage(message string) (string, bool) {
-	if strings.Contains(message, fmt.Sprintf("<@%s>", s.myUsername)) {
-		msg := strings.Replace(message, fmt.Sprintf("<@%s>", s.myUsername), "", -1)
-		return strings.TrimSpace(msg), true
+func (s *Slack) isStandup(message string) (string, bool) {
+	if strings.Contains(message, "роблем") && (strings.Contains(message, "чера") || strings.Contains(message, "ятницу") || strings.Contains(message, "делал") || strings.Contains(message, "делано")) && (strings.Contains(message, "егодн") || strings.Contains(message, "обираюс")) {
+		return strings.TrimSpace(message), true
 	}
 	return message, false
 }

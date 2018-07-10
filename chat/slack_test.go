@@ -12,18 +12,18 @@ import (
 type MessageEvent struct {
 }
 
-func TestCleanMessage(t *testing.T) {
+func TestIsStandup(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 	s.myUsername = "comedian"
 	assert.NoError(t, err)
-	text, ok := s.cleanMessage("<@comedian> hey there")
-	assert.Equal(t, "hey there", text)
+	text, ok := s.isStandup("вчера делал дохуя всего сегодня собираюсь делать еще больше Проблемы: дохуя проблем, пиздец охуеваю!")
+	assert.Equal(t, "вчера делал дохуя всего сегодня собираюсь делать еще больше Проблемы: дохуя проблем, пиздец охуеваю!", text)
 	assert.True(t, ok)
-	text, ok = s.cleanMessage("What's up?")
-	assert.Equal(t, "What's up?", text)
+	text, ok = s.isStandup("какая-то хуйня")
+	assert.Equal(t, "какая-то хуйня", text)
 	assert.False(t, ok)
 }
 
