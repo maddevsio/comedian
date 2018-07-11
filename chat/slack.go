@@ -145,7 +145,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 }
 
 func (s *Slack) isStandup(message string) (string, bool) {
-	if strings.Contains(message, "роблем") && (strings.Contains(message, "чера") || strings.Contains(message, "ятницу") || strings.Contains(message, "делал") || strings.Contains(message, "делано")) && (strings.Contains(message, "егодн") || strings.Contains(message, "обираюс")) {
+	if (strings.Contains(message, "роблем") || strings.Contains(message, "рудност") || strings.Contains(message, "атрдуднен")) && (strings.Contains(message, "чера") || strings.Contains(message, "ятницу") || strings.Contains(message, "делал") || strings.Contains(message, "делано")) && (strings.Contains(message, "егодн") || strings.Contains(message, "обираюс")) {
 		return strings.TrimSpace(message), true
 	}
 	return message, false
