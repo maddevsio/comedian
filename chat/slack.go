@@ -61,7 +61,7 @@ func (s *Slack) Run() error {
 			switch ev := msg.Data.(type) {
 			case *slack.ConnectedEvent:
 				s.GetAllUsersToDB()
-				s.api.PostMessage("CBAP453GV", "Hey! I am alive!", slack.PostMessageParameters{})
+				//	s.api.PostMessage("CBAP453GV", "Hey! I am alive!", slack.PostMessageParameters{})
 				s.SendUserMessage("UB9AE7CL9", "Hello, dear Manager!")
 
 			case *slack.MessageEvent:
@@ -69,8 +69,8 @@ func (s *Slack) Run() error {
 			case *slack.PresenceChangeEvent:
 				s.logger.Infof("Presence Change: %v\n", ev)
 
-			case *slack.LatencyReport:
-				s.logger.Infof("Current latency: %v\n", ev.Value)
+			// case *slack.LatencyReport:
+			// 	s.logger.Infof("Current latency: %v\n", ev.Value)
 
 			case *slack.RTMError:
 				logrus.Errorf("ERROR: %s", ev.Error())
@@ -146,9 +146,13 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 
 func (s *Slack) isStandup(message string) (string, bool) {
 	if (strings.Contains(message, "роблем") || strings.Contains(message, "рудност") || strings.Contains(message, "атрдуднен")) && (strings.Contains(message, "чера") || strings.Contains(message, "ятницу") || strings.Contains(message, "делал") || strings.Contains(message, "делано")) && (strings.Contains(message, "егодн") || strings.Contains(message, "обираюс")) {
+		logrus.Infof("This message is a standup: %v", message)
 		return strings.TrimSpace(message), true
+
 	}
+	logrus.Errorf("This message is not a standup: %v", message)
 	return message, false
+
 }
 
 // SendMessage posts a message in a specified channel
