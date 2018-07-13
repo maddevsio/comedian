@@ -3,9 +3,11 @@ package chat
 import (
 	"sync"
 
+	"github.com/BurntSushi/toml"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 
@@ -26,6 +28,7 @@ type Slack struct {
 	wg         sync.WaitGroup
 	myUsername string
 	db         *storage.MySQL
+	lang       string
 }
 
 // NewSlack creates a new copy of slack handler
@@ -40,14 +43,19 @@ func NewSlack(conf config.Config) (*Slack, error) {
 	s.logger = logrus.New()
 	s.rtm = s.api.NewRTM()
 	s.db = m
+	s.lang = "ru_RU"
 
 	return s, nil
 }
 
 // Run runs a listener loop for slack
 func (s *Slack) Run() error {
+	localizer, err := s.getLocalizer()
+	if err != nil {
+		logrus.Fatal(err)
+		return err
+	}
 	s.ManageConnection()
-
 	for {
 		if s.myUsername == "" {
 			info := s.rtm.GetInfo()
@@ -62,7 +70,7 @@ func (s *Slack) Run() error {
 			case *slack.ConnectedEvent:
 				s.GetAllUsersToDB()
 				//	s.api.PostMessage("CBAP453GV", "Hey! I am alive!", slack.PostMessageParameters{})
-				s.SendUserMessage("UB9AE7CL9", "Hello, dear Manager!")
+				s.SendUserMessage("UB9AE7CL9", localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "HelloManager"}))
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev)
@@ -93,9 +101,29 @@ func (s *Slack) ManageConnection() {
 
 }
 
-func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
+func (s *Slack) getLocalizer() (*i18n.Localizer, error) {
+	bundle := &i18n.Bundle{}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	_, err := bundle.LoadMessageFile("./chat/ru.toml")
+	if err != nil {
+		logrus.Fatal(err)
+		return nil, err
+	}
+	_, err = bundle.LoadMessageFile("./chat/en.toml")
+	if err != nil {
+		logrus.Fatal(err)
+		return nil, err
+	}
+	localizer := i18n.NewLocalizer(bundle, s.lang)
+	return localizer, nil
+}
 
-	// TODO: check if channel message (not direct)
+func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
+	localizer, err := s.getLocalizer()
+	if err != nil {
+		logrus.Fatal(err)
+		return err
+	}
 	switch msg.SubType {
 	case typeMessage:
 		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
@@ -112,7 +140,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				text = err.Error()
 				return err
 			} else {
-				text = "Good job! Standup accepted! Keep it up!"
+				text = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "StandupAccepted"})
 			}
 			return s.SendMessage(msg.Msg.Channel, text)
 
@@ -182,7 +210,7 @@ func (s *Slack) GetAllUsersToDB() error {
 	}
 	chans, err := s.api.GetChannels(false)
 	if err != nil {
-		logrus.Errorf("ERROR: %s", err.Error())
+		logrus.Error("ERROR: %s", err.Error())
 		return err
 	}
 	var channelID string
