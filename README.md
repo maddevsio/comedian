@@ -96,12 +96,14 @@ docker-compose up
 - [x] Configure superusers with config file or env variables
 - [x] Get all users in slack's organization and sync it with users in database
 - [x] Make research: is it possible to show the certain commands to the certain user
-- [ ] Setup reminders when bot starts
-- [x] Setup reminders when we add new reminder on a channel
-- [ ] Text analysis engine to get standup messages without mentioning bot user
-- [ ] Get task worklogs from JIRA
-- [ ] NLP based configuration for standup time adding
 - [x] Create a docker-compose.yml
+- [x] Setup reminders when bot starts
+- [x] Setup reminders when we add new reminder on a channel
+- [x] Get standup messages without mentioning bot user
+- [ ] Get task worklogs from JIRA
+- [ ] Get data from Gitlab
+- [ ] NLP based configuration for standup time adding
+
 - [ ] Build HTTP API for reports with oAuth authentication
 
 
@@ -109,6 +111,7 @@ docker-compose up
 
 - [ ] Endpoint for report by project(channel) in date range
 - [ ] Endpoint for report by user and all his project in date range
+- [ ] Endpoint for report by project and user in date range
 - [ ] Authentication endpoint.
 
 ## Issues
