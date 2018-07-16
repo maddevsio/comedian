@@ -12,7 +12,7 @@ services:
       MYSQL_PASSWORD: comedian
 
   comedian:
-    image: anatoliyfedorenko/comedian
+    build: .
     restart: on-failure
     ports:
       - 8080:8080
