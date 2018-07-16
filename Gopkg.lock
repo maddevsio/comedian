@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  revision = "b26d9c308763d68093482582cea63d69be07a0f0"
+  version = "v0.3.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/bouk/monkey"
   packages = ["."]
@@ -34,7 +40,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/jmoiron/sqlx"
-  packages = [".","reflectx"]
+  packages = [
+    ".",
+    "reflectx"
+  ]
   revision = "de8647470aafe4854c976707c431dbe1eb2822c6"
 
 [[projects]]
@@ -51,7 +60,10 @@
 
 [[projects]]
   name = "github.com/labstack/gommon"
-  packages = ["color","log"]
+  packages = [
+    "color",
+    "log"
+  ]
   revision = "57409ada9da0f2afad6664c49502f8c50fbd8476"
   version = "0.2.3"
 
@@ -66,6 +78,16 @@
   packages = ["."]
   revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
   version = "v0.0.3"
+
+[[projects]]
+  name = "github.com/nicksnyder/go-i18n"
+  packages = [
+    "v2/i18n",
+    "v2/internal",
+    "v2/internal/plural"
+  ]
+  revision = "8c6996ea1058153460146b16c341a4ae611f7cf7"
+  version = "v2.0.0-beta.3"
 
 [[projects]]
   name = "github.com/nlopes/slack"
@@ -106,7 +128,11 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["acme","acme/autocert","ssh/terminal"]
+  packages = [
+    "acme",
+    "acme/autocert",
+    "ssh/terminal"
+  ]
   revision = "b3c9a1d25cfbbbab0ff4780b71c4f54e6e92a0de"
 
 [[projects]]
@@ -118,12 +144,26 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix","windows"]
+  packages = [
+    "unix",
+    "windows"
+  ]
   revision = "810d7000345868fc619eb81f46307107118f4ae1"
+
+[[projects]]
+  name = "golang.org/x/text"
+  packages = [
+    "internal/gen",
+    "internal/tag",
+    "language",
+    "unicode/cldr"
+  ]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1bf27b5851c0fc5aead1ce03e24b64b2aa86bdf867800e671136e96732cda25f"
+  inputs-digest = "1b6c0bdc2a2e921e760e44e4e737bc434518745207cc0a47691575bd5fc1ee9f"
   solver-name = "gps-cdcl"
   solver-version = 1
