@@ -219,7 +219,7 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "addStandupTimeNoUsers"}), standupTime.Time))
 	}
 
-	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "StandupTime"}), standupTime.Time))
+	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "addStandupTime"}), standupTime.Time))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
@@ -265,7 +265,7 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err.Error()))
 		}
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "StandupTime"}), standupTime.Time))
+	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "showStandupTime"}), standupTime.Time))
 }
 
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
