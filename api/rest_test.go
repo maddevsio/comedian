@@ -238,7 +238,7 @@ func TestHandleTimeCommands(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel>", timeInt), rec.Body.String())
 	}
 	if c.Language == "ru_RU" {
-		assert.Equal(t, "<!date^1531721100^Срок для стэндапов установлен на {time}, но в этом канале нет стэндаперов>", rec.Body.String())
+		assert.Equal(t, fmt.Sprintf("<!date^%v^Срок для стэндапов установлен на {time}, но в этом канале нет стэндаперов>", timeInt), rec.Body.String())
 	}
 	//add time no text
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(AddEmptyTime))
@@ -288,7 +288,7 @@ func TestHandleTimeCommands(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("<!date^%v^Standup time is {time}|Standup time set at 12:00>", timeInt), rec.Body.String())
 	}
 	if c.Language == "ru_RU" {
-		assert.Equal(t, "<!date^1531721100^Срок для стэндапов установлен на {time}|Срок для стэндапов установлен на 12:00>", rec.Body.String())
+		assert.Equal(t, fmt.Sprintf("<!date^%v^Срок для стэндапов установлен на {time}|Срок для стэндапов установлен на 12:00>", timeInt), rec.Body.String())
 	}
 	//delete time with no channel id
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(DelTimeNoChanID))
@@ -327,7 +327,7 @@ func TestHandleTimeCommands(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("<!date^%v^Standup time set at {time}|Standup time set at 12:00>", timeInt), rec.Body.String())
 	}
 	if c.Language == "ru_RU" {
-		assert.Equal(t, "<!date^1531721100^Срок для стэндапов установлен на {time}|Срок для стэндапов установлен на 12:00>", rec.Body.String())
+		assert.Equal(t, fmt.Sprintf("<!date^%v^Срок для стэндапов установлен на {time}|Срок для стэндапов установлен на 12:00>", timeInt), rec.Body.String())
 	}
 
 	//delete time (with users)
