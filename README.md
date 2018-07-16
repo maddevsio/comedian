@@ -65,6 +65,7 @@ NOTIFIER_CHECK_INTERVAL=15
 MANAGER=yourUserName
 DIRECT_MANAGER_CHANNEL_ID=
 REPORT_TIME="09:35"
+LANGUAGE="ru_RU"
 ```
 
 Run:
@@ -100,6 +101,7 @@ docker-compose up
 - [x] Setup reminders when bot starts
 - [x] Setup reminders when we add new reminder on a channel
 - [x] Get standup messages without mentioning bot user
+- [x] Set up multilang option for Comedian (En + Ru)
 - [ ] Get task worklogs from JIRA
 - [ ] Get data from Gitlab
 - [ ] NLP based configuration for standup time adding
