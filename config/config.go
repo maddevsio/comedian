@@ -33,6 +33,7 @@ func Get() (Config, error) {
 	return c, nil
 }
 
+// GetLocalizer creates localizer instance that can be used by app packages to localize translations
 func GetLocalizer() (*i18n.Localizer, error) {
 	c, err := Get()
 	if err != nil {
@@ -40,12 +41,12 @@ func GetLocalizer() (*i18n.Localizer, error) {
 	}
 	bundle := &i18n.Bundle{}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	_, err = bundle.LoadMessageFile("./chat/ru.toml")
+	_, err = bundle.LoadMessageFile("../config/ru.toml")
 	if err != nil {
 		logrus.Fatal(err)
 		return nil, err
 	}
-	_, err = bundle.LoadMessageFile("./chat/en.toml")
+	_, err = bundle.LoadMessageFile("../config/en.toml")
 	if err != nil {
 		logrus.Fatal(err)
 		return nil, err
