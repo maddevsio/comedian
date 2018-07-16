@@ -28,3 +28,15 @@ notifyManagerAllDone = "<@%v>, in channel <#%s> all standupers have written stan
 notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup today, these users ignored standup today: %v."
 notifyUsersWarning = "Hey! We are still waiting standup for today from you: %s"
 notifyDirectMessage = "Hello, <@%s>! You missed the standup deadline in <#%s> channel. Please, write you standup ASAP!"
+
+reportOnProjectHead = "Full Standup Report %v:\n\n"
+reportOnUserHead = "Full Standup Report for user <@%s>:\n\n"
+reportOnProjectAndUserHead = "Standup Report Project: %v, User: <@%s>\n\n"
+
+reportNoData = "No data for this period"
+reportPeriod = "\n\nReport from %s to %s:\n"
+reportStandupFromUser = "\nStandup from <@%s>:\n%s\n"
+reportStandupsFromProject = "\nOn project: <#%s>\n%s\n"
+reportIgnoredStandup = "\n<@%s>: ignored standup!\n"
+
+

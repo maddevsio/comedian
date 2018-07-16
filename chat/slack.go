@@ -183,7 +183,7 @@ func (s *Slack) GetAllUsersToDB() error {
 	}
 	chans, err := s.api.GetChannels(false)
 	if err != nil {
-		logrus.Error("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR: %s", err.Error())
 		return err
 	}
 	var channelID string

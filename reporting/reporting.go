@@ -6,8 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,6 +20,8 @@ type reportEntry struct {
 	NonReporters []model.StandupUser
 }
 
+var localizer, _ = config.GetLocalizer()
+
 // StandupReportByProject creates a standup report for a specified period of time
 func StandupReportByProject(db storage.Storage, channelID string, dateFrom, dateTo time.Time) (string, error) {
 	log.Infof("Making standup report for channel: %q, period: %s - %s",
@@ -27,8 +31,7 @@ func StandupReportByProject(db storage.Storage, channelID string, dateFrom, date
 		log.Errorf("ERROR: %s", err.Error())
 		return "Error!", err
 	}
-	report := fmt.Sprintf("Full Standup Report %v:\n\n", channelID)
-	//log.Println("REPORT ENTRIES!!!", reportEntries)
+	report := fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportOnProjectHead"}), channelID)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
@@ -42,7 +45,7 @@ func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, d
 		log.Errorf("ERROR: %s", err.Error())
 		return "Error!", err
 	}
-	report := fmt.Sprintf("Full Standup Report for user <@%s>:\n\n", user.SlackName)
+	report := fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportOnUserHead"}), user.SlackName)
 	report += ReportEntriesByUserToString(reportEntries)
 	return report, nil
 }
@@ -56,8 +59,7 @@ func StandupReportByProjectAndUser(db storage.Storage, channelID string, user mo
 		log.Errorf("ERROR: %s", err.Error())
 		return "Error!", err
 	}
-	report := fmt.Sprintf("Standup Report Project: %v, User: <@%s>\n\n", channelID, user.SlackName)
-	//log.Println("REPORT ENTRIES!!!", reportEntries)
+	report := fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportOnProjectAndUserHead"}), channelID, user.SlackName)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
@@ -120,19 +122,19 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 func ReportEntriesForPeriodByChannelToString(reportEntries []reportEntry) string {
 	var report string
 	if len(reportEntries) == 0 {
-		return report + "No data for this period"
+		return report + localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
 	}
 
 	for _, value := range reportEntries {
 		currentDateFrom := value.DateFrom
 		currentDateTo := value.DateTo
-		report += fmt.Sprintf("\n\nReport from %s to %s:\n", currentDateFrom.Format("2006-01-02"),
+		report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportPeriod"}), currentDateFrom.Format("2006-01-02"),
 			currentDateTo.Format("2006-01-02"))
 		for _, standup := range value.Standups {
-			report += fmt.Sprintf("\nStandup from <@%s>:\n%s\n", standup.Username, standup.Comment)
+			report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportStandupFromUser"}), standup.Username, standup.Comment)
 		}
 		for _, user := range value.NonReporters {
-			report += fmt.Sprintf("\n<@%s>: ignored standup!\n", user.SlackName)
+			report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportIgnoredStandup"}), user.SlackName)
 		}
 	}
 
@@ -194,19 +196,20 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 func ReportEntriesByUserToString(reportEntries []reportEntry) string {
 	var report string
 	if len(reportEntries) == 0 {
-		return report + "No data for this period"
+		return report + localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
 	}
 
 	for _, value := range reportEntries {
 		currentDateFrom := value.DateFrom
 		currentDateTo := value.DateTo
-		report += fmt.Sprintf("\n\nReport from %s to %s:\n", currentDateFrom.Format("2006-01-02"),
+
+		report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportPeriod"}), currentDateFrom.Format("2006-01-02"),
 			currentDateTo.Format("2006-01-02"))
 		for _, standup := range value.Standups {
-			report += fmt.Sprintf("\nOn project: <#%s>\n%s\n", standup.ChannelID, standup.Comment)
+			report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportStandupsFromProject"}), standup.ChannelID, standup.Comment)
 		}
 		for _, user := range value.NonReporters {
-			report += fmt.Sprintf("\n<@%s>: ignored standup\n", user.SlackName)
+			report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportIgnoredStandup"}), user.SlackName)
 		}
 	}
 	return report
