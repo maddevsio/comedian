@@ -3,7 +3,6 @@ package chat
 import (
 	"sync"
 
-	"github.com/BurntSushi/toml"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
@@ -17,6 +16,7 @@ import (
 var (
 	typeMessage     = ""
 	typeEditMessage = "message_changed"
+	localizer, _    = config.GetLocalizer()
 )
 
 // Slack struct used for storing and communicating with slack api
@@ -28,7 +28,6 @@ type Slack struct {
 	wg         sync.WaitGroup
 	myUsername string
 	db         *storage.MySQL
-	lang       string
 }
 
 // NewSlack creates a new copy of slack handler
@@ -43,18 +42,13 @@ func NewSlack(conf config.Config) (*Slack, error) {
 	s.logger = logrus.New()
 	s.rtm = s.api.NewRTM()
 	s.db = m
-	s.lang = "ru_RU"
 
 	return s, nil
 }
 
 // Run runs a listener loop for slack
 func (s *Slack) Run() error {
-	localizer, err := s.getLocalizer()
-	if err != nil {
-		logrus.Fatal(err)
-		return err
-	}
+
 	s.ManageConnection()
 	for {
 		if s.myUsername == "" {
@@ -101,29 +95,8 @@ func (s *Slack) ManageConnection() {
 
 }
 
-func (s *Slack) getLocalizer() (*i18n.Localizer, error) {
-	bundle := &i18n.Bundle{}
-	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	_, err := bundle.LoadMessageFile("./chat/ru.toml")
-	if err != nil {
-		logrus.Fatal(err)
-		return nil, err
-	}
-	_, err = bundle.LoadMessageFile("./chat/en.toml")
-	if err != nil {
-		logrus.Fatal(err)
-		return nil, err
-	}
-	localizer := i18n.NewLocalizer(bundle, s.lang)
-	return localizer, nil
-}
-
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
-	localizer, err := s.getLocalizer()
-	if err != nil {
-		logrus.Fatal(err)
-		return err
-	}
+
 	switch msg.SubType {
 	case typeMessage:
 		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
