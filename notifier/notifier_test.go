@@ -74,19 +74,33 @@ func TestNotifier(t *testing.T) {
 	})
 
 	notifyStandupStart(ch, n.DB, channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@user1>, <@user2>", ch.LastMessage)
-
+	if c.Language == "en_US" {
+		assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@user1>, <@user2>", ch.LastMessage)
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Друзья, я всё еще жду стэндапы от вас! Если их не будет, вам пизда: <@user1>, <@user2>", ch.LastMessage)
+	}
 	nonReporters, err := getNonReporters(ch, n.DB, channelID)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(nonReporters))
 
 	standupReminderForChannel(ch, n.DB)
 	assert.NoError(t, err)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@user1>, <@user2>", ch.LastMessage) // херня какая-то
+	if c.Language == "en_US" {
+		assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@user1>, <@user2>", ch.LastMessage) // херня какая-то
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Друзья, я всё еще жду стэндапы от вас! Если их не будет, вам пизда: <@user1>, <@user2>", ch.LastMessage)
+	}
 
 	managerStandupReport(ch, c, n.DB, d)
 	assert.NoError(t, err)
-	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
+	if c.Language == "en_US" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, в канале <#QWERTY123> не все написали стэндапы сегодня, игнорировали: <@user1>, <@user2>.", ch.LastMessage)
+	}
 
 	// add standup for user @test
 	s, err := n.DB.CreateStandup(model.Standup{
@@ -99,11 +113,20 @@ func TestNotifier(t *testing.T) {
 	assert.NoError(t, err)
 
 	standupReminderForChannel(ch, n.DB)
-	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
+	if c.Language == "en_US" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, в канале <#QWERTY123> не все написали стэндапы сегодня, игнорировали: <@user1>, <@user2>.", ch.LastMessage)
+	}
 
 	managerStandupReport(ch, c, n.DB, d)
-	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user2>.", ch.LastMessage)
-
+	if c.Language == "en_US" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> not all standupers wrote standup today, this users ignored standup today: <@user2>.", ch.LastMessage)
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, в канале <#QWERTY123> не все написали стэндапы сегодня, игнорировали: <@user2>.", ch.LastMessage)
+	}
 	// add standup for user @user2
 	s2, err := n.DB.CreateStandup(model.Standup{
 		ChannelID:  channelID,
@@ -115,18 +138,37 @@ func TestNotifier(t *testing.T) {
 	assert.NoError(t, err)
 
 	notifyStandupStart(ch, n.DB, channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
-
+	if c.Language == "en_US" {
+		assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Поздравляю, сегодня все написали стэндапы!", ch.LastMessage)
+	}
 	standupReminderForChannel(ch, n.DB)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
+
+	if c.Language == "en_US" {
+		assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Поздравляю, сегодня все написали стэндапы!", ch.LastMessage)
+	}
 
 	managerStandupReport(ch, c, n.DB, d)
-	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
+	if c.Language == "en_US" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, в канале <#QWERTY123> все написали стэндапы сегодня", ch.LastMessage)
+	}
 
 	err = directRemindStandupers(ch, n.DB, channelID)
 	assert.NoError(t, err)
-	assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
-
+	if c.Language == "en_US" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "CHAT: CBAP453GV, MESSAGE: <@fedorenko.tolik>, в канале <#QWERTY123> все написали стэндапы сегодня", ch.LastMessage)
+	}
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))
 
