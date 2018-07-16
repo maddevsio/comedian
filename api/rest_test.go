@@ -399,8 +399,12 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Full Standup Report chanid:\n\nNo data for this period", rec.Body.String())
-
+	if c.Language == "en_US" {
+		assert.Equal(t, "Full Standup Report chanid:\n\nNo data for this period", rec.Body.String())
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "Полный отчёт по стэндапам chanid:\n\nНет данных за данный период", rec.Body.String())
+	}
 }
 
 func TestHandleReportByUserCommands(t *testing.T) {
@@ -466,8 +470,12 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Full Standup Report for user <@user1>:\n\nNo data for this period", rec.Body.String())
-
+	if c.Language == "en_US" {
+		assert.Equal(t, "Full Standup Report for user <@user1>:\n\nNo data for this period", rec.Body.String())
+	}
+	if c.Language == "ru_RU" {
+		assert.Equal(t, "Полный отчет по пользователю <@user1>:\n\nНет данных за данный период", rec.Body.String())
+	}
 	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 
 }
