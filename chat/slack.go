@@ -154,15 +154,15 @@ func (s *Slack) isStandup(message string) (string, bool) {
 
 	p1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p1"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 	p2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p2"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 	p3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p3"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 
 	mentionsProblem := false
@@ -175,19 +175,19 @@ func (s *Slack) isStandup(message string) (string, bool) {
 
 	y1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y1"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 	y2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y2"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 	y3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y3"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 	y4, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y4"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 	mentionsYesterdayWork := false
 	yesterdayWorkKeys := []string{y1, y2, y3, y4}
@@ -199,15 +199,15 @@ func (s *Slack) isStandup(message string) (string, bool) {
 
 	t1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t1"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 	t2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t2"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 	t3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t3"})
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Error(err)
 	}
 	mentionsTodayPlans := false
 	todayPlansKeys := []string{t1, t2, t3}

@@ -82,7 +82,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 					//periodic reminder for non reporters!
 					text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyNotAll"})
 					if err != nil {
-						log.Fatal(err)
+						log.Error(err)
 					}
 					chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(nonReporters, ", ")))
 				}
@@ -151,7 +151,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 			if nonReportersCheck == 0 {
 				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerAllDone"})
 				if err != nil {
-					log.Fatal(err)
+					log.Error(err)
 				}
 				err = chat.SendMessage(c.DirectManagerChannelID, fmt.Sprintf(text, c.Manager, channel))
 				if err != nil {
@@ -160,7 +160,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 			} else {
 				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerNotAll"})
 				if err != nil {
-					log.Fatal(err)
+					log.Error(err)
 				}
 				err = chat.SendMessage(c.DirectManagerChannelID, fmt.Sprintf(text, c.Manager, channel, strings.Join(nonReporters, ", ")))
 				if err != nil {
@@ -180,13 +180,13 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 	if len(list) > 0 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyUsersWarning"})
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 		err = chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(list, ", ")))
 	} else {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyAllDone"})
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 		err = chat.SendMessage(channelID, text)
 	}
@@ -267,7 +267,7 @@ func directRemindStandupers(chat chat.Chat, db storage.Storage, channelID string
 	for _, motherFucker := range nonReporters {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyDirectMessage"})
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 		chat.SendUserMessage(motherFucker.SlackUserID, fmt.Sprintf(text, motherFucker.SlackName, motherFucker.ChannelID))
 	}
