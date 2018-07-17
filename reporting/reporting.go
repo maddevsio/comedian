@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -21,9 +22,18 @@ type reportEntry struct {
 
 var localizer *i18n.Localizer
 
+func initLocalizer() *i18n.Localizer {
+	localizer, err := config.GetLocalizer()
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+	return localizer
+}
+
 // StandupReportByProject creates a standup report for a specified period of time
 func StandupReportByProject(db storage.Storage, channelID string, dateFrom, dateTo time.Time) (string, error) {
-
+	localizer = initLocalizer()
 	reportEntries, err := getReportEntriesForPeriodByChannel(db, channelID, dateFrom, dateTo)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
@@ -36,7 +46,7 @@ func StandupReportByProject(db storage.Storage, channelID string, dateFrom, date
 
 // StandupReportByUser creates a standup report for a specified period of time
 func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
-
+	localizer = initLocalizer()
 	reportEntries, err := getReportEntriesForPeriodbyUser(db, user, dateFrom, dateTo)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
@@ -49,7 +59,7 @@ func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, d
 
 // StandupReportByProjectAndUser creates a standup report for a specified period of time
 func StandupReportByProjectAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
-
+	localizer = initLocalizer()
 	reportEntries, err := getReportEntriesForPeriodByChannelAndUser(db, channelID, user, dateFrom, dateTo)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
@@ -116,6 +126,7 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 
 //ReportEntriesForPeriodByChannelToString returns report entries by channel in text
 func ReportEntriesForPeriodByChannelToString(reportEntries []reportEntry) string {
+	localizer = initLocalizer()
 	var report string
 	if len(reportEntries) == 0 {
 		return report + localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
@@ -190,6 +201,7 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 
 //ReportEntriesByUserToString provides reporting entries in selected time period
 func ReportEntriesByUserToString(reportEntries []reportEntry) string {
+	localizer = initLocalizer()
 	var report string
 	if len(reportEntries) == 0 {
 		return report + localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
