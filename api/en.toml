@@ -16,4 +16,14 @@ showStandupTime = "<!date^%v^Standup time is {time}|Standup time set at 12:00>"
 
 wrongNArgs = "Wrong number of arguments"
 reportByProjectAndUser = "This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command"
+reportOnProjectHead = "Full Standup Report %v:\n\n"
+reportOnUserHead = "Full Standup Report for user <@%s>:\n\n"
+reportOnProjectAndUserHead = "Standup Report Project: %v, User: <@%s>\n\n"
+
+reportNoData = "No data for this period"
+reportPeriod = "\n\nReport from %s to %s:\n"
+reportStandupFromUser = "\nStandup from <@%s>:\n%s\n"
+reportStandupsFromProject = "\nOn project: <#%s>\n%s\n"
+reportIgnoredStandup = "\n<@%s>: ignored standup!\n"
+
 

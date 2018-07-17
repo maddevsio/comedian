@@ -1,8 +1,6 @@
 package config
 
 import (
-	"path/filepath"
-
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/labstack/gommon/log"
@@ -43,20 +41,13 @@ func GetLocalizer() (*i18n.Localizer, error) {
 	}
 	bundle := &i18n.Bundle{}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	path, err := filepath.Abs("ru.toml")
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	_, err = bundle.LoadMessageFile(path)
+
+	_, err = bundle.LoadMessageFile("ru.toml")
 	if err != nil {
 		logrus.Fatal(err)
 		return nil, err
 	}
-	path, err = filepath.Abs("en.toml")
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	_, err = bundle.LoadMessageFile(path)
+	_, err = bundle.LoadMessageFile("en.toml")
 	if err != nil {
 		logrus.Fatal(err)
 		return nil, err
