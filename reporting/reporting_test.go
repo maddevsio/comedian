@@ -127,7 +127,7 @@ func TestStandupReportByUser(t *testing.T) {
 	text, err = StandupReportByUser(db, user, dateFrom, dateTo)
 	assert.NoError(t, err)
 
-	assert.Equal(t, fmt.Sprintf("Full Standup Report for user <@user1>:\n\n\n\nReport from %v to %v:\n\n<@user1>: ignored standup\n", dateToText, dateNextText), text)
+	assert.Equal(t, fmt.Sprintf("Full Standup Report for user <@user1>:\n\n\n\nReport from %v to %v:\n\n<@user1>: ignored standup!\n", dateToText, dateNextText), text)
 
 	standup1, err := db.CreateStandup(model.Standup{
 		ChannelID:  channelID,
