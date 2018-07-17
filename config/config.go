@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	logrus "github.com/sirupsen/logrus"
+	"golang.org/x/text/language"
 )
 
 type (
@@ -18,7 +19,7 @@ type (
 		Manager                string `envconfig:"MANAGER" required:"true"`
 		DirectManagerChannelID string `envconfig:"DIRECT_MANAGER_CHANNEL_ID" required:"true"`
 		ReportTime             string `envconfig:"REPORT_TIME" required:"true"`
-		Language               string `envconfig:"LANGUAGE" required:"true"`
+		Language               string `envconfig:"LANGUAGE" required:"false"`
 		Debug                  bool
 	}
 )
@@ -39,17 +40,17 @@ func GetLocalizer() (*i18n.Localizer, error) {
 	if err != nil {
 		return nil, err
 	}
-	bundle := &i18n.Bundle{}
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
 	_, err = bundle.LoadMessageFile("ru.toml")
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Error(err)
 		return nil, err
 	}
 	_, err = bundle.LoadMessageFile("en.toml")
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Error(err)
 		return nil, err
 	}
 	localizer := i18n.NewLocalizer(bundle, c.Language)

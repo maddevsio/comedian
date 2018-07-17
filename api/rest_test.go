@@ -91,7 +91,7 @@ func TestHandleUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Пользователь <@test> добавлен, но в этом канале не установлено время для стэндапов!", rec.Body.String())
+	assert.Equal(t, "<@test> added, but there is no standup time for this channel", rec.Body.String())
 
 	//list users with users
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(ListUsers))
@@ -101,7 +101,7 @@ func TestHandleUserCommands(t *testing.T) {
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	assert.Equal(t, "Стэндаперы в канале: <@test>", rec.Body.String())
+	assert.Equal(t, "Standupers in this channel: <@test>", rec.Body.String())
 
 	//add user that already exists
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(AddUser))
@@ -111,7 +111,7 @@ func TestHandleUserCommands(t *testing.T) {
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	assert.Equal(t, "Этот пользователь уже существует", rec.Body.String())
+	assert.Equal(t, "User already exists!", rec.Body.String())
 
 	//delete user
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(DelUser))
@@ -121,7 +121,7 @@ func TestHandleUserCommands(t *testing.T) {
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	assert.Equal(t, "Пользователь <@test> удален", rec.Body.String())
+	assert.Equal(t, "<@test> deleted", rec.Body.String())
 
 	st, err := rest.db.CreateStandupTime(model.StandupTime{
 		ChannelID: "chanid",
@@ -136,7 +136,7 @@ func TestHandleUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Пользователь <@test> добавлен", rec.Body.String())
+	assert.Equal(t, "<@test> added", rec.Body.String())
 
 	//delete user
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(DelUser))
@@ -146,7 +146,7 @@ func TestHandleUserCommands(t *testing.T) {
 
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Пользователь <@test> удален", rec.Body.String())
+	assert.Equal(t, "<@test> deleted", rec.Body.String())
 
 	//list no users
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(ListUsers))
@@ -155,7 +155,7 @@ func TestHandleUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "В этом канале нет стэндаперов! Чтобы добавить кого-нибдуь, используйте слэш команду `/comedianadd`", rec.Body.String())
+	assert.Equal(t, "No standupers in this channel! To add one, please, use /comedianadd slash command", rec.Body.String())
 
 	assert.NoError(t, rest.db.DeleteStandupTime(st.ChannelID))
 
@@ -187,7 +187,7 @@ func TestHandleTimeCommands(t *testing.T) {
 	context := e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "У этого канала до сих пор не установленно стэндап время! Пожалуйста, установите время слэшкомандой `/standuptimeset`!", rec.Body.String())
+	assert.Equal(t, "No standup time set for this channel yet! Please, add a standup time using `/standuptimeset` command!", rec.Body.String())
 
 	//add time (no users)
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(AddTime))
@@ -196,7 +196,7 @@ func TestHandleTimeCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, fmt.Sprintf("<!date^%v^Срок для стэндапов установлен на {time}, но в этом канале нет стэндаперов>", timeInt), rec.Body.String())
+	assert.Equal(t, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel>", timeInt), rec.Body.String())
 
 	//add time no text
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(AddEmptyTime))
@@ -242,7 +242,7 @@ func TestHandleTimeCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, fmt.Sprintf("<!date^%v^Срок для стэндапов установлен на {time}|Срок для стэндапов установлен на 12:00>", timeInt), rec.Body.String())
+	assert.Equal(t, fmt.Sprintf("<!date^%v^Standup time is {time}|Standup time set at 12:00>", timeInt), rec.Body.String())
 
 	//delete time with no channel id
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(DelTimeNoChanID))
@@ -277,7 +277,7 @@ func TestHandleTimeCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, fmt.Sprintf("<!date^%v^Срок для стэндапов установлен на {time}|Срок для стэндапов установлен на 12:00>", timeInt), rec.Body.String())
+	assert.Equal(t, fmt.Sprintf("<!date^%v^Standup time set at {time}|Standup time set at 12:00>", timeInt), rec.Body.String())
 
 	//delete time (with users)
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(DelTime))
@@ -287,7 +287,8 @@ func TestHandleTimeCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "Время для стэндапов в этом канале удалено, но остались стэндаперы!", rec.Body.String())
+
+		assert.Equal(t, "standup time for this channel removed, but there are people marked as a standuper.", rec.Body.String())
 
 	}
 
@@ -300,7 +301,7 @@ func TestHandleTimeCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Стэндап время для канала channame удалено", rec.Body.String())
+	assert.Equal(t, "standup time for channame channel deleted", rec.Body.String())
 
 }
 
@@ -340,7 +341,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Полный отчёт по стэндапам chanid:\n\nНет данных за данный период", rec.Body.String())
+	assert.Equal(t, "Full Standup Report chanid:\n\nNo data for this period", rec.Body.String())
 
 }
 
@@ -407,7 +408,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Полный отчет по пользователю <@user1>:\n\nНет данных за данный период", rec.Body.String())
+	assert.Equal(t, "Full Standup Report for user <@user1>:\n\nNo data for this period", rec.Body.String())
 
 	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 
@@ -476,7 +477,7 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Данный пользователь не установлен как стэндапер в этом канале. Для начала добавьте его слэшкомандой `/comdeidanadd`", rec.Body.String())
+	assert.Equal(t, "This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command", rec.Body.String())
 
 	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 
