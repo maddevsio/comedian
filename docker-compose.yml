@@ -1,4 +1,4 @@
-version: '3'
+version: '2'
 
 services:
 
@@ -13,6 +13,7 @@ services:
 
   comedian:
     build: .
+    restart: on-failure
     ports:
       - 8080:8080
     links:
@@ -24,7 +25,7 @@ services:
       COMEDIAN_NOTIFIER_CHECK_INTERVAL: 60
       COMEDIAN_MANAGER: fedorenko.tolik
       COMEDIAN_DIRECT_MANAGER_CHANNEL_ID: CBAP453GV
-      COMEDIAN_REPORT_TIME: 15:26
+      COMEDIAN_REPORT_TIME: '15:26'
       COMEDIAN_LANGUAGE: ru_RU
     depends_on:
       - "db"

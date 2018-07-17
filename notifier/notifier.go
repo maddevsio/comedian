@@ -43,7 +43,7 @@ func (n *Notifier) Start(c config.Config) error {
 
 	reportTimeParsed, err := time.Parse("15:04", c.ReportTime)
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		log.Errorf("ERROR PARSING TIME: %s", err.Error())
 		return err
 	}
 	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, c, n.DB, reportTimeParsed)
@@ -59,7 +59,7 @@ func (n *Notifier) Start(c config.Config) error {
 func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 	standupTimes, err := db.ListAllStandupTime()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		log.Errorf("ERROR LIST ALL STANDUP TIME: %s", err.Error())
 	}
 	for _, standupTime := range standupTimes {
 		channelID := standupTime.ChannelID
@@ -71,7 +71,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 		}
 		nonReporters, err := getNonReporters(chat, db, channelID)
 		if err != nil {
-			log.Errorf("ERROR: %s", err.Error())
+			log.Errorf("ERROR GET NONREPORTERS: %s", err.Error())
 		}
 		if len(nonReporters) > 0 {
 			pauseTime := time.Minute * 1 //repeats after n minutes
@@ -127,7 +127,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 		for _, channel := range standupChannelsList {
 			userStandupRaw, err := db.SelectStandupsByChannelID(channel)
 			if err != nil {
-				log.Errorf("ERROR: %s", err.Error())
+				log.Errorf("ERROR SELECT STANDUP BY CHANNEL ID: %s", err.Error())
 			}
 			var usersWhoCreatedStandup []string
 			for _, userStandup := range userStandupRaw {
@@ -155,7 +155,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 				}
 				err = chat.SendMessage(c.DirectManagerChannelID, fmt.Sprintf(text, c.Manager, channel))
 				if err != nil {
-					log.Errorf("ERROR: %s", err.Error())
+					log.Errorf("ERROR SENDING MESSAGE: %s", err.Error())
 				}
 			} else {
 				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerNotAll"})
@@ -164,7 +164,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 				}
 				err = chat.SendMessage(c.DirectManagerChannelID, fmt.Sprintf(text, c.Manager, channel, strings.Join(nonReporters, ", ")))
 				if err != nil {
-					log.Errorf("ERROR: %s", err.Error())
+					log.Errorf("ERROR SENDING MESSAGE: %s", err.Error())
 				}
 			}
 		}
