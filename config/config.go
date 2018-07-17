@@ -43,7 +43,7 @@ func GetLocalizer() (*i18n.Localizer, error) {
 	}
 	bundle := &i18n.Bundle{}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	path, err := filepath.Abs("config/ru.toml")
+	path, err := filepath.Abs("ru.toml")
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func GetLocalizer() (*i18n.Localizer, error) {
 		logrus.Fatal(err)
 		return nil, err
 	}
-	path, err = filepath.Abs("config/en.toml")
+	path, err = filepath.Abs("en.toml")
 	if err != nil {
 		logrus.Fatal(err)
 	}

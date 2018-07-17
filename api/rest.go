@@ -137,16 +137,28 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		}
 	}
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
-		return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "userExist"})))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
+		if err != nil {
+			logrus.Errorf("ERROR: %s", err.Error())
+		}
+		return c.String(http.StatusOK, fmt.Sprintf(text))
 	}
 	st, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("could not list standup time: %v", err.Error())
 	}
 	if st.Time == int64(0) {
-		return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "addUserNoStandupTime"}), userName))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addUserNoStandupTime"})
+		if err != nil {
+			logrus.Errorf("ERROR: %s", err.Error())
+		}
+		return c.String(http.StatusOK, fmt.Sprintf(text, userName))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "addUser"}), userName))
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addUser"})
+	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(text, userName))
 }
 
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
@@ -166,7 +178,11 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		logrus.Errorf("could not delete standup user: %v", err.Error())
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err.Error()))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "deleteUser"}), userName))
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "deleteUser"})
+	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(text, userName))
 }
 
 func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
@@ -192,9 +208,17 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 	}
 
 	if len(userNames) < 1 {
-		return c.String(http.StatusOK, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "listNoStandupers"}))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "listNoStandupers"})
+		if err != nil {
+			logrus.Errorf("ERROR: %s", err.Error())
+		}
+		return c.String(http.StatusOK, text)
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "listStandupers"}), strings.Join(userNames, ", ")))
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "listStandupers"})
+	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(text, strings.Join(userNames, ", ")))
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {
@@ -222,10 +246,18 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	})
 	st, _ := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if len(st) == 0 {
-		return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "addStandupTimeNoUsers"}), standupTime.Time))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addStandupTimeNoUsers"})
+		if err != nil {
+			logrus.Errorf("ERROR: %s", err.Error())
+		}
+		return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
 	}
 
-	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "addStandupTime"}), standupTime.Time))
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addStandupTime"})
+	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
@@ -246,9 +278,17 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if len(st) != 0 {
-		return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "removeStandupTimeWithUsers"})))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "removeStandupTimeWithUsers"})
+		if err != nil {
+			logrus.Errorf("ERROR: %s", err.Error())
+		}
+		return c.String(http.StatusOK, fmt.Sprintf(text))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "removeStandupTime"}), ca.ChannelName))
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "removeStandupTime"})
+	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(text, ca.ChannelName))
 }
 
 func (r *REST) listTime(c echo.Context, f url.Values) error {
@@ -266,12 +306,20 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 	if err != nil {
 		logrus.Errorf("ERROR: %s", err.Error())
 		if err.Error() == "sql: no rows in result set" {
-			return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "showNoStandupTime"})))
+			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "showNoStandupTime"})
+			if err != nil {
+				logrus.Errorf("ERROR: %s", err.Error())
+			}
+			return c.String(http.StatusOK, fmt.Sprintf(text))
 		} else {
 			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err.Error()))
 		}
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "showStandupTime"}), standupTime.Time))
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "showStandupTime"})
+	if err != nil {
+		logrus.Errorf("ERROR: %s", err.Error())
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
 }
 
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
@@ -287,7 +335,11 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	commandParams := strings.Fields(ca.Text)
 	logrus.Println(len(commandParams))
 	if len(commandParams) != 3 {
-		return c.String(http.StatusOK, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "wrongNArgs"}))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "wrongNArgs"})
+		if err != nil {
+			logrus.Errorf("ERROR: %s", err.Error())
+		}
+		return c.String(http.StatusOK, text)
 	}
 	channelID := commandParams[0]
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
@@ -320,7 +372,11 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 3 {
-		return c.String(http.StatusOK, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "userExist"}))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
+		if err != nil {
+			logrus.Errorf("ERROR: %s", err.Error())
+		}
+		return c.String(http.StatusOK, text)
 	}
 	userfull := commandParams[0]
 	result := strings.Split(userfull, "|")
@@ -360,7 +416,11 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 4 {
-		return c.String(http.StatusOK, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "userExist"}))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
+		if err != nil {
+			logrus.Errorf("ERROR: %s", err.Error())
+		}
+		return c.String(http.StatusOK, text)
 	}
 	channelID := commandParams[0]
 	logrus.Println("0" + channelID)
@@ -386,7 +446,11 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
 	if err != nil {
 		if err.Error() == "sql: no rows in result set" {
-			return c.String(http.StatusOK, fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})))
+			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
+			if err != nil {
+				logrus.Errorf("ERROR: %s", err.Error())
+			}
+			return c.String(http.StatusOK, fmt.Sprintf(text))
 		}
 	}
 	return c.String(http.StatusOK, report)
