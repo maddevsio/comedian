@@ -13,6 +13,7 @@ type MessageEvent struct {
 }
 
 func TestIsStandup(t *testing.T) {
+
 	c, err := config.Get()
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
