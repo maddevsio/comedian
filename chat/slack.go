@@ -150,11 +150,77 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 }
 
 func (s *Slack) isStandup(message string) (string, bool) {
-	if (strings.Contains(message, "роблем") || strings.Contains(message, "рудност") || strings.Contains(message, "атрдуднен")) && (strings.Contains(message, "чера") || strings.Contains(message, "ятницу") || strings.Contains(message, "делал") || strings.Contains(message, "делано")) && (strings.Contains(message, "егодн") || strings.Contains(message, "обираюс")) {
+
+	p1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p1"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	p2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p2"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	p3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p3"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+
+	mentionsProblem := false
+	problemKeys := []string{p1, p2, p3}
+	for _, problem := range problemKeys {
+		if strings.Contains(message, problem) {
+			mentionsProblem = true
+		}
+	}
+
+	y1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y1"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	y2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y2"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	y3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y3"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	y4, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y4"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	mentionsYesterdayWork := false
+	yesterdayWorkKeys := []string{y1, y2, y3, y4}
+	for _, work := range yesterdayWorkKeys {
+		if strings.Contains(message, work) {
+			mentionsYesterdayWork = true
+		}
+	}
+
+	t1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t1"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	t2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t2"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	t3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t3"})
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	mentionsTodayPlans := false
+	todayPlansKeys := []string{t1, t2, t3}
+	for _, plan := range todayPlansKeys {
+		if strings.Contains(message, plan) {
+			mentionsTodayPlans = true
+		}
+	}
+
+	if mentionsProblem && mentionsYesterdayWork && mentionsTodayPlans {
 		logrus.Infof("This message is a standup: %v", message)
 		return strings.TrimSpace(message), true
-
 	}
+
 	logrus.Errorf("This message is not a standup: %v", message)
 	return message, false
 
