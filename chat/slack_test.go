@@ -18,12 +18,12 @@ func TestIsStandup(t *testing.T) {
 		input   string
 		confirm bool
 	}{
-		{"все ключевые слова", "вчера делал дохуя всего сегодня собираюсь делать еще больше Проблемы: дохуя проблем, пиздец охуеваю!", true},
-		{"нет ключевых слов", "я хочу написать стэндап, но забыл как бот определяет мой стэндап!", false},
-		{"ключевые слова вчера", "Вчера дарил хлеб собакам!", false},
-		{"ключевые слова вчера и что буду делать", "Вчера ломал сервер, сегодня будет охренеть много дел", false},
-		{"все ключевые слова с большой буквы", "Вчера чинил мускуль, Сегодня буду бухать Проблемы: нет проблем и это проблема!", true},
-		{"ключевые слова с ошибками", "вера починил докер сегдня буду пушить в мастер Прблемы: не понял, как починил докер", false},
+		{"all key words", "Yesterday managed to get docker up and running, today will complete test #100, problems: I have multilang!", true},
+		{"no key words", "i want to create a standup but totaly forgot the way i should write it!", false},
+		{"key words yesterday", "Yesterday it was fucking awesome!", false},
+		{"key words yesterday and today", "Вчера ломал сервер, сегодня будет охренеть много дел", false},
+		{"all key words capitalized", "Yesterday: launched MySQL, Today: will scream and should, Problems: SHIT IS ALL OVER!", true},
+		{"keywords with mistakes", "Yesday completed shit, dotay will fap like crazy, promlems: no problems!", false},
 	}
 	c, err := config.Get()
 	assert.NoError(t, err)
