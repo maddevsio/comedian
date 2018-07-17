@@ -17,7 +17,7 @@ build_linux:
 build_docker:
 	docker build -t comedian .
 
-docker: build_linux build_docker
+docker: clean build_linux build_docker
 
 migrate:
 	goose -dir migrations mysql "comedian:comedian@tcp(172.18.0.3:3306)/comedian"  up
