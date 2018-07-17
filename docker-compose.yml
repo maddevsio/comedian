@@ -13,7 +13,6 @@ services:
 
   comedian:
     build: .
-    restart: on-failure
     ports:
       - 8080:8080
     links:

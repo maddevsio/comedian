@@ -34,7 +34,7 @@ type Slack struct {
 func NewSlack(conf config.Config) (*Slack, error) {
 	m, err := storage.NewMySQL(conf)
 	if err != nil {
-		logrus.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("DATABASE CONNECTION ERROR: %s", err.Error())
 		return nil, err
 	}
 	s := &Slack{}
@@ -79,7 +79,7 @@ func (s *Slack) Run() error {
 				s.logger.Infof("Presence Change: %v\n", ev)
 
 			case *slack.RTMError:
-				logrus.Errorf("ERROR: %s", ev.Error())
+				logrus.Errorf("RTME ERROR: %s", ev.Error())
 
 			case *slack.InvalidAuthEvent:
 				s.logger.Info("Invalid credentials")

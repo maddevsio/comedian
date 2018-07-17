@@ -46,7 +46,7 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 	e := echo.New()
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
-		logrus.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR CONNECTION TO DB: %s", err.Error())
 		return nil, err
 	}
 	decoder := schema.NewDecoder()
@@ -61,6 +61,7 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 
 	localizer, err = config.GetLocalizer()
 	if err != nil {
+		logrus.Errorf("ERROR GET LOCALIZER: %s", err.Error())
 		return nil, err
 	}
 
@@ -79,7 +80,7 @@ func (r *REST) Start() error {
 func (r *REST) handleCommands(c echo.Context) error {
 	form, err := c.FormParams()
 	if err != nil {
-		logrus.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR PARSING FORM PARAMS: %s", err.Error())
 		return c.JSON(http.StatusBadRequest, nil)
 	}
 	if command := form.Get("command"); command != "" {
@@ -112,11 +113,11 @@ func (r *REST) handleCommands(c echo.Context) error {
 func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	result := strings.Split(ca.Text, "|")
@@ -139,7 +140,7 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
 		if err != nil {
-			logrus.Errorf("ERROR: %s", err.Error())
+			logrus.Errorf("ERROR LOCALIZER: %s", err.Error())
 		}
 		return c.String(http.StatusOK, fmt.Sprintf(text))
 	}
@@ -150,13 +151,13 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	if st.Time == int64(0) {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addUserNoStandupTime"})
 		if err != nil {
-			logrus.Errorf("ERROR: %s", err.Error())
+			logrus.Errorf("ERROR LOCALIZER: %s", err.Error())
 		}
 		return c.String(http.StatusOK, fmt.Sprintf(text, userName))
 	}
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addUser"})
 	if err != nil {
-		logrus.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR LOCALIZER: %s", err.Error())
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(text, userName))
 }

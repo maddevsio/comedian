@@ -28,7 +28,7 @@ type (
 func Get() (Config, error) {
 	var c Config
 	if err := envconfig.Process("comedian", &c); err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		log.Errorf("CONFIG ERROR: %s", err.Error())
 		return c, err
 	}
 	return c, nil
