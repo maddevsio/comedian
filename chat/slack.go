@@ -67,16 +67,16 @@ func (s *Slack) Run() error {
 			switch ev := msg.Data.(type) {
 			case *slack.ConnectedEvent:
 				s.GetAllUsersToDB()
-				//	s.api.PostMessage("CBAP453GV", "Hey! I am alive!", slack.PostMessageParameters{})
-				s.SendUserMessage("UB9AE7CL9", localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "HelloManager"}))
+				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "HelloManager"})
+				if err != nil {
+					s.logger.Error(err)
+				}
+				s.SendUserMessage("UB9AE7CL9", text)
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev)
 			case *slack.PresenceChangeEvent:
 				s.logger.Infof("Presence Change: %v\n", ev)
-
-			// case *slack.LatencyReport:
-			// 	s.logger.Infof("Current latency: %v\n", ev.Value)
 
 			case *slack.RTMError:
 				logrus.Errorf("ERROR: %s", ev.Error())
@@ -114,10 +114,11 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			var text string
 			if err != nil {
 				logrus.Errorf("ERROR: %s", err.Error())
-				text = err.Error()
 				return err
-			} else {
-				text = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "StandupAccepted"})
+			}
+			text, err = localizer.Localize(&i18n.LocalizeConfig{MessageID: "StandupAccepted"})
+			if err != nil {
+				s.logger.Error(err)
 			}
 			return s.SendMessage(msg.Msg.Channel, text)
 
