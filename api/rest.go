@@ -39,7 +39,7 @@ const (
 	commandReportByProjectAndUser = "/report_by_project_and_user"
 )
 
-var localizer, _ = config.GetLocalizer()
+var localizer *i18n.Localizer
 
 // NewRESTAPI creates API for Slack commands
 func NewRESTAPI(c config.Config) (*REST, error) {
@@ -58,6 +58,12 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 		decoder: decoder,
 	}
 	r.initEndpoints()
+
+	localizer, err = config.GetLocalizer()
+	if err != nil {
+		return nil, err
+	}
+
 	return r, nil
 }
 

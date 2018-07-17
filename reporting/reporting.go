@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -20,12 +19,11 @@ type reportEntry struct {
 	NonReporters []model.StandupUser
 }
 
-var localizer, _ = config.GetLocalizer()
+var localizer *i18n.Localizer
 
 // StandupReportByProject creates a standup report for a specified period of time
 func StandupReportByProject(db storage.Storage, channelID string, dateFrom, dateTo time.Time) (string, error) {
-	log.Infof("Making standup report for channel: %q, period: %s - %s",
-		channelID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+
 	reportEntries, err := getReportEntriesForPeriodByChannel(db, channelID, dateFrom, dateTo)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
@@ -38,8 +36,7 @@ func StandupReportByProject(db storage.Storage, channelID string, dateFrom, date
 
 // StandupReportByUser creates a standup report for a specified period of time
 func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
-	log.Infof("Making standup report for channel: %q, period: %s - %s",
-		user, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+
 	reportEntries, err := getReportEntriesForPeriodbyUser(db, user, dateFrom, dateTo)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
@@ -52,8 +49,7 @@ func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, d
 
 // StandupReportByProjectAndUser creates a standup report for a specified period of time
 func StandupReportByProjectAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
-	log.Infof("Making standup report for channel: %q, period: %s - %s",
-		channelID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+
 	reportEntries, err := getReportEntriesForPeriodByChannelAndUser(db, channelID, user, dateFrom, dateTo)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())

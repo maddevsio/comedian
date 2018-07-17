@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var localizer, _ = config.GetLocalizer()
+var localizer *i18n.Localizer
 
 // Notifier struct is used to notify users about upcoming or skipped standups
 type Notifier struct {
@@ -29,6 +29,11 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
+		return nil, err
+	}
+	localizer, err = config.GetLocalizer()
+	if err != nil {
+		return nil, err
 	}
 	return &Notifier{Chat: chat, DB: conn, CheckInterval: c.NotifierCheckInterval}, nil
 }

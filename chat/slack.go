@@ -16,7 +16,7 @@ import (
 var (
 	typeMessage     = ""
 	typeEditMessage = "message_changed"
-	localizer, _    = config.GetLocalizer()
+	localizer       *i18n.Localizer
 )
 
 // Slack struct used for storing and communicating with slack api
@@ -43,6 +43,10 @@ func NewSlack(conf config.Config) (*Slack, error) {
 	s.rtm = s.api.NewRTM()
 	s.db = m
 
+	localizer, err = config.GetLocalizer()
+	if err != nil {
+		return nil, err
+	}
 	return s, nil
 }
 
