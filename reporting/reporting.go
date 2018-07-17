@@ -39,7 +39,11 @@ func StandupReportByProject(db storage.Storage, channelID string, dateFrom, date
 		log.Errorf("ERROR: %s", err.Error())
 		return "Error!", err
 	}
-	report := fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportOnProjectHead"}), channelID)
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportOnProjectHead"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	report := fmt.Sprintf(text, channelID)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
@@ -52,7 +56,11 @@ func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, d
 		log.Errorf("ERROR: %s", err.Error())
 		return "Error!", err
 	}
-	report := fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportOnUserHead"}), user.SlackName)
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportOnUserHead"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	report := fmt.Sprintf(text, user.SlackName)
 	report += ReportEntriesByUserToString(reportEntries)
 	return report, nil
 }
@@ -65,7 +73,11 @@ func StandupReportByProjectAndUser(db storage.Storage, channelID string, user mo
 		log.Errorf("ERROR: %s", err.Error())
 		return "Error!", err
 	}
-	report := fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportOnProjectAndUserHead"}), channelID, user.SlackName)
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportOnProjectAndUserHead"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	report := fmt.Sprintf(text, channelID, user.SlackName)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
@@ -129,19 +141,35 @@ func ReportEntriesForPeriodByChannelToString(reportEntries []reportEntry) string
 	localizer = initLocalizer()
 	var report string
 	if len(reportEntries) == 0 {
-		return report + localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
+		if err != nil {
+			log.Fatal(err)
+		}
+		return report + text
 	}
 
 	for _, value := range reportEntries {
 		currentDateFrom := value.DateFrom
 		currentDateTo := value.DateTo
-		report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportPeriod"}), currentDateFrom.Format("2006-01-02"),
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportPeriod"})
+		if err != nil {
+			log.Fatal(err)
+		}
+		report += fmt.Sprintf(text, currentDateFrom.Format("2006-01-02"),
 			currentDateTo.Format("2006-01-02"))
 		for _, standup := range value.Standups {
-			report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportStandupFromUser"}), standup.Username, standup.Comment)
+			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportStandupFromUser"})
+			if err != nil {
+				log.Fatal(err)
+			}
+			report += fmt.Sprintf(text, standup.Username, standup.Comment)
 		}
 		for _, user := range value.NonReporters {
-			report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportIgnoredStandup"}), user.SlackName)
+			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportIgnoredStandup"})
+			if err != nil {
+				log.Fatal(err)
+			}
+			report += fmt.Sprintf(text, user.SlackName)
 		}
 	}
 
@@ -204,20 +232,36 @@ func ReportEntriesByUserToString(reportEntries []reportEntry) string {
 	localizer = initLocalizer()
 	var report string
 	if len(reportEntries) == 0 {
-		return report + localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
+		if err != nil {
+			log.Fatal(err)
+		}
+		return report + text
 	}
 
 	for _, value := range reportEntries {
 		currentDateFrom := value.DateFrom
 		currentDateTo := value.DateTo
 
-		report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportPeriod"}), currentDateFrom.Format("2006-01-02"),
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportPeriod"})
+		if err != nil {
+			log.Fatal(err)
+		}
+		report += fmt.Sprintf(text, currentDateFrom.Format("2006-01-02"),
 			currentDateTo.Format("2006-01-02"))
 		for _, standup := range value.Standups {
-			report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportStandupsFromProject"}), standup.ChannelID, standup.Comment)
+			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportStandupsFromProject"})
+			if err != nil {
+				log.Fatal(err)
+			}
+			report += fmt.Sprintf(text, standup.ChannelID, standup.Comment)
 		}
 		for _, user := range value.NonReporters {
-			report += fmt.Sprintf(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "reportIgnoredStandup"}), user.SlackName)
+			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportIgnoredStandup"})
+			if err != nil {
+				log.Fatal(err)
+			}
+			report += fmt.Sprintf(text, user.SlackName)
 		}
 	}
 	return report
