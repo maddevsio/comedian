@@ -28,7 +28,6 @@ func initLocalizer() *i18n.Localizer {
 		logrus.Errorf("get localizer: %v", err)
 		return nil
 	}
-	logrus.Infof("initialized localizer %#v", localizer)
 	return localizer
 }
 
@@ -40,6 +39,7 @@ func StandupReportByProject(db storage.Storage, channelID string, dateFrom, date
 		logrus.Errorf("get report entries by channel: %v", err)
 		return "Error!", err
 	}
+	logrus.Infof("report entries: %#v", reportEntries)
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportOnProjectHead"})
 	if err != nil {
 		logrus.Errorf("localize text: %v", err)
@@ -57,6 +57,7 @@ func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, d
 		logrus.Errorf("get report entries by user: %v", err)
 		return "Error!", err
 	}
+	logrus.Infof("report entries: %#v", reportEntries)
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportOnUserHead"})
 	if err != nil {
 		logrus.Errorf("localize text: %v", err)
@@ -74,6 +75,8 @@ func StandupReportByProjectAndUser(db storage.Storage, channelID string, user mo
 		logrus.Errorf("get report entries by channel and user: %v", err)
 		return "Error!", err
 	}
+	logrus.Infof("report entries: %#v", reportEntries)
+
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportOnProjectAndUserHead"})
 	if err != nil {
 		logrus.Errorf("localize text: %v", err)
@@ -92,6 +95,7 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 		return nil, err
 	}
 	channel := strings.Replace(channelID, "#", "", -1)
+	logrus.Infof("report by channel, channel: %v", channel)
 
 	reportEntries := make([]reportEntry, 0, numberOfDays)
 	for day := 0; day <= numberOfDays; day++ {
@@ -103,11 +107,13 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 			logrus.Errorf("list standup users by channel name: %v", err)
 			return nil, err
 		}
+		logrus.Infof("report by channel, standup users: %v", standupUsers)
 		createdStandups, err := db.SelectStandupByChannelNameForPeriod(channel, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("select standup by channel name: %v", err)
 			return nil, err
 		}
+		logrus.Infof("report by channel, created standups: %v", createdStandups)
 		currentDayStandups := make([]model.Standup, 0, len(standupUsers))
 		currentDayNonReporters := make([]model.StandupUser, 0, len(standupUsers))
 		for _, user := range standupUsers {
@@ -126,6 +132,8 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 				currentDayNonReporters = append(currentDayNonReporters, user)
 			}
 		}
+		logrus.Infof("report by channel, current day standups: %v", currentDayStandups)
+		logrus.Infof("report by channel, current day non reporters: %v", currentDayNonReporters)
 		if len(currentDayNonReporters) > 0 || len(currentDayStandups) > 0 {
 			reportEntries = append(reportEntries,
 				reportEntry{
@@ -331,7 +339,7 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 //setupDays gets dates and returns their differense in days
 func setupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
 	if dateTo.Before(dateFrom) {
-		err := errors.New("starting date is bigger than end date")
+		err := errors.New("Starting date is bigger than end date")
 		logrus.Errorf("set up dateTo before: %v", err)
 		return time.Now(), 0, err
 	}

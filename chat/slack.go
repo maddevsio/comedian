@@ -103,7 +103,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	case typeMessage:
 		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
 			_, err := s.db.CreateStandup(model.Standup{
-				Channel:    msg.Msg.Channel,
+				ChannelID:  msg.Msg.Channel,
 				UsernameID: msg.Msg.User,
 				Username:   msg.Msg.Username,
 				Comment:    standupText,
