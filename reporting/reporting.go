@@ -45,7 +45,7 @@ func StandupReportByProject(db storage.Storage, channelName string, dateFrom, da
 	if err != nil {
 		logrus.Errorf("localize text: %v", err)
 	}
-	report := fmt.Sprintf(text, channel)
+	report := fmt.Sprintf(text, "CBA2M41Q8", channel)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
