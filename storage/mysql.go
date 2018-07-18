@@ -5,7 +5,6 @@ import (
 
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
