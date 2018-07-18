@@ -142,7 +142,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				logrus.Errorf("update standup: %v", err)
 				return err
 			}
-			logrus.Info("standup updated: %#v", standup)
+			logrus.Info("standup updated: %v", standup)
 		}
 	}
 	return nil
