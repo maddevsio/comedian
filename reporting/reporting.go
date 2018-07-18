@@ -29,6 +29,7 @@ func initLocalizer() *i18n.Localizer {
 
 		return nil
 	}
+	logrus.Info("INFO initialized localizer")
 	return localizer
 }
 

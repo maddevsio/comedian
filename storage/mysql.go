@@ -25,6 +25,7 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 	}
 	m := &MySQL{}
 	m.conn = conn
+	logrus.Infof("INFO mysql connection: %v", m.conn)
 	return m, nil
 }
 
@@ -49,6 +50,7 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 		return s, err
 	}
 	s.ID = id
+	logrus.Infof("INFO standup created: %v", s)
 	return s, nil
 }
 
@@ -69,6 +71,7 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 	}
 	var i model.Standup
 	err = m.conn.Get(&i, "SELECT * FROM `standup` WHERE id=?", s.ID)
+	logrus.Infof("INFO standup updated: %v", i)
 	return i, err
 }
 
@@ -76,6 +79,7 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 func (m *MySQL) SelectStandup(id int64) (model.Standup, error) {
 	var s model.Standup
 	err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE id=?", id)
+	logrus.Infof("INFO standup selected: %v", s)
 	return s, err
 }
 
@@ -83,6 +87,7 @@ func (m *MySQL) SelectStandup(id int64) (model.Standup, error) {
 func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
 	var s model.Standup
 	err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE message_ts=?", messageTS)
+	logrus.Infof("INFO standup selected: %v", s)
 	return s, err
 }
 
@@ -90,6 +95,7 @@ func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error
 func (m *MySQL) SelectStandupsByChannelID(channelID string) ([]model.Standup, error) {
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=?", channelID)
+	logrus.Infof("INFO standups selected: %v", items)
 	return items, err
 }
 
@@ -99,6 +105,10 @@ func (m *MySQL) SelectStandupByChannelNameForPeriod(channelName string, dateStar
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel=? AND created BETWEEN ? AND ?",
 		channelName, dateStart, dateEnd)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO standups selected: %v", items)
 	return items, err
 }
 
@@ -108,6 +118,10 @@ func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart,
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND created BETWEEN ? AND ?",
 		channelID, dateStart, dateEnd)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO standups selected: %v", items)
 	return items, err
 }
 
@@ -117,6 +131,10 @@ func (m *MySQL) SelectStandupByUserNameForPeriod(username string, dateStart,
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE username=? AND created BETWEEN ? AND ? ",
 		username, dateStart, dateEnd)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO standups selected: %v", items)
 	return items, err
 }
 
@@ -124,6 +142,10 @@ func (m *MySQL) SelectStandupByUserNameForPeriod(username string, dateStart,
 func (m *MySQL) ListStandups() ([]model.Standup, error) {
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup`")
+	if err != nil {
+		logrus.Errorf("ERROR STANDUPS: %v", err.Error())
+	}
+	logrus.Infof("INFO standups: %v", items)
 	return items, err
 }
 
@@ -132,18 +154,30 @@ func (m *MySQL) SelectStandupsForPeriod(dateStart, dateEnd time.Time) ([]model.S
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE created BETWEEN ? AND ?",
 		dateStart, dateEnd)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO standups selected: %v", items)
 	return items, err
 }
 
 // DeleteStandup deletes standup entry from database
 func (m *MySQL) DeleteStandup(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `standup` WHERE id=?", id)
+	standup, err := m.conn.Exec("DELETE FROM `standup` WHERE id=?", id)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP DELETE: %v", err.Error())
+	}
+	logrus.Infof("INFO standups deleted: %v", standup)
 	return err
 }
 
 // DeleteStandupByUsername deletes standup_users entry from database
 func (m *MySQL) DeleteStandupByUsername(username string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup` WHERE username=?", username)
+	standup, err := m.conn.Exec("DELETE FROM `standup` WHERE username=?", username)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP DELETE: %v", err.Error())
+	}
+	logrus.Infof("INFO standups deleted: %v", standup)
 	return err
 }
 
@@ -167,6 +201,7 @@ func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error
 		return s, err
 	}
 	s.ID = id
+	logrus.Infof("INFO user created: %v", s)
 	return s, nil
 }
 
@@ -174,6 +209,10 @@ func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error
 func (m *MySQL) FindStandupUserInChannel(username, channelID string) (model.StandupUser, error) {
 	var u model.StandupUser
 	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP USER SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO user selected: %v", u)
 	return u, err
 }
 
@@ -181,6 +220,10 @@ func (m *MySQL) FindStandupUserInChannel(username, channelID string) (model.Stan
 func (m *MySQL) FindStandupUserInChannelName(username, channel string) (model.StandupUser, error) {
 	var u model.StandupUser
 	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=? AND channel=?", username, channel)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP USER SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO user selected: %v", u)
 	return u, err
 }
 
@@ -188,6 +231,10 @@ func (m *MySQL) FindStandupUserInChannelName(username, channel string) (model.St
 func (m *MySQL) FindStandupUser(username string) (model.StandupUser, error) {
 	var u model.StandupUser
 	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=?", username)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP USER SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO user selected: %v", u)
 	return u, err
 }
 
@@ -195,6 +242,10 @@ func (m *MySQL) FindStandupUser(username string) (model.StandupUser, error) {
 func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users`")
+	if err != nil {
+		logrus.Errorf("ERROR USERS SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO users selected: %v", items)
 	return items, err
 }
 
@@ -202,6 +253,10 @@ func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 func (m *MySQL) ListStandupUsersByChannelID(channelID string) ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=?", channelID)
+	if err != nil {
+		logrus.Errorf("ERROR USERS SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO users selected: %v", items)
 	return items, err
 }
 
@@ -209,12 +264,20 @@ func (m *MySQL) ListStandupUsersByChannelID(channelID string) ([]model.StandupUs
 func (m *MySQL) ListStandupUsersByChannelName(channelName string) ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel=?", channelName)
+	if err != nil {
+		logrus.Errorf("ERROR USERS SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO users selected: %v", items)
 	return items, err
 }
 
 // DeleteStandupUserByUsername deletes standup_users entry from database
 func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
+	user, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
+	if err != nil {
+		logrus.Errorf("ERROR USERS DELETE: %v", err.Error())
+	}
+	logrus.Infof("INFO user deleted: %v", user)
 	return err
 }
 
@@ -238,6 +301,7 @@ func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error
 		return s, err
 	}
 	s.ID = id
+	logrus.Infof("INFO standup time created: %v", s)
 	return s, nil
 }
 
@@ -245,6 +309,10 @@ func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error
 func (m *MySQL) ListStandupTime(channelID string) (model.StandupTime, error) {
 	var time model.StandupTime
 	err := m.conn.Get(&time, "SELECT * FROM `standup_time` WHERE channel_id=?", channelID)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP TIME SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO standup time selected: %v", time)
 	return time, err
 }
 
@@ -252,12 +320,20 @@ func (m *MySQL) ListStandupTime(channelID string) (model.StandupTime, error) {
 func (m *MySQL) ListAllStandupTime() ([]model.StandupTime, error) {
 	reminders := []model.StandupTime{}
 	err := m.conn.Select(&reminders, "SELECT * FROM `standup_time`")
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP TIME SELECT: %v", err.Error())
+	}
+	logrus.Infof("INFO standup times selected: %v", reminders)
 	return reminders, err
 }
 
 // DeleteStandupTime deletes standup_time entry for channel from database
 func (m *MySQL) DeleteStandupTime(channelID string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_time` WHERE channel_id=?", channelID)
+	standupTime, err := m.conn.Exec("DELETE FROM `standup_time` WHERE channel_id=?", channelID)
+	if err != nil {
+		logrus.Errorf("ERROR STANDUP TIME DELETE: %v", err.Error())
+	}
+	logrus.Infof("INFO standup time deleted: %v", standupTime)
 	return err
 }
 
@@ -281,6 +357,7 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 		return s, err
 	}
 	s.ID = id
+	logrus.Infof("INFO standup history created: %v", s)
 	return s, nil
 }
 
