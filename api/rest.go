@@ -46,7 +46,7 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 	e := echo.New()
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
-		logrus.Errorf("ERROR CONNECTION TO DB: %s", err.Error())
+		logrus.Errorf("connect to DB: %v", err)
 		return nil, err
 	}
 	decoder := schema.NewDecoder()
@@ -61,7 +61,7 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 
 	localizer, err = config.GetLocalizer()
 	if err != nil {
-		logrus.Errorf("ERROR GET LOCALIZER: %s", err.Error())
+		logrus.Errorf("get localizer: %v", err)
 		return nil, err
 	}
 
@@ -80,7 +80,7 @@ func (r *REST) Start() error {
 func (r *REST) handleCommands(c echo.Context) error {
 	form, err := c.FormParams()
 	if err != nil {
-		logrus.Errorf("ERROR PARSING FORM PARAMS: %s", err.Error())
+		logrus.Errorf("parse form params: %v", err)
 		return c.JSON(http.StatusBadRequest, nil)
 	}
 	if command := form.Get("command"); command != "" {
@@ -113,11 +113,11 @@ func (r *REST) handleCommands(c echo.Context) error {
 func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
+		logrus.Errorf("decode URL values: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
+		logrus.Errorf("validate form: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	result := strings.Split(ca.Text, "|")
@@ -133,31 +133,31 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 			Channel:     ca.ChannelName,
 		})
 		if err != nil {
-			logrus.Errorf("ERROR CREATE STANDUP USER: %v", err.Error())
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err.Error()))
+			logrus.Errorf("create standup user: %v", err)
+			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v", err))
 		}
 	}
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
 		if err != nil {
-			logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+			logrus.Errorf("localize text: %v", err)
 		}
 		return c.String(http.StatusOK, fmt.Sprintf(text))
 	}
 	st, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("ERROR LIST STANDUP TIME: %v", err.Error())
+		logrus.Errorf("list standup time: %v", err)
 	}
 	if st.Time == int64(0) {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addUserNoStandupTime"})
 		if err != nil {
-			logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+			logrus.Errorf("localize text: %v", err)
 		}
 		return c.String(http.StatusOK, fmt.Sprintf(text, userName))
 	}
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addUser"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(text, userName))
 }
@@ -165,23 +165,23 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
+		logrus.Errorf("decode URL values: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
+		logrus.Errorf("validate form: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	userName := strings.Replace(ca.Text, "@", "", -1)
 	err := r.db.DeleteStandupUserByUsername(userName, ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("could not delete standup user: %v", err.Error())
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err.Error()))
+		logrus.Errorf("could not delete standup user: %v", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v", err))
 	}
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "deleteUser"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(text, userName))
 }
@@ -190,17 +190,17 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 	logrus.Printf("%+v\n", f)
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
+		logrus.Errorf("decode URL values: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
+		logrus.Errorf("validate form: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	users, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("ERROR LIST STANDUP USERS BY CHANNEL ID: %s", err.Error())
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err.Error()))
+		logrus.Errorf("list standup users by channel ID: %v", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v", err))
 	}
 
 	var userNames []string
@@ -211,13 +211,13 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 	if len(userNames) < 1 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "listNoStandupers"})
 		if err != nil {
-			logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+			logrus.Errorf("localize text: %v", err)
 		}
 		return c.String(http.StatusOK, text)
 	}
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "listStandupers"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(text, strings.Join(userNames, ", ")))
 }
@@ -226,23 +226,23 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
+		logrus.Errorf("decode URL values: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
+		logrus.Errorf("validate form: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	result := strings.Split(ca.Text, ":")
 	hours, err := strconv.Atoi(result[0])
 	if err != nil {
-		logrus.Errorf("ERROR CONVERT TIME: %v", err)
+		logrus.Errorf("convert time: %v", err)
 		return err
 	}
 	munites, err := strconv.Atoi(result[1])
 	if err != nil {
-		logrus.Errorf("ERROR CONVERT TIME: %v", err)
+		logrus.Errorf("convert time: %v", err)
 		return err
 	}
 	currentTime := time.Now()
@@ -254,25 +254,25 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		Time:      timeInt,
 	})
 	if err != nil {
-		logrus.Errorf("ERROR CREATE STANDUP TIME: %v", err)
+		logrus.Errorf("create standup time: %v", err)
 		return err
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("ERROR LIST STANDUP USERS BY CHANNEL ID: %v", err)
+		logrus.Errorf("list standup users by channel ID: %v", err)
 		return err
 	}
 	if len(st) == 0 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addStandupTimeNoUsers"})
 		if err != nil {
-			logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+			logrus.Errorf("localize text: %v", err)
 		}
 		return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
 	}
 
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addStandupTime"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
 }
@@ -280,30 +280,30 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	var ca ChannelForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
+		logrus.Errorf("decode URL values: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
+		logrus.Errorf("validate form: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	err := r.db.DeleteStandupTime(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("could not delete standup time: %v", err.Error())
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err.Error()))
+		logrus.Errorf("could not delete standup time: %v", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v", err))
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if len(st) != 0 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "removeStandupTimeWithUsers"})
 		if err != nil {
-			logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+			logrus.Errorf("localize text: %v", err)
 		}
 		return c.String(http.StatusOK, fmt.Sprintf(text))
 	}
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "removeStandupTime"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(text, ca.ChannelName))
 }
@@ -311,30 +311,30 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 func (r *REST) listTime(c echo.Context, f url.Values) error {
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
+		logrus.Errorf("decode URL values: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
+		logrus.Errorf("validate form: %v", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	standupTime, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("ERROR LIST STANDUP TIME: %s", err.Error())
+		logrus.Errorf("list standup time: %v", err)
 		if err.Error() == "sql: no rows in result set" {
 			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "showNoStandupTime"})
 			if err != nil {
-				logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+				logrus.Errorf("localize text: %v", err)
 			}
 			return c.String(http.StatusOK, fmt.Sprintf(text))
 		} else {
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err.Error()))
+			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v", err))
 		}
 	}
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "showStandupTime"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
 }
@@ -342,11 +342,11 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
+		logrus.Errorf("decode URL values: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
+		logrus.Errorf("validate form: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	commandParams := strings.Fields(ca.Text)
@@ -354,24 +354,24 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "wrongNArgs"})
 		if err != nil {
-			logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+			logrus.Errorf("localize text: %v", err)
 		}
 		return c.String(http.StatusOK, text)
 	}
 	channelID := commandParams[0]
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
-		logrus.Errorf("ERROR PARSING TIME: %s", err.Error())
+		logrus.Errorf("parse time: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	dateTo, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
-		logrus.Errorf("ERROR PARSING TIME: %s", err.Error())
+		logrus.Errorf("parse time: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
 	if err != nil {
-		logrus.Errorf("ERROR STANDUP REPORT BY PROJECT: %s", err.Error())
+		logrus.Errorf("standup report by project: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	return c.String(http.StatusOK, report)
@@ -380,18 +380,18 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
+		logrus.Errorf("decode URL values: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
+		logrus.Errorf("validate form: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 3 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
 		if err != nil {
-			logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+			logrus.Errorf("localize text: %v", err)
 		}
 		return c.String(http.StatusOK, text)
 	}
@@ -400,22 +400,22 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	userName := strings.Replace(result[1], ">", "", -1)
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
-		logrus.Errorf("ERROR FIND STANDUP USER: %s", err.Error())
+		logrus.Errorf("find standup user: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
-		logrus.Errorf("ERROR PARSE TIME: %s", err.Error())
+		logrus.Errorf("parse time: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	dateTo, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
-		logrus.Errorf("ERROR PARSE TIME: %s", err.Error())
+		logrus.Errorf("parse time: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo)
 	if err != nil {
-		logrus.Errorf("ERROR STANDUP REPORT BY USER: %s", err.Error())
+		logrus.Errorf("standup report by user: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	return c.String(http.StatusOK, report)
@@ -424,18 +424,18 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("ERROR DECODING URL VALUES: %s", err.Error())
+		logrus.Errorf("decode URL values: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("ERROR VALIDATING FORM: %s", err.Error())
+		logrus.Errorf("validate form: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 4 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
 		if err != nil {
-			logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+			logrus.Errorf("localize text: %v", err)
 		}
 		return c.String(http.StatusOK, text)
 	}
@@ -447,17 +447,17 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	logrus.Println("1" + userName)
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
-		logrus.Errorf("ERROR FIND STANDUP USER: %s", err.Error())
+		logrus.Errorf("find standup user: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
-		logrus.Errorf("ERROR PARSING TIME: %s", err.Error())
+		logrus.Errorf("parse time: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	dateTo, err := time.Parse("2006-01-02", commandParams[3])
 	if err != nil {
-		logrus.Errorf("ERROR PARSING TIME: %s", err.Error())
+		logrus.Errorf("parse time: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
@@ -465,7 +465,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		if err.Error() == "sql: no rows in result set" {
 			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
 			if err != nil {
-				logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+				logrus.Errorf("localize text: %v", err)
 			}
 			return c.String(http.StatusOK, fmt.Sprintf(text))
 		}
