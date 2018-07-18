@@ -358,7 +358,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		}
 		return c.String(http.StatusOK, text)
 	}
-	channelID := commandParams[0]
+	channelName := commandParams[0]
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
 		logrus.Errorf("parse time: %v", err)
@@ -369,7 +369,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("parse time: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
+	report, err := reporting.StandupReportByProject(r.db, channelName, dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("standup report by project: %v", err)
 		return c.String(http.StatusOK, err.Error())
