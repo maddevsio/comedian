@@ -11,11 +11,18 @@ import (
 )
 
 func TestCRUDLStandup(t *testing.T) {
+
 	c, err := config.Get()
 	assert.NoError(t, err)
 	db, err := NewMySQL(c)
 	assert.NoError(t, err)
-	assert.NoError(t, err)
+
+	// clean up table before tests
+	standups, _ := db.ListStandups()
+	for _, standup := range standups {
+		db.DeleteStandup(standup.ID)
+	}
+
 	s, err := db.CreateStandup(model.Standup{
 		Channel:   "First Channel",
 		ChannelID: "QWERTY123",
@@ -123,6 +130,13 @@ func TestCRUDStandupUser(t *testing.T) {
 	assert.NoError(t, err)
 	db, err := NewMySQL(c)
 	assert.NoError(t, err)
+
+	// clean up table before tests
+	standupUsers, _ := db.ListAllStandupUsers()
+	for _, user := range standupUsers {
+		db.DeleteStandupUserByUsername(user.SlackName, user.ChannelID)
+	}
+
 	su1, err := db.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID1",
 		SlackName:   "user1",
