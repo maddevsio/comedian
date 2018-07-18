@@ -5,11 +5,11 @@ import (
 
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/labstack/gommon/log"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	logrus "github.com/sirupsen/logrus"
 )
 
 // MySQL provides api for work with mysql database
@@ -21,6 +21,7 @@ type MySQL struct {
 func NewMySQL(c config.Config) (*MySQL, error) {
 	conn, err := sqlx.Open("mysql", c.DatabaseURL)
 	if err != nil {
+		logrus.Errorf("ERROR CREATING NEW MYSQL: %s", err.Error())
 		return nil, err
 	}
 	m := &MySQL{}
@@ -32,7 +33,7 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR VALIDATING STANDUP: %s", err.Error())
 		return s, err
 	}
 	res, err := m.conn.Exec(
@@ -40,10 +41,12 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 		now().UTC(), now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.MessageTS,
 	)
 	if err != nil {
+		logrus.Errorf("ERROR CREATING STANDUP: %s", err.Error())
 		return s, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
+		logrus.Errorf("ERROR CREATING STANDUP ID: %s", err.Error())
 		return s, err
 	}
 	s.ID = id
@@ -54,7 +57,7 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR VALIDATING STANDUP UPDATE: %s", err.Error())
 		return s, err
 	}
 	_, err = m.conn.Exec(
@@ -62,6 +65,7 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 		now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.MessageTS, s.ID,
 	)
 	if err != nil {
+		logrus.Errorf("ERROR UPDATING STANDUP: %s", err.Error())
 		return s, err
 	}
 	var i model.Standup
@@ -148,17 +152,19 @@ func (m *MySQL) DeleteStandupByUsername(username string) error {
 func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR VALIDATING STANDUP USER: %s", err.Error())
 		return s, err
 	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel) VALUES (?, ?, ?, ?, ?, ?)",
 		now().UTC(), now().UTC(), s.SlackUserID, s.SlackName, s.ChannelID, s.Channel)
 	if err != nil {
+		logrus.Errorf("ERROR CREATING STANDUP USER: %s", err.Error())
 		return s, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
+		logrus.Errorf("ERROR CREATING STANDUP USER ID: %s", err.Error())
 		return s, err
 	}
 	s.ID = id
@@ -217,17 +223,19 @@ func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
 func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR VALIDATING STANDUP TIME: %s", err.Error())
 		return s, err
 	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_time` (created, channel_id, channel, standuptime) VALUES (?, ?, ?, ?)",
 		now().UTC(), s.ChannelID, s.Channel, s.Time)
 	if err != nil {
+		logrus.Errorf("ERROR CREATING STANDUP TIME: %s", err.Error())
 		return s, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
+		logrus.Errorf("ERROR CREATING STANDUP TIME ID: %s", err.Error())
 		return s, err
 	}
 	s.ID = id
@@ -258,17 +266,19 @@ func (m *MySQL) DeleteStandupTime(channelID string) error {
 func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEditHistory, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("ERROR VALIDATING STANDUP HISTORY: %s", err.Error())
 		return s, err
 	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_edit_history` (created, standup_id, standup_text) VALUES (?, ?, ?)",
 		now().UTC(), s.StandupID, s.StandupText)
 	if err != nil {
+		logrus.Errorf("ERROR CREATING STANDUP HISTORY: %s", err.Error())
 		return s, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
+		logrus.Errorf("ERROR CREATING STANDUP HISTORY ID: %s", err.Error())
 		return s, err
 	}
 	s.ID = id
