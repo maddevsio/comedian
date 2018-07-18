@@ -3,8 +3,6 @@ package model
 import (
 	"errors"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 type (
@@ -54,12 +52,10 @@ type (
 func (c Standup) Validate() error {
 	if c.Channel == "" && c.ChannelID == "" {
 		err := errors.New("Channel cannot be empty")
-		logrus.Errorf("ERROR VALIDATING MODEL: %s", err.Error())
 		return err
 	}
 	if c.Comment == "" {
 		err := errors.New("Standup cannot be empty")
-		logrus.Errorf("ERROR VALIDATING MODEL: %s", err.Error())
 		return err
 	}
 	return nil
@@ -69,7 +65,6 @@ func (c Standup) Validate() error {
 func (c StandupUser) Validate() error {
 	if c.SlackName == "" && c.SlackUserID == "" {
 		err := errors.New("User cannot be empty")
-		logrus.Errorf("ERROR VALIDATING MODEL: %s", err.Error())
 		return err
 	}
 	return nil
@@ -79,7 +74,6 @@ func (c StandupUser) Validate() error {
 func (c StandupTime) Validate() error {
 	if c.Time == 0 {
 		err := errors.New("Time cannot be empty")
-		logrus.Errorf("ERROR VALIDATING MODEL: %s", err.Error())
 		return err
 	}
 	return nil
@@ -89,7 +83,6 @@ func (c StandupTime) Validate() error {
 func (c StandupEditHistory) Validate() error {
 	if c.StandupText == "" {
 		err := errors.New("Text cannot be empty")
-		logrus.Errorf("ERROR VALIDATING MODEL: %s", err.Error())
 		return err
 	}
 	return nil
