@@ -65,7 +65,6 @@ func (s *Slack) Run() error {
 
 			switch ev := msg.Data.(type) {
 			case *slack.ConnectedEvent:
-				s.GetAllUsersToDB()
 				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "HelloManager"})
 				if err != nil {
 					logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
@@ -229,7 +228,10 @@ func (s *Slack) isStandup(message string) (string, bool) {
 // SendMessage posts a message in a specified channel
 func (s *Slack) SendMessage(channel, message string) error {
 	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{})
-	logrus.Errorf("ERROR POST MESSAGE: %s", err.Error())
+	if err != nil {
+		logrus.Errorf("ERROR POST MESSAGE: %s", err.Error())
+		return err
+	}
 	return err
 }
 
@@ -246,38 +248,4 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 		logrus.Errorf("ERROR SEND MESSAGE: %s", err.Error())
 	}
 	return err
-}
-
-// GetAllUsersToDB selects all the users in the organization and sync them to db
-func (s *Slack) GetAllUsersToDB() error {
-	users, err := s.api.GetUsers()
-	if err != nil {
-		logrus.Errorf("ERROR GET USERS: %s", err.Error())
-		return err
-	}
-	chans, err := s.api.GetChannels(false)
-	if err != nil {
-		logrus.Errorf("ERROR GET CHANNELS: %s", err.Error())
-		return err
-	}
-	var channelID string
-	for _, channel := range chans {
-		if channel.Name == "general" {
-			channelID = channel.ID
-		}
-	}
-	for _, user := range users {
-		_, err := s.db.FindStandupUserInChannel(user.Name, channelID)
-		if err != nil {
-			logrus.Info("USER NOT FOUND. ADD NEW USER TO DB")
-			s.db.CreateStandupUser(model.StandupUser{
-				SlackUserID: user.ID,
-				SlackName:   user.Name,
-				ChannelID:   "",
-				Channel:     "",
-			})
-		}
-
-	}
-	return nil
 }
