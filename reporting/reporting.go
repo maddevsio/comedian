@@ -116,7 +116,7 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 			}
 			found := false
 			for _, standup := range createdStandups {
-				if user.SlackName == standup.Username {
+				if user.SlackUserID == standup.UsernameID {
 					found = true
 					currentDayStandups = append(currentDayStandups, standup)
 					break
@@ -212,7 +212,7 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 		}
 		found := false
 		for _, standup := range createdStandups {
-			if standupUser.SlackName == standup.Username {
+			if standupUser.SlackUserID == standup.UsernameID {
 				found = true
 				currentDayStandups = append(currentDayStandups, standup)
 				break
@@ -307,7 +307,7 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 		}
 		found := false
 		for _, standup := range createdStandups {
-			if user.SlackName == standup.Username {
+			if user.SlackUserID == standup.UsernameID {
 				found = true
 				currentDayStandups = append(currentDayStandups, standup)
 				break
