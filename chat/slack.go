@@ -33,7 +33,7 @@ type Slack struct {
 func NewSlack(conf config.Config) (*Slack, error) {
 	m, err := storage.NewMySQL(conf)
 	if err != nil {
-		logrus.Errorf("DATABASE CONNECTION ERROR: %s", err.Error())
+		logrus.Errorf("database connection: %v", err)
 		return nil, err
 	}
 	s := &Slack{}
@@ -43,7 +43,7 @@ func NewSlack(conf config.Config) (*Slack, error) {
 
 	localizer, err = config.GetLocalizer()
 	if err != nil {
-		logrus.Errorf("ERROR GET LOCALIZER: %s", err.Error())
+		logrus.Errorf("get localizer: %v", err)
 		return nil, err
 	}
 	return s, nil
@@ -67,7 +67,7 @@ func (s *Slack) Run() error {
 			case *slack.ConnectedEvent:
 				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "HelloManager"})
 				if err != nil {
-					logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+					logrus.Errorf("localize text: %v", err)
 				}
 				s.SendUserMessage("UB9AE7CL9", text)
 
@@ -77,7 +77,7 @@ func (s *Slack) Run() error {
 				logrus.Infof("Presence Change: %v\n", ev)
 
 			case *slack.RTMError:
-				logrus.Errorf("ERROR RTME: %s", ev.Error())
+				logrus.Errorf("RTME: %v", ev)
 
 			case *slack.InvalidAuthEvent:
 				logrus.Info("Invalid credentials")
@@ -111,12 +111,12 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			})
 			var text string
 			if err != nil {
-				logrus.Errorf("ERROR CREATE STANDUP: %s", err.Error())
+				logrus.Errorf("create standup: %v", err)
 				return err
 			}
 			text, err = localizer.Localize(&i18n.LocalizeConfig{MessageID: "StandupAccepted"})
 			if err != nil {
-				logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+				logrus.Errorf("localize text: %v", err)
 			}
 			return s.SendMessage(msg.Msg.Channel, text)
 
@@ -124,25 +124,25 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
-			logrus.Errorf("ERROR SELECT STANDUP BY MESSAGE TS: %s", err.Error())
+			logrus.Errorf("select standup by message TS: %v", err)
 			return err
 		}
 		_, err = s.db.AddToStandupHistory(model.StandupEditHistory{
 			StandupID:   standup.ID,
 			StandupText: standup.Comment})
 		if err != nil {
-			logrus.Errorf("ERROR ADD TO STANDUP HISTORY: %s", err.Error())
+			logrus.Errorf("add to standup history: %v", err)
 			return err
 		}
 		if standupText, ok := s.isStandup(msg.SubMessage.Text); ok {
 			standup.Comment = standupText
 
-			_, err = s.db.UpdateStandup(standup)
+			standup, err = s.db.UpdateStandup(standup)
 			if err != nil {
-				logrus.Errorf("ERROR UPDATE STANDUP: %s", err.Error())
+				logrus.Errorf("update standup: %v", err)
 				return err
 			}
-			logrus.Info("STANDUP SUCCESSFULLY UPDATED")
+			logrus.Info("standup updated: %#v", standup)
 		}
 	}
 	return nil
@@ -152,15 +152,15 @@ func (s *Slack) isStandup(message string) (string, bool) {
 
 	p1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p1"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	p2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p2"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	p3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p3"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 
 	mentionsProblem := false
@@ -173,19 +173,19 @@ func (s *Slack) isStandup(message string) (string, bool) {
 
 	y1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y1"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	y2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y2"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	y3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y3"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	y4, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y4"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	mentionsYesterdayWork := false
 	yesterdayWorkKeys := []string{y1, y2, y3, y4}
@@ -197,15 +197,15 @@ func (s *Slack) isStandup(message string) (string, bool) {
 
 	t1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t1"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	t2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t2"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	t3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t3"})
 	if err != nil {
-		logrus.Errorf("ERROR LOCALIZING TEXT: %s", err.Error())
+		logrus.Errorf("localize text: %v", err)
 	}
 	mentionsTodayPlans := false
 	todayPlansKeys := []string{t1, t2, t3}
@@ -216,11 +216,11 @@ func (s *Slack) isStandup(message string) (string, bool) {
 	}
 
 	if mentionsProblem && mentionsYesterdayWork && mentionsTodayPlans {
-		logrus.Infof("This message is a standup: %v", message)
+		logrus.Infof("this is a standup: %v", message)
 		return strings.TrimSpace(message), true
 	}
 
-	logrus.Errorf("This message is not a standup: %v", message)
+	logrus.Errorf("This is not a standup: %v", message)
 	return message, false
 
 }
@@ -229,7 +229,7 @@ func (s *Slack) isStandup(message string) (string, bool) {
 func (s *Slack) SendMessage(channel, message string) error {
 	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{})
 	if err != nil {
-		logrus.Errorf("ERROR POST MESSAGE: %s", err.Error())
+		logrus.Errorf("post message: %v", err)
 		return err
 	}
 	return err
@@ -240,12 +240,12 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 	_, _, channelID, err := s.api.OpenIMChannel(userID)
 	logrus.Println(channelID)
 	if err != nil {
-		logrus.Errorf("ERROR OPEN IM CHANNEL: %s", err.Error())
+		logrus.Errorf("open IM channel: %v", err)
 		return err
 	}
 	err = s.SendMessage(channelID, message)
 	if err != nil {
-		logrus.Errorf("ERROR SEND MESSAGE: %s", err.Error())
+		logrus.Errorf("send message: %v", err)
 	}
 	return err
 }
