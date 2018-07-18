@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/maddevsio/comedian/model"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	"github.com/jasonlvhit/gocron"
 	"github.com/maddevsio/comedian/chat"
@@ -13,6 +14,8 @@ import (
 	"github.com/maddevsio/comedian/storage"
 	log "github.com/sirupsen/logrus"
 )
+
+var localizer *i18n.Localizer
 
 // Notifier struct is used to notify users about upcoming or skipped standups
 type Notifier struct {
@@ -26,17 +29,21 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
 		log.Errorf("ERROR: %s", err.Error())
+		return nil, err
+	}
+	localizer, err = config.GetLocalizer()
+	if err != nil {
+		return nil, err
 	}
 	return &Notifier{Chat: chat, DB: conn, CheckInterval: c.NotifierCheckInterval}, nil
 }
 
 // Start starts all notifier treads
 func (n *Notifier) Start(c config.Config) error {
-	log.Println("Starting notifier...")
 
 	reportTimeParsed, err := time.Parse("15:04", c.ReportTime)
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		log.Errorf("ERROR PARSING TIME: %s", err.Error())
 		return err
 	}
 	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, c, n.DB, reportTimeParsed)
@@ -52,7 +59,7 @@ func (n *Notifier) Start(c config.Config) error {
 func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 	standupTimes, err := db.ListAllStandupTime()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
+		log.Errorf("ERROR LIST ALL STANDUP TIME: %s", err.Error())
 	}
 	for _, standupTime := range standupTimes {
 		channelID := standupTime.ChannelID
@@ -64,7 +71,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 		}
 		nonReporters, err := getNonReporters(chat, db, channelID)
 		if err != nil {
-			log.Errorf("ERROR: %s", err.Error())
+			log.Errorf("ERROR GET NONREPORTERS: %s", err.Error())
 		}
 		if len(nonReporters) > 0 {
 			pauseTime := time.Minute * 1 //repeats after n minutes
@@ -73,7 +80,11 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 				notifyTime := standupTime.Add(pauseTime * time.Duration(i))
 				if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
 					//periodic reminder for non reporters!
-					chat.SendMessage(channelID, fmt.Sprintf("In this channel not all standupers wrote standup today, shame on you: %v.", strings.Join(nonReporters, ", ")))
+					text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyNotAll"})
+					if err != nil {
+						log.Error(err)
+					}
+					chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(nonReporters, ", ")))
 				}
 			}
 		}
@@ -116,7 +127,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 		for _, channel := range standupChannelsList {
 			userStandupRaw, err := db.SelectStandupsByChannelID(channel)
 			if err != nil {
-				log.Errorf("ERROR: %s", err.Error())
+				log.Errorf("ERROR SELECT STANDUP BY CHANNEL ID: %s", err.Error())
 			}
 			var usersWhoCreatedStandup []string
 			for _, userStandup := range userStandupRaw {
@@ -138,19 +149,22 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 			}
 			nonReportersCheck := len(nonReporters)
 			if nonReportersCheck == 0 {
-				err = chat.SendMessage(c.DirectManagerChannelID,
-					fmt.Sprintf("<@%v>, in channel <#%s> all standupers have written standup today", c.Manager,
-						channel))
+				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerAllDone"})
 				if err != nil {
-					log.Errorf("ERROR: %s", err.Error())
+					log.Error(err)
+				}
+				err = chat.SendMessage(c.DirectManagerChannelID, fmt.Sprintf(text, c.Manager, channel))
+				if err != nil {
+					log.Errorf("ERROR SENDING MESSAGE: %s", err.Error())
 				}
 			} else {
-				err = chat.SendMessage(c.DirectManagerChannelID,
-					fmt.Sprintf("<@%v>, in channel <#%s> not all standupers wrote standup today, "+
-						"this users ignored standup today: %v.",
-						c.Manager, channel, strings.Join(nonReporters, ", ")))
+				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerNotAll"})
 				if err != nil {
-					log.Errorf("ERROR: %s", err.Error())
+					log.Error(err)
+				}
+				err = chat.SendMessage(c.DirectManagerChannelID, fmt.Sprintf(text, c.Manager, channel, strings.Join(nonReporters, ", ")))
+				if err != nil {
+					log.Errorf("ERROR SENDING MESSAGE: %s", err.Error())
 				}
 			}
 		}
@@ -164,9 +178,17 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 		log.Errorf("ERROR: %s", err.Error())
 	}
 	if len(list) > 0 {
-		err = chat.SendMessage(channelID, fmt.Sprintf("Hey! We are still waiting standup for today from you: %s", strings.Join(list, ", ")))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyUsersWarning"})
+		if err != nil {
+			log.Error(err)
+		}
+		err = chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(list, ", ")))
 	} else {
-		err = chat.SendMessage(channelID, "Congradulations! Everybody wrote their standups today!")
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyAllDone"})
+		if err != nil {
+			log.Error(err)
+		}
+		err = chat.SendMessage(channelID, text)
 	}
 
 }
@@ -243,7 +265,11 @@ func directRemindStandupers(chat chat.Chat, db storage.Storage, channelID string
 		}
 	}
 	for _, motherFucker := range nonReporters {
-		chat.SendUserMessage(motherFucker.SlackUserID, fmt.Sprintf("Hello, <@%s>! You missed the standup deadline in <#%s> channel. Please, write you standup ASAP!", motherFucker.SlackName, motherFucker.ChannelID))
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyDirectMessage"})
+		if err != nil {
+			log.Error(err)
+		}
+		chat.SendUserMessage(motherFucker.SlackUserID, fmt.Sprintf(text, motherFucker.SlackName, motherFucker.ChannelID))
 	}
 	return nil
 }

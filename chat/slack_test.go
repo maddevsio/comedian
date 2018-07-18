@@ -13,18 +13,30 @@ type MessageEvent struct {
 }
 
 func TestIsStandup(t *testing.T) {
+	testCases := []struct {
+		title   string
+		input   string
+		confirm bool
+	}{
+		{"all key words", "Yesterday managed to get docker up and running, today will complete test #100, problems: I have multilang!", true},
+		{"no key words", "i want to create a standup but totaly forgot the way i should write it!", false},
+		{"key words yesterday", "Yesterday it was fucking awesome!", false},
+		{"key words yesterday and today", "Вчера ломал сервер, сегодня будет охренеть много дел", false},
+		{"all key words capitalized", "Yesterday: launched MySQL, Today: will scream and should, Problems: SHIT IS ALL OVER!", true},
+		{"keywords with mistakes", "Yesday completed shit, dotay will fap like crazy, promlems: no problems!", false},
+	}
 	c, err := config.Get()
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 	s.myUsername = "comedian"
 	assert.NoError(t, err)
-	text, ok := s.isStandup("вчера делал дохуя всего сегодня собираюсь делать еще больше Проблемы: дохуя проблем, пиздец охуеваю!")
-	assert.Equal(t, "вчера делал дохуя всего сегодня собираюсь делать еще больше Проблемы: дохуя проблем, пиздец охуеваю!", text)
-	assert.True(t, ok)
-	text, ok = s.isStandup("какая-то хуйня")
-	assert.Equal(t, "какая-то хуйня", text)
-	assert.False(t, ok)
+	for _, tt := range testCases {
+		_, ok := s.isStandup(tt.input)
+		if ok != tt.confirm {
+			t.Errorf("Test %s: \n input: %s,\n expected confirm: %v\n actual confirm: %v \n", tt.title, tt.input, tt.confirm, ok)
+		}
+	}
 }
 
 func TestHandleMessage(t *testing.T) {

@@ -100,6 +100,7 @@ func TestHandleUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
+
 	assert.Equal(t, "Standupers in this channel: <@test>", rec.Body.String())
 
 	//add user that already exists
@@ -109,6 +110,7 @@ func TestHandleUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
+
 	assert.Equal(t, "User already exists!", rec.Body.String())
 
 	//delete user
@@ -118,6 +120,7 @@ func TestHandleUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
+
 	assert.Equal(t, "<@test> deleted", rec.Body.String())
 
 	st, err := rest.db.CreateStandupTime(model.StandupTime{
@@ -284,8 +287,9 @@ func TestHandleTimeCommands(t *testing.T) {
 
 	if assert.NoError(t, rest.handleCommands(context)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "standup time for this channel removed, but there are "+
-			"people marked as a standuper.", rec.Body.String())
+
+		assert.Equal(t, "standup time for this channel removed, but there are people marked as a standuper.", rec.Body.String())
+
 	}
 
 	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
@@ -298,6 +302,7 @@ func TestHandleTimeCommands(t *testing.T) {
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "standup time for channame channel deleted", rec.Body.String())
+
 }
 
 func TestHandleReportByProjectCommands(t *testing.T) {

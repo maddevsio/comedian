@@ -1,0 +1,29 @@
+userExist = "User already exists!"
+addUserNoStandupTime = "<@%s> added, but there is no standup time for this channel"
+addUser = "<@%s> added"
+
+deleteUser = "<@%s> deleted"
+listNoStandupers = "No standupers in this channel! To add one, please, use /comedianadd slash command"
+listStandupers = "Standupers in this channel: %v"
+
+addStandupTimeNoUsers = "<!date^%v^Standup time at {time} added, but there is no standup users for this channel>"
+addStandupTime = "<!date^%v^Standup time set at {time}|Standup time set at 12:00>"
+removeStandupTimeWithUsers = "standup time for this channel removed, but there are people marked as a standuper."
+removeStandupTime = "standup time for %s channel deleted" 
+
+showNoStandupTime = "No standup time set for this channel yet! Please, add a standup time using `/standuptimeset` command!"
+showStandupTime = "<!date^%v^Standup time is {time}|Standup time set at 12:00>"
+
+wrongNArgs = "Wrong number of arguments"
+reportByProjectAndUser = "This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command"
+reportOnProjectHead = "Full Standup Report %v:\n\n"
+reportOnUserHead = "Full Standup Report for user <@%s>:\n\n"
+reportOnProjectAndUserHead = "Standup Report Project: %v, User: <@%s>\n\n"
+
+reportNoData = "No data for this period"
+reportPeriod = "\n\nReport from %s to %s:\n"
+reportStandupFromUser = "\nStandup from <@%s>:\n%s\n"
+reportStandupsFromProject = "\nOn project: <#%s>\n%s\n"
+reportIgnoredStandup = "\n<@%s>: ignored standup!\n"
+
+

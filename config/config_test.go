@@ -20,6 +20,7 @@ func TestConfig(t *testing.T) {
 	os.Setenv("COMEDIAN_REPORT_TIME", "17:00")
 	os.Setenv("COMEDIAN_DEBUG", "true")
 	os.Setenv("COMEDIAN_SLACK_TOKEN", "token")
+	os.Setenv("COMEDIAN_LANGUAGE", "ru_RU")
 
 	conf, err = Get()
 	assert.NoError(t, err)
@@ -30,5 +31,12 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, conf.Manager, "manager")
 	assert.Equal(t, conf.DirectManagerChannelID, "someID")
 	assert.Equal(t, conf.ReportTime, "17:00")
+	assert.Equal(t, conf.Language, "ru_RU")
 	assert.Equal(t, conf.Debug, true)
+}
+
+func TestGetLocalizer(t *testing.T) {
+	localizer, err := GetLocalizer()
+	assert.NoError(t, err)
+	assert.NotNil(t, localizer)
 }

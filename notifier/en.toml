@@ -1,0 +1,6 @@
+notifyNotAll = "In this channel not all standupers wrote standup today, shame on you: %v."
+notifyAllDone = "Congradulations! Everybody wrote their standups today!"
+notifyManagerAllDone = "<@%v>, in channel <#%s> all standupers have written standup today"
+notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup today, these users ignored standup today: %v."
+notifyUsersWarning = "Hey! We are still waiting standup for today from you: %s"
+notifyDirectMessage = "Hello, <@%s>! You missed the standup deadline in <#%s> channel. Please, write you standup ASAP!"

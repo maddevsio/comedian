@@ -6,6 +6,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 
@@ -15,6 +16,7 @@ import (
 var (
 	typeMessage     = ""
 	typeEditMessage = "message_changed"
+	localizer       *i18n.Localizer
 )
 
 // Slack struct used for storing and communicating with slack api
@@ -32,7 +34,7 @@ type Slack struct {
 func NewSlack(conf config.Config) (*Slack, error) {
 	m, err := storage.NewMySQL(conf)
 	if err != nil {
-		logrus.Errorf("ERROR: %s", err.Error())
+		logrus.Errorf("DATABASE CONNECTION ERROR: %s", err.Error())
 		return nil, err
 	}
 	s := &Slack{}
@@ -41,13 +43,17 @@ func NewSlack(conf config.Config) (*Slack, error) {
 	s.rtm = s.api.NewRTM()
 	s.db = m
 
+	localizer, err = config.GetLocalizer()
+	if err != nil {
+		return nil, err
+	}
 	return s, nil
 }
 
 // Run runs a listener loop for slack
 func (s *Slack) Run() error {
-	s.ManageConnection()
 
+	s.ManageConnection()
 	for {
 		if s.myUsername == "" {
 			info := s.rtm.GetInfo()
@@ -61,19 +67,19 @@ func (s *Slack) Run() error {
 			switch ev := msg.Data.(type) {
 			case *slack.ConnectedEvent:
 				s.GetAllUsersToDB()
-				//	s.api.PostMessage("CBAP453GV", "Hey! I am alive!", slack.PostMessageParameters{})
-				s.SendUserMessage("UB9AE7CL9", "Hello, dear Manager!")
+				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "HelloManager"})
+				if err != nil {
+					s.logger.Error(err)
+				}
+				s.SendUserMessage("UB9AE7CL9", text)
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev)
 			case *slack.PresenceChangeEvent:
 				s.logger.Infof("Presence Change: %v\n", ev)
 
-			// case *slack.LatencyReport:
-			// 	s.logger.Infof("Current latency: %v\n", ev.Value)
-
 			case *slack.RTMError:
-				logrus.Errorf("ERROR: %s", ev.Error())
+				logrus.Errorf("RTME ERROR: %s", ev.Error())
 
 			case *slack.InvalidAuthEvent:
 				s.logger.Info("Invalid credentials")
@@ -95,7 +101,6 @@ func (s *Slack) ManageConnection() {
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 
-	// TODO: check if channel message (not direct)
 	switch msg.SubType {
 	case typeMessage:
 		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
@@ -109,10 +114,11 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			var text string
 			if err != nil {
 				logrus.Errorf("ERROR: %s", err.Error())
-				text = err.Error()
 				return err
-			} else {
-				text = "Good job! Standup accepted! Keep it up!"
+			}
+			text, err = localizer.Localize(&i18n.LocalizeConfig{MessageID: "StandupAccepted"})
+			if err != nil {
+				s.logger.Error(err)
 			}
 			return s.SendMessage(msg.Msg.Channel, text)
 
@@ -145,11 +151,77 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 }
 
 func (s *Slack) isStandup(message string) (string, bool) {
-	if (strings.Contains(message, "роблем") || strings.Contains(message, "рудност") || strings.Contains(message, "атрдуднен")) && (strings.Contains(message, "чера") || strings.Contains(message, "ятницу") || strings.Contains(message, "делал") || strings.Contains(message, "делано")) && (strings.Contains(message, "егодн") || strings.Contains(message, "обираюс")) {
+
+	p1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p1"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+	p2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p2"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+	p3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p3"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+
+	mentionsProblem := false
+	problemKeys := []string{p1, p2, p3}
+	for _, problem := range problemKeys {
+		if strings.Contains(message, problem) {
+			mentionsProblem = true
+		}
+	}
+
+	y1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y1"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+	y2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y2"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+	y3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y3"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+	y4, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y4"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+	mentionsYesterdayWork := false
+	yesterdayWorkKeys := []string{y1, y2, y3, y4}
+	for _, work := range yesterdayWorkKeys {
+		if strings.Contains(message, work) {
+			mentionsYesterdayWork = true
+		}
+	}
+
+	t1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t1"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+	t2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t2"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+	t3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t3"})
+	if err != nil {
+		s.logger.Error(err)
+	}
+	mentionsTodayPlans := false
+	todayPlansKeys := []string{t1, t2, t3}
+	for _, plan := range todayPlansKeys {
+		if strings.Contains(message, plan) {
+			mentionsTodayPlans = true
+		}
+	}
+
+	if mentionsProblem && mentionsYesterdayWork && mentionsTodayPlans {
 		logrus.Infof("This message is a standup: %v", message)
 		return strings.TrimSpace(message), true
-
 	}
+
 	logrus.Errorf("This message is not a standup: %v", message)
 	return message, false
 
