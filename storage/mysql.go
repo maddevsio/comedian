@@ -194,6 +194,13 @@ func (m *MySQL) FindStandupUser(username string) (model.StandupUser, error) {
 	return u, err
 }
 
+//FindStandupUsers finds users in table
+func (m *MySQL) FindStandupUsers(username string) ([]model.StandupUser, error) {
+	users := []model.StandupUser{}
+	err := m.conn.Select(&users, "SELECT * FROM `standup_users` WHERE username=?", username)
+	return users, err
+}
+
 // ListAllStandupUsers returns array of standup entries from database
 func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	items := []model.StandupUser{}

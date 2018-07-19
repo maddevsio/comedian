@@ -63,7 +63,6 @@ func (s *Slack) Run() error {
 
 			}
 		}
-		logrus.Infof("Slack username: %#v", s.myUsername)
 		select {
 		case msg := <-s.rtm.IncomingEvents:
 

@@ -25,7 +25,7 @@ reportPeriod = "\n\nОтчет с %s по %s:\n"
 reportStandupFromUser = "\nСтэндап от <@%s>:\n%s\n"
 reportStandupsFromProject = "\nНа проект: <#%s>\n%s\n"
 reportIgnoredStandup = "\n<@%s>: стэндап успешно просран!\n"
-
+reportShowChannel = "В канале: <#%s>"
 
 HelloManager = "Привет, менеджер!"
 StandupAccepted = "Отличная работа! Стэндап принят! Бомби дальше!"

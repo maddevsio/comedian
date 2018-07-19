@@ -35,6 +35,8 @@ type (
 		CreateStandupUser(model.StandupUser) (model.StandupUser, error)
 		//FindStandupUser finds standup user
 		FindStandupUser(username string) (model.StandupUser, error)
+		//FindStandupUsers finds standup users
+		FindStandupUsers(username string) ([]model.StandupUser, error)
 		//FindStandupUserInChannel finds standup user in channel
 		FindStandupUserInChannel(string, string) (model.StandupUser, error)
 		//FindStandupUserInChannelByUserID finds standup user in channel by Slack member ID

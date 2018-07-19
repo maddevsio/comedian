@@ -50,10 +50,6 @@ type (
 
 // Validate validates Standup struct
 func (c Standup) Validate() error {
-	if c.Channel == "" && c.ChannelID == "" {
-		err := errors.New("Channel cannot be empty")
-		return err
-	}
 	if c.Comment == "" {
 		err := errors.New("Standup cannot be empty")
 		return err

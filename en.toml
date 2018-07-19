@@ -25,6 +25,7 @@ reportPeriod = "\n\nReport from %s to %s:\n"
 reportStandupFromUser = "\nStandup from <@%s>:\n%s\n"
 reportStandupsFromProject = "\nOn project: <#%s>\n%s\n"
 reportIgnoredStandup = "\n<@%s>: ignored standup!\n"
+reportShowChannel = "In channel: <#%s>"
 
 
 HelloManager = "Hello, Manager!"
