@@ -50,7 +50,7 @@ func StandupReportByProject(db storage.Storage, channelName string, dateFrom, da
 	if err != nil {
 		logrus.Errorf("localize text: %v\n", err)
 	}
-	report := fmt.Sprintf(text, "CBA2M41Q8", channel)
+	report := fmt.Sprintf(text, "", channel)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
@@ -74,9 +74,9 @@ func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, d
 }
 
 // StandupReportByProjectAndUser creates a standup report for a specified period of time
-func StandupReportByProjectAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
+func StandupReportByProjectAndUser(db storage.Storage, channelName string, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
 	localizer = initLocalizer()
-	reportEntries, err := getReportEntriesForPeriodByChannelAndUser(db, channelID, user, dateFrom, dateTo)
+	reportEntries, err := getReportEntriesForPeriodByChannelAndUser(db, channelName, user, dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("get report entries by channel and user: %v\n", err)
 		return "Error!", err
@@ -88,7 +88,7 @@ func StandupReportByProjectAndUser(db storage.Storage, channelID string, user mo
 		logrus.Errorf("localize text: %v\n", err)
 
 	}
-	report := fmt.Sprintf(text, channelID, user.SlackName)
+	report := fmt.Sprintf(text, user.ChannelID, user.SlackName)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
@@ -326,7 +326,7 @@ func ReportEntriesByUserToString(reportEntries []reportEntry) string {
 }
 
 //getReportEntriesForPeriodByChannelAndUser returns report entries by channel
-func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelName string, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
 	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("set up dates: %v\n", err)
@@ -337,13 +337,13 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 	for day := 0; day <= numberOfDays; day++ {
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
-		standupUser, err := db.FindStandupUserInChannel(user.SlackName, channelID)
+		standupUser, err := db.FindStandupUserInChannelName(user.SlackName, channelName)
 		if err != nil {
 			logrus.Errorf("find standup user in channel: %v\n", err)
 			return nil, err
 		}
 		logrus.Infof("projectUserReport, user: %#v\n", standupUser)
-		createdStandups, err := db.SelectStandupsByChannelIDForPeriod(channelID, currentDateFrom, currentDateTo)
+		createdStandups, err := db.SelectStandupByChannelNameForPeriod(channelName, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("selects standups by channel id: %v\n", err)
 			return nil, err
