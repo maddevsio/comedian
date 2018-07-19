@@ -268,7 +268,13 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 func ReportEntriesByUserToString(reportEntries []reportEntry) string {
 	localizer = initLocalizer()
 	var report string
-	if len(reportEntries) == 0 {
+	emptyReport := true
+	for _, reportEntry := range reportEntries {
+		if len(reportEntry.ReportContents) != 0 {
+			emptyReport = false
+		}
+	}
+	if emptyReport {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
 		if err != nil {
 			logrus.Errorf("localize text: %v\n", err)
