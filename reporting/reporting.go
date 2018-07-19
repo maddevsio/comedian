@@ -307,13 +307,13 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 			logrus.Errorf("find standup user in channel: %v\n", err)
 			return nil, err
 		}
-		logrus.Infof("userReport, user: %#v\n", standupUser)
+		logrus.Infof("projectUserReport, user: %#v\n", standupUser)
 		createdStandups, err := db.SelectStandupsByChannelIDForPeriod(channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("selects standups by channel id: %v\n", err)
 			return nil, err
 		}
-		logrus.Infof("userReport, created standups: %#v\n", createdStandups)
+		logrus.Infof("projectUserReport, created standups: %#v\n", createdStandups)
 		currentDayStandups := make([]model.Standup, 0, 1)
 		currentDayNonReporters := make([]model.StandupUser, 0, 1)
 
@@ -331,8 +331,8 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 		if !found {
 			currentDayNonReporters = append(currentDayNonReporters, standupUser)
 		}
-		logrus.Infof("userReport, current day standups: %#v\n", currentDayStandups)
-		logrus.Infof("userReport, current day non reporters: %#v\n", currentDayNonReporters)
+		logrus.Infof("projectUserReport, current day standups: %#v\n", currentDayStandups)
+		logrus.Infof("projectUserReport, current day non reporters: %#v\n", currentDayNonReporters)
 		if len(currentDayNonReporters) > 0 || len(currentDayStandups) > 0 {
 			reportEntries = append(reportEntries,
 				reportEntry{
@@ -342,7 +342,7 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 					NonReporters: currentDayNonReporters})
 		}
 	}
-	logrus.Infof("userReport, final report entries: %#v\n", reportEntries)
+	logrus.Infof("projectUserReport, final report entries: %#v\n", reportEntries)
 	return reportEntries, nil
 }
 
