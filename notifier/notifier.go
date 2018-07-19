@@ -36,7 +36,9 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 		logrus.Errorf("get localizer: %v\n", err)
 		return nil, err
 	}
-	return &Notifier{Chat: chat, DB: conn, CheckInterval: c.NotifierCheckInterval}, nil
+	notifier := &Notifier{Chat: chat, DB: conn, CheckInterval: c.NotifierCheckInterval}
+	logrus.Infof("Created Notifier: %#v", notifier)
+	return notifier, nil
 }
 
 // Start starts all notifier treads
@@ -47,6 +49,7 @@ func (n *Notifier) Start(c config.Config) error {
 		logrus.Errorf("parse time: %v\n", err)
 		return err
 	}
+	logrus.Infof("Report time parsed: %#v", reportTimeParsed)
 	gocron.Every(n.CheckInterval).Seconds().Do(managerStandupReport, n.Chat, c, n.DB, reportTimeParsed)
 	gocron.Every(n.CheckInterval).Seconds().Do(standupReminderForChannel, n.Chat, n.DB)
 	channel := gocron.Start()
@@ -67,6 +70,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 		standupTime := time.Unix(standupTime.Time, 0)
 		currTime := time.Now()
 		if standupTime.Hour() == currTime.Hour() && standupTime.Minute() == currTime.Minute() {
+			logrus.Infof("Standup time in Channel: %#v, Current time: %v, IT's TIME TO DO A STANDUP", channelID, currTime)
 			notifyStandupStart(chat, db, channelID)
 			directRemindStandupers(chat, db, channelID)
 		}
@@ -74,10 +78,13 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 		if err != nil {
 			logrus.Errorf("get nonreporters: %v\n", err)
 		}
+		logrus.Infof("Notifier non reporters: %#v", nonReporters)
 		if len(nonReporters) > 0 {
 			pauseTime := time.Minute * 1 //repeats after n minutes
 			repeatCount := 5             //repeat n times
+			logrus.Infof("Notifier pause time: %#v", pauseTime)
 			for i := 1; i <= repeatCount; i++ {
+				logrus.Infof("Notifier repeated: %v times", i)
 				notifyTime := standupTime.Add(pauseTime * time.Duration(i))
 				if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
 					//periodic reminder for non reporters!
@@ -102,14 +109,14 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 		if err != nil {
 			logrus.Errorf("list all standup users: %v\n", err)
 		}
-
+		logrus.Infof("Notifier standup users: %#v", standupUsers)
 		// list usernames
 		var allStandupUsernames []string
 		for _, standupUser := range standupUsers {
 			user := standupUser.SlackName
 			allStandupUsernames = append(allStandupUsernames, user)
 		}
-
+		logrus.Infof("Notifier all standup usernames: %#v", allStandupUsernames)
 		// list unique channels
 		var standupChannelsList []string
 		for _, standupUser := range standupUsers {
@@ -124,12 +131,15 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 				standupChannelsList = append(standupChannelsList, channel)
 			}
 		}
+		logrus.Infof("Notifier standup chanels list: %#v", standupChannelsList)
 		// for each unique channel, create a separate msg report to manager
 		for _, channel := range standupChannelsList {
+			logrus.Infof("Notifier manager report for channel: %v", channel)
 			userStandupRaw, err := db.SelectStandupsByChannelID(channel)
 			if err != nil {
 				logrus.Errorf("select standup by channel id: %v\n", err)
 			}
+			logrus.Infof("Notifier userStandupRaw (select standup by channelID: %#v", userStandupRaw)
 			var usersWhoCreatedStandup []string
 			for _, userStandup := range userStandupRaw {
 				user := userStandup.Username
@@ -148,6 +158,8 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 					nonReporters = append(nonReporters, "<@"+user+">")
 				}
 			}
+			logrus.Infof("Notifier manager report userwhocreated standup: %#v", usersWhoCreatedStandup)
+			logrus.Infof("Notifier manager report nonReporters: %#v", nonReporters)
 			nonReportersCheck := len(nonReporters)
 			if nonReportersCheck == 0 {
 				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerAllDone"})
@@ -190,6 +202,7 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 			logrus.Errorf("localize text: %v\n", err)
 		}
 		err = chat.SendMessage(channelID, text)
+		return
 	}
 
 }
@@ -230,6 +243,8 @@ func getNonReporters(chat chat.Chat, db storage.Storage, channelID string) ([]st
 			nonReporters = append(nonReporters, "<@"+user+">")
 		}
 	}
+	logrus.Infof("Notifier GetNonReporters userswhocreated standup: %#v", usersWhoCreatedStandup)
+	logrus.Infof("Notifier GetNonReporters nonReporters: %#v", nonReporters)
 	return nonReporters, nil
 }
 
@@ -264,7 +279,10 @@ func directRemindStandupers(chat chat.Chat, db storage.Storage, channelID string
 			nonReporters = append(nonReporters, user)
 		}
 	}
+	logrus.Infof("Notifier GetNonReporters userswhocreated standup: %#v", usersWhoCreatedStandup)
+	logrus.Infof("Notifier GetNonReporters nonReporters: %#v", nonReporters)
 	for _, motherFucker := range nonReporters {
+		logrus.Infof("Notifier Send Message to non reporter: %#v", motherFucker)
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyDirectMessage"})
 		if err != nil {
 			logrus.Errorf("localize text: %v\n", err)
