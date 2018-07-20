@@ -36,7 +36,7 @@ func NewSlack(conf config.Config) (*Slack, error) {
 		logrus.Errorf("slack: NewMySQL failed: %v\n", err)
 		return nil, err
 	}
-	logrus.Infof("slack: mysql connection: %#v", m)
+	logrus.Infof("slack: mysql connection: %v\n", m)
 	s := &Slack{}
 	s.api = slack.New(conf.SlackToken)
 	s.rtm = s.api.NewRTM()
@@ -47,7 +47,7 @@ func NewSlack(conf config.Config) (*Slack, error) {
 		logrus.Errorf("slack: GetLocalizer failed: %v\n", err)
 		return nil, err
 	}
-	logrus.Infof("slack: new Slack: %#v", s)
+	logrus.Infof("slack: new Slack: %v\n", s)
 	return s, nil
 }
 
@@ -63,7 +63,6 @@ func (s *Slack) Run() error {
 
 			}
 		}
-		logrus.Infof("slack: Slack Username: %#v", s.myUsername)
 		select {
 		case msg := <-s.rtm.IncomingEvents:
 
@@ -104,7 +103,7 @@ func (s *Slack) ManageConnection() {
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	user, err := s.db.FindStandupUserInChannelByUserID(msg.Msg.User, msg.Msg.Channel)
 	if err != nil {
-		logrus.Errorf("slack: FindStandupUserInChannelByUserID failed: %#v", err)
+		logrus.Errorf("slack: FindStandupUserInChannelByUserID failed: %v,\n User:%v,\n channel:%v", err)
 	}
 	switch msg.SubType {
 	case typeMessage:
@@ -117,7 +116,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				Comment:    standupText,
 				MessageTS:  msg.Msg.Timestamp,
 			})
-			logrus.Infof("slack: Standup created: %#v", standup)
+			logrus.Infof("slack: Standup created: %v\n", standup)
 			var text string
 			if err != nil {
 				logrus.Errorf("slack: CreateStandup failed: %v\n", err)
@@ -142,7 +141,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			logrus.Errorf("slack: AddToStandupHistory failed: %v\n", err)
 			return err
 		}
-		logrus.Infof("slack: Slack standup history: %#v", standupHistory)
+		logrus.Infof("slack: Slack standup history: %v\n", standupHistory)
 		if standupText, ok := s.isStandup(msg.SubMessage.Text); ok {
 			standup.Comment = standupText
 
@@ -251,7 +250,7 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 		logrus.Errorf("slack: OpenIMChannel failed: %v\n", err)
 		return err
 	}
-	logrus.Infof("slack: Slack OpenIMChannel: %#v", userID)
+	logrus.Infof("slack: Slack OpenIMChannel: %v\n", userID)
 	err = s.SendMessage(channelID, message)
 	if err != nil {
 		logrus.Errorf("slack: SendMessage failed: %v\n", err)

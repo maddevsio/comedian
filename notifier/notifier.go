@@ -166,18 +166,18 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 				if err != nil {
 					logrus.Errorf("notifier: Localize failed: %v\n", err)
 				}
-				err = chat.SendMessage(c.DirectManagerChannelID, fmt.Sprintf(text, c.Manager, channel))
+				err = chat.SendUserMessage(c.ManagerSlackUserID, fmt.Sprintf(text, c.ManagerSlackUserID, channel))
 				if err != nil {
-					logrus.Errorf("notifier: chat.SendMessage failed: %v\n", err)
+					logrus.Errorf("notifier: chat.SendUserMessage failed: %v\n", err)
 				}
 			} else {
 				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerNotAll"})
 				if err != nil {
 					logrus.Errorf("notifier: Localize failed: %v\n", err)
 				}
-				err = chat.SendMessage(c.DirectManagerChannelID, fmt.Sprintf(text, c.Manager, channel, strings.Join(nonReporters, ", ")))
+				err = chat.SendUserMessage(c.ManagerSlackUserID, fmt.Sprintf(text, c.ManagerSlackUserID, channel, strings.Join(nonReporters, ", ")))
 				if err != nil {
-					logrus.Errorf("notifier: chat.SendMessage failed: %v\n", err)
+					logrus.Errorf("notifier: chat.SendUserMessage failed: %v\n", err)
 				}
 			}
 		}
