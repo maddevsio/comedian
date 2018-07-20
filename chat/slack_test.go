@@ -70,7 +70,7 @@ func TestSendMessage(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
-	err = s.SendMessage(c.DirectManagerChannelID, "MSG to manager!")
+	err = s.SendMessage(c.ManagerSlackUserID, "MSG to manager!")
 	assert.NoError(t, err)
 }
 

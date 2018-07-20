@@ -72,7 +72,12 @@ func (s *Slack) Run() error {
 				if err != nil {
 					logrus.Errorf("slack: Localize failed: %v\n", err)
 				}
-				s.SendUserMessage("UB9AE7CL9", text)
+				c, err := config.Get()
+				if err != nil {
+					logrus.Errorf("slack: GetConfig: %v\n", err)
+					return err
+				}
+				s.SendUserMessage(c.ManagerSlackUserID, text)
 
 			case *slack.MessageEvent:
 				s.handleMessage(ev)
