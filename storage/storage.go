@@ -37,6 +37,8 @@ type (
 		FindStandupUser(username string) (model.StandupUser, error)
 		//FindStandupUserInChannel finds standup user in channel
 		FindStandupUserInChannel(string, string) (model.StandupUser, error)
+		//FindStandupUserInChannelByUserID finds standup user in channel by Slack member ID
+		FindStandupUserInChannelByUserID(string, string) (model.StandupUser, error)
 		//FindStandupUserInChannelName finds standup user in channel
 		FindStandupUserInChannelName(string, string) (model.StandupUser, error)
 		// DeleteStandupUser deletes standup_users entry from database

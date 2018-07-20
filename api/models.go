@@ -1,6 +1,10 @@
 package api
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/sirupsen/logrus"
+)
 
 type (
 	// FullSlackForm struct used for parsing full payload from slack
@@ -32,13 +36,19 @@ type (
 // Validate validates struct
 func (c FullSlackForm) Validate() error {
 	if c.Text == "" {
-		return errors.New("`text` cannot be empty")
+		err := errors.New("`text` cannot be empty")
+		logrus.Errorf("api/models: FullSlackForm Validate failed: %s", err.Error())
+		return err
 	}
 	if c.ChannelID == "" {
-		return errors.New("`channel_id` cannot be empty")
+		err := errors.New("`channel_id` cannot be empty")
+		logrus.Errorf("api/models: FullSlackForm Validate failed: %s", err.Error())
+		return err
 	}
 	if c.ChannelName == "" {
-		return errors.New("`channel_name` cannot be empty")
+		err := errors.New("`channel_name` cannot be empty")
+		logrus.Errorf("api/models: FullSlackForm Validate failed: %s", err.Error())
+		return err
 	}
 	return nil
 }
@@ -46,10 +56,14 @@ func (c FullSlackForm) Validate() error {
 // Validate validates struct
 func (s ChannelIDTextForm) Validate() error {
 	if s.Text == "" {
-		return errors.New("`text` cannot be empty")
+		err := errors.New("`text` cannot be empty")
+		logrus.Errorf("api/models: ChannelIDTextForm Validate failed: %s", err.Error())
+		return err
 	}
 	if s.ChannelID == "" {
-		return errors.New("`channel_id` cannot be empty")
+		err := errors.New("`channel_id` cannot be empty")
+		logrus.Errorf("api/models: ChannelIDTextForm Validate failed: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -58,7 +72,9 @@ func (s ChannelIDTextForm) Validate() error {
 // Validate validates struct
 func (s ChannelIDForm) Validate() error {
 	if s.ChannelID == "" {
-		return errors.New("`channel_id` cannot be empty")
+		err := errors.New("`channel_id` cannot be empty")
+		logrus.Errorf("api/models: ChannelIDForm Validate failed: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -67,10 +83,14 @@ func (s ChannelIDForm) Validate() error {
 // Validate validates struct
 func (s ChannelForm) Validate() error {
 	if s.ChannelID == "" {
-		return errors.New("`channel_id` cannot be empty")
+		err := errors.New("`channel_id` cannot be empty")
+		logrus.Errorf("api/models: ChannelForm Validate failed: %s", err.Error())
+		return err
 	}
 	if s.ChannelName == "" {
-		return errors.New("`channel_name` cannot be empty")
+		err := errors.New("`channel_name` cannot be empty")
+		logrus.Errorf("api/models: ChannelForm Validate failed: %s", err.Error())
+		return err
 	}
 
 	return nil

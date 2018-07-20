@@ -27,7 +27,7 @@ func TestStandupReportByProject(t *testing.T) {
 	text, err := StandupReportByProject(db, channelID, dateFrom, dateTo)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "Full Standup Report QWERTY123:\n\nNo data for this period", text)
+	assert.Equal(t, "Full Standup Report by project <#CBA2M41Q8|QWERTY123>:\n\nNo data for this period", text)
 
 	//create user who did not write standup
 	user1, err := db.CreateStandupUser(model.StandupUser{
@@ -172,7 +172,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	text, err := StandupReportByProjectAndUser(db, channelID, user1, dateFrom, dateTo)
 	assert.NoError(t, err)
 
-	assert.Equal(t, fmt.Sprintf("Standup Report Project: QWERTY123, User: <@user1>\n\n\n\nReport from %v to %v:\n\n<@user1>: ignored standup!\n", dateToText, dateNextText), text)
+	assert.Equal(t, fmt.Sprintf("Standup Report Project: <#QWERTY123>, User: <@user1>\n\n\n\nReport from %v to %v:\n\n<@user1>: ignored standup!\n", dateToText, dateNextText), text)
 
 	standup1, err := db.CreateStandup(model.Standup{
 		ChannelID:  channelID,
@@ -186,7 +186,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	text, err = StandupReportByProjectAndUser(db, channelID, user1, dateFrom, dateTo)
 	assert.NoError(t, err)
 
-	assert.Equal(t, fmt.Sprintf("Standup Report Project: QWERTY123, User: <@user1>\n\n\n\nReport from %v to %v:\n\nStandup from <@user1>:\nmy standup\n", dateToText, dateNextText), text)
+	assert.Equal(t, fmt.Sprintf("Standup Report Project: <#QWERTY123>, User: <@user1>\n\n\n\nReport from %v to %v:\n\nStandup from <@user1>:\nmy standup\n", dateToText, dateNextText), text)
 
 	assert.NoError(t, db.DeleteStandup(standup1.ID))
 	assert.NoError(t, db.DeleteStandupUserByUsername(user1.SlackName, user1.ChannelID))

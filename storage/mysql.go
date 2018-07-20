@@ -5,8 +5,6 @@ import (
 
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/labstack/gommon/log"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
@@ -25,6 +23,7 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 	}
 	m := &MySQL{}
 	m.conn = conn
+
 	return m, nil
 }
 
@@ -32,7 +31,6 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
 		return s, err
 	}
 	res, err := m.conn.Exec(
@@ -47,6 +45,7 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 		return s, err
 	}
 	s.ID = id
+
 	return s, nil
 }
 
@@ -54,7 +53,6 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
 		return s, err
 	}
 	_, err = m.conn.Exec(
@@ -66,6 +64,7 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 	}
 	var i model.Standup
 	err = m.conn.Get(&i, "SELECT * FROM `standup` WHERE id=?", s.ID)
+
 	return i, err
 }
 
@@ -73,6 +72,7 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 func (m *MySQL) SelectStandup(id int64) (model.Standup, error) {
 	var s model.Standup
 	err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE id=?", id)
+
 	return s, err
 }
 
@@ -80,6 +80,7 @@ func (m *MySQL) SelectStandup(id int64) (model.Standup, error) {
 func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
 	var s model.Standup
 	err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE message_ts=?", messageTS)
+
 	return s, err
 }
 
@@ -148,7 +149,6 @@ func (m *MySQL) DeleteStandupByUsername(username string) error {
 func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
 		return s, err
 	}
 	res, err := m.conn.Exec(
@@ -162,6 +162,7 @@ func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error
 		return s, err
 	}
 	s.ID = id
+
 	return s, nil
 }
 
@@ -169,6 +170,13 @@ func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error
 func (m *MySQL) FindStandupUserInChannel(username, channelID string) (model.StandupUser, error) {
 	var u model.StandupUser
 	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
+	return u, err
+}
+
+//FindStandupUserInChannelByUserID finds user in channel
+func (m *MySQL) FindStandupUserInChannelByUserID(usernameID, channelID string) (model.StandupUser, error) {
+	var u model.StandupUser
+	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE slack_user_id=? AND channel_id=?", usernameID, channelID)
 	return u, err
 }
 
@@ -217,7 +225,6 @@ func (m *MySQL) DeleteStandupUserByUsername(username, channelID string) error {
 func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
 		return s, err
 	}
 	res, err := m.conn.Exec(
@@ -231,6 +238,7 @@ func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error
 		return s, err
 	}
 	s.ID = id
+
 	return s, nil
 }
 
@@ -258,7 +266,6 @@ func (m *MySQL) DeleteStandupTime(channelID string) error {
 func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEditHistory, error) {
 	err := s.Validate()
 	if err != nil {
-		log.Errorf("ERROR: %s", err.Error())
 		return s, err
 	}
 	res, err := m.conn.Exec(
@@ -272,6 +279,7 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 		return s, err
 	}
 	s.ID = id
+
 	return s, nil
 }
 

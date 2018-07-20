@@ -341,7 +341,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Full Standup Report chanid:\n\nNo data for this period", rec.Body.String())
+	assert.Equal(t, "Full Standup Report by project <#CBA2M41Q8|chanid>:\n\nNo data for this period", rec.Body.String())
 
 }
 

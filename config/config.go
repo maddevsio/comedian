@@ -3,9 +3,7 @@ package config
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/labstack/gommon/log"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	logrus "github.com/sirupsen/logrus"
 	"golang.org/x/text/language"
 )
 
@@ -28,7 +26,6 @@ type (
 func Get() (Config, error) {
 	var c Config
 	if err := envconfig.Process("comedian", &c); err != nil {
-		log.Errorf("CONFIG ERROR: %s", err.Error())
 		return c, err
 	}
 	return c, nil
@@ -45,12 +42,10 @@ func GetLocalizer() (*i18n.Localizer, error) {
 
 	_, err = bundle.LoadMessageFile("ru.toml")
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	_, err = bundle.LoadMessageFile("en.toml")
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	localizer := i18n.NewLocalizer(bundle, c.Language)
