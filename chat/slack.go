@@ -108,7 +108,7 @@ func (s *Slack) ManageConnection() {
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	user, err := s.db.FindStandupUserInChannelByUserID(msg.Msg.User, msg.Msg.Channel)
 	if err != nil {
-		logrus.Errorf("slack: FindStandupUserInChannelByUserID failed: %v,\n User:%v,\n channel:%v", err)
+		logrus.Errorf("slack: FindStandupUserInChannelByUserID failed: %v,\n User:%v,\n channel:%v", err, msg.Msg.User, msg.Msg.Channel)
 	}
 	switch msg.SubType {
 	case typeMessage:
