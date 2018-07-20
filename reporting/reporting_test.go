@@ -27,7 +27,7 @@ func TestStandupReportByProject(t *testing.T) {
 	text, err := StandupReportByProject(db, channelID, dateFrom, dateTo)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "Full Standup Report by project <#CBA2M41Q8|QWERTY123>:\n\nNo data for this period", text)
+	assert.Equal(t, "Full Standup Report by project <#QWERTY123>:\n\nNo data for this period", text)
 
 	//create user who did not write standup
 	user1, err := db.CreateStandupUser(model.StandupUser{

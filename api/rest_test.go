@@ -306,9 +306,9 @@ func TestHandleTimeCommands(t *testing.T) {
 }
 
 func TestHandleReportByProjectCommands(t *testing.T) {
-	ReportByProjectEmptyText := "command=/report_by_project&channel_id=chanid&text="
+	ReportByProjectEmptyText := "command=/report_by_project&channel_id=<#CBA2M41Q8|chanid>&text="
 	ReportByProjectEmptyChanID := "command=/report_by_project&channel_id=&text=2018-06-25 2018-06-26"
-	ReportByProject := "command=/report_by_project&channel_id=chanid&text= chanid 2018-06-25 2018-06-26"
+	ReportByProject := "command=/report_by_project&channel_id=chanid&text= <#CBA2M41Q8|chanid> 2018-06-25 2018-06-26"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
@@ -341,7 +341,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Full Standup Report by project <#CBA2M41Q8|chanid>:\n\nNo data for this period", rec.Body.String())
+	assert.Equal(t, "Full Standup Report by project <#CBA2M41Q8>:\n\nNo data for this period", rec.Body.String())
 
 }
 
@@ -415,11 +415,11 @@ func TestHandleReportByUserCommands(t *testing.T) {
 }
 
 func TestHandleReportByProjectAndUserCommands(t *testing.T) {
-	ReportByProjectAndUserEmptyText := "command=/report_by_project_and_user&channel_id=chanid&text="
-	ReportByProjectAndUser := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= channel1 @user1 2018-06-25 2018-06-26"
-	ReportByProjectAndUserNameMessUp := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= channel1 @nouser 2018-06-25 2018-06-26"
-	ReportByProjectAndUserDateToMessUp := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= channel1 @user1 2018-6-25 2018-06-26"
-	ReportByProjectAndUserDateFromMessUp := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= channel1 @user1 2018-06-25 2018-6-26"
+	ReportByProjectAndUserEmptyText := "command=/report_by_project_and_user&channel_id=<#CBA2M41Q8|chanid>&text="
+	ReportByProjectAndUser := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-06-25 2018-06-26"
+	ReportByProjectAndUserNameMessUp := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|nouser> 2018-06-25 2018-06-26"
+	ReportByProjectAndUserDateToMessUp := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-6-25 2018-06-26"
+	ReportByProjectAndUserDateFromMessUp := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-06-25 2018-6-26"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
