@@ -442,11 +442,13 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		}
 		return c.String(http.StatusOK, text)
 	}
-	channelID := commandParams[0]
+	channel := commandParams[0]
+	channelSeparate := strings.Split(channel, "|")
+	channelID := strings.Replace(channelSeparate[0], "<", "", -1)
 	logrus.Println("0" + channelID)
-	userfull := commandParams[1]
-	logrus.Println("1" + userfull)
-	userName := strings.Replace(userfull, "@", "", -1)
+	userFull := strings.Split(commandParams[1], "|")
+	logrus.Println("1" + userFull[1])
+	userName := strings.Replace(userFull[1], ">", "", -1)
 	logrus.Println("1" + userName)
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
