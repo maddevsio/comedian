@@ -1,4 +1,4 @@
-reportOnProjectHead = "Full Standup Report by project <#%s|%s>:\n\n"
+reportOnProjectHead = "Full Standup Report by project <#%s>:\n\n"
 reportOnUserHead = "Full Standup Report for user <@%s>:\n\n"
 reportOnProjectAndUserHead = "Standup Report Project: <#%s>, User: <@%s>\n\n"
 

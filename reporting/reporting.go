@@ -37,9 +37,9 @@ func initLocalizer() *i18n.Localizer {
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
-func StandupReportByProject(db storage.Storage, channelName string, dateFrom, dateTo time.Time) (string, error) {
+func StandupReportByProject(db storage.Storage, channelID string, dateFrom, dateTo time.Time) (string, error) {
 	localizer = initLocalizer()
-	channel := strings.Replace(channelName, "#", "", -1)
+	channel := strings.Replace(channelID, "#", "", -1)
 	reportEntries, err := getReportEntriesForPeriodByChannel(db, channel, dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("get report entries by channel: %v\n", err)
@@ -50,7 +50,7 @@ func StandupReportByProject(db storage.Storage, channelName string, dateFrom, da
 	if err != nil {
 		logrus.Errorf("localize text: %v\n", err)
 	}
-	report := fmt.Sprintf(text, "", channel)
+	report := fmt.Sprintf(text, channel)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
 	return report, nil
 }
@@ -94,26 +94,26 @@ func StandupReportByProjectAndUser(db storage.Storage, channelName string, user 
 }
 
 //getReportEntriesForPeriodByChannel returns report entries by channel
-func getReportEntriesForPeriodByChannel(db storage.Storage, channelName string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
 	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("set up dates: %v\n", err)
 		return nil, err
 	}
-	logrus.Infof("chanReport, channel: <#%v>", channelName)
+	logrus.Infof("chanReport, channel: <#%v>", channelID)
 
 	reportEntries := make([]reportEntry, 0, numberOfDays)
 	for day := 0; day <= numberOfDays; day++ {
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
 
-		standupUsers, err := db.ListStandupUsersByChannelName(channelName)
+		standupUsers, err := db.ListStandupUsersByChannelID(channelID)
 		if err != nil {
 			logrus.Errorf("list standup users by channel name: %v\n", err)
 			return nil, err
 		}
 		logrus.Infof("chanReport, standup users: %v\n", standupUsers)
-		createdStandups, err := db.SelectStandupByChannelNameForPeriod(channelName, currentDateFrom, currentDateTo)
+		createdStandups, err := db.SelectStandupsByChannelIDForPeriod(channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("select standup by channel name: %v\n", err)
 			return nil, err
