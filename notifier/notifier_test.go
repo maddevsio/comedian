@@ -74,20 +74,20 @@ func TestNotifier(t *testing.T) {
 	})
 
 	notifyStandupStart(ch, n.DB, channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@user1>, <@user2>", ch.LastMessage)
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@userID1>, <@userID2>", ch.LastMessage)
 
-	nonReporters, err := getNonReporters(ch, n.DB, channelID)
+	nonReporters, err := getNonReporters(n.DB, channelID)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(nonReporters))
 
 	standupReminderForChannel(ch, n.DB)
 	assert.NoError(t, err)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@user1>, <@user2>", ch.LastMessage) // херня какая-то
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@userID1>, <@userID2>", ch.LastMessage) // херня какая-то
 
 	managerStandupReport(ch, c, n.DB, d)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> not all standupers wrote standup today, these users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> not all standupers wrote standup today, these users ignored standup today: <@userID1>, <@userID2>.", ch.LastMessage)
 
 	// add standup for user @test
 	s, err := n.DB.CreateStandup(model.Standup{
@@ -100,10 +100,10 @@ func TestNotifier(t *testing.T) {
 	assert.NoError(t, err)
 
 	standupReminderForChannel(ch, n.DB)
-	assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> not all standupers wrote standup today, these users ignored standup today: <@user1>, <@user2>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> not all standupers wrote standup today, these users ignored standup today: <@userID1>, <@userID2>.", ch.LastMessage)
 
 	managerStandupReport(ch, c, n.DB, d)
-	assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> not all standupers wrote standup today, these users ignored standup today: <@user2>.", ch.LastMessage)
+	assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> not all standupers wrote standup today, these users ignored standup today: <@userID2>.", ch.LastMessage)
 
 	// add standup for user @user2
 	s2, err := n.DB.CreateStandup(model.Standup{
@@ -114,7 +114,7 @@ func TestNotifier(t *testing.T) {
 		MessageTS:  "qweasd",
 	})
 	assert.NoError(t, err)
-
+	fmt.Println("USER1:", s.Created, "USER2", s2.Created)
 	notifyStandupStart(ch, n.DB, channelID)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
 

@@ -201,21 +201,23 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 		for _, standupUser := range standupUsers {
 			currentDayNonReporter := []model.StandupUser{}
 			currentDayStandup, err := db.SelectStandupsByChannelIDAndUserForPeriod(standupUser.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
+
+			currentDayNonReporter, err = db.GetNonReporterByTimeUserIDAndChannelID(user.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
 			if err != nil {
-				logrus.Errorf("reporting: SelectStandupsByChannelIDAndUserForPeriod failed: %v\n", err)
-			}
-			if len(currentDayStandup) < 1 {
-				currentDayNonReporter = []model.StandupUser{user}
+				logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
+				return nil, err
 			}
 
 			logrus.Infof("reporting: userReport, current day standups: %#v\n", currentDayStandup)
 			logrus.Infof("reporting: userReport, current day non reporters: %#v\n", currentDayNonReporter)
 
-			reportContents = append(reportContents,
-				reportContent{
-					Channel:      standupUser.ChannelID,
-					Standups:     currentDayStandup,
-					NonReporters: currentDayNonReporter})
+			if len(currentDayNonReporter) > 0 || len(currentDayStandup) > 0 {
+				reportContents = append(reportContents,
+					reportContent{
+						Channel:      standupUser.ChannelID,
+						Standups:     currentDayStandup,
+						NonReporters: currentDayNonReporter})
+			}
 
 		}
 		reportEntries = append(reportEntries,
@@ -299,28 +301,33 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
 
-		currentDayNonReporter := []model.StandupUser{}
 		currentDayStandup, err := db.SelectStandupsByChannelIDAndUserForPeriod(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("reporting: SelectStandupsByChannelIDAndUserForPeriod failed: %v\n", err)
 		}
-		if len(currentDayStandup) < 1 {
-			currentDayNonReporter = []model.StandupUser{user}
+
+		currentDayNonReporter, err := db.GetNonReporterByTimeUserIDAndChannelID(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
+		if err != nil {
+			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
+			return nil, err
 		}
 
 		logrus.Infof("reporting: projectUserReport, current day standups: %#v\n", currentDayStandup)
 		logrus.Infof("reporting: projectUserReport, current day non reporters: %#v\n", currentDayNonReporter)
-		reportContents := []reportContent{}
-		reportContents = append(reportContents,
-			reportContent{
-				Standups:     currentDayStandup,
-				NonReporters: currentDayNonReporter})
 
-		reportEntries = append(reportEntries,
-			reportEntry{
-				DateFrom:       currentDateFrom,
-				DateTo:         currentDateTo,
-				ReportContents: reportContents})
+		if len(currentDayNonReporter) > 0 || len(currentDayStandup) > 0 {
+			reportContents := make([]reportContent, 0, 1)
+			reportContents = append(reportContents,
+				reportContent{
+					Standups:     currentDayStandup,
+					NonReporters: currentDayNonReporter})
+
+			reportEntries = append(reportEntries,
+				reportEntry{
+					DateFrom:       currentDateFrom,
+					DateTo:         currentDateTo,
+					ReportContents: reportContents})
+		}
 
 	}
 	logrus.Infof("reporting: projectUserReport, final report entries: %#v\n", reportEntries)

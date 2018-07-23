@@ -450,7 +450,7 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "sql: no rows in result set", rec.Body.String())
+	assert.Equal(t, "This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command", rec.Body.String())
 
 	//report by project and user date from mess up
 	req = httptest.NewRequest(echo.POST, "/commands", strings.NewReader(ReportByProjectAndUserDateFromMessUp))

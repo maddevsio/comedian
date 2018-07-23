@@ -449,14 +449,6 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	userFull := strings.Split(commandParams[1], "|")
 	userID := strings.Replace(userFull[0], "<@", "", -1)
 	logrus.Println("UserID: " + userID)
-	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
-	if err != nil {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, fmt.Sprintf(text))
-	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -466,6 +458,14 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
+	}
+	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
+	if err != nil {
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
+		if err != nil {
+			logrus.Errorf("rest: Localize failed: %v\n", err)
+		}
+		return c.String(http.StatusOK, fmt.Sprintf(text))
 	}
 	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
 	if err != nil {

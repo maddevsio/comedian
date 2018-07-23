@@ -207,6 +207,12 @@ func TestCRUDStandupTime(t *testing.T) {
 	assert.NoError(t, err)
 	db, err := NewMySQL(c)
 	assert.NoError(t, err)
+
+	//clean up table before tests
+	ast, err := db.ListAllStandupTime()
+	for _, st := range ast {
+		db.DeleteStandupTime(st.ChannelID)
+	}
 	st, err := db.CreateStandupTime(model.StandupTime{
 		ChannelID: "chanid",
 		Channel:   "chanName",

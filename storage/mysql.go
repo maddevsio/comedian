@@ -205,11 +205,25 @@ func (m *MySQL) ListNonReportersByTimeAndChannelID(channelID string, dateFrom, d
 	for _, user := range us {
 		usernames = append(usernames, user.SlackName)
 	}
-	fmt.Printf("USERNAMES: %v", strings.Join(usernames, ","))
 	users := []model.StandupUser{}
-	err = m.conn.Select(&users, `SELECT * FROM standup_users where channel_id = ? and username NOT IN (?) and created < ?`, channelID, strings.Join(usernames, ","), dateTo)
+	err = m.conn.Select(&users, `SELECT * FROM standup_users where channel_id = ? and username NOT IN (?) and created between ? and ?`, channelID, strings.Join(usernames, ","), dateFrom, dateTo)
 
 	return users, err
+}
+
+func (m *MySQL) GetNonReporterByTimeUserIDAndChannelID(userID, channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
+	us := []model.StandupUser{}
+	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
+								on s.username_id = r.slack_user_id and r.channel_id = ? 
+								where s.created BETWEEN ? AND ?`, channelID, dateFrom, dateTo)
+	usernames := []string{}
+	for _, user := range us {
+		usernames = append(usernames, user.SlackName)
+	}
+	user := []model.StandupUser{}
+	err = m.conn.Select(&user, `SELECT * FROM standup_users where channel_id = ? and username NOT IN (?) and slack_user_id = ? and created between ? and ?`, channelID, strings.Join(usernames, ","), userID, dateFrom, dateTo)
+
+	return user, err
 }
 
 // ListStandupUsersByChannelID returns array of standup entries from database

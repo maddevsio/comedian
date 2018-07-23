@@ -44,6 +44,7 @@ type (
 		FindStandupUserInChannelByUserID(string, string) (model.StandupUser, error)
 
 		ListNonReportersByTimeAndChannelID(string, time.Time, time.Time) ([]model.StandupUser, error)
+		GetNonReporterByTimeUserIDAndChannelID(string, string, time.Time, time.Time) ([]model.StandupUser, error)
 
 		// DeleteStandupUser deletes standup_users entry from database
 		DeleteStandupUserByUsername(string, string) error
