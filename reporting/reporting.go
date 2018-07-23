@@ -108,35 +108,15 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
 
-		standupUsers, err := db.ListStandupUsersByChannelID(channelID)
+		currentDayStandups, err := db.SelectStandupsByChannelIDForPeriod(channelID, currentDateFrom, currentDateTo)
 		if err != nil {
-			logrus.Errorf("reporting: ListStandupUsersByChannelID: %v\n", err)
+			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 			return nil, err
 		}
-		logrus.Infof("chanReport, standup users: %v\n", standupUsers)
-		createdStandups, err := db.SelectStandupsByChannelIDForPeriod(channelID, currentDateFrom, currentDateTo)
+		currentDayNonReporters, err := db.ListNonReportersByTimeAndChannelID(channelID, currentDateFrom, currentDateTo)
 		if err != nil {
-			logrus.Errorf("reporting: SelectStandupByChannelIDForPeriod: %v\n", err)
+			logrus.Errorf("reporting: ListNonReportersByTimeAndChannelID failed: %v", err)
 			return nil, err
-		}
-		logrus.Infof("reporting: chanReport, created standups: %v\n", createdStandups)
-		currentDayStandups := make([]model.Standup, 0, len(standupUsers))
-		currentDayNonReporters := make([]model.StandupUser, 0, len(standupUsers))
-		for _, user := range standupUsers {
-			if user.Created.After(currentDateTo) {
-				continue
-			}
-			found := false
-			for _, standup := range createdStandups {
-				if user.SlackUserID == standup.UsernameID {
-					found = true
-					currentDayStandups = append(currentDayStandups, standup)
-					break
-				}
-			}
-			if !found {
-				currentDayNonReporters = append(currentDayNonReporters, user)
-			}
 		}
 		logrus.Infof("reporting: chanReport, current day standups: %v\n", currentDayStandups)
 		logrus.Infof("reporting: chanReport, current day non reporters: %v\n", currentDayNonReporters)

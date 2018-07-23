@@ -42,6 +42,8 @@ type (
 		//FindStandupUserInChannelByUserID finds standup user in channel by Slack member ID
 		FindStandupUserInChannelByUserID(string, string) (model.StandupUser, error)
 
+		ListNonReportersByTimeAndChannelID(string, time.Time, time.Time) ([]model.StandupUser, error)
+
 		// DeleteStandupUser deletes standup_users entry from database
 		DeleteStandupUserByUsername(string, string) error
 
@@ -54,6 +56,7 @@ type (
 		CreateStandupTime(model.StandupTime) (model.StandupTime, error)
 		// DeleteStandupTime deletes time entry from database
 		DeleteStandupTime(string) error
+
 		// ListStandupTime returns standup time entry from database
 		ListStandupTime(string) (model.StandupTime, error)
 		// ListAllStandupTime returns standup time entry for all channels from database

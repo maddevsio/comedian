@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	// This line is must for working MySQL database
@@ -92,8 +94,7 @@ func (m *MySQL) SelectStandupsByChannelID(channelID string) ([]model.Standup, er
 }
 
 // SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
-func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart,
-	dateEnd time.Time) ([]model.Standup, error) {
+func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND created BETWEEN ? AND ?",
 		channelID, dateStart, dateEnd)
@@ -184,6 +185,22 @@ func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users`")
 	return items, err
+}
+
+func (m *MySQL) ListNonReportersByTimeAndChannelID(channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
+	us := []model.StandupUser{}
+	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
+								on s.username_id = r.slack_user_id and r.channel_id = ? 
+								where s.created BETWEEN ? AND ?`, channelID, dateFrom, dateTo)
+	usernames := []string{}
+	for _, user := range us {
+		usernames = append(usernames, user.SlackName)
+	}
+	fmt.Printf("USERNAMES: %v", strings.Join(usernames, ","))
+	users := []model.StandupUser{}
+	err = m.conn.Select(&users, `SELECT * FROM standup_users where channel_id = ? and username NOT IN (?) and created < ?`, channelID, strings.Join(usernames, ","), dateTo)
+
+	return users, err
 }
 
 // ListStandupUsersByChannelID returns array of standup entries from database

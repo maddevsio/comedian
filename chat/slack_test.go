@@ -5,7 +5,6 @@ import (
 
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
-	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,32 +36,6 @@ func TestIsStandup(t *testing.T) {
 			t.Errorf("Test %s: \n input: %s,\n expected confirm: %v\n actual confirm: %v \n", tt.title, tt.input, tt.confirm, ok)
 		}
 	}
-}
-
-func TestHandleMessage(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	s, err := NewSlack(c)
-	assert.NoError(t, err)
-
-	su1, err := s.db.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   "123qwe",
-		Channel:     "general",
-	})
-	assert.NoError(t, err)
-
-	msg := &slack.MessageEvent{}
-	msg.Text = "<@> some message"
-	msg.Channel = su1.Channel
-	msg.Username = su1.SlackName
-
-	err = s.handleMessage(msg)
-	assert.NoError(t, err)
-	assert.NoError(t, s.db.DeleteStandupByUsername(su1.SlackName))
-	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
-
 }
 
 func TestSendMessage(t *testing.T) {
