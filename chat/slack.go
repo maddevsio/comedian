@@ -80,6 +80,7 @@ func (s *Slack) Run() error {
 				s.SendUserMessage(c.ManagerSlackUserID, text)
 
 			case *slack.MessageEvent:
+
 				s.handleMessage(ev)
 			case *slack.PresenceChangeEvent:
 				logrus.Infof("slack: Presence Change: %v\n", ev)
@@ -106,18 +107,12 @@ func (s *Slack) ManageConnection() {
 }
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
-	user, err := s.db.FindStandupUserInChannelByUserID(msg.Msg.User, msg.Msg.Channel)
-	if err != nil {
-		logrus.Errorf("slack: FindStandupUserInChannelByUserID failed: %v,\n User:%v,\n channel:%v", err, msg.Msg.User, msg.Msg.Channel)
-	}
 	switch msg.SubType {
 	case typeMessage:
 		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
 			standup, err := s.db.CreateStandup(model.Standup{
-				Channel:    user.Channel,
-				ChannelID:  user.ChannelID,
-				UsernameID: user.SlackUserID,
-				Username:   user.SlackName,
+				ChannelID:  msg.Channel,
+				UsernameID: msg.User,
 				Comment:    standupText,
 				MessageTS:  msg.Msg.Timestamp,
 			})
