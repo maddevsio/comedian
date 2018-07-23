@@ -115,19 +115,19 @@ func TestNotifier(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	fmt.Println("USER1:", s.Created, "USER2", s2.Created)
-	notifyStandupStart(ch, n.DB, channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
+	// notifyStandupStart(ch, n.DB, channelID)
+	// assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
 
-	standupReminderForChannel(ch, n.DB)
+	// standupReminderForChannel(ch, n.DB)
 
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
+	// assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
 
-	managerStandupReport(ch, c, n.DB, d)
-	assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
+	// managerStandupReport(ch, c, n.DB, d)
+	// assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
 
-	err = directRemindStandupers(ch, n.DB, channelID)
-	assert.NoError(t, err)
-	assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
+	// err = directRemindStandupers(ch, n.DB, channelID)
+	// assert.NoError(t, err)
+	// assert.Equal(t, "CHAT: UB9AE7CL9, MESSAGE: <@UB9AE7CL9>, in channel <#QWERTY123> all standupers have written standup today", ch.LastMessage)
 
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))
