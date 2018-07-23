@@ -115,7 +115,7 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 		}
 		currentDayNonReporters, err := db.ListNonReportersByTimeAndChannelID(channelID, currentDateFrom, currentDateTo)
 		if err != nil {
-			logrus.Errorf("reporting: ListNonReportersByTimeAndChannelID failed: %v", err)
+			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 			return nil, err
 		}
 		logrus.Infof("reporting: chanReport, current day standups: %v\n", currentDayStandups)
@@ -320,50 +320,30 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 	for day := 0; day <= numberOfDays; day++ {
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
-		standupUser, err := db.FindStandupUserInChannel(user.SlackName, channelID)
-		if err != nil {
-			logrus.Errorf("reporting: FindStandupUserInChannel failed: %v\n", err)
-			return nil, err
-		}
-		logrus.Infof("projectUserReport, user: %#v\n", standupUser)
-		createdStandups, err := db.SelectStandupsByChannelIDForPeriod(channelID, currentDateFrom, currentDateTo)
-		if err != nil {
-			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v\n", err)
-			return nil, err
-		}
-		logrus.Infof("reporting: projectUserReport, created standups: %#v\n", createdStandups)
-		currentDayStandups := make([]model.Standup, 0, 1)
-		currentDayNonReporters := make([]model.StandupUser, 0, 1)
 
-		if standupUser.Created.After(currentDateTo) {
-			continue
+		currentDayNonReporter := []model.StandupUser{}
+		currentDayStandup, err := db.SelectStandupsByChannelIDAndUserForPeriod(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
+		if err != nil {
+			logrus.Errorf("reporting: SelectStandupsByChannelIDAndUserForPeriod failed: %v\n", err)
 		}
-		found := false
-		for _, standup := range createdStandups {
-			if user.SlackUserID == standup.UsernameID {
-				found = true
-				currentDayStandups = append(currentDayStandups, standup)
-				break
-			}
+		if len(currentDayStandup) < 1 {
+			currentDayNonReporter = []model.StandupUser{user}
 		}
-		if !found {
-			currentDayNonReporters = append(currentDayNonReporters, standupUser)
-		}
-		logrus.Infof("reporting: projectUserReport, current day standups: %#v\n", currentDayStandups)
-		logrus.Infof("reporting: projectUserReport, current day non reporters: %#v\n", currentDayNonReporters)
-		if len(currentDayNonReporters) > 0 || len(currentDayStandups) > 0 {
-			reportContents := make([]reportContent, 0, 1)
-			reportContents = append(reportContents,
-				reportContent{
-					Standups:     currentDayStandups,
-					NonReporters: currentDayNonReporters})
 
-			reportEntries = append(reportEntries,
-				reportEntry{
-					DateFrom:       currentDateFrom,
-					DateTo:         currentDateTo,
-					ReportContents: reportContents})
-		}
+		logrus.Infof("reporting: projectUserReport, current day standups: %#v\n", currentDayStandup)
+		logrus.Infof("reporting: projectUserReport, current day non reporters: %#v\n", currentDayNonReporter)
+		reportContents := []reportContent{}
+		reportContents = append(reportContents,
+			reportContent{
+				Standups:     currentDayStandup,
+				NonReporters: currentDayNonReporter})
+
+		reportEntries = append(reportEntries,
+			reportEntry{
+				DateFrom:       currentDateFrom,
+				DateTo:         currentDateTo,
+				ReportContents: reportContents})
+
 	}
 	logrus.Infof("reporting: projectUserReport, final report entries: %#v\n", reportEntries)
 	return reportEntries, nil

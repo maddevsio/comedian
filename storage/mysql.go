@@ -101,6 +101,15 @@ func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart, 
 	return items, err
 }
 
+// SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
+func (m *MySQL) SelectStandupsByChannelIDAndUserForPeriod(slack_user_id, channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND username_id =? AND created BETWEEN ? AND ?",
+		channelID, slack_user_id, dateStart, dateEnd)
+	fmt.Println("STANDUP:", items)
+	return items, err
+}
+
 // SelectStandupByUserNameForPeriod selects standup entrys by username and time period from database
 func (m *MySQL) SelectStandupByUserNameForPeriod(username string, dateStart,
 	dateEnd time.Time) ([]model.Standup, error) {
