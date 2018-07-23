@@ -91,15 +91,6 @@ func (m *MySQL) SelectStandupsByChannelID(channelID string) ([]model.Standup, er
 	return items, err
 }
 
-// SelectStandupByChannelNameForPeriod selects standup entry by channel name and time period from database
-func (m *MySQL) SelectStandupByChannelNameForPeriod(channelName string, dateStart,
-	dateEnd time.Time) ([]model.Standup, error) {
-	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel=? AND created BETWEEN ? AND ?",
-		channelName, dateStart, dateEnd)
-	return items, err
-}
-
 // SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
 func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart,
 	dateEnd time.Time) ([]model.Standup, error) {
@@ -139,12 +130,6 @@ func (m *MySQL) DeleteStandup(id int64) error {
 	return err
 }
 
-// DeleteStandupByUsername deletes standup_users entry from database
-func (m *MySQL) DeleteStandupByUsername(username string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup` WHERE username=?", username)
-	return err
-}
-
 // CreateStandupUser creates comedian entry in database
 func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error) {
 	err := s.Validate()
@@ -180,13 +165,6 @@ func (m *MySQL) FindStandupUserInChannelByUserID(usernameID, channelID string) (
 	return u, err
 }
 
-//FindStandupUserInChannelName finds user in channel
-func (m *MySQL) FindStandupUserInChannelName(username, channel string) (model.StandupUser, error) {
-	var u model.StandupUser
-	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=? AND channel=?", username, channel)
-	return u, err
-}
-
 //FindStandupUser finds user in
 func (m *MySQL) FindStandupUser(username string) (model.StandupUser, error) {
 	var u model.StandupUser
@@ -212,13 +190,6 @@ func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 func (m *MySQL) ListStandupUsersByChannelID(channelID string) ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=?", channelID)
-	return items, err
-}
-
-// ListStandupUsersByChannelName returns array of standup entries from database filtered by channel name
-func (m *MySQL) ListStandupUsersByChannelName(channelName string) ([]model.StandupUser, error) {
-	items := []model.StandupUser{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel=?", channelName)
 	return items, err
 }
 
