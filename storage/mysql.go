@@ -287,6 +287,13 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 	return s, nil
 }
 
+//GetAllChannels returns list of unique channels
+func (m *MySQL) GetAllChannels() ([]string, error) {
+	channels := []string{}
+	err := m.conn.Select(&channels, "SELECT DISTINCT channel_id FROM `standup_users`")
+	return channels, err
+}
+
 var nowFunc func() time.Time
 
 func init() {

@@ -62,5 +62,7 @@ type (
 		ListStandupTime(string) (model.StandupTime, error)
 		// ListAllStandupTime returns standup time entry for all channels from database
 		ListAllStandupTime() ([]model.StandupTime, error)
+
+		GetAllChannels() ([]string, error)
 	}
 )
