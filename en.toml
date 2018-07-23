@@ -23,10 +23,8 @@ reportOnProjectAndUserHead = "Standup Report Project: <#%s>, User: <@%s>\n\n"
 reportNoData = "No data for this period"
 reportPeriod = "\n\nReport from %s to %s:\n"
 reportStandupFromUser = "\nStandup from <@%s>:\n%s\n"
-reportStandupsFromProject = "\nOn project: <#%s>\n%s\n"
 reportIgnoredStandup = "\n<@%s>: ignored standup!\n"
-reportShowChannel = "In channel: <#%s>"
-
+reportShowChannel = "In channel: <#%s>\n"
 
 HelloManager = "Hello, Manager!"
 StandupAccepted = "Good job! Standup accepted! Keep it up!"

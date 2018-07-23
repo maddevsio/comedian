@@ -187,7 +187,6 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 		logrus.Errorf("reporting: setupDays failed: %v\n", err)
 		return nil, err
 	}
-
 	reportEntries := make([]reportEntry, 0, numberOfDays)
 	for day := 0; day <= numberOfDays; day++ {
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
@@ -200,41 +199,24 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 		}
 		reportContents := make([]reportContent, 0, len(standupUsers))
 		for _, standupUser := range standupUsers {
-			channel := standupUser.ChannelID
-			logrus.Infof("reporting: userReport, user: %#v\n", standupUser)
-			createdStandups, err := db.SelectStandupsForPeriod(currentDateFrom, currentDateTo)
+			currentDayNonReporter := []model.StandupUser{}
+			currentDayStandup, err := db.SelectStandupsByChannelIDAndUserForPeriod(standupUser.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
 			if err != nil {
-				logrus.Errorf("select standup for period: %v\n", err)
-				return nil, err
+				logrus.Errorf("reporting: SelectStandupsByChannelIDAndUserForPeriod failed: %v\n", err)
 			}
-			logrus.Infof("reporting: userReport, created standups: %#v\n", createdStandups)
-			currentDayStandups := make([]model.Standup, 0, 1)
-			currentDayNonReporter := make([]model.StandupUser, 0, 1)
+			if len(currentDayStandup) < 1 {
+				currentDayNonReporter = []model.StandupUser{user}
+			}
 
-			if standupUser.Created.After(currentDateTo) {
-				continue
-			}
-			found := false
-			for _, standup := range createdStandups {
-				if standupUser.SlackUserID == standup.UsernameID {
-					found = true
-					currentDayStandups = append(currentDayStandups, standup)
-					break
-				}
-			}
-			if !found {
-				currentDayNonReporter = append(currentDayNonReporter, standupUser)
-			}
-			logrus.Infof("reporting: userReport, current day standups: %#v\n", currentDayStandups)
+			logrus.Infof("reporting: userReport, current day standups: %#v\n", currentDayStandup)
 			logrus.Infof("reporting: userReport, current day non reporters: %#v\n", currentDayNonReporter)
 
-			if len(currentDayNonReporter) > 0 || len(currentDayStandups) > 0 {
-				reportContents = append(reportContents,
-					reportContent{
-						Channel:      channel,
-						Standups:     currentDayStandups,
-						NonReporters: currentDayNonReporter})
-			}
+			reportContents = append(reportContents,
+				reportContent{
+					Channel:      standupUser.ChannelID,
+					Standups:     currentDayStandup,
+					NonReporters: currentDayNonReporter})
+
 		}
 		reportEntries = append(reportEntries,
 			reportEntry{
@@ -286,11 +268,7 @@ func ReportEntriesByUserToString(reportEntries []reportEntry) string {
 			}
 			report += fmt.Sprintf(text, reportContent.Channel)
 			for _, standup := range reportContent.Standups {
-				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportStandupsFromProject"})
-				if err != nil {
-					logrus.Errorf("reporting: Localize failed: %v\n", err)
-				}
-				report += fmt.Sprintf(text, standup.ChannelID, standup.Comment)
+				report += standup.Comment + "\n"
 			}
 			for _, user := range reportContent.NonReporters {
 				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportIgnoredStandup"})
