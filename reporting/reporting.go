@@ -113,7 +113,7 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 			return nil, err
 		}
-		currentDayNonReporters, err := db.ListNonReportersByTimeAndChannelID(channelID, currentDateFrom, currentDateTo)
+		currentDayNonReporters, err := db.GetNonReporters(channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 			return nil, err
@@ -200,9 +200,9 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 		reportContents := make([]reportContent, 0, len(standupUsers))
 		for _, standupUser := range standupUsers {
 			currentDayNonReporter := []model.StandupUser{}
-			currentDayStandup, err := db.SelectStandupsByChannelIDAndUserForPeriod(standupUser.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
+			currentDayStandup, err := db.SelectStandupsFiltered(standupUser.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
 
-			currentDayNonReporter, err = db.GetNonReporterByTimeUserIDAndChannelID(user.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
+			currentDayNonReporter, err = db.GetNonReporter(user.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
 			if err != nil {
 				logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 				return nil, err
@@ -301,12 +301,12 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
 
-		currentDayStandup, err := db.SelectStandupsByChannelIDAndUserForPeriod(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
+		currentDayStandup, err := db.SelectStandupsFiltered(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
 		if err != nil {
-			logrus.Errorf("reporting: SelectStandupsByChannelIDAndUserForPeriod failed: %v\n", err)
+			logrus.Errorf("reporting: SelectStandups failed: %v\n", err)
 		}
 
-		currentDayNonReporter, err := db.GetNonReporterByTimeUserIDAndChannelID(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
+		currentDayNonReporter, err := db.GetNonReporter(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 			return nil, err

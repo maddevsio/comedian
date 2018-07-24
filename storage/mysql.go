@@ -102,7 +102,7 @@ func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart, 
 }
 
 // SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
-func (m *MySQL) SelectStandupsByChannelIDAndUserForPeriod(slack_user_id, channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error) {
+func (m *MySQL) SelectStandupsFiltered(slack_user_id, channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND username_id =? AND created BETWEEN ? AND ?",
 		channelID, slack_user_id, dateStart, dateEnd)
@@ -196,7 +196,7 @@ func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	return items, err
 }
 
-func (m *MySQL) ListNonReportersByTimeAndChannelID(channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
+func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
 	us := []model.StandupUser{}
 	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
 								on s.username_id = r.slack_user_id and r.channel_id = ? 
@@ -211,7 +211,7 @@ func (m *MySQL) ListNonReportersByTimeAndChannelID(channelID string, dateFrom, d
 	return users, err
 }
 
-func (m *MySQL) GetNonReporterByTimeUserIDAndChannelID(userID, channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
+func (m *MySQL) GetNonReporter(userID, channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
 	us := []model.StandupUser{}
 	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
 								on s.username_id = r.slack_user_id and r.channel_id = ? 
