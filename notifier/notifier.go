@@ -67,9 +67,7 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 	}
 	for _, standupTime := range standupTimes {
 		channelID := standupTime.ChannelID
-		//channel := standupTime.Channel
 		standupTime := time.Unix(standupTime.Time, 0)
-		//logrus.Infof("notifier: Standup time for Channel: #%v is %v:%v\n", channel, standupTime.Hour(), standupTime.Minute())
 		currTime := time.Now()
 		if standupTime.Hour() == currTime.Hour() && standupTime.Minute() == currTime.Minute() {
 			logrus.Infof("notifier: Standup time in Channel: %v, Current time: %v, IT's TIME TO DO A STANDUP", channelID, currTime)
