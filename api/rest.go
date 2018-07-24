@@ -465,7 +465,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		if err != nil {
 			logrus.Errorf("rest: Localize failed: %v\n", err)
 		}
-		return c.String(http.StatusOK, fmt.Sprintf(text))
+		return c.String(http.StatusOK, text)
 	}
 	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
 	if err != nil {

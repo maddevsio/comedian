@@ -189,21 +189,7 @@ func managerStandupReport(chat chat.Chat, c config.Config, db storage.Storage, r
 // notifyStandupStart reminds users about upcoming standups
 func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 	listNonReporters, err := getNonReporters(db, channelID)
-	logrus.Infof("notifier: ListNonReporters results: %v", listNonReporters)
-	if err != nil {
-		logrus.Errorf("notifier: getNonReporters failed: %v\n", err)
-	}
-	if len(listNonReporters) > 0 {
-		slackUserID := []string{}
-		for _, sui := range listNonReporters {
-			slackUserID = append(slackUserID, "<@"+sui.SlackUserID+">")
-		}
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyUsersWarning"})
-		if err != nil {
-			logrus.Errorf("notifier: Localize failed: %v\n", err)
-		}
-		err = chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(slackUserID, ", ")))
-	} else {
+	if len(listNonReporters) == 0 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyAllDone"})
 		if err != nil {
 			logrus.Errorf("notifier: Localize failed: %v\n", err)
@@ -211,6 +197,19 @@ func notifyStandupStart(chat chat.Chat, db storage.Storage, channelID string) {
 		err = chat.SendMessage(channelID, text)
 		return
 	}
+	logrus.Infof("notifier: ListNonReporters results: %v", listNonReporters)
+	if err != nil {
+		logrus.Errorf("notifier: getNonReporters failed: %v\n", err)
+	}
+	slackUserID := []string{}
+	for _, sui := range listNonReporters {
+		slackUserID = append(slackUserID, "<@"+sui.SlackUserID+">")
+	}
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyUsersWarning"})
+	if err != nil {
+		logrus.Errorf("notifier: Localize failed: %v\n", err)
+	}
+	err = chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(slackUserID, ", ")))
 
 }
 
