@@ -8,6 +8,7 @@ import (
 	"github.com/maddevsio/comedian/model"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
+	"github.com/cenkalti/backoff"
 	"github.com/jasonlvhit/gocron"
 	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
@@ -78,27 +79,31 @@ func standupReminderForChannel(chat chat.Chat, db storage.Storage) {
 			if err != nil {
 				logrus.Errorf("notifier: getNonReporters failed: %v\n", err)
 			}
+			nonReportersSlackIDs := []string{}
+			for _, nonReporter := range nonReporters {
+				nonReportersSlackIDs = append(nonReportersSlackIDs, nonReporter.SlackUserID)
+			}
 			logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
-			if len(nonReporters) != 0 {
-				nonReportersSlackIDs := []string{}
-				for _, nonReporter := range nonReporters {
-					nonReportersSlackIDs = append(nonReportersSlackIDs, nonReporter.SlackUserID)
-				}
 
-				pauseTime := time.Minute * 1 //repeats after n minutes
-				repeatCount := 5             //repeat n times
-				logrus.Infof("notifier: Notifier pause time: %v", pauseTime)
-				for i := 1; i <= repeatCount; i++ {
-					logrus.Infof("notifier: Notifier repeated: %v times", i)
-					notifyTime := standupTime.Add(pauseTime * time.Duration(i))
-					if notifyTime.Hour() == currTime.Hour() && notifyTime.Minute() == currTime.Minute() {
-						//periodic reminder for non reporters!
-						text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyNotAll"})
-						if err != nil {
-							logrus.Errorf("notifier: Localize failed: %v\n", err)
-						}
-						chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(nonReportersSlackIDs, ", ")))
+			repeatCount := 0
+			notifyNotAll := func() error {
+				if repeatCount != 5 {
+					repeatCount++
+					text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyNotAll"})
+					if err != nil {
+						logrus.Errorf("notifier: Localize failed: %v\n", err)
+						return err
 					}
+					chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(nonReportersSlackIDs, ", ")))
+					return nil
+				}
+				logrus.Info("notifier: notifyNotAll finished!")
+				return nil
+			}
+			if len(nonReporters) != 0 {
+				err := backoff.Retry(notifyNotAll, backoff.NewExponentialBackOff())
+				if err != nil {
+					logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
 				}
 			} else {
 				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyAllDone"})
@@ -215,9 +220,9 @@ func getNonReporters(db storage.Storage, channelID string) ([]model.StandupUser,
 	currentTime := time.Now()
 	timeFrom := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
 
-	nonReporters, err := db.ListNonReportersByTimeAndChannelID(channelID, timeFrom, currentTime)
+	nonReporters, err := db.GetNonReporters(channelID, timeFrom, currentTime)
 	if err != nil {
-		logrus.Errorf("notifier: ListNonReportersByTimeAndChannelID failed: %v\n", err)
+		logrus.Errorf("notifier: GetNonReporters failed: %v\n", err)
 		return nil, err
 	}
 	return nonReporters, nil
