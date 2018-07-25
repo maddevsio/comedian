@@ -50,7 +50,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 }
 
 // Start starts all notifier treads
-func (n *Notifier) Start() {
+func (n *Notifier) Start() error {
 	gocron.Every(n.CheckInterval).Seconds().Do(n.NotifyChannels)
 	channel := gocron.Start()
 	for {
