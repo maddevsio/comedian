@@ -50,7 +50,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 }
 
 // Start starts all notifier treads
-func (n *Notifier) Start() error {
+func (n *Notifier) Start() {
 	gocron.Every(n.CheckInterval).Seconds().Do(n.NotifyChannels)
 	channel := gocron.Start()
 	for {
@@ -61,6 +61,7 @@ func (n *Notifier) Start() error {
 
 // NotifyChannels reminds users of channels about upcoming or missing standups
 func (n *Notifier) NotifyChannels() {
+
 	standupTimes, err := n.DB.ListAllStandupTime()
 	if err != nil {
 		logrus.Errorf("notifier: ListAllStandupTime failed: %v\n", err)
@@ -91,8 +92,8 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		return
 	}
 
-	n.sendWarning(channelID, nonReporters)
-	n.DMNonReporters(channelID, nonReporters)
+	n.SendWarning(channelID, nonReporters)
+	n.DMNonReporters(nonReporters)
 
 	nonReportersSlackIDs := []string{}
 	for _, nonReporter := range nonReporters {
@@ -133,8 +134,8 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 }
 
-// sendWarning reminds users in chat about upcoming standups
-func (n *Notifier) sendWarning(channelID string, nonReporters []model.StandupUser) {
+// SendWarning reminds users in chat about upcoming standups
+func (n *Notifier) SendWarning(channelID string, nonReporters []model.StandupUser) {
 	slackUserID := []string{}
 	for _, user := range nonReporters {
 		slackUserID = append(slackUserID, "<@"+user.SlackUserID+">")
@@ -148,7 +149,7 @@ func (n *Notifier) sendWarning(channelID string, nonReporters []model.StandupUse
 }
 
 // DMNonReporters writes DM to users who did not write standups
-func (n *Notifier) DMNonReporters(channelID string, nonReporters []model.StandupUser) error {
+func (n *Notifier) DMNonReporters(nonReporters []model.StandupUser) error {
 	//send each non reporter direct message
 	for _, nonReporter := range nonReporters {
 		logrus.Infof("notifier: Notifier Send Message to non reporter: %v", nonReporter)
