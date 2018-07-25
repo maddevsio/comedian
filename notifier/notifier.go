@@ -25,14 +25,7 @@ type Notifier struct {
 	CheckInterval uint64
 }
 
-type Report struct {
-	Channel      string
-	AllDone      bool
-	NonReporters []string
-}
-
 var localizer *i18n.Localizer
-var Reports []Report
 
 // NewNotifier creates a new notifier
 func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
@@ -59,7 +52,6 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
 	gocron.Every(n.CheckInterval).Seconds().Do(n.NotifyChannels)
-	gocron.Every(n.CheckInterval).Seconds().Do(n.NotifyManager)
 	channel := gocron.Start()
 	for {
 		report := <-channel
@@ -92,11 +84,6 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	}
 	if len(nonReporters) == 0 {
 		notifyAllDone, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyAllDone"})
-		report := Report{
-			Channel: channelID,
-			AllDone: true,
-		}
-		Reports = append(Reports, report)
 		if err != nil {
 			logrus.Errorf("notifier: Localize failed: %v\n", err)
 		}
@@ -113,35 +100,37 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	}
 	logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
-	repeatCount := 0
 	notifyNotAll := func() error {
-		if repeatCount != 5 {
-			repeatCount++
-			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyNotAll"})
-			if err != nil {
-				logrus.Errorf("notifier: Localize failed: %v\n", err)
-				return err
-			}
-			n.Chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(nonReportersSlackIDs, ", ")))
-			return nil
+		// Comedian will notify non reporters 5 times with 30 minutes interval.
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyNotAll"})
+		if err != nil {
+			logrus.Errorf("notifier: Localize failed: %v\n", err)
+			return err
 		}
-		if repeatCount == 3 {
-			// after 3rd reminder form report to send Manager
-			report := Report{
-				Channel:      channelID,
-				AllDone:      false,
-				NonReporters: nonReportersSlackIDs,
-			}
-			Reports = append(Reports, report)
-		}
+		n.Chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(nonReportersSlackIDs, ", ")))
+		return nil
 		logrus.Info("notifier: notifyNotAll finished!")
 		return nil
 	}
-	b := backoff.NewConstantBackOff(30 * time.Minute)
-	err = backoff.Retry(notifyNotAll, b)
-	if err != nil {
-		logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
+	for i := 0; i <= 5; i++ {
+		b := backoff.NewConstantBackOff(30 * time.Minute)
+		err = backoff.Retry(notifyNotAll, b)
+		if err != nil {
+			logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
+		}
+		if i == 3 {
+			// after 3 reminders Comedian sends direct message to Manager notifiing about missed standups
+			notifyManager, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerNotAll"})
+			if err != nil {
+				logrus.Errorf("notifier: Localize failed: %v\n", err)
+			}
+			err = n.Chat.SendUserMessage(n.Config.ManagerSlackUserID, fmt.Sprintf(notifyManager, n.Config.ManagerSlackUserID, channelID, strings.Join(nonReportersSlackIDs, ", ")))
+			if err != nil {
+				logrus.Errorf("notifier: n.Chat.SendUserMessage failed: %v\n", err)
+			}
+		}
 	}
+
 }
 
 // sendWarning reminds users in chat about upcoming standups
@@ -170,40 +159,6 @@ func (n *Notifier) DMNonReporters(channelID string, nonReporters []model.Standup
 		n.Chat.SendUserMessage(nonReporter.SlackUserID, fmt.Sprintf(text, nonReporter.SlackName, nonReporter.ChannelID))
 	}
 	return nil
-}
-
-// NotifyManager reminds manager about missing or completed standups from channels
-func (n *Notifier) NotifyManager() {
-	currTime := time.Now()
-	if n.ReportTime.Hour() == currTime.Hour() && n.ReportTime.Minute() == currTime.Minute() {
-		n.SendManagerReport(Reports)
-	}
-}
-
-func (n *Notifier) SendManagerReport(reports []Report) {
-	for _, report := range reports {
-		switch allDone := report.AllDone; allDone {
-		case true:
-			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerAllDone"})
-			if err != nil {
-				logrus.Errorf("notifier: Localize failed: %v\n", err)
-			}
-
-			err = n.Chat.SendUserMessage(n.Config.ManagerSlackUserID, fmt.Sprintf(text, n.Config.ManagerSlackUserID, report.Channel))
-			if err != nil {
-				logrus.Errorf("notifier: n.Chat.SendUserMessage failed: %v\n", err)
-			}
-		case false:
-			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerNotAll"})
-			if err != nil {
-				logrus.Errorf("notifier: Localize failed: %v\n", err)
-			}
-			err = n.Chat.SendUserMessage(n.Config.ManagerSlackUserID, fmt.Sprintf(text, n.Config.ManagerSlackUserID, report.Channel, strings.Join(report.NonReporters, ", ")))
-			if err != nil {
-				logrus.Errorf("notifier: n.Chat.SendUserMessage failed: %v\n", err)
-			}
-		}
-	}
 }
 
 // getNonReporters returns a list of standupers that did not write standups
