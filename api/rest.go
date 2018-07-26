@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -339,6 +340,7 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
 }
 
+///report_by_project #collector-test 2018-07-24 2018-07-26
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
@@ -350,7 +352,6 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 	commandParams := strings.Fields(ca.Text)
-	logrus.Println(len(commandParams))
 	if len(commandParams) != 3 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "wrongNArgs"})
 		if err != nil {
@@ -361,7 +362,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	channel := commandParams[0]
 	channelSeparate := strings.Split(channel, "|")
 	channelID := strings.Replace(channelSeparate[0], "<", "", -1)
-	logrus.Debugf("Channel ID before and after separations: %v, %v", channel, channelID)
+	channelName := strings.Replace(channelSeparate[1], ">", "", -1)
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -372,7 +373,12 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
+	data, err := r.getCollectorData("projects", channelName, commandParams[1], commandParams[2])
+	if err != nil {
+		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProject: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -380,6 +386,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, report)
 }
 
+///report_by_user @Anatoliy 2018-07-24 2018-07-26
 func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
@@ -401,6 +408,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	userfull := commandParams[0]
 	result := strings.Split(userfull, "|")
 	userName := strings.Replace(result[1], ">", "", -1)
+	slackUserID := strings.Replace(result[0], "<@", "", -1)
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
 		logrus.Errorf("rest: FindStandupUser failed: %v\n", err)
@@ -416,7 +424,12 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo)
+	data, err := r.getCollectorData("users", slackUserID, commandParams[1], commandParams[2])
+	if err != nil {
+		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -424,6 +437,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, report)
 }
 
+///report_by_project_and_user #collector-test @Anatoliy 2018-07-24 2018-07-26
 func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
@@ -445,6 +459,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	channel := commandParams[0]
 	channelSeparate := strings.Split(channel, "|")
 	channelID := strings.Replace(channelSeparate[0], "<#", "", -1)
+	channelName := strings.Replace(channelSeparate[1], ">", "", -1)
 	logrus.Println("ChannelID: " + channelID)
 	userFull := strings.Split(commandParams[1], "|")
 	userID := strings.Replace(userFull[0], "<@", "", -1)
@@ -459,6 +474,13 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
+	pu := channelName + "/" + userID
+	data, err := r.getCollectorData("projects-users", pu, commandParams[2], commandParams[3])
+	if err != nil {
+		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+
 	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
 	if err != nil {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
@@ -467,10 +489,38 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		}
 		return c.String(http.StatusOK, text)
 	}
-	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
+	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	return c.String(http.StatusOK, report)
+}
+
+func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byte, error) {
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.c.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	logrus.Infof("rest: getCollectorData request URL: %s", linkURL)
+	req, err := http.NewRequest("GET", linkURL, nil)
+	if err != nil {
+		logrus.Errorf("rest: http.NewRequest failed: %v\n", err)
+		return nil, err
+	}
+	token := r.c.CollectorToken
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logrus.Errorf("rest: http.DefaultClient.Do(req) failed: %v\n", err)
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logrus.Errorf("rest: ioutil.ReadAll(res.Body) failed: %v\n", err)
+		return nil, err
+	}
+	logrus.Infof("rest: getCollectorData responce body: %s", string(body))
+	return body, nil
+
 }

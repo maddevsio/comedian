@@ -20,6 +20,8 @@ func TestConfig(t *testing.T) {
 	os.Setenv("COMEDIAN_DEBUG", "true")
 	os.Setenv("COMEDIAN_SLACK_TOKEN", "token")
 	os.Setenv("COMEDIAN_LANGUAGE", "ru_RU")
+	os.Setenv("COMEDIAN_COLLECTOR_TOKEN", "cotoken")
+	os.Setenv("COMEDIAN_COLLECTOR_URL", "www.collector.some")
 
 	conf, err = Get()
 	assert.NoError(t, err)
@@ -30,6 +32,10 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, conf.ManagerSlackUserID, "FAKEUSERID")
 	assert.Equal(t, conf.ReportTime, "17:00")
 	assert.Equal(t, conf.Language, "ru_RU")
+	assert.Equal(t, conf.ReportTime, "17:00")
+	assert.Equal(t, conf.Language, "ru_RU")
+	assert.Equal(t, conf.CollectorToken, "cotoken")
+	assert.Equal(t, conf.CollectorURL, "www.collector.some")
 	assert.Equal(t, conf.Debug, true)
 }
 

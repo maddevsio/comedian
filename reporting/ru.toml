@@ -1,6 +1,6 @@
-reportOnProjectHead = "Полный отчёт по стэндапам <#%s>:\n\n"
+reportOnProjectHead = "Полный отчёт по проекту <#%s>:\n\n"
 reportOnUserHead = "Полный отчет по пользователю <@%s>:\n\n"
-reportOnProjectAndUserHead = "Стэндап отчет по проекту: <#%s>, пользователь: <@%s>\n\n"
+reportOnProjectAndUserHead = "Полный отчет по проекту: <#%s>, по пользователю: <@%s>\n\n"
 
 reportNoData = "Нет данных за данный период"
 reportPeriod = "\n\nОтчет с %s по %s:\n"

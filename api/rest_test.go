@@ -12,6 +12,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 func TestHandleCommands(t *testing.T) {
@@ -316,6 +317,12 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 
 	e := echo.New()
 
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects/chanid/2018-06-25/2018-06-26", c.CollectorURL),
+		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
+
 	//report by project Empty text
 	req := httptest.NewRequest(echo.POST, "/commands", strings.NewReader(ReportByProjectEmptyText))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
@@ -341,7 +348,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Full Standup Report by project <#CBA2M41Q8>:\n\nNo data for this period", rec.Body.String())
+	assert.Equal(t, "Full Standup Report by project <#CBA2M41Q8>:\n\nNo data for this period\n\nCommits for period: 0 \nMerges for period: 0\n", rec.Body.String())
 
 }
 
@@ -357,6 +364,13 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	assert.NoError(t, err)
 
 	e := echo.New()
+
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-26", c.CollectorURL),
+		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0, "worklogs": 0}]`))
+
 	//report by user empty
 	req := httptest.NewRequest(echo.POST, "/commands", strings.NewReader(ReportByUserEmptyText))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
@@ -408,7 +422,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Full Standup Report for user <@user1>:\n\nNo data for this period", rec.Body.String())
+	assert.Equal(t, "Full Standup Report for user <@user1>:\n\nNo data for this period\n\nCommits for period: 0 \nMerges for period: 0\nWorklogs: 0 hours", rec.Body.String())
 
 	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 
@@ -426,6 +440,13 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	assert.NoError(t, err)
 
 	e := echo.New()
+
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects-users/chanid/USERID/2018-06-25/2018-06-26", c.CollectorURL),
+		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
+
 	//report by project and user empty text
 	req := httptest.NewRequest(echo.POST, "/commands", strings.NewReader(ReportByProjectAndUserEmptyText))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)

@@ -1,6 +1,7 @@
 package reporting
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -25,6 +26,25 @@ type reportEntry struct {
 	ReportContents []reportContent
 }
 
+// UserData used to parse data on user from Collector
+type UserData struct {
+	TotalCommits int `json:"total_commits"`
+	TotalMerges  int `json:"total_merges"`
+	Worklogs     int `json:"worklogs"`
+}
+
+// ProjectData used to parse data on project from Collector
+type ProjectData struct {
+	TotalCommits int `json:"total_commits"`
+	TotalMerges  int `json:"total_merges"`
+}
+
+// ProjectUserData used to parse data on user in project from Collector
+type ProjectUserData struct {
+	TotalCommits int `json:"total_commits"`
+	TotalMerges  int `json:"total_merges"`
+}
+
 var localizer *i18n.Localizer
 
 func initLocalizer() *i18n.Localizer {
@@ -37,7 +57,7 @@ func initLocalizer() *i18n.Localizer {
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
-func StandupReportByProject(db storage.Storage, channelID string, dateFrom, dateTo time.Time) (string, error) {
+func StandupReportByProject(db storage.Storage, channelID string, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
 	localizer = initLocalizer()
 	channel := strings.Replace(channelID, "#", "", -1)
 	reportEntries, err := getReportEntriesForPeriodByChannel(db, channel, dateFrom, dateTo)
@@ -52,11 +72,16 @@ func StandupReportByProject(db storage.Storage, channelID string, dateFrom, date
 	}
 	report := fmt.Sprintf(text, channel)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
+
+	var dataP ProjectData
+	json.Unmarshal(collectorData, &dataP)
+
+	report += fmt.Sprintf("\n\nCommits for period: %v \nMerges for period: %v\n", dataP.TotalCommits, dataP.TotalMerges)
 	return report, nil
 }
 
 // StandupReportByUser creates a standup report for a specified period of time
-func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
+func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
 	localizer = initLocalizer()
 	reportEntries, err := getReportEntriesForPeriodbyUser(db, user, dateFrom, dateTo)
 	if err != nil {
@@ -70,11 +95,17 @@ func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, d
 	}
 	report := fmt.Sprintf(text, user.SlackName)
 	report += ReportEntriesByUserToString(reportEntries)
+
+	var dataU UserData
+	json.Unmarshal(collectorData, &dataU)
+
+	report += fmt.Sprintf("\n\nCommits for period: %v \nMerges for period: %v\nWorklogs: %v hours", dataU.TotalCommits, dataU.TotalMerges, dataU.Worklogs/3600)
+
 	return report, nil
 }
 
 // StandupReportByProjectAndUser creates a standup report for a specified period of time
-func StandupReportByProjectAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time) (string, error) {
+func StandupReportByProjectAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
 	localizer = initLocalizer()
 	channel := strings.Replace(channelID, "#", "", -1)
 	reportEntries, err := getReportEntriesForPeriodByChannelAndUser(db, channel, user, dateFrom, dateTo)
@@ -91,6 +122,12 @@ func StandupReportByProjectAndUser(db storage.Storage, channelID string, user mo
 	}
 	report := fmt.Sprintf(text, channel, user.SlackName)
 	report += ReportEntriesForPeriodByChannelToString(reportEntries)
+
+	var dataPU ProjectUserData
+	json.Unmarshal(collectorData, &dataPU)
+
+	report += fmt.Sprintf("\n\nCommits for period: %v \nMerges for period: %v\n", dataPU.TotalCommits, dataPU.TotalMerges)
+
 	return report, nil
 }
 
