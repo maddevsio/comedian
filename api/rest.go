@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -27,6 +28,15 @@ type REST struct {
 	c       config.Config
 	decoder *schema.Decoder
 }
+
+// UserData used to parse data on user from Collector
+type UserData struct{}
+
+// ProjectData used to parse data on project from Collector
+type ProjectData struct{}
+
+// ProjectUserData used to parse data on user in project from Collector
+type ProjectUserData struct{}
 
 const (
 	commandAddUser                = "/comedianadd"
@@ -379,7 +389,11 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
+	var dataOnProject ProjectData
+	json.Unmarshal(data, &dataOnProject)
+
 	fmt.Println(data)
+	fmt.Println(dataOnProject)
 	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProject: %v\n", err)
@@ -430,7 +444,11 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
+	var dataOnUser UserData
+	json.Unmarshal(data, &dataOnUser)
+
 	fmt.Println(data)
+	fmt.Println(dataOnUser)
 	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
@@ -481,7 +499,11 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
+	var dataProjectUser ProjectUserData
+	json.Unmarshal(data, &dataProjectUser)
+
 	fmt.Println(data)
+	fmt.Println(dataProjectUser)
 	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
 	if err != nil {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
