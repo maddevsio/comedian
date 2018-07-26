@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -27,25 +26,6 @@ type REST struct {
 	e       *echo.Echo
 	c       config.Config
 	decoder *schema.Decoder
-}
-
-// UserData used to parse data on user from Collector
-type UserData struct {
-	TotalCommits int `json:"total_commits"`
-	TotalMerges  int `json:"total_merges"`
-	Worklogs     int `json:"worklogs"`
-}
-
-// ProjectData used to parse data on project from Collector
-type ProjectData struct {
-	TotalCommits int `json:"total_commits"`
-	TotalMerges  int `json:"total_merges"`
-}
-
-// ProjectUserData used to parse data on user in project from Collector
-type ProjectUserData struct {
-	TotalCommits int `json:"total_commits"`
-	TotalMerges  int `json:"total_merges"`
 }
 
 const (
@@ -383,7 +363,6 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	channelSeparate := strings.Split(channel, "|")
 	channelID := strings.Replace(channelSeparate[0], "<", "", -1)
 	channelName := strings.Replace(channelSeparate[1], ">", "", -1)
-	logrus.Debugf("Channel ID before and after separations: %v, %v", channel, channelID)
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -399,11 +378,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	var dataOnProject ProjectData
-	json.Unmarshal(data, &dataOnProject)
-
-	logrus.Infof("rest: JSON Unmarshal data: Commits: %v, Merges: %v", dataOnProject.TotalCommits, dataOnProject.TotalMerges)
-	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
+	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProject: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -454,13 +429,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	var dataOnUser UserData
-	json.Unmarshal(data, &dataOnUser)
-
-	logrus.Infof("rest: getCollectorData on User: %s", data)
-	logrus.Infof("rest: JSON Unmarshal data: Commits: %v, Merges: %v, Worklog: %v", dataOnUser.TotalCommits, dataOnUser.TotalMerges, dataOnUser.Worklogs)
-
-	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo)
+	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -511,11 +480,6 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	var dataProjectUser ProjectUserData
-	json.Unmarshal(data, &dataProjectUser)
-
-	logrus.Infof("rest: getCollectorData Project+User: %s", data)
-	logrus.Infof("rest: JSON Unmarshal data: Commits: %v, Merges: %v", dataProjectUser.TotalCommits, dataProjectUser.TotalMerges)
 
 	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
 	if err != nil {
@@ -525,7 +489,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		}
 		return c.String(http.StatusOK, text)
 	}
-	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
+	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
