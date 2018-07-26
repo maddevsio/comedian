@@ -30,13 +30,23 @@ type REST struct {
 }
 
 // UserData used to parse data on user from Collector
-type UserData struct{}
+type UserData struct {
+	TotalCommits int `json:"total_commits"`
+	TotalMerges  int `json:"total_merges"`
+	Worklogs     int `json:"worklogs"`
+}
 
 // ProjectData used to parse data on project from Collector
-type ProjectData struct{}
+type ProjectData struct {
+	TotalCommits int `json:"total_commits"`
+	TotalMerges  int `json:"total_merges"`
+}
 
 // ProjectUserData used to parse data on user in project from Collector
-type ProjectUserData struct{}
+type ProjectUserData struct {
+	TotalCommits int `json:"total_commits"`
+	TotalMerges  int `json:"total_merges"`
+}
 
 const (
 	commandAddUser                = "/comedianadd"
@@ -350,6 +360,7 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
 }
 
+///report_by_project #collector-test 2018-07-24 2018-07-26
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
@@ -361,7 +372,6 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 	commandParams := strings.Fields(ca.Text)
-	logrus.Println(len(commandParams))
 	if len(commandParams) != 3 {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "wrongNArgs"})
 		if err != nil {
@@ -392,8 +402,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	var dataOnProject ProjectData
 	json.Unmarshal(data, &dataOnProject)
 
-	fmt.Println(data)
-	fmt.Println(dataOnProject)
+	logrus.Infof("rest: JSON Unmarshal data: Commits: %v, Merges: %v", dataOnProject.TotalCommits, dataOnProject.TotalMerges)
 	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProject: %v\n", err)
@@ -402,6 +411,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, report)
 }
 
+///report_by_user @Anatoliy 2018-07-24 2018-07-26
 func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
@@ -447,8 +457,9 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	var dataOnUser UserData
 	json.Unmarshal(data, &dataOnUser)
 
-	fmt.Println(data)
-	fmt.Println(dataOnUser)
+	logrus.Infof("rest: getCollectorData on User: %s", data)
+	logrus.Infof("rest: JSON Unmarshal data: Commits: %v, Merges: %v, Worklog: %v", dataOnUser.TotalCommits, dataOnUser.TotalMerges, dataOnUser.Worklogs)
+
 	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
@@ -457,6 +468,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, report)
 }
 
+///report_by_project_and_user #collector-test @Anatoliy 2018-07-24 2018-07-26
 func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
@@ -494,7 +506,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 	pu := channelName + "/" + userID
-	data, err := r.getCollectorData("projects-users", pu, commandParams[1], commandParams[2])
+	data, err := r.getCollectorData("projects-users", pu, commandParams[2], commandParams[3])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -502,8 +514,9 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	var dataProjectUser ProjectUserData
 	json.Unmarshal(data, &dataProjectUser)
 
-	fmt.Println(data)
-	fmt.Println(dataProjectUser)
+	logrus.Infof("rest: getCollectorData Project+User: %s", data)
+	logrus.Infof("rest: JSON Unmarshal data: Commits: %v, Merges: %v", dataProjectUser.TotalCommits, dataProjectUser.TotalMerges)
+
 	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
 	if err != nil {
 		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
@@ -522,7 +535,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 
 func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byte, error) {
 	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.c.CollectorURL, getDataOn, data, dateFrom, dateTo)
-	logrus.Infof("rest: GET REQUEST URL: %s", linkURL)
+	logrus.Infof("rest: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		logrus.Errorf("rest: http.NewRequest failed: %v\n", err)
@@ -543,7 +556,7 @@ func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byt
 		logrus.Errorf("rest: ioutil.ReadAll(res.Body) failed: %v\n", err)
 		return nil, err
 	}
-	logrus.Infof("rest: GET REQUEST: %s", string(body))
+	logrus.Infof("rest: getCollectorData responce body: %s", string(body))
 	return body, nil
 
 }
