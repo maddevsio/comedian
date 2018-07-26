@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -473,4 +474,40 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 	return c.String(http.StatusOK, report)
+}
+
+func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byte, error) {
+	var linkURL string
+	switch getDataOn := getDataOn; getDataOn {
+	case "user":
+		linkURL = fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.c.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	case "project":
+		linkURL = fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.c.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	case "userandproject":
+		linkURL = fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.c.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	}
+	logrus.Infof("rest: GET REQUEST URL: %s", linkURL)
+	req, err := http.NewRequest("GET", linkURL, nil)
+	if err != nil {
+		logrus.Errorf("rest: http.NewRequest failed: %v\n", err)
+		return nil, err
+	}
+	token := r.c.CollectorToken
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logrus.Errorf("rest: http.DefaultClient.Do(req) failed: %v\n", err)
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logrus.Errorf("rest: ioutil.ReadAll(res.Body) failed: %v\n", err)
+		return nil, err
+	}
+	logrus.Infof("rest: GET REQUEST: %s", string(body))
+	return body, nil
+
 }

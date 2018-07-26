@@ -17,6 +17,8 @@ type (
 		ManagerSlackUserID    string `envconfig:"MANAGER_SLACK_USER_ID" required:"true"`
 		ReportTime            string `envconfig:"REPORT_TIME" required:"true"`
 		Language              string `envconfig:"LANGUAGE" required:"false"`
+		CollectorURL          string `envconfig:"COLLECTOR_URL" required:"true"`
+		CollectorToken        string `envconfig:"COLLECTOR_TOKEN" required:"true"`
 		Debug                 bool
 	}
 )
