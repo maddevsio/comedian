@@ -25,6 +25,12 @@ type Notifier struct {
 	CheckInterval uint64
 }
 
+const (
+	NotificationInterval = 30
+	ReminderRepeatsMax   = 5
+	RemindManager        = 3
+)
+
 var localizer *i18n.Localizer
 
 // NewNotifier creates a new notifier
@@ -113,13 +119,13 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		logrus.Info("notifier: notifyNotAll finished!")
 		return nil
 	}
-	for i := 0; i <= 5; i++ {
-		b := backoff.NewConstantBackOff(30 * time.Minute)
+	for i := 0; i <= ReminderRepeatsMax; i++ {
+		b := backoff.NewConstantBackOff(NotificationInterval * time.Minute)
 		err = backoff.Retry(notifyNotAll, b)
 		if err != nil {
 			logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
 		}
-		if i == 3 {
+		if i == RemindManager {
 			// after 3 reminders Comedian sends direct message to Manager notifiing about missed standups
 			notifyManager, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerNotAll"})
 			if err != nil {
