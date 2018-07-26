@@ -170,9 +170,15 @@
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
+[[projects]]
+  branch = "v1"
+  name = "gopkg.in/jarcoal/httpmock.v1"
+  packages = ["."]
+  revision = "8007e27cdb3239fcfc95c1274d7d8cbcc68b7d52"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3ae220b2d11708c10d2fb8ca6fa209dd8c52ac9d74ce4e1ea5dd1752ece22b1f"
+  inputs-digest = "5415e91b6e99bde29cc10130c319cad2ab71ab0e842cbaa70212cbcb90c9e37d"
   solver-name = "gps-cdcl"
   solver-version = 1
