@@ -358,7 +358,10 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		}
 		return c.String(http.StatusOK, text)
 	}
-	channelName := commandParams[0]
+	channel := commandParams[0]
+	channelSeparate := strings.Split(channel, "|")
+	channelID := strings.Replace(channelSeparate[0], "<", "", -1)
+	logrus.Debugf("Channel ID before and after separations: %v, %v", channel, channelID)
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -369,7 +372,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := reporting.StandupReportByProject(r.db, channelName, dateFrom, dateTo)
+	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProject: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -439,17 +442,13 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		}
 		return c.String(http.StatusOK, text)
 	}
-	channelID := commandParams[0]
-	logrus.Println("0" + channelID)
-	userfull := commandParams[1]
-	logrus.Println("1" + userfull)
-	userName := strings.Replace(userfull, "@", "", -1)
-	logrus.Println("1" + userName)
-	user, err := r.db.FindStandupUser(userName)
-	if err != nil {
-		logrus.Errorf("rest: FindStandupUser failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
-	}
+	channel := commandParams[0]
+	channelSeparate := strings.Split(channel, "|")
+	channelID := strings.Replace(channelSeparate[0], "<#", "", -1)
+	logrus.Println("ChannelID: " + channelID)
+	userFull := strings.Split(commandParams[1], "|")
+	userID := strings.Replace(userFull[0], "<@", "", -1)
+	logrus.Println("UserID: " + userID)
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -460,15 +459,18 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
+	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
+	if err != nil {
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
+		if err != nil {
+			logrus.Errorf("rest: Localize failed: %v\n", err)
+		}
+		return c.String(http.StatusOK, text)
+	}
 	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo)
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
-			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
-			if err != nil {
-				logrus.Errorf("rest: Localize failed: %v\n", err)
-			}
-			return c.String(http.StatusOK, fmt.Sprintf(text))
-		}
+		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
 	}
 	return c.String(http.StatusOK, report)
 }

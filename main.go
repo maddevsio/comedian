@@ -30,7 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	go func() { log.Fatal(notifier.Start(c)) }()
+	go func() { log.Fatal(notifier.Start()) }()
 
 	slack.Run()
 }

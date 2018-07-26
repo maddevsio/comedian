@@ -1,11 +1,9 @@
-reportOnProjectHead = "Full Standup Report by project <#%s|%s>:\n\n"
+reportOnProjectHead = "Full Standup Report by project <#%s>:\n\n"
 reportOnUserHead = "Full Standup Report for user <@%s>:\n\n"
 reportOnProjectAndUserHead = "Standup Report Project: <#%s>, User: <@%s>\n\n"
 
 reportNoData = "No data for this period"
 reportPeriod = "\n\nReport from %s to %s:\n"
 reportStandupFromUser = "\nStandup from <@%s>:\n%s\n"
-reportStandupsFromProject = "\nOn project: <#%s>\n%s\n"
 reportIgnoredStandup = "\n<@%s>: ignored standup!\n"
-
-
+reportShowChannel = "In channel: <#%s>\n"

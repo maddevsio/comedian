@@ -106,10 +106,6 @@ func TestCRUDLStandup(t *testing.T) {
 	assert.NoError(t, err)
 	//assert.Equal(t, 2, len(SelectStandupsForPeriod))
 
-	_, err = db.SelectStandupByChannelNameForPeriod(s.Channel, dateFrom, dateTo)
-	assert.NoError(t, err)
-	//assert.Equal(t, 1, len(SelectStandupByChannelNameForPeriod))
-
 	_, err = db.SelectStandupsByChannelIDForPeriod(s.ChannelID, dateFrom, dateTo)
 	assert.NoError(t, err)
 	//assert.Equal(t, 1, len(SelectStandupsByChannelIDForPeriod))
@@ -119,7 +115,7 @@ func TestCRUDLStandup(t *testing.T) {
 	//assert.Equal(t, 1, len(SelectStandupByUserNameForPeriod))
 
 	assert.NoError(t, db.DeleteStandup(s.ID))
-	assert.NoError(t, db.DeleteStandupByUsername(s2.Username))
+	assert.NoError(t, db.DeleteStandup(s2.ID))
 	s, err = db.SelectStandup(s.ID)
 	assert.Equal(t, err, sql.ErrNoRows)
 	assert.Equal(t, s.ID, int64(0))
@@ -188,9 +184,6 @@ func TestCRUDStandupUser(t *testing.T) {
 	user, err = db.FindStandupUserInChannel(su2.SlackName, su1.ChannelID)
 	assert.Error(t, err)
 
-	user, err = db.FindStandupUserInChannelName(su2.SlackName, su1.Channel)
-	assert.Error(t, err)
-
 	users, err := db.ListStandupUsersByChannelID(su1.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, users[0].SlackName, su1.SlackName)
@@ -203,10 +196,6 @@ func TestCRUDStandupUser(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(users))
 
-	users, err = db.ListStandupUsersByChannelName(su2.Channel)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(users))
-
 	assert.NoError(t, db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 	assert.NoError(t, db.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))
 	assert.NoError(t, db.DeleteStandupUserByUsername(su3.SlackName, su3.ChannelID))
@@ -218,6 +207,12 @@ func TestCRUDStandupTime(t *testing.T) {
 	assert.NoError(t, err)
 	db, err := NewMySQL(c)
 	assert.NoError(t, err)
+
+	//clean up table before tests
+	ast, err := db.ListAllStandupTime()
+	for _, st := range ast {
+		db.DeleteStandupTime(st.ChannelID)
+	}
 	st, err := db.CreateStandupTime(model.StandupTime{
 		ChannelID: "chanid",
 		Channel:   "chanName",

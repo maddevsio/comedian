@@ -1,9 +1,10 @@
-reportOnProjectHead = "Полный отчёт по стэндапам %v:\n\n"
+reportOnProjectHead = "Полный отчёт по стэндапам <#%s>:\n\n"
 reportOnUserHead = "Полный отчет по пользователю <@%s>:\n\n"
-reportOnProjectAndUserHead = "Стэндап отчет по проекту: %v, пользователь: <@%s>\n\n"
+reportOnProjectAndUserHead = "Стэндап отчет по проекту: <#%s>, пользователь: <@%s>\n\n"
 
 reportNoData = "Нет данных за данный период"
 reportPeriod = "\n\nОтчет с %s по %s:\n"
 reportStandupFromUser = "\nСтэндап от <@%s>:\n%s\n"
 reportStandupsFromProject = "\nНа проект: <#%s>\n%s\n"
 reportIgnoredStandup = "\n<@%s>: стэндап успешно просран!\n"
+reportShowChannel = "В канале: <#%s>"

@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	// This line is must for working MySQL database
@@ -91,21 +93,20 @@ func (m *MySQL) SelectStandupsByChannelID(channelID string) ([]model.Standup, er
 	return items, err
 }
 
-// SelectStandupByChannelNameForPeriod selects standup entry by channel name and time period from database
-func (m *MySQL) SelectStandupByChannelNameForPeriod(channelName string, dateStart,
-	dateEnd time.Time) ([]model.Standup, error) {
+// SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
+func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel=? AND created BETWEEN ? AND ?",
-		channelName, dateStart, dateEnd)
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND created BETWEEN ? AND ?",
+		channelID, dateStart, dateEnd)
 	return items, err
 }
 
 // SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
-func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart,
-	dateEnd time.Time) ([]model.Standup, error) {
+func (m *MySQL) SelectStandupsFiltered(slack_user_id, channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND created BETWEEN ? AND ?",
-		channelID, dateStart, dateEnd)
+	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND username_id =? AND created BETWEEN ? AND ?",
+		channelID, slack_user_id, dateStart, dateEnd)
+	fmt.Println("STANDUP:", items)
 	return items, err
 }
 
@@ -136,12 +137,6 @@ func (m *MySQL) SelectStandupsForPeriod(dateStart, dateEnd time.Time) ([]model.S
 // DeleteStandup deletes standup entry from database
 func (m *MySQL) DeleteStandup(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `standup` WHERE id=?", id)
-	return err
-}
-
-// DeleteStandupByUsername deletes standup_users entry from database
-func (m *MySQL) DeleteStandupByUsername(username string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup` WHERE username=?", username)
 	return err
 }
 
@@ -180,18 +175,18 @@ func (m *MySQL) FindStandupUserInChannelByUserID(usernameID, channelID string) (
 	return u, err
 }
 
-//FindStandupUserInChannelName finds user in channel
-func (m *MySQL) FindStandupUserInChannelName(username, channel string) (model.StandupUser, error) {
-	var u model.StandupUser
-	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=? AND channel=?", username, channel)
-	return u, err
-}
-
 //FindStandupUser finds user in
 func (m *MySQL) FindStandupUser(username string) (model.StandupUser, error) {
 	var u model.StandupUser
 	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=?", username)
 	return u, err
+}
+
+//FindStandupUsers finds users in table
+func (m *MySQL) FindStandupUsers(username string) ([]model.StandupUser, error) {
+	users := []model.StandupUser{}
+	err := m.conn.Select(&users, "SELECT * FROM `standup_users` WHERE username=?", username)
+	return users, err
 }
 
 // ListAllStandupUsers returns array of standup entries from database
@@ -201,17 +196,40 @@ func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	return items, err
 }
 
+func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
+	us := []model.StandupUser{}
+	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
+								on s.username_id = r.slack_user_id and r.channel_id = ? 
+								where s.created BETWEEN ? AND ?`, channelID, dateFrom, dateTo)
+	usernames := []string{}
+	for _, user := range us {
+		usernames = append(usernames, user.SlackName)
+	}
+	users := []model.StandupUser{}
+	err = m.conn.Select(&users, `SELECT * FROM standup_users where channel_id = ? and username NOT IN (?) and created between ? and ?`, channelID, strings.Join(usernames, ","), dateFrom, dateTo)
+
+	return users, err
+}
+
+func (m *MySQL) GetNonReporter(userID, channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
+	us := []model.StandupUser{}
+	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
+								on s.username_id = r.slack_user_id and r.channel_id = ? 
+								where s.created BETWEEN ? AND ?`, channelID, dateFrom, dateTo)
+	usernames := []string{}
+	for _, user := range us {
+		usernames = append(usernames, user.SlackName)
+	}
+	user := []model.StandupUser{}
+	err = m.conn.Select(&user, `SELECT * FROM standup_users where channel_id = ? and username NOT IN (?) and slack_user_id = ? and created between ? and ?`, channelID, strings.Join(usernames, ","), userID, dateFrom, dateTo)
+
+	return user, err
+}
+
 // ListStandupUsersByChannelID returns array of standup entries from database
 func (m *MySQL) ListStandupUsersByChannelID(channelID string) ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=?", channelID)
-	return items, err
-}
-
-// ListStandupUsersByChannelName returns array of standup entries from database filtered by channel name
-func (m *MySQL) ListStandupUsersByChannelName(channelName string) ([]model.StandupUser, error) {
-	items := []model.StandupUser{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel=?", channelName)
 	return items, err
 }
 
@@ -281,6 +299,13 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 	s.ID = id
 
 	return s, nil
+}
+
+//GetAllChannels returns list of unique channels
+func (m *MySQL) GetAllChannels() ([]string, error) {
+	channels := []string{}
+	err := m.conn.Select(&channels, "SELECT DISTINCT channel_id FROM `standup_users`")
+	return channels, err
 }
 
 var nowFunc func() time.Time

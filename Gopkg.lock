@@ -14,6 +14,12 @@
   revision = "5df1f207ff77e025801505ae4d903133a0b4353f"
 
 [[projects]]
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
+  version = "v2.0.0"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -138,7 +144,10 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["websocket"]
+  packages = [
+    "context",
+    "websocket"
+  ]
   revision = "c7086645de248775cbf2373cf5ca4d2fa664b8c1"
 
 [[projects]]
@@ -164,6 +173,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1b6c0bdc2a2e921e760e44e4e737bc434518745207cc0a47691575bd5fc1ee9f"
+  inputs-digest = "3ae220b2d11708c10d2fb8ca6fa209dd8c52ac9d74ce4e1ea5dd1752ece22b1f"
   solver-name = "gps-cdcl"
   solver-version = 1
