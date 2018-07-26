@@ -341,7 +341,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Full Standup Report by project <#CBA2M41Q8>:\n\nNo data for this period", rec.Body.String())
+	assert.Equal(t, "Full Standup Report by project <#CBA2M41Q8>:\n\nNo data for this period\n\nCommits for period: 0 \nMerges for period: 0\n", rec.Body.String())
 
 }
 
@@ -408,7 +408,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	context = e.NewContext(req, rec)
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Full Standup Report for user <@user1>:\n\nNo data for this period", rec.Body.String())
+	assert.Equal(t, "Full Standup Report for user <@user1>:\n\nNo data for this period\n\nCommits for period: 0 \nMerges for period: 0\nWorklogs: 0 hours", rec.Body.String())
 
 	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 
