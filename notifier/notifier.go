@@ -43,9 +43,10 @@ type MN struct {
 }
 
 const (
-	NotificationInterval = 30
-	ReminderRepeatsMax   = 5
-	RemindManager        = 3
+	NotificationInterval   = 30
+	ReminderRepeatsMax     = 5
+	RemindManager          = 3
+	MorningRooksReportTime = "10:30"
 )
 
 var localizer *i18n.Localizer
@@ -75,7 +76,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
 	gocron.Every(n.CheckInterval).Seconds().Do(n.NotifyChannels)
-	gocron.Every(1).Day().At("17:34").Do(n.RevealRooks)
+	gocron.Every(1).Day().At(MorningRooksReportTime).Do(n.RevealRooks)
 	channel := gocron.Start()
 	for {
 		report := <-channel
