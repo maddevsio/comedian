@@ -9,6 +9,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
+	httpmock "gopkg.in/jarcoal/httpmock.v1"
 )
 
 type ChatStub struct {
@@ -108,4 +109,108 @@ func TestNotifier(t *testing.T) {
 
 	assert.NoError(t, n.DB.DeleteStandup(s.ID))
 	assert.NoError(t, n.DB.DeleteStandup(s2.ID))
+}
+
+func TestCheckUser(t *testing.T) {
+	c, err := config.Get()
+	c.ChanGeneral = "XXXYYYZZZ"
+	assert.NoError(t, err)
+	ch := &ChatStub{}
+	n, err := NewNotifier(c, ch)
+	assert.NoError(t, err)
+
+	users, err := n.DB.ListAllStandupUsers()
+	assert.NoError(t, err)
+	for _, user := range users {
+		assert.NoError(t, n.DB.DeleteStandupUserByUsername(user.SlackName, user.ChannelID))
+	}
+
+	d := time.Date(2018, 6, 24, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	channelID := "QWERTY123"
+	st, err := n.DB.CreateStandupTime(model.StandupTime{
+		ChannelID: channelID,
+		Channel:   "chanName",
+		Time:      time.Now().Unix(),
+	})
+
+	d = time.Date(2018, 6, 25, 0, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	u1, err := n.DB.CreateStandupUser(model.StandupUser{
+		SlackUserID: "userID1",
+		SlackName:   "user1",
+		ChannelID:   channelID,
+		Channel:     "chanName",
+	})
+	assert.NoError(t, err)
+	u2, err := n.DB.CreateStandupUser(model.StandupUser{
+		SlackUserID: "userID2",
+		SlackName:   "user2",
+		ChannelID:   channelID,
+		Channel:     "chanName",
+	})
+	assert.NoError(t, err)
+
+	u3, err := n.DB.CreateStandupUser(model.StandupUser{
+		SlackUserID: "userID3",
+		SlackName:   "user3",
+		ChannelID:   channelID,
+		Channel:     "chanName",
+	})
+	assert.NoError(t, err)
+	u4, err := n.DB.CreateStandupUser(model.StandupUser{
+		SlackUserID: "userID4",
+		SlackName:   "user4",
+		ChannelID:   channelID,
+		Channel:     "chanName",
+	})
+	assert.NoError(t, err)
+
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-25", c.CollectorURL),
+		httpmock.NewStringResponder(200, `{"total_commits": 2, "total_merges": 1, "worklogs": 100000}`))
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID2/2018-06-25/2018-06-25", c.CollectorURL),
+		httpmock.NewStringResponder(200, `{"total_commits": 30, "total_merges": 0, "worklogs": 13600}`))
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID3/2018-06-25/2018-06-25", c.CollectorURL),
+		httpmock.NewStringResponder(200, `{"total_commits": 0, "total_merges": 0, "worklogs": 0}`))
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID4/2018-06-25/2018-06-25", c.CollectorURL),
+		httpmock.NewStringResponder(200, `{"total_commits": 20, "total_merges": 0, "worklogs": 50000}`))
+
+	testCases := []struct {
+		title         string
+		user          model.StandupUser
+		worklogs      int
+		commits       int
+		isNonReporter bool
+		err           error
+	}{
+		{"test 1", u1, 27, 2, false, nil},
+		{"test 2", u2, 3, 30, false, nil},
+		{"test 3", u3, 0, 0, false, nil},
+		{"test 4", u4, 13, 20, false, nil},
+	}
+
+	for _, tt := range testCases {
+		worklogs, commits, isNonReporter, err := n.checkUser(tt.user, time.Now(), time.Now())
+		assert.NoError(t, err)
+		assert.Equal(t, tt.worklogs, worklogs)
+		assert.Equal(t, tt.commits, commits)
+		assert.Equal(t, tt.isNonReporter, isNonReporter)
+	}
+	n.RevealRooks()
+	assert.Equal(t, fmt.Sprintf("CHAT: %s, MESSAGE: <@userID2> is a rook! (Not enough worklogs: 3, enough commits: 30, yet wrote a standup, good job!)\n<@userID3> is a rook! (Not enough worklogs: 0, no commits at all, yet wrote a standup, good job!)\n", n.Config.ChanGeneral), ch.LastMessage)
+
+	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u1.SlackName, u1.ChannelID))
+	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u2.SlackName, u2.ChannelID))
+	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u3.SlackName, u3.ChannelID))
+	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u4.SlackName, u4.ChannelID))
+
+	assert.NoError(t, n.DB.DeleteStandupTime(st.ChannelID))
 }

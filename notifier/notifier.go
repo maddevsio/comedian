@@ -75,7 +75,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
 	gocron.Every(n.CheckInterval).Seconds().Do(n.NotifyChannels)
-	gocron.Every(1).Day().At("15:43").Do(n.RevealMotherfuckers)
+	gocron.Every(1).Day().At("17:34").Do(n.RevealRooks)
 	channel := gocron.Start()
 	for {
 		report := <-channel
@@ -83,7 +83,7 @@ func (n *Notifier) Start() error {
 	}
 }
 
-func (n *Notifier) RevealMotherfuckers() {
+func (n *Notifier) RevealRooks() {
 	currentTime := time.Now()
 	timeFrom := currentTime.AddDate(0, 0, -1)
 	allUsers, err := n.DB.ListAllStandupUsers()
@@ -120,7 +120,7 @@ func (n *Notifier) RevealMotherfuckers() {
 			text += fmt.Sprintf(notification.isRook, user.SlackUserID, fails)
 		}
 	}
-	n.Chat.SendMessage("CBAPFA2J2", text)
+	n.Chat.SendMessage(n.Config.ChanGeneral, text)
 
 }
 
@@ -247,17 +247,20 @@ func (n *Notifier) checkUser(user model.StandupUser, timeFrom, timeTo time.Time)
 	logrus.Infof("rest: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
+		logrus.Errorf("notifier: Get Request failed: %v\n", err)
 		return 0, 0, true, err
 	}
 	token := n.Config.CollectorToken
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		logrus.Errorf("notifier: Authorization failed: %v\n", err)
 		return 0, 0, true, err
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
+		logrus.Errorf("notifier: ioutil.ReadAll failed: %v\n", err)
 		return 0, 0, true, err
 	}
 	var dataU reporting.UserData
