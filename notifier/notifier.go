@@ -1,12 +1,16 @@
 package notifier
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff"
 	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/reporting"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	"github.com/jasonlvhit/gocron"
@@ -58,11 +62,33 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
 	gocron.Every(n.CheckInterval).Seconds().Do(n.NotifyChannels)
+	gocron.Every(1).Day().At("13:35").Do(n.RevealMotherfuckers)
 	channel := gocron.Start()
 	for {
 		report := <-channel
 		logrus.Println(report)
 	}
+}
+
+func (n *Notifier) RevealMotherfuckers() {
+	currentTime := time.Now()
+	timeFrom := currentTime.AddDate(0, 0, -1)
+	allUsers, err := n.DB.ListAllStandupUsers()
+	if err != nil {
+		logrus.Errorf("notifier: GetNonReporters failed: %v\n", err)
+	}
+	text := "Mad Devs MotherFuckers: \n"
+	for _, user := range allUsers {
+		userIsMotherfucker, err := n.checkMotherFucker(user, timeFrom, currentTime)
+		if err != nil {
+			logrus.Errorf("notifier: checkMotherFucker failed: %v\n", err)
+		}
+		if userIsMotherfucker {
+			text += fmt.Sprintf("<@%v> is Mother Fucker! WHAT THE FUCK!!!\n", user.SlackUserID)
+		}
+	}
+	n.Chat.SendMessage("CBAPFA2J2", text)
+
 }
 
 // NotifyChannels reminds users of channels about upcoming or missing standups
@@ -179,4 +205,38 @@ func getNonReporters(db storage.Storage, channelID string) ([]model.StandupUser,
 		return nil, err
 	}
 	return nonReporters, nil
+}
+
+func (n *Notifier) checkMotherFucker(user model.StandupUser, timeFrom, timeTo time.Time) (bool, error) {
+	date := fmt.Sprintf("%d-%02d-%02d", timeTo.Year(), timeTo.Month(), timeTo.Day())
+
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", n.Config.CollectorURL, "users", user.SlackUserID, date, date)
+	logrus.Infof("rest: getCollectorData request URL: %s", linkURL)
+	req, err := http.NewRequest("GET", linkURL, nil)
+	if err != nil {
+		return true, err
+	}
+	token := n.Config.CollectorToken
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return true, err
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return true, err
+	}
+	var dataU reporting.UserData
+	json.Unmarshal(body, &dataU)
+
+	userIsNonReporter, err := n.DB.CheckNonReporter(user, timeFrom, timeTo)
+	logrus.Printf("checkMotherFucker: worklogs %v", dataU.Worklogs/3600)
+	logrus.Printf("checkMotherFucker: commits %v", dataU.TotalCommits)
+	logrus.Printf("checkMotherFucker: isNonReporter %v", userIsNonReporter)
+
+	if (dataU.Worklogs/3600 > 8) && (dataU.TotalCommits > 0) && (userIsNonReporter == false) {
+		return false, nil
+	}
+	return true, nil
 }

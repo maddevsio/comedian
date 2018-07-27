@@ -211,6 +211,23 @@ func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([
 	return users, err
 }
 
+func (m *MySQL) CheckNonReporter(user model.StandupUser, dateFrom, dateTo time.Time) (bool, error) {
+	us := []model.StandupUser{}
+	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
+								on s.username_id = r.slack_user_id where s.created BETWEEN ? AND ?`, dateFrom, dateTo)
+	if err != nil {
+		return true, err
+	}
+	for _, u := range us {
+		if user.SlackUserID == u.SlackUserID {
+			return false, nil
+		} else {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (m *MySQL) GetNonReporter(userID, channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
 	us := []model.StandupUser{}
 	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
