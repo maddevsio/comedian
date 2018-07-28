@@ -33,8 +33,6 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, conf.ManagerSlackUserID, "FAKEUSERID")
 	assert.Equal(t, conf.ReportTime, "17:00")
 	assert.Equal(t, conf.Language, "ru_RU")
-	assert.Equal(t, conf.ReportTime, "17:00")
-	assert.Equal(t, conf.Language, "ru_RU")
 	assert.Equal(t, conf.CollectorToken, "cotoken")
 	assert.Equal(t, conf.CollectorURL, "www.collector.some")
 	assert.Equal(t, conf.ChanGeneral, "XXXYYYZZZ")
