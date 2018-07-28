@@ -81,7 +81,7 @@ func TestHandleMessage(t *testing.T) {
 		SlackUserID: "userID1",
 		SlackName:   "user1",
 		ChannelID:   "123qwe",
-		Channel:     "general",
+		Channel:     "testchannel",
 	})
 	assert.NoError(t, err)
 
@@ -89,8 +89,39 @@ func TestHandleMessage(t *testing.T) {
 	msg.Text = "<@> some message"
 	msg.Channel = su1.Channel
 	msg.Username = su1.SlackName
+	msg.Timestamp = "1"
 
 	err = s.handleMessage(msg)
+	assert.NoError(t, err)
+
+	fakeChannel := "someotherChan"
+
+	msg.Text = "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
+	msg.Channel = su1.Channel
+	msg.Username = su1.SlackName
+	msg.Timestamp = "2"
+	err = s.handleMessage(msg)
+	assert.NoError(t, err)
+
+	editmsg := &slack.MessageEvent{
+		SubMessage: &slack.Msg{
+			Text:      "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problem",
+			Timestamp: "2",
+		},
+	}
+	editmsg.SubType = typeEditMessage
+
+	err = s.handleMessage(editmsg)
+	assert.NoError(t, err)
+
+	msg.Text = "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
+	msg.Channel = fakeChannel
+	msg.Username = su1.SlackName
+
+	err = s.handleMessage(msg)
+	assert.Error(t, err)
+
+	err = s.handleConnection()
 	assert.NoError(t, err)
 
 	// clean up

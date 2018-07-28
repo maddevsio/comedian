@@ -54,56 +54,41 @@ func NewSlack(conf config.Config) (*Slack, error) {
 // Run runs a listener loop for slack
 func (s *Slack) Run() error {
 
-	s.ManageConnection()
-	for {
-		if s.myUsername == "" {
-			info := s.rtm.GetInfo()
-			if info != nil {
-				s.myUsername = info.User.ID
+	s.wg.Add(1)
+	go s.rtm.ManageConnection()
+	s.wg.Done()
 
-			}
-		}
-		select {
-		case msg := <-s.rtm.IncomingEvents:
-
-			switch ev := msg.Data.(type) {
-			case *slack.ConnectedEvent:
-				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "HelloManager"})
-				if err != nil {
-					logrus.Errorf("slack: Localize failed: %v\n", err)
-				}
-				c, err := config.Get()
-				if err != nil {
-					logrus.Errorf("slack: GetConfig: %v\n", err)
-					return err
-				}
-				s.SendUserMessage(c.ManagerSlackUserID, text)
-
-			case *slack.MessageEvent:
-
-				s.handleMessage(ev)
-			case *slack.PresenceChangeEvent:
-				logrus.Infof("slack: Presence Change: %v\n", ev)
-
-			case *slack.RTMError:
-				logrus.Errorf("slack: RTME: %v\n", ev)
-
-			case *slack.InvalidAuthEvent:
-				logrus.Info("slack: Invalid credentials")
-				return nil
-			}
+	for msg := range s.rtm.IncomingEvents {
+		switch ev := msg.Data.(type) {
+		case *slack.ConnectedEvent:
+			s.handleConnection()
+		case *slack.MessageEvent:
+			s.handleMessage(ev)
+		case *slack.PresenceChangeEvent:
+			logrus.Infof("slack: Presence Change: %v\n", ev)
+		case *slack.RTMError:
+			logrus.Errorf("slack: RTME: %v\n", ev)
+		case *slack.InvalidAuthEvent:
+			logrus.Info("slack: Invalid credentials")
+			return nil
 		}
 	}
+	return nil
 }
 
-// ManageConnection manages connection
-func (s *Slack) ManageConnection() {
-	s.wg.Add(1)
-	go func() {
-		s.rtm.ManageConnection()
-		s.wg.Done()
-	}()
-
+func (s *Slack) handleConnection() error {
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "HelloManager"})
+	if err != nil {
+		logrus.Errorf("slack: Localize failed: %v\n", err)
+		return err
+	}
+	c, err := config.Get()
+	if err != nil {
+		logrus.Errorf("slack: GetConfig: %v\n", err)
+		return err
+	}
+	s.SendUserMessage(c.ManagerSlackUserID, text)
+	return nil
 }
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
