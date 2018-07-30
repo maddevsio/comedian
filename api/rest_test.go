@@ -19,8 +19,9 @@ import (
 
 func TestHandleCommands(t *testing.T) {
 
-	noneCommand := ""
-	emptyCommand := "command=/"
+	noneCommand := "user_id=UB9AE7CL9"
+	noneUserID := "user_id=UB9AE7CL8"
+	emptyCommand := "user_id=UB9AE7CL9&command=/"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
@@ -34,6 +35,7 @@ func TestHandleCommands(t *testing.T) {
 	}{
 		{"command not allowed", noneCommand, http.StatusMethodNotAllowed, "\"Command not allowed\""},
 		{"empty command", emptyCommand, http.StatusNotImplemented, "Not implemented"},
+		{"empty user_id", noneUserID, http.StatusOK, "This command is not allowed for you! You are not admin"},
 	}
 
 	for _, tt := range testCases {
@@ -48,12 +50,12 @@ func TestHandleCommands(t *testing.T) {
 }
 
 func TestHandleUserCommands(t *testing.T) {
-	AddUser := "command=/comedianadd&text=<@userid|test>&channel_id=chanid&channel_name=channame"
-	AddEmptyText := "command=/comedianadd&text="
-	AddUserEmptyChannelID := "command=/comedianadd&text=test&channel_id=&channel_name=channame"
-	AddUserEmptyChannelName := "command=/comedianadd&text=test&channel_id=chanid&channel_name="
-	DelUser := "command=/comedianremove&text=@test&channel_id=chanid"
-	ListUsers := "command=/comedianlist&channel_id=chanid"
+	AddUser := "user_id=UB9AE7CL9&command=/comedianadd&text=<@userid|test>&channel_id=chanid&channel_name=channame"
+	AddEmptyText := "user_id=UB9AE7CL9&command=/comedianadd&text="
+	AddUserEmptyChannelID := "user_id=UB9AE7CL9&command=/comedianadd&text=test&channel_id=&channel_name=channame"
+	AddUserEmptyChannelName := "user_id=UB9AE7CL9&command=/comedianadd&text=test&channel_id=chanid&channel_name="
+	DelUser := "user_id=UB9AE7CL9&command=/comedianremove&text=@test&channel_id=chanid"
+	ListUsers := "user_id=UB9AE7CL9&command=/comedianlist&channel_id=chanid"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
@@ -116,15 +118,15 @@ func TestHandleUserCommands(t *testing.T) {
 
 func TestHandleTimeCommands(t *testing.T) {
 
-	AddTime := "command=/standuptimeset&text=12:05&channel_id=chanid&channel_name=channame"
-	AddTimeEmptyChannelName := "command=/standuptimeset&text=12:05&channel_id=chanid&channel_name="
-	AddTimeEmptyChannelID := "command=/standuptimeset&text=12:05&channel_id=&channel_name=channame"
-	AddEmptyTime := "command=/standuptimeset&text=&channel_id=chanid&channel_name=channame"
-	ListTime := "command=/standuptime&channel_id=chanid"
-	ListTimeNoChanID := "command=/standuptime&channel_id="
-	DelTime := "command=/standuptimeremove&channel_id=chanid&channel_name=channame"
-	DelTimeNoChanID := "command=/standuptimeremove&channel_id=&channel_name=channame"
-	DelTimeNoChanName := "command=/standuptimeremove&channel_id=chanid&channel_name="
+	AddTime := "user_id=UB9AE7CL9&command=/standuptimeset&text=12:05&channel_id=chanid&channel_name=channame"
+	AddTimeEmptyChannelName := "user_id=UB9AE7CL9&command=/standuptimeset&text=12:05&channel_id=chanid&channel_name="
+	AddTimeEmptyChannelID := "user_id=UB9AE7CL9&command=/standuptimeset&text=12:05&channel_id=&channel_name=channame"
+	AddEmptyTime := "user_id=UB9AE7CL9&command=/standuptimeset&text=&channel_id=chanid&channel_name=channame"
+	ListTime := "user_id=UB9AE7CL9&command=/standuptime&channel_id=chanid"
+	ListTimeNoChanID := "user_id=UB9AE7CL9&command=/standuptime&channel_id="
+	DelTime := "user_id=UB9AE7CL9&command=/standuptimeremove&channel_id=chanid&channel_name=channame"
+	DelTimeNoChanID := "user_id=UB9AE7CL9&command=/standuptimeremove&channel_id=&channel_name=channame"
+	DelTimeNoChanName := "user_id=UB9AE7CL9&command=/standuptimeremove&channel_id=chanid&channel_name="
 	currentTime := time.Now()
 	timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 12, 5, 0, 0, time.Local).Unix()
 
@@ -198,9 +200,9 @@ func TestHandleTimeCommands(t *testing.T) {
 }
 
 func TestHandleReportByProjectCommands(t *testing.T) {
-	ReportByProjectEmptyText := "command=/report_by_project&channel_id=<#CBA2M41Q8|chanid>&text="
-	ReportByProjectEmptyChanID := "command=/report_by_project&channel_id=&text=2018-06-25 2018-06-26"
-	ReportByProject := "command=/report_by_project&channel_id=chanid&text= <#CBA2M41Q8|chanid> 2018-06-25 2018-06-26"
+	ReportByProjectEmptyText := "user_id=UB9AE7CL9&command=/report_by_project&channel_id=<#CBA2M41Q8|chanid>&text="
+	ReportByProjectEmptyChanID := "user_id=UB9AE7CL9&command=/report_by_project&channel_id=&text=2018-06-25 2018-06-26"
+	ReportByProject := "user_id=UB9AE7CL9&command=/report_by_project&channel_id=chanid&text= <#CBA2M41Q8|chanid> 2018-06-25 2018-06-26"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
@@ -236,11 +238,11 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 }
 
 func TestHandleReportByUserCommands(t *testing.T) {
-	ReportByUserEmptyText := "command=/report_by_user&text="
-	ReportByUser := "command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@userID1|user1> 2018-06-25 2018-06-26"
-	ReportByUserMessUser := "command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@huiuser|huinya> 2018-06-25 2018-06-26"
-	ReportByUserMessDateF := "command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@userID1|user1> 2018-6-25 2018-06-26"
-	ReportByUserMessDateT := "command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@userID1|user1> 2018-06-25 2018-6-26"
+	ReportByUserEmptyText := "user_id=UB9AE7CL9&command=/report_by_user&text="
+	ReportByUser := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@userID1|user1> 2018-06-25 2018-06-26"
+	ReportByUserMessUser := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@huiuser|huinya> 2018-06-25 2018-06-26"
+	ReportByUserMessDateF := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@userID1|user1> 2018-6-25 2018-06-26"
+	ReportByUserMessDateT := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@userID1|user1> 2018-06-25 2018-6-26"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
@@ -288,11 +290,11 @@ func TestHandleReportByUserCommands(t *testing.T) {
 }
 
 func TestHandleReportByProjectAndUserCommands(t *testing.T) {
-	ReportByProjectAndUserEmptyText := "command=/report_by_project_and_user&channel_id=<#CBA2M41Q8|chanid>&text="
-	ReportByProjectAndUser := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-06-25 2018-06-26"
-	ReportByProjectAndUserNameMessUp := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|nouser> 2018-06-25 2018-06-26"
-	ReportByProjectAndUserDateToMessUp := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-6-25 2018-06-26"
-	ReportByProjectAndUserDateFromMessUp := "command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-06-25 2018-6-26"
+	ReportByProjectAndUserEmptyText := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=<#CBA2M41Q8|chanid>&text="
+	ReportByProjectAndUser := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-06-25 2018-06-26"
+	ReportByProjectAndUserNameMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|nouser> 2018-06-25 2018-06-26"
+	ReportByProjectAndUserDateToMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-6-25 2018-06-26"
+	ReportByProjectAndUserDateFromMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-06-25 2018-6-26"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)

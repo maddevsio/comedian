@@ -80,6 +80,10 @@ func (r *REST) Start() error {
 
 func (r *REST) handleCommands(c echo.Context) error {
 	form, err := c.FormParams()
+	if formUser := form.Get("user_id"); formUser != r.c.ManagerSlackUserID {
+		return c.String(http.StatusOK, "This command is not allowed for you! You are not admin")
+	}
+	logrus.Infof("rest: FormParams info: %v", form)
 	if err != nil {
 		logrus.Errorf("rest: FormParams failed: %v\n", err)
 		return c.JSON(http.StatusBadRequest, nil)
