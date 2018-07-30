@@ -37,13 +37,16 @@ Create the following commands (Request URL for all "http: // <comedian_address> 
 
 | Name | Hint | Description |
 | --- | --- | --- |
-| /comedianadd | @user | Adds a new comedian |
-| /comedianremove | @user | Removes a comedian |
-| /comedianlist | - | Lists all comedians |
+| /comedianadd | @user | Adds a new standuper |
+| /comedianaddadmin | @user | Adds a new admin |
+| /comedianremove | @user | Removes a standuper |
+| /comedianlist | - | Lists all standupers |
 | /standuptimeset | hh:mm | Set standup time |
 | /standuptime | - | Show standup time in current channel |
 | /standuptimeremove | - | Delete standup time in current channel |
-| /comedian_report_by_project | projectName 2017-01-01 2017-01-31 | gets all standups for specified project for time period |
+| /report_by_project | channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period |
+| /report_by_user | slackUserID 2017-01-01 2017-01-31 | gets all standups for specified user for time period |
+| /report_by_project_and_user | project user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period |
 
 Select "Bot users" in the menu.
 Create a new bot user.
@@ -58,19 +61,21 @@ Add to .env:
 DB_NAME=comedian
 DB_USER=comedian
 DB_PASS=comedian
-SLACK_TOKEN=xoxb-__________________________
-DATABASE=comedian:comedian@(127.0.0.1:0000)/comedian?parseTime=true
-HTTP_BIND_ADDR=0.0.0.0:8080
-NOTIFIER_CHECK_INTERVAL=15
-MANAGER=yourUserName
-DIRECT_MANAGER_CHANNEL_ID=
-REPORT_TIME="09:35"
-LANGUAGE="ru_RU"
+COMEDIAN_SLACK_TOKEN=xoxb-__________________________
+COMEDIAN_DATABASE=comedian:comedian@(localhost:3306)/comedian?parseTime=true
+COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
+COMEDIAN_NOTIFIER_CHECK_INTERVAL=60
+COMEDIAN_MANAGER_SLACK_USER_ID=XXXYYYXXZZZ
+COMEDIAN_MANAGER_SLACK_CHAN_GENERAL=LKGJFKLGF8909
+COMEDIAN_REPORT_TIME=16:26
+COMEDIAN_LANGUAGE=en_US
+COMEDIAN_COLLECTOR_TOKEN=43io04u23423io4u234i234u23io4u23io423o
+COMEDIAN_COLLECTOR_URL=COLLECTOR_URL
 ```
 
 Run:
 ```
-docker-compose build
+make docker
 docker-compose up
 ```
 
@@ -102,19 +107,8 @@ docker-compose up
 - [x] Setup reminders when we add new reminder on a channel
 - [x] Get standup messages without mentioning bot user
 - [x] Set up multilang option for Comedian (En + Ru)
-- [ ] Get task worklogs from JIRA
-- [ ] Get data from Gitlab
-- [ ] NLP based configuration for standup time adding
-
-- [ ] Build HTTP API for reports with oAuth authentication
-
-
-### API
-
-- [ ] Endpoint for report by project(channel) in date range
-- [ ] Endpoint for report by user and all his project in date range
-- [ ] Endpoint for report by project and user in date range
-- [ ] Authentication endpoint.
+- [x] Get task worklogs from JIRA
+- [x] Get data from Gitlab
 
 ## Issues
 
