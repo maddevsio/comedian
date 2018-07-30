@@ -90,7 +90,11 @@ func (r *REST) handleCommands(c echo.Context) error {
 	logrus.Infof("rest: FormParams info: %v", form)
 	logrus.Infof("rest: isAdmin: %v", userIsAdmin)
 	if (slackUserID != r.c.ManagerSlackUserID) && (userIsAdmin == false) {
-		return c.String(http.StatusOK, "This command is not allowed for you! You are not admin")
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "accessDenied"})
+		if err != nil {
+			logrus.Errorf("rest: Localize failed: %v\n", err)
+		}
+		return c.String(http.StatusOK, text)
 	}
 	if command := form.Get("command"); command != "" {
 		switch command {
