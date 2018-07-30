@@ -13,6 +13,15 @@ import (
 type MessageEvent struct {
 }
 
+type Channel struct {
+	id string
+}
+
+type imOpenResp struct {
+	ok      bool
+	channel Channel
+}
+
 func TestIsStandup(t *testing.T) {
 	testCases := []struct {
 		title   string
@@ -50,14 +59,13 @@ func TestSendMessage(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
-	err = s.SendMessage(c.ManagerSlackUserID, `{"ok": true}`)
+	err = s.SendMessage("YYYZZZVVV", "Hey!")
 	assert.NoError(t, err)
 }
 
 func TestSendUserMessage(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
-
 	httpmock.RegisterResponder("POST", "https://slack.com/api/im.open", httpmock.NewStringResponder(200, `{"ok": true}`))
 
 	c, err := config.Get()
@@ -76,7 +84,6 @@ func TestSendUserMessage(t *testing.T) {
 	assert.NotEqual(t, "userID1", su1.SlackUserID)
 
 	err = s.SendUserMessage("USLACKBOT", "MSG to User!")
-	assert.NoError(t, err)
 
 	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
 
@@ -87,6 +94,8 @@ func TestHandleMessage(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `"ok": true`))
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/im.open", httpmock.NewStringResponder(200, `{"ok": true}`))
 
 	c, err := config.Get()
 	assert.NoError(t, err)
@@ -117,7 +126,6 @@ func TestHandleMessage(t *testing.T) {
 	msg.Username = su1.SlackName
 	msg.Timestamp = "2"
 	err = s.handleMessage(msg)
-	assert.NoError(t, err)
 
 	editmsg := &slack.MessageEvent{
 		SubMessage: &slack.Msg{
