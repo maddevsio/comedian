@@ -48,3 +48,13 @@ notifyManagerAllDone = "<@%v>, in channel <#%s> all standupers have written stan
 notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup today, these users ignored standup today: %v."
 notifyUsersWarning = "Hey! We are still waiting standup for today from you: %s"
 notifyDirectMessage = "Hello, <@%s>! You missed the standup deadline in <#%s> channel. Please, write you standup ASAP!"
+
+noWorklogs = "Not enough worklogs: %v"
+noCommits = "no commits at all, "
+noStandup = "and did not write standup!!!"
+
+hasWorklogs = "Has enough worklogs: %v"
+hasCommits = "enough commits: %v"
+hasStandup = "yet wrote a standup, good job!"
+
+isRook = "<@%v> is a rook! (%v)\n"

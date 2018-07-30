@@ -1,12 +1,16 @@
 package notifier
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff"
 	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/reporting"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	"github.com/jasonlvhit/gocron"
@@ -25,10 +29,24 @@ type Notifier struct {
 	CheckInterval uint64
 }
 
+// MorningNotification (MN)
+type MN struct {
+	noWorklogs string
+	noCommits  string
+	noStandup  string
+
+	hasWorklogs string
+	hasCommits  string
+	hasStandup  string
+
+	isRook string
+}
+
 const (
-	NotificationInterval = 30
-	ReminderRepeatsMax   = 5
-	RemindManager        = 3
+	NotificationInterval   = 30
+	ReminderRepeatsMax     = 5
+	RemindManager          = 3
+	MorningRooksReportTime = "10:30"
 )
 
 var localizer *i18n.Localizer
@@ -58,11 +76,53 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
 	gocron.Every(n.CheckInterval).Seconds().Do(n.NotifyChannels)
+	gocron.Every(1).Day().At(MorningRooksReportTime).Do(n.RevealRooks)
 	channel := gocron.Start()
 	for {
 		report := <-channel
 		logrus.Println(report)
 	}
+}
+
+func (n *Notifier) RevealRooks() {
+	currentTime := time.Now()
+	timeFrom := currentTime.AddDate(0, 0, -1)
+	allUsers, err := n.DB.ListAllStandupUsers()
+	if err != nil {
+		logrus.Errorf("notifier: GetNonReporters failed: %v\n", err)
+	}
+	text := ""
+	for _, user := range allUsers {
+		notification, err := getMN()
+		if err != nil {
+			logrus.Errorf("notifier: GetMN failed: %v\n", err)
+		}
+		worklogs, commits, isNonReporter, err := n.checkUser(user, timeFrom, currentTime)
+		fails := ""
+		if err != nil {
+			logrus.Errorf("notifier: checkMotherFucker failed: %v\n", err)
+		}
+		if worklogs < 8 {
+			fails += fmt.Sprintf(notification.noWorklogs, worklogs) + ", "
+		} else {
+			fails += fmt.Sprintf(notification.hasWorklogs, worklogs) + ", "
+		}
+		if commits == 0 {
+			fails += notification.noCommits
+		} else {
+			fails += fmt.Sprintf(notification.hasCommits, commits) + ", "
+		}
+		if isNonReporter == true {
+			fails += notification.noStandup
+		} else {
+			fails += notification.hasStandup
+		}
+		if (worklogs < 8) || (commits == 0) || (isNonReporter == true) {
+			text += fmt.Sprintf(notification.isRook, user.SlackUserID, fails)
+		}
+	}
+	n.Chat.SendMessage(n.Config.ChanGeneral, text)
+
 }
 
 // NotifyChannels reminds users of channels about upcoming or missing standups
@@ -179,4 +239,63 @@ func getNonReporters(db storage.Storage, channelID string) ([]model.StandupUser,
 		return nil, err
 	}
 	return nonReporters, nil
+}
+
+func (n *Notifier) checkUser(user model.StandupUser, timeFrom, timeTo time.Time) (int, int, bool, error) {
+	date := fmt.Sprintf("%d-%02d-%02d", timeTo.Year(), timeTo.Month(), timeTo.Day())
+
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", n.Config.CollectorURL, "users", user.SlackUserID, date, date)
+	logrus.Infof("rest: getCollectorData request URL: %s", linkURL)
+	req, err := http.NewRequest("GET", linkURL, nil)
+	if err != nil {
+		logrus.Errorf("notifier: Get Request failed: %v\n", err)
+		return 0, 0, true, err
+	}
+	token := n.Config.CollectorToken
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logrus.Errorf("notifier: Authorization failed: %v\n", err)
+		return 0, 0, true, err
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logrus.Errorf("notifier: ioutil.ReadAll failed: %v\n", err)
+		return 0, 0, true, err
+	}
+	var dataU reporting.UserData
+	json.Unmarshal(body, &dataU)
+
+	userIsNonReporter, err := n.DB.CheckNonReporter(user, timeFrom, timeTo)
+	logrus.Printf("checkMotherFucker: worklogs %v", dataU.Worklogs/3600)
+	logrus.Printf("checkMotherFucker: commits %v", dataU.TotalCommits)
+	logrus.Printf("checkMotherFucker: isNonReporter %v", userIsNonReporter)
+
+	return dataU.Worklogs / 3600, dataU.TotalCommits, userIsNonReporter, nil
+
+}
+
+func getMN() (MN, error) {
+	noWorklogs, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "noWorklogs"})
+	noCommits, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "noCommits"})
+	noStandup, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "noStandup"})
+	hasWorklogs, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "hasWorklogs"})
+	hasCommits, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "hasCommits"})
+	hasStandup, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "hasStandup"})
+	isRook, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "isRook"})
+	if err != nil {
+		logrus.Errorf("slack: Localize failed: %v\n", err)
+		return MN{}, err
+	}
+	mn := MN{
+		noWorklogs:  noWorklogs,
+		noCommits:   noCommits,
+		noStandup:   noStandup,
+		hasWorklogs: hasWorklogs,
+		hasCommits:  hasCommits,
+		hasStandup:  hasStandup,
+		isRook:      isRook,
+	}
+	return mn, nil
 }

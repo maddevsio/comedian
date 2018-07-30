@@ -19,6 +19,7 @@ type (
 		Language              string `envconfig:"LANGUAGE" required:"false"`
 		CollectorURL          string `envconfig:"COLLECTOR_URL" required:"true"`
 		CollectorToken        string `envconfig:"COLLECTOR_TOKEN" required:"true"`
+		ChanGeneral           string `envconfig:"MANAGER_SLACK_CHAN_GENERAL" required:"true"`
 		Debug                 bool
 	}
 )
