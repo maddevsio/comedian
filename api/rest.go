@@ -30,6 +30,7 @@ type REST struct {
 
 const (
 	commandAddUser                = "/comedianadd"
+	commandAddAdmin               = "/comedianaddadmin"
 	commandRemoveUser             = "/comedianremove"
 	commandListUsers              = "/comedianlist"
 	commandAddTime                = "/standuptimeset"
@@ -80,18 +81,23 @@ func (r *REST) Start() error {
 
 func (r *REST) handleCommands(c echo.Context) error {
 	form, err := c.FormParams()
-	if formUser := form.Get("user_id"); formUser != r.c.ManagerSlackUserID {
-		return c.String(http.StatusOK, "This command is not allowed for you! You are not admin")
-	}
-	logrus.Infof("rest: FormParams info: %v", form)
 	if err != nil {
-		logrus.Errorf("rest: FormParams failed: %v\n", err)
-		return c.JSON(http.StatusBadRequest, nil)
+		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
+	}
+	slackUserID := form.Get("user_id")
+	channelID := form.Get("channel_id")
+	userIsAdmin := r.db.IsAdmin(slackUserID, channelID)
+	logrus.Infof("rest: FormParams info: %v", form)
+	logrus.Infof("rest: isAdmin: %v", userIsAdmin)
+	if (slackUserID != r.c.ManagerSlackUserID) && (userIsAdmin == false) {
+		return c.String(http.StatusOK, "This command is not allowed for you! You are not admin")
 	}
 	if command := form.Get("command"); command != "" {
 		switch command {
 		case commandAddUser:
 			return r.addUserCommand(c, form)
+		case commandAddAdmin:
+			return r.addAdminCommand(c, form)
 		case commandRemoveUser:
 			return r.removeUserCommand(c, form)
 		case commandListUsers:
@@ -136,6 +142,7 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 			SlackName:   userName,
 			ChannelID:   ca.ChannelID,
 			Channel:     ca.ChannelName,
+			Role:        "user",
 		})
 		if err != nil {
 			logrus.Errorf("rest: CreateStandupUser failed: %v\n", err)
@@ -161,6 +168,48 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, fmt.Sprintf(text, userName))
 	}
 	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addUser"})
+	if err != nil {
+		logrus.Errorf("rest: Localize failed: %v\n", err)
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(text, userName))
+}
+
+func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
+	var ca FullSlackForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		logrus.Errorf("rest: addUserCommand Validate failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	result := strings.Split(ca.Text, "|")
+	slackUserID := strings.Replace(result[0], "<@", "", -1)
+	userName := strings.Replace(result[1], ">", "", -1)
+
+	user, err := r.db.FindStandupUserInChannel(userName, ca.ChannelID)
+	if err != nil {
+		_, err = r.db.CreateStandupUser(model.StandupUser{
+			SlackUserID: slackUserID,
+			SlackName:   userName,
+			ChannelID:   ca.ChannelID,
+			Channel:     ca.ChannelName,
+			Role:        "admin",
+		})
+		if err != nil {
+			logrus.Errorf("rest: CreateStandupUser failed: %v\n", err)
+			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
+		}
+	}
+	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
+		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
+		if err != nil {
+			logrus.Errorf("rest: Localize failed: %v\n", err)
+		}
+		return c.String(http.StatusOK, fmt.Sprintf(text))
+	}
+	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addAdmin"})
 	if err != nil {
 		logrus.Errorf("rest: Localize failed: %v\n", err)
 	}

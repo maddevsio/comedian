@@ -28,6 +28,7 @@ type (
 		SlackName   string    `db:"username" json:"username"`
 		Channel     string    `db:"channel" json:"channel"`
 		ChannelID   string    `db:"channel_id" json:"channelId"`
+		Role        string    `db:"role" json:"role"`
 	}
 
 	// StandupTime model used for serialization/deserialization stored standupTime

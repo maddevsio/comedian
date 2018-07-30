@@ -41,6 +41,8 @@ type (
 		// CreateStandupUser creates standupUser entry in database
 		CreateStandupUser(model.StandupUser) (model.StandupUser, error)
 
+		IsAdmin(string, string) bool
+
 		//FindStandupUser finds standup user
 		FindStandupUser(username string) (model.StandupUser, error)
 

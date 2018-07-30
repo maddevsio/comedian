@@ -144,9 +144,12 @@ func TestCRUDStandupUser(t *testing.T) {
 		SlackName:   "user1",
 		ChannelID:   "123qwe",
 		Channel:     "channel1",
+		Role:        "user",
 	})
-
 	assert.NoError(t, err)
+
+	isAdmin := db.IsAdmin(su1.SlackUserID, su1.ChannelID)
+	assert.Equal(t, false, isAdmin)
 
 	assert.Equal(t, "channel1", su1.Channel)
 
@@ -155,9 +158,13 @@ func TestCRUDStandupUser(t *testing.T) {
 		SlackName:   "user2",
 		ChannelID:   "qwe123",
 		Channel:     "channel2",
+		Role:        "admin",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "user2", su2.SlackName)
+
+	isAdmin = db.IsAdmin(su2.SlackUserID, su2.ChannelID)
+	assert.Equal(t, true, isAdmin)
 
 	su3, err := db.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID3",
