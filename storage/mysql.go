@@ -147,8 +147,8 @@ func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error
 		return s, err
 	}
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel) VALUES (?, ?, ?, ?, ?, ?)",
-		now().UTC(), now().UTC(), s.SlackUserID, s.SlackName, s.ChannelID, s.Channel)
+		"INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		now().UTC(), now().UTC(), s.SlackUserID, s.SlackName, s.ChannelID, s.Channel, s.Role)
 	if err != nil {
 		return s, err
 	}
@@ -226,6 +226,16 @@ func (m *MySQL) CheckNonReporter(user model.StandupUser, dateFrom, dateTo time.T
 		}
 	}
 	return false, nil
+}
+
+// isAdmin checks if user in channel is of a role admin
+func (m *MySQL) IsAdmin(slack_user_id, channel_id string) bool {
+	var u model.StandupUser
+	err := m.conn.Get(&u, `SELECT * FROM standup_users where channel_id = ? and slack_user_id = ? and role = ?`, channel_id, slack_user_id, "admin")
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func (m *MySQL) GetNonReporter(userID, channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {

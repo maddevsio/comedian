@@ -1,6 +1,8 @@
 userExist = "User already exists!"
 addUserNoStandupTime = "<@%s> added, but there is no standup time for this channel"
 addUser = "<@%s> added"
+addAdmin = "<@%s> added as admin"
+accessDenied = "This command is not allowed for you! You are not admin"
 
 deleteUser = "<@%s> deleted"
 listNoStandupers = "No standupers in this channel! To add one, please, use /comedianadd slash command"
