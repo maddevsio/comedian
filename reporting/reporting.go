@@ -14,64 +14,89 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type reportContent struct {
-	Channel      string
-	Standups     []model.Standup
-	NonReporters []model.StandupUser
-}
-
-type reportEntry struct {
-	DateFrom       time.Time
-	DateTo         time.Time
-	ReportContents []reportContent
-}
-
-// UserData used to parse data on user from Collector
-type UserData struct {
-	TotalCommits int `json:"total_commits"`
-	TotalMerges  int `json:"total_merges"`
-	Worklogs     int `json:"worklogs"`
-}
-
-// ProjectData used to parse data on project from Collector
-type ProjectData struct {
-	TotalCommits int `json:"total_commits"`
-	TotalMerges  int `json:"total_merges"`
-}
-
-// ProjectUserData used to parse data on user in project from Collector
-type ProjectUserData struct {
-	TotalCommits int `json:"total_commits"`
-	TotalMerges  int `json:"total_merges"`
-}
-
-var localizer *i18n.Localizer
-
-func initLocalizer() *i18n.Localizer {
-	localizer, err := config.GetLocalizer()
-	if err != nil {
-		logrus.Errorf("reporting: GetLocalizer failed: %v\n", err)
-		return nil
+//Reporter provides db and translation to functions
+type (
+	Reporter struct {
+		DB storage.Storage
+		T  Translation
 	}
-	return localizer
+
+	//Translation struct to get translation data
+	Translation struct {
+		reportByProjectAndUser     string
+		reportOnProjectHead        string
+		reportOnUserHead           string
+		reportOnProjectAndUserHead string
+		reportNoData               string
+		reportPeriod               string
+		reportStandupFromUser      string
+		reportIgnoredStandup       string
+		reportShowChannel          string
+	}
+
+	reportContent struct {
+		Channel      string
+		Standups     []model.Standup
+		NonReporters []model.StandupUser
+	}
+
+	reportEntry struct {
+		DateFrom       time.Time
+		DateTo         time.Time
+		ReportContents []reportContent
+	}
+
+	// UserData used to parse data on user from Collector
+	UserData struct {
+		TotalCommits int `json:"total_commits"`
+		TotalMerges  int `json:"total_merges"`
+		Worklogs     int `json:"worklogs"`
+	}
+
+	// ProjectData used to parse data on project from Collector
+	ProjectData struct {
+		TotalCommits int `json:"total_commits"`
+		TotalMerges  int `json:"total_merges"`
+	}
+
+	// ProjectUserData used to parse data on user in project from Collector
+	ProjectUserData struct {
+		TotalCommits int `json:"total_commits"`
+		TotalMerges  int `json:"total_merges"`
+	}
+)
+
+//NewReporter creates new reporter instanse
+func NewReporter(c config.Config) (*Reporter, error) {
+	conn, err := storage.NewMySQL(c)
+	if err != nil {
+		logrus.Errorf("notifier: NewMySQL failed: %v\n", err)
+		return nil, err
+	}
+
+	translation, err := getTranslation()
+	if err != nil {
+		logrus.Errorf("notifier: getTranslation failed: %v\n", err)
+		return nil, err
+	}
+
+	r := &Reporter{DB: conn, T: translation}
+	logrus.Infof("notifier: Created Reporter: %v", r)
+	return r, nil
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
-func StandupReportByProject(db storage.Storage, channelID string, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
-	localizer = initLocalizer()
+func (r *Reporter) StandupReportByProject(channelID string, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
 	channel := strings.Replace(channelID, "#", "", -1)
-	reportEntries, err := getReportEntriesForPeriodByChannel(db, channel, dateFrom, dateTo)
+	reportEntries, err := r.ChanReports(channel, dateFrom, dateTo)
 	if err != nil {
-		logrus.Errorf("reporting: getReportEntriesForPeriodByChannel failed: %v\n", err)
+		logrus.Errorf("reporting: ChanReports failed: %v\n", err)
 		return "Error!", err
 	}
 	logrus.Infof("report entries: %#v\n", reportEntries)
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportOnProjectHead"})
-	if err != nil {
-		logrus.Errorf("reporting: Localize failed: %v\n", err)
-	}
-	report := fmt.Sprintf(text, channel)
-	report += ReportEntriesForPeriodByChannelToString(reportEntries)
+
+	report := fmt.Sprintf(r.T.reportOnProjectHead, channel)
+	report += r.ChanRepsToStr(reportEntries)
 
 	var dataP ProjectData
 	json.Unmarshal(collectorData, &dataP)
@@ -81,20 +106,15 @@ func StandupReportByProject(db storage.Storage, channelID string, dateFrom, date
 }
 
 // StandupReportByUser creates a standup report for a specified period of time
-func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
-	localizer = initLocalizer()
-	reportEntries, err := getReportEntriesForPeriodbyUser(db, user, dateFrom, dateTo)
+func (r *Reporter) StandupReportByUser(user model.StandupUser, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
+	reportEntries, err := r.UserReports(user, dateFrom, dateTo)
 	if err != nil {
-		logrus.Errorf("reporting: getReportEntriesForPeriodbyUser failed: %v\n", err)
+		logrus.Errorf("reporting: UserReports failed: %v\n", err)
 		return "Error!", err
 	}
 	logrus.Infof("reporting: report entries: %#v\n", reportEntries)
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportOnUserHead"})
-	if err != nil {
-		logrus.Errorf("reporting: Localize failed: %v\n", err)
-	}
-	report := fmt.Sprintf(text, user.SlackName)
-	report += ReportEntriesByUserToString(reportEntries)
+	report := fmt.Sprintf(r.T.reportOnUserHead, user.SlackName)
+	report += r.UserRepsToStr(reportEntries)
 
 	var dataU UserData
 	json.Unmarshal(collectorData, &dataU)
@@ -105,23 +125,17 @@ func StandupReportByUser(db storage.Storage, user model.StandupUser, dateFrom, d
 }
 
 // StandupReportByProjectAndUser creates a standup report for a specified period of time
-func StandupReportByProjectAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
-	localizer = initLocalizer()
+func (r *Reporter) StandupReportByProjectAndUser(channelID string, user model.StandupUser, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
 	channel := strings.Replace(channelID, "#", "", -1)
-	reportEntries, err := getReportEntriesForPeriodByChannelAndUser(db, channel, user, dateFrom, dateTo)
+	reportEntries, err := r.ChanReportsAndUser(channel, user, dateFrom, dateTo)
 	if err != nil {
-		logrus.Errorf("reporting: getReportEntriesForPeriodByChannelAndUser: %v\n", err)
+		logrus.Errorf("reporting: ChanReportsAndUser: %v\n", err)
 		return "Error!", err
 	}
 	logrus.Infof("reporting: report entries: %#v\n", reportEntries)
 
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportOnProjectAndUserHead"})
-	if err != nil {
-		logrus.Errorf("reporting: Localize failed: %v\n", err)
-
-	}
-	report := fmt.Sprintf(text, channel, user.SlackName)
-	report += ReportEntriesForPeriodByChannelToString(reportEntries)
+	report := fmt.Sprintf(r.T.reportOnProjectAndUserHead, channel, user.SlackName)
+	report += r.ChanRepsToStr(reportEntries)
 
 	var dataPU ProjectUserData
 	json.Unmarshal(collectorData, &dataPU)
@@ -131,8 +145,8 @@ func StandupReportByProjectAndUser(db storage.Storage, channelID string, user mo
 	return report, nil
 }
 
-//getReportEntriesForPeriodByChannel returns report entries by channel
-func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+//ChanReports returns report entries by channel
+func (r *Reporter) ChanReports(channelID string, dateFrom, dateTo time.Time) ([]reportEntry, error) {
 	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("reporting: setupDays failed: %v\n", err)
@@ -145,12 +159,12 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
 
-		currentDayStandups, err := db.SelectStandupsByChannelIDForPeriod(channelID, currentDateFrom, currentDateTo)
+		currentDayStandups, err := r.DB.SelectStandupsByChannelIDForPeriod(channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 			return nil, err
 		}
-		currentDayNonReporters, err := db.GetNonReporters(channelID, currentDateFrom, currentDateTo)
+		currentDayNonReporters, err := r.DB.GetNonReporters(channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 			return nil, err
@@ -175,50 +189,29 @@ func getReportEntriesForPeriodByChannel(db storage.Storage, channelID string, da
 }
 
 //ReportEntriesForPeriodByChannelToString returns report entries by channel in text
-func ReportEntriesForPeriodByChannelToString(reportEntries []reportEntry) string {
-	localizer = initLocalizer()
+func (r *Reporter) ChanRepsToStr(reportEntries []reportEntry) string {
 	var report string
 	if len(reportEntries) == 0 {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
-		if err != nil {
-			logrus.Errorf("reporting: Localize failed: %v\n", err)
-
-		}
-		return report + text
+		return report + r.T.reportNoData
 	}
 
 	for _, value := range reportEntries {
 		currentDateFrom := value.DateFrom
 		currentDateTo := value.DateTo
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportPeriod"})
-		if err != nil {
-			logrus.Errorf("reporting: Localize failed: %v\n", err)
-
-		}
-		report += fmt.Sprintf(text, currentDateFrom.Format("2006-01-02"),
+		report += fmt.Sprintf(r.T.reportPeriod, currentDateFrom.Format("2006-01-02"),
 			currentDateTo.Format("2006-01-02"))
 		for _, standup := range value.ReportContents[0].Standups {
-			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportStandupFromUser"})
-			if err != nil {
-				logrus.Errorf("reporting: Localize failed: %v\n", err)
 
-			}
-			report += fmt.Sprintf(text, standup.Username, standup.Comment)
+			report += fmt.Sprintf(r.T.reportStandupFromUser, standup.Username, standup.Comment)
 		}
 		for _, user := range value.ReportContents[0].NonReporters {
-			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportIgnoredStandup"})
-			if err != nil {
-				logrus.Errorf("reporting: Localize failed: %v\n", err)
-
-			}
-			report += fmt.Sprintf(text, user.SlackName)
+			report += fmt.Sprintf(r.T.reportIgnoredStandup, user.SlackName)
 		}
 	}
-
 	return report
 }
 
-func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+func (r *Reporter) UserReports(user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
 	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("reporting: setupDays failed: %v\n", err)
@@ -229,7 +222,7 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
 
-		standupUsers, err := db.FindStandupUsers(user.SlackName)
+		standupUsers, err := r.DB.FindStandupUsers(user.SlackName)
 		if err != nil {
 			logrus.Errorf("reporting: FindStandupUser failed: %v\n", err)
 			return nil, err
@@ -237,9 +230,9 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 		reportContents := make([]reportContent, 0, len(standupUsers))
 		for _, standupUser := range standupUsers {
 			currentDayNonReporter := []model.StandupUser{}
-			currentDayStandup, err := db.SelectStandupsFiltered(standupUser.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
+			currentDayStandup, err := r.DB.SelectStandupsFiltered(standupUser.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
 
-			currentDayNonReporter, err = db.GetNonReporter(user.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
+			currentDayNonReporter, err = r.DB.GetNonReporter(user.SlackUserID, standupUser.ChannelID, currentDateFrom, currentDateTo)
 			if err != nil {
 				logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 				return nil, err
@@ -268,8 +261,7 @@ func getReportEntriesForPeriodbyUser(db storage.Storage, user model.StandupUser,
 }
 
 //ReportEntriesByUserToString provides reporting entries in selected time period
-func ReportEntriesByUserToString(reportEntries []reportEntry) string {
-	localizer = initLocalizer()
+func (r *Reporter) UserRepsToStr(reportEntries []reportEntry) string {
 	var report string
 	emptyReport := true
 	for _, reportEntry := range reportEntries {
@@ -278,12 +270,7 @@ func ReportEntriesByUserToString(reportEntries []reportEntry) string {
 		}
 	}
 	if emptyReport {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportNoData"})
-		if err != nil {
-			logrus.Errorf("reporting: Localize failed: %v\n", err)
-
-		}
-		return report + text
+		return report + r.T.reportNoData
 	}
 
 	for _, value := range reportEntries {
@@ -293,29 +280,15 @@ func ReportEntriesByUserToString(reportEntries []reportEntry) string {
 		currentDateFrom := value.DateFrom
 		currentDateTo := value.DateTo
 
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportPeriod"})
-		if err != nil {
-			logrus.Errorf("reporting: Localize failed: %v\n", err)
-
-		}
-		report += fmt.Sprintf(text, currentDateFrom.Format("2006-01-02"),
+		report += fmt.Sprintf(r.T.reportPeriod, currentDateFrom.Format("2006-01-02"),
 			currentDateTo.Format("2006-01-02"))
 		for _, reportContent := range value.ReportContents {
-			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportShowChannel"})
-			if err != nil {
-				logrus.Errorf("reporting: Localize failed: %v\n", err)
-			}
-			report += fmt.Sprintf(text, reportContent.Channel)
+			report += fmt.Sprintf(r.T.reportShowChannel, reportContent.Channel)
 			for _, standup := range reportContent.Standups {
 				report += standup.Comment + "\n"
 			}
 			for _, user := range reportContent.NonReporters {
-				text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportIgnoredStandup"})
-				if err != nil {
-					logrus.Errorf("reporting: Localize failed: %v\n", err)
-
-				}
-				report += fmt.Sprintf(text, user.SlackName)
+				report += fmt.Sprintf(r.T.reportIgnoredStandup, user.SlackName)
 			}
 			report += "\n"
 
@@ -325,8 +298,8 @@ func ReportEntriesByUserToString(reportEntries []reportEntry) string {
 	return report
 }
 
-//getReportEntriesForPeriodByChannelAndUser returns report entries by channel
-func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID string, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
+//ChanReportsAndUser returns report entries by channel
+func (r *Reporter) ChanReportsAndUser(channelID string, user model.StandupUser, dateFrom, dateTo time.Time) ([]reportEntry, error) {
 	dateFromRounded, numberOfDays, err := setupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("reporting: setupDays failed: %v\n", err)
@@ -338,12 +311,12 @@ func getReportEntriesForPeriodByChannelAndUser(db storage.Storage, channelID str
 		currentDateFrom := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
 		currentDateTo := currentDateFrom.Add(24 * time.Hour)
 
-		currentDayStandup, err := db.SelectStandupsFiltered(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
+		currentDayStandup, err := r.DB.SelectStandupsFiltered(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("reporting: SelectStandups failed: %v\n", err)
 		}
 
-		currentDayNonReporter, err := db.GetNonReporter(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
+		currentDayNonReporter, err := r.DB.GetNonReporter(user.SlackUserID, channelID, currentDateFrom, currentDateTo)
 		if err != nil {
 			logrus.Errorf("reporting: SelectStandupsByChannelIDForPeriod failed: %v", err)
 			return nil, err
@@ -389,4 +362,39 @@ func setupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
 	dateDiff := dateToRounded.Sub(dateFromRounded)
 	numberOfDays := int(dateDiff.Hours() / 24)
 	return dateFromRounded, numberOfDays, nil
+}
+
+func getTranslation() (Translation, error) {
+	localizer, err := config.GetLocalizer()
+	if err != nil {
+		logrus.Errorf("slack: GetLocalizer failed: %v\n", err)
+		return Translation{}, err
+	}
+	m := make(map[string]string)
+	r := []string{
+		"reportByProjectAndUser", "reportOnProjectHead", "reportOnUserHead",
+		"reportOnProjectAndUserHead", "reportNoData", "reportPeriod",
+		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel"}
+
+	for _, t := range r {
+		translated, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: t})
+		if err != nil {
+			logrus.Errorf("slack: Localize failed: %v\n", err)
+			return Translation{}, err
+		}
+		m[t] = translated
+	}
+
+	t := Translation{
+		reportByProjectAndUser:     m["reportByProjectAndUser"],
+		reportOnProjectHead:        m["reportOnProjectHead"],
+		reportOnUserHead:           m["reportOnUserHead"],
+		reportOnProjectAndUserHead: m["reportOnProjectAndUserHead"],
+		reportNoData:               m["reportNoData"],
+		reportPeriod:               m["reportPeriod"],
+		reportStandupFromUser:      m["reportStandupFromUser"],
+		reportIgnoredStandup:       m["reportIgnoredStandup"],
+		reportShowChannel:          m["reportShowChannel"],
+	}
+	return t, nil
 }

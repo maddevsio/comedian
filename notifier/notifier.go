@@ -27,19 +27,23 @@ type Notifier struct {
 	Config        config.Config
 	ReportTime    time.Time
 	CheckInterval uint64
+	T             Translation
 }
 
-// MorningNotification (MN)
-type MN struct {
-	noWorklogs string
-	noCommits  string
-	noStandup  string
-
-	hasWorklogs string
-	hasCommits  string
-	hasStandup  string
-
-	isRook string
+//Translation struct to get translation data
+type Translation struct {
+	noWorklogs          string
+	noCommits           string
+	noStandup           string
+	hasWorklogs         string
+	hasCommits          string
+	hasStandup          string
+	isRook              string
+	notifyAllDone       string
+	notifyNotAll        string
+	notifyManagerNotAll string
+	notifyUsersWarning  string
+	notifyDirectMessage string
 }
 
 const (
@@ -49,8 +53,6 @@ const (
 	MorningRooksReportTime = "10:30"
 )
 
-var localizer *i18n.Localizer
-
 // NewNotifier creates a new notifier
 func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	conn, err := storage.NewMySQL(c)
@@ -58,7 +60,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 		logrus.Errorf("notifier: NewMySQL failed: %v\n", err)
 		return nil, err
 	}
-	localizer, err = config.GetLocalizer()
+
 	if err != nil {
 		logrus.Errorf("notifier: GetLocalizer failed: %v\n", err)
 		return nil, err
@@ -68,7 +70,14 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 		logrus.Errorf("notifier: time.Parse failed: %v\n", err)
 		return nil, err
 	}
-	notifier := &Notifier{Chat: chat, DB: conn, Config: c, ReportTime: r, CheckInterval: c.NotifierCheckInterval}
+
+	translation, err := getTranslation()
+	if err != nil {
+		logrus.Errorf("notifier: getTranslation failed: %v\n", err)
+		return nil, err
+	}
+
+	notifier := &Notifier{Chat: chat, DB: conn, Config: c, ReportTime: r, CheckInterval: c.NotifierCheckInterval, T: translation}
 	logrus.Infof("notifier: Created Notifier: %v", notifier)
 	return notifier, nil
 }
@@ -93,7 +102,7 @@ func (n *Notifier) RevealRooks() {
 	}
 	text := ""
 	for _, user := range allUsers {
-		notification, err := getMN()
+
 		if err != nil {
 			logrus.Errorf("notifier: GetMN failed: %v\n", err)
 		}
@@ -103,22 +112,22 @@ func (n *Notifier) RevealRooks() {
 			logrus.Errorf("notifier: checkMotherFucker failed: %v\n", err)
 		}
 		if worklogs < 8 {
-			fails += fmt.Sprintf(notification.noWorklogs, worklogs) + ", "
+			fails += fmt.Sprintf(n.T.noWorklogs, worklogs) + ", "
 		} else {
-			fails += fmt.Sprintf(notification.hasWorklogs, worklogs) + ", "
+			fails += fmt.Sprintf(n.T.hasWorklogs, worklogs) + ", "
 		}
 		if commits == 0 {
-			fails += notification.noCommits
+			fails += n.T.noCommits
 		} else {
-			fails += fmt.Sprintf(notification.hasCommits, commits) + ", "
+			fails += fmt.Sprintf(n.T.hasCommits, commits) + ", "
 		}
 		if isNonReporter == true {
-			fails += notification.noStandup
+			fails += n.T.noStandup
 		} else {
-			fails += notification.hasStandup
+			fails += n.T.hasStandup
 		}
 		if (worklogs < 8) || (commits == 0) || (isNonReporter == true) {
-			text += fmt.Sprintf(notification.isRook, user.SlackUserID, fails)
+			text += fmt.Sprintf(n.T.isRook, user.SlackUserID, fails)
 		}
 	}
 	n.Chat.SendMessage(n.Config.ChanGeneral, text)
@@ -150,11 +159,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		logrus.Errorf("notifier: getNonReporters failed: %v\n", err)
 	}
 	if len(nonReporters) == 0 {
-		notifyAllDone, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyAllDone"})
-		if err != nil {
-			logrus.Errorf("notifier: Localize failed: %v\n", err)
-		}
-		n.Chat.SendMessage(channelID, notifyAllDone)
+		n.Chat.SendMessage(channelID, n.T.notifyAllDone)
 		return
 	}
 
@@ -169,14 +174,8 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 	notifyNotAll := func() error {
 		// Comedian will notify non reporters 5 times with 30 minutes interval.
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyNotAll"})
-		if err != nil {
-			logrus.Errorf("notifier: Localize failed: %v\n", err)
-			return err
-		}
-		n.Chat.SendMessage(channelID, fmt.Sprintf(text, strings.Join(nonReportersSlackIDs, ", ")))
-		return nil
-		logrus.Info("notifier: notifyNotAll finished!")
+
+		n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
 		return nil
 	}
 	for i := 0; i <= ReminderRepeatsMax; i++ {
@@ -187,11 +186,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		}
 		if i == RemindManager {
 			// after 3 reminders Comedian sends direct message to Manager notifiing about missed standups
-			notifyManager, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyManagerNotAll"})
-			if err != nil {
-				logrus.Errorf("notifier: Localize failed: %v\n", err)
-			}
-			err = n.Chat.SendUserMessage(n.Config.ManagerSlackUserID, fmt.Sprintf(notifyManager, n.Config.ManagerSlackUserID, channelID, strings.Join(nonReportersSlackIDs, ", ")))
+			err = n.Chat.SendUserMessage(n.Config.ManagerSlackUserID, fmt.Sprintf(n.T.notifyManagerNotAll, n.Config.ManagerSlackUserID, channelID, strings.Join(nonReportersSlackIDs, ", ")))
 			if err != nil {
 				logrus.Errorf("notifier: n.Chat.SendUserMessage failed: %v\n", err)
 			}
@@ -206,11 +201,10 @@ func (n *Notifier) SendWarning(channelID string, nonReporters []model.StandupUse
 	for _, user := range nonReporters {
 		slackUserID = append(slackUserID, "<@"+user.SlackUserID+">")
 	}
-	notifyUsersWarning, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyUsersWarning"})
+	err := n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyUsersWarning, strings.Join(slackUserID, ", ")))
 	if err != nil {
-		logrus.Errorf("notifier: Localize failed: %v\n", err)
+		logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
 	}
-	err = n.Chat.SendMessage(channelID, fmt.Sprintf(notifyUsersWarning, strings.Join(slackUserID, ", ")))
 
 }
 
@@ -219,11 +213,7 @@ func (n *Notifier) DMNonReporters(nonReporters []model.StandupUser) error {
 	//send each non reporter direct message
 	for _, nonReporter := range nonReporters {
 		logrus.Infof("notifier: Notifier Send Message to non reporter: %v", nonReporter)
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "notifyDirectMessage"})
-		if err != nil {
-			logrus.Errorf("notifier: Localize failed: %v\n", err)
-		}
-		n.Chat.SendUserMessage(nonReporter.SlackUserID, fmt.Sprintf(text, nonReporter.SlackName, nonReporter.ChannelID))
+		n.Chat.SendUserMessage(nonReporter.SlackUserID, fmt.Sprintf(n.T.notifyDirectMessage, nonReporter.SlackName, nonReporter.ChannelID))
 	}
 	return nil
 }
@@ -268,34 +258,50 @@ func (n *Notifier) checkUser(user model.StandupUser, timeFrom, timeTo time.Time)
 	json.Unmarshal(body, &dataU)
 
 	userIsNonReporter, err := n.DB.CheckNonReporter(user, timeFrom, timeTo)
-	logrus.Printf("checkMotherFucker: worklogs %v", dataU.Worklogs/3600)
-	logrus.Printf("checkMotherFucker: commits %v", dataU.TotalCommits)
-	logrus.Printf("checkMotherFucker: isNonReporter %v", userIsNonReporter)
+	logrus.Printf("checkNonReporter: worklogs %v", dataU.Worklogs/3600)
+	logrus.Printf("checkNonReporter: commits %v", dataU.TotalCommits)
+	logrus.Printf("checkNonReporter: isNonReporter %v", userIsNonReporter)
 
 	return dataU.Worklogs / 3600, dataU.TotalCommits, userIsNonReporter, nil
 
 }
 
-func getMN() (MN, error) {
-	noWorklogs, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "noWorklogs"})
-	noCommits, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "noCommits"})
-	noStandup, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "noStandup"})
-	hasWorklogs, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "hasWorklogs"})
-	hasCommits, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "hasCommits"})
-	hasStandup, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "hasStandup"})
-	isRook, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "isRook"})
+func getTranslation() (Translation, error) {
+	localizer, err := config.GetLocalizer()
 	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-		return MN{}, err
+		logrus.Errorf("slack: GetLocalizer failed: %v\n", err)
+		return Translation{}, err
 	}
-	mn := MN{
-		noWorklogs:  noWorklogs,
-		noCommits:   noCommits,
-		noStandup:   noStandup,
-		hasWorklogs: hasWorklogs,
-		hasCommits:  hasCommits,
-		hasStandup:  hasStandup,
-		isRook:      isRook,
+	m := make(map[string]string)
+	r := []string{
+		"noWorklogs", "noCommits", "noStandup", "hasWorklogs",
+		"hasCommits", "hasStandup", "isRook", "notifyAllDone",
+		"notifyNotAll", "notifyManagerNotAll", "notifyUsersWarning",
+		"notifyDirectMessage",
 	}
-	return mn, nil
+
+	for _, t := range r {
+		translated, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: t})
+		if err != nil {
+			logrus.Errorf("slack: Localize failed: %v\n", err)
+			return Translation{}, err
+		}
+		m[t] = translated
+	}
+
+	t := Translation{
+		noWorklogs:          m["noWorklogs"],
+		noCommits:           m["noCommits"],
+		noStandup:           m["noStandup"],
+		hasWorklogs:         m["hasWorklogs"],
+		hasCommits:          m["hasCommits"],
+		hasStandup:          m["hasStandup"],
+		isRook:              m["isRook"],
+		notifyAllDone:       m["notifyAllDone"],
+		notifyNotAll:        m["notifyNotAll"],
+		notifyManagerNotAll: m["notifyManagerNotAll"],
+		notifyUsersWarning:  m["notifyUsersWarning"],
+		notifyDirectMessage: m["notifyDirectMessage"],
+	}
+	return t, nil
 }

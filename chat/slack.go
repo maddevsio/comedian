@@ -16,18 +16,40 @@ import (
 var (
 	typeMessage     = ""
 	typeEditMessage = "message_changed"
-	localizer       *i18n.Localizer
 )
 
-// Slack struct used for storing and communicating with slack api
-type Slack struct {
-	Chat
-	api        *slack.Client
-	rtm        *slack.RTM
-	wg         sync.WaitGroup
-	myUsername string
-	db         *storage.MySQL
-}
+// Chat inteface should be implemented for all messengers(facebook, slack, telegram, whatever)
+type (
+	// Slack struct used for storing and communicating with slack api
+	Slack struct {
+		Chat
+		api        *slack.Client
+		rtm        *slack.RTM
+		wg         sync.WaitGroup
+		myUsername string
+		db         *storage.MySQL
+		T          Translation
+	}
+
+	//Translation struct to get translation data
+	Translation struct {
+		HelloManager    string
+		StandupAccepted string
+
+		p1 string
+		p2 string
+		p3 string
+
+		y1 string
+		y2 string
+		y3 string
+		y4 string
+
+		t1 string
+		t2 string
+		t3 string
+	}
+)
 
 // NewSlack creates a new copy of slack handler
 func NewSlack(conf config.Config) (*Slack, error) {
@@ -36,17 +58,18 @@ func NewSlack(conf config.Config) (*Slack, error) {
 		logrus.Errorf("slack: NewMySQL failed: %v\n", err)
 		return nil, err
 	}
-	logrus.Infof("slack: mysql connection: %v\n", m)
+
 	s := &Slack{}
 	s.api = slack.New(conf.SlackToken)
 	s.rtm = s.api.NewRTM()
 	s.db = m
-
-	localizer, err = config.GetLocalizer()
+	t, err := getTranslation()
 	if err != nil {
-		logrus.Errorf("slack: GetLocalizer failed: %v\n", err)
+		logrus.Errorf("slack: getTranslation failed: %v\n", err)
 		return nil, err
 	}
+	s.T = t
+
 	logrus.Infof("slack: new Slack: %v\n", s)
 	return s, nil
 }
@@ -77,17 +100,12 @@ func (s *Slack) Run() error {
 }
 
 func (s *Slack) handleConnection() error {
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "HelloManager"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-		return err
-	}
 	c, err := config.Get()
 	if err != nil {
 		logrus.Errorf("slack: GetConfig: %v\n", err)
 		return err
 	}
-	s.SendUserMessage(c.ManagerSlackUserID, text)
+	s.SendUserMessage(c.ManagerSlackUserID, s.T.HelloManager)
 	return nil
 }
 
@@ -102,16 +120,11 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				MessageTS:  msg.Msg.Timestamp,
 			})
 			logrus.Infof("slack: Standup created: %v\n", standup)
-			var text string
 			if err != nil {
 				logrus.Errorf("slack: CreateStandup failed: %v\n", err)
 				return err
 			}
-			text, err = localizer.Localize(&i18n.LocalizeConfig{MessageID: "StandupAccepted"})
-			if err != nil {
-				logrus.Errorf("slack: Localize failed: %v\n", err)
-			}
-			return s.SendMessage(msg.Msg.Channel, text)
+			return s.SendMessage(msg.Msg.Channel, s.T.StandupAccepted)
 		}
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
@@ -143,65 +156,24 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 
 func (s *Slack) isStandup(message string) (string, bool) {
 
-	p1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p1"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
-	p2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p2"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
-	p3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "p3"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
-
 	mentionsProblem := false
-	problemKeys := []string{p1, p2, p3}
+	problemKeys := []string{s.T.p1, s.T.p2, s.T.p3}
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
 		}
 	}
 
-	y1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y1"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
-	y2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y2"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
-	y3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y3"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
-	y4, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "y4"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
 	mentionsYesterdayWork := false
-	yesterdayWorkKeys := []string{y1, y2, y3, y4}
+	yesterdayWorkKeys := []string{s.T.y1, s.T.y2, s.T.y3, s.T.y4}
 	for _, work := range yesterdayWorkKeys {
 		if strings.Contains(message, work) {
 			mentionsYesterdayWork = true
 		}
 	}
 
-	t1, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t1"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
-	t2, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t2"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
-	t3, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "t3"})
-	if err != nil {
-		logrus.Errorf("slack: Localize failed: %v\n", err)
-	}
 	mentionsTodayPlans := false
-	todayPlansKeys := []string{t1, t2, t3}
+	todayPlansKeys := []string{s.T.t1, s.T.t2, s.T.t3}
 	for _, plan := range todayPlansKeys {
 		if strings.Contains(message, plan) {
 			mentionsTodayPlans = true
@@ -242,4 +214,47 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 	}
 	logrus.Info("slack: Message sent\n")
 	return err
+}
+
+func getTranslation() (Translation, error) {
+	localizer, err := config.GetLocalizer()
+	if err != nil {
+		logrus.Errorf("slack: GetLocalizer failed: %v\n", err)
+		return Translation{}, err
+	}
+	m := make(map[string]string)
+	r := []string{
+		"HelloManager", "StandupAccepted",
+		"p1", "p2", "p3",
+		"y1", "y2", "y3", "y4",
+		"t1", "t2", "t3",
+	}
+
+	for _, t := range r {
+		translated, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: t})
+		if err != nil {
+			logrus.Errorf("slack: Localize failed: %v\n", err)
+			return Translation{}, err
+		}
+		m[t] = translated
+	}
+
+	t := Translation{
+		HelloManager:    m["HelloManager"],
+		StandupAccepted: m["StandupAccepted"],
+
+		p1: m["p1"],
+		p2: m["p2"],
+		p3: m["p3"],
+
+		y1: m["y1"],
+		y2: m["y2"],
+		y3: m["y3"],
+		y4: m["y4"],
+
+		t1: m["t1"],
+		t2: m["t2"],
+		t3: m["t3"],
+	}
+	return t, nil
 }
