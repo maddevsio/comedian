@@ -1,6 +1,11 @@
 package config
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -42,11 +47,15 @@ func GetLocalizer() (*i18n.Localizer, error) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
-	_, err = bundle.LoadMessageFile("ru.toml")
+	wd, _ := os.Getwd()
+	for !strings.HasSuffix(wd, "comedian") {
+		wd = filepath.Dir(wd)
+	}
+	_, err = bundle.LoadMessageFile(fmt.Sprintf("%s/config/ru.toml", wd))
 	if err != nil {
 		return nil, err
 	}
-	_, err = bundle.LoadMessageFile("en.toml")
+	_, err = bundle.LoadMessageFile(fmt.Sprintf("%s/config/en.toml", wd))
 	if err != nil {
 		return nil, err
 	}
