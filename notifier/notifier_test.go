@@ -191,10 +191,10 @@ func TestCheckUser(t *testing.T) {
 		isNonReporter bool
 		err           error
 	}{
-		{"test 1", u1, 27, 2, false, nil},
-		{"test 2", u2, 3, 30, false, nil},
-		{"test 3", u3, 0, 0, false, nil},
-		{"test 4", u4, 13, 20, false, nil},
+		{"test 1", u1, 27, 2, true, nil},
+		{"test 2", u2, 3, 30, true, nil},
+		{"test 3", u3, 0, 0, true, nil},
+		{"test 4", u4, 13, 20, true, nil},
 	}
 
 	for _, tt := range testCases {
@@ -204,8 +204,9 @@ func TestCheckUser(t *testing.T) {
 		assert.Equal(t, tt.commits, commits)
 		assert.Equal(t, tt.isNonReporter, isNonReporter)
 	}
+
 	n.RevealRooks()
-	assert.Equal(t, fmt.Sprintf("CHAT: %s, MESSAGE: <@userID2> is a rook! (Not enough worklogs: 3, enough commits: 30, yet wrote a standup, good job!)\n<@userID3> is a rook! (Not enough worklogs: 0, no commits at all, yet wrote a standup, good job!)\n", n.Config.ChanGeneral), ch.LastMessage)
+	assert.Equal(t, fmt.Sprintf("CHAT: %s, MESSAGE: <@userID1> is a rook! (Has enough worklogs: 27, enough commits: 2, and did not write standup!!!)\n<@userID2> is a rook! (Not enough worklogs: 3, enough commits: 30, and did not write standup!!!)\n<@userID3> is a rook! (Not enough worklogs: 0, no commits at all, and did not write standup!!!)\n<@userID4> is a rook! (Has enough worklogs: 13, enough commits: 20, and did not write standup!!!)\n", n.Config.ChanGeneral), ch.LastMessage)
 
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u1.SlackName, u1.ChannelID))
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u2.SlackName, u2.ChannelID))
