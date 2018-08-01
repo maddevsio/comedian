@@ -131,7 +131,7 @@ func TestStandupReportByUser(t *testing.T) {
 	text, err = r.StandupReportByUser(user, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 
-	assert.Equal(t, fmt.Sprintf("Full Report on user <@user1>:\n\n\n\nReport from %v to %v:\nIn channel: <#QWERTY123>\n\n<@user1>: ignored standup!\n\n\n\nCommits for period: 0 \nMerges for period: 0\nWorklogs: 0 hours", dateToText, dateNextText), text)
+	assert.Equal(t, fmt.Sprintf("Full Report on user <@user1>:\n\n\n\nReport from %v to %v:\nIn channel: <#QWERTY123>\n\n<@user1>: ignored standup!\n\n\n\nCommits for period: 0 \nMerges for period: 0\nLogged Hours: 0", dateToText, dateNextText), text)
 	standup1, err := r.DB.CreateStandup(model.Standup{
 		ChannelID:  channelID,
 		Comment:    "my standup",
@@ -142,7 +142,7 @@ func TestStandupReportByUser(t *testing.T) {
 	text, err = r.StandupReportByUser(user, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 
-	assert.Equal(t, fmt.Sprintf("Full Report on user <@user1>:\n\n\n\nReport from %v to %v:\nIn channel: <#QWERTY123>\nmy standup\n\n\n\nCommits for period: 0 \nMerges for period: 0\nWorklogs: 0 hours", dateToText, dateNextText), text)
+	assert.Equal(t, fmt.Sprintf("Full Report on user <@user1>:\n\n\n\nReport from %v to %v:\nIn channel: <#QWERTY123>\nmy standup\n\n\n\nCommits for period: 0 \nMerges for period: 0\nLogged Hours: 0", dateToText, dateNextText), text)
 
 	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
 	assert.NoError(t, r.DB.DeleteStandupUserByUsername(user.SlackName, user.ChannelID))
