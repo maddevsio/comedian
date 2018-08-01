@@ -32,6 +32,7 @@ type (
 		reportStandupFromUser      string
 		reportIgnoredStandup       string
 		reportShowChannel          string
+		reportCollectorDataUser    string
 	}
 
 	reportContent struct {
@@ -119,7 +120,7 @@ func (r *Reporter) StandupReportByUser(user model.StandupUser, dateFrom, dateTo 
 	var dataU UserData
 	json.Unmarshal(collectorData, &dataU)
 
-	report += fmt.Sprintf("\n\nCommits for period: %v \nMerges for period: %v\nWorklogs: %v hours", dataU.TotalCommits, dataU.TotalMerges, dataU.Worklogs/3600)
+	report += fmt.Sprintf(r.T.reportCollectorDataUser, dataU.TotalCommits, dataU.TotalMerges, dataU.Worklogs/3600)
 
 	return report, nil
 }
@@ -374,7 +375,8 @@ func getTranslation() (Translation, error) {
 	r := []string{
 		"reportByProjectAndUser", "reportOnProjectHead", "reportOnUserHead",
 		"reportOnProjectAndUserHead", "reportNoData", "reportPeriod",
-		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel"}
+		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel",
+		"reportCollectorDataUser"}
 
 	for _, t := range r {
 		translated, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: t})
@@ -395,6 +397,7 @@ func getTranslation() (Translation, error) {
 		reportStandupFromUser:      m["reportStandupFromUser"],
 		reportIgnoredStandup:       m["reportIgnoredStandup"],
 		reportShowChannel:          m["reportShowChannel"],
+		reportCollectorDataUser:    m["reportCollectorDataUser"],
 	}
 	return t, nil
 }

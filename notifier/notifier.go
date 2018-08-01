@@ -50,7 +50,7 @@ const (
 	NotificationInterval   = 30
 	ReminderRepeatsMax     = 5
 	RemindManager          = 3
-	MorningRooksReportTime = "10:30"
+	MorningRooksReportTime = "10:40"
 )
 
 // NewNotifier creates a new notifier

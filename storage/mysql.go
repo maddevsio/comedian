@@ -225,7 +225,7 @@ func (m *MySQL) CheckNonReporter(user model.StandupUser, dateFrom, dateTo time.T
 			return true, nil
 		}
 	}
-	return false, nil
+	return true, nil
 }
 
 // isAdmin checks if user in channel is of a role admin

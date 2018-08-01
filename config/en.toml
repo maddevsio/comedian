@@ -27,6 +27,8 @@ reportPeriod = "\n\nReport from %s to %s:\n"
 reportStandupFromUser = "\nStandup from <@%s>:\n%s\n"
 reportIgnoredStandup = "\n<@%s>: ignored standup!\n"
 reportShowChannel = "In channel: <#%s>\n"
+reportCollectorDataUser = "\n\nCommits for period: %v \nMerges for period: %v\nLogged Hours: %v"
+
 
 HelloManager = "Hello, Manager!"
 StandupAccepted = "Good job! Standup accepted! Keep it up!"
