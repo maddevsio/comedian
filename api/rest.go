@@ -435,7 +435,12 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := reporting.StandupReportByProject(r.db, channelID, dateFrom, dateTo, data)
+	rep, err := reporting.NewReporter(r.c)
+	if err != nil {
+		logrus.Errorf("rest: NewReporter failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+	report, err := rep.StandupReportByProject(channelID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProject: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -486,7 +491,12 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := reporting.StandupReportByUser(r.db, user, dateFrom, dateTo, data)
+	rep, err := reporting.NewReporter(r.c)
+	if err != nil {
+		logrus.Errorf("rest: NewReporter failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+	report, err := rep.StandupReportByUser(user, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -546,7 +556,12 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		}
 		return c.String(http.StatusOK, text)
 	}
-	report, err := reporting.StandupReportByProjectAndUser(r.db, channelID, user, dateFrom, dateTo, data)
+	rep, err := reporting.NewReporter(r.c)
+	if err != nil {
+		logrus.Errorf("rest: NewReporter failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+	report, err := rep.StandupReportByProjectAndUser(channelID, user, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())

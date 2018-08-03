@@ -222,7 +222,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	}{
 		{"empty text", ReportByProjectEmptyText, http.StatusOK, "`text` cannot be empty"},
 		{"empty channel ID", ReportByProjectEmptyChanID, http.StatusOK, "`channel_id` cannot be empty"},
-		{"correct", ReportByProject, http.StatusOK, "Full Standup Report by project <#CBA2M41Q8>:\n\nNo data for this period\n\nCommits for period: 0 \nMerges for period: 0\n"},
+		{"correct", ReportByProject, http.StatusOK, "Full Report on project <#CBA2M41Q8>:\n\nNo standup data for this period\n\nCommits for period: 0 \nMerges for period: 0\n"},
 	}
 
 	for _, tt := range testCases {
@@ -272,7 +272,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		{"user mess up", ReportByUserMessUser, http.StatusOK, "sql: no rows in result set"},
 		{"date from mess up", ReportByUserMessDateF, http.StatusOK, "parsing time \"2018-6-25\": month out of range"},
 		{"date to mess up", ReportByUserMessDateT, http.StatusOK, "parsing time \"2018-6-26\": month out of range"},
-		{"correct", ReportByUser, http.StatusOK, "Full Standup Report for user <@user1>:\n\nNo data for this period\n\nCommits for period: 0 \nMerges for period: 0\nWorklogs: 0 hours"},
+		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@user1>:\n\nNo standup data for this period\n\nCommits for period: 0 \nMerges for period: 0\nLogged Hours: 0"},
 	}
 
 	for _, tt := range testCases {

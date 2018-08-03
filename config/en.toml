@@ -1,0 +1,64 @@
+userExist = "User already exists!"
+addUserNoStandupTime = "<@%s> added, but there is no standup time for this channel"
+addUser = "<@%s> added"
+addAdmin = "<@%s> added as admin"
+accessDenied = "This command is not allowed for you! You are not admin"
+
+deleteUser = "<@%s> deleted"
+listNoStandupers = "No standupers in this channel! To add one, please, use /comedianadd slash command"
+listStandupers = "Standupers in this channel: %v"
+
+addStandupTimeNoUsers = "<!date^%v^Standup time at {time} added, but there is no standup users for this channel>"
+addStandupTime = "<!date^%v^Standup time set at {time}|Standup time set at 12:00>"
+removeStandupTimeWithUsers = "standup time for this channel removed, but there are people marked as a standuper."
+removeStandupTime = "standup time for %s channel deleted" 
+
+showNoStandupTime = "No standup time set for this channel yet! Please, add a standup time using `/standuptimeset` command!"
+showStandupTime = "<!date^%v^Standup time is {time}|Standup time set at 12:00>"
+
+wrongNArgs = "Wrong number of arguments"
+reportByProjectAndUser = "This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command"
+reportOnProjectHead = "Full Report on project <#%s>:\n\n"
+reportOnUserHead = "Full Report on user <@%s>:\n\n"
+reportOnProjectAndUserHead = "Report on project: <#%s>, and user: <@%s>\n\n"
+
+reportNoData = "No standup data for this period"
+reportPeriod = "\n\nReport from %s to %s:\n"
+reportStandupFromUser = "\nStandup from <@%s>:\n%s\n"
+reportIgnoredStandup = "\n<@%s>: ignored standup!\n"
+reportShowChannel = "In channel: <#%s>\n"
+reportCollectorDataUser = "\n\nCommits for period: %v \nMerges for period: %v\nLogged Hours: %v"
+
+
+HelloManager = "Hello, Manager!"
+StandupAccepted = "Good job! Standup accepted! Keep it up!"
+
+p1 = "roblem"
+p2 = "ifficul"
+p3 = "tuck"
+
+y1 = "esterday"
+y2 = "riday"
+y3 = "did"
+y4 = "have done"
+		
+t1 = "oday"
+t2 = "going to"
+t3 = "plan"
+
+notifyNotAll = "In this channel not all standupers wrote standup today, shame on you: %v."
+notifyAllDone = "Congradulations! Everybody wrote their standups today!"
+notifyManagerAllDone = "<@%v>, in channel <#%s> all standupers have written standup today"
+notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup today, these users ignored standup today: %v."
+notifyUsersWarning = "Hey! We are still waiting standup for today from you: %s"
+notifyDirectMessage = "Hello, <@%s>! You missed the standup deadline in <#%s> channel. Please, write you standup ASAP!"
+
+noWorklogs = "Not enough worklogs: %v"
+noCommits = "no commits at all, "
+noStandup = "and did not write standup!!!"
+
+hasWorklogs = "Has enough worklogs: %v"
+hasCommits = "enough commits: %v"
+hasStandup = "yet wrote a standup, good job!"
+
+isRook = "<@%v> is a rook! (%v)\n"

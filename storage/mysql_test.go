@@ -176,7 +176,7 @@ func TestCRUDStandupUser(t *testing.T) {
 
 	checkNonReporter, err := db.CheckNonReporter(su3, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
 	assert.NoError(t, err)
-	assert.Equal(t, false, checkNonReporter)
+	assert.Equal(t, true, checkNonReporter)
 
 	su4, err := db.CreateStandupUser(model.StandupUser{
 		SlackUserID: "",
