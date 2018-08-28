@@ -1,10 +1,7 @@
 #!/bin/sh
 
-set -e
+/goose -dir /migrations mysql $COMEDIAN_DATABASE up
 
-while true
-do
-    /goose -dir /migrations mysql $COMEDIAN_DATABASE up && break
-    sleep 2
-done
+sleep 5
+
 /comedian $@
