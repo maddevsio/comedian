@@ -168,13 +168,12 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 	nonReportersSlackIDs := []string{}
 	for _, nonReporter := range nonReporters {
-		nonReportersSlackIDs = append(nonReportersSlackIDs, nonReporter.SlackUserID)
+		nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("@%v", nonReporter.SlackUserID))
 	}
 	logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
 	notifyNotAll := func() error {
 		// Comedian will notify non reporters 5 times with 30 minutes interval.
-
 		n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
 		return nil
 	}
