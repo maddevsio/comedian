@@ -70,8 +70,8 @@ func TestNotifier(t *testing.T) {
 	assert.NotEmpty(t, NonReporters)
 	assert.Equal(t, 2, len(NonReporters))
 
-	n.SendWarning(channelID, NonReporters)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@userID1>, <@userID2>", ch.LastMessage)
+	n.SendWarning(channelID)
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, <@userID1>, <@userID2>! 5 minutes to deadline and the team is still waiting for standups from you!", ch.LastMessage)
 
 	n.SendChannelNotification(channelID)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: In this channel not all standupers wrote standup today, shame on you: <@userID1>, <@userID2>.", ch.LastMessage)
