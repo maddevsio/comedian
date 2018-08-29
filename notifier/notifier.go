@@ -50,7 +50,7 @@ const (
 	NotificationInterval   = 30
 	ReminderRepeatsMax     = 1
 	RemindManager          = 3
-	MorningRooksReportTime = "14:41"
+	MorningRooksReportTime = "15:25"
 )
 
 // NewNotifier creates a new notifier
@@ -58,11 +58,6 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
 		logrus.Errorf("notifier: NewMySQL failed: %v\n", err)
-		return nil, err
-	}
-
-	if err != nil {
-		logrus.Errorf("notifier: GetLocalizer failed: %v\n", err)
 		return nil, err
 	}
 	r, err := time.Parse("15:04", c.ReportTime)

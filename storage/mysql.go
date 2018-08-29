@@ -192,7 +192,7 @@ func (m *MySQL) FindStandupUsers(username string) ([]model.StandupUser, error) {
 // ListAllStandupUsers returns array of standup entries from database
 func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup_users`")
+	err := m.conn.Select(&items, "SELECT * FROM `standup_users` where role!='admin'")
 	return items, err
 }
 
@@ -206,7 +206,7 @@ func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([
 		usernames = append(usernames, user.SlackName)
 	}
 	users := []model.StandupUser{}
-	err = m.conn.Select(&users, `SELECT * FROM standup_users where channel_id = ? and username NOT IN (?) and created between ? and ?`, channelID, strings.Join(usernames, ","), dateFrom, dateTo)
+	err = m.conn.Select(&users, `SELECT * FROM standup_users where channel_id = ? and role!='admin' and username NOT IN (?) and created between ? and ?`, channelID, strings.Join(usernames, ","), dateFrom, dateTo)
 
 	return users, err
 }
