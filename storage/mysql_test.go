@@ -219,7 +219,7 @@ func TestCRUDStandupUser(t *testing.T) {
 
 	users, err = db.ListAllStandupUsers()
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(users))
+	assert.Equal(t, 2, len(users))
 
 	users, err = db.ListStandupUsersByChannelID(su1.ChannelID)
 	assert.NoError(t, err)
@@ -227,7 +227,7 @@ func TestCRUDStandupUser(t *testing.T) {
 
 	channels, err := db.GetAllChannels()
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(channels))
+	assert.Equal(t, 3, len(channels))
 
 	nonReporter, err := db.GetNonReporter(su1.SlackUserID, su1.ChannelID, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
 	assert.NoError(t, err)
