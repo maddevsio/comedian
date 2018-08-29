@@ -219,7 +219,7 @@ func TestCRUDStandupUser(t *testing.T) {
 
 	users, err = db.ListAllStandupUsers()
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(users))
+	assert.Equal(t, 2, len(users))
 
 	users, err = db.ListStandupUsersByChannelID(su1.ChannelID)
 	assert.NoError(t, err)

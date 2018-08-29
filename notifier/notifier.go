@@ -48,9 +48,9 @@ type Translation struct {
 
 const (
 	NotificationInterval   = 30
-	ReminderRepeatsMax     = 5
+	ReminderRepeatsMax     = 1
 	RemindManager          = 3
-	MorningRooksReportTime = "10:40"
+	MorningRooksReportTime = "15:25"
 )
 
 // NewNotifier creates a new notifier
@@ -58,11 +58,6 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
 		logrus.Errorf("notifier: NewMySQL failed: %v\n", err)
-		return nil, err
-	}
-
-	if err != nil {
-		logrus.Errorf("notifier: GetLocalizer failed: %v\n", err)
 		return nil, err
 	}
 	r, err := time.Parse("15:04", c.ReportTime)
@@ -168,7 +163,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 	nonReportersSlackIDs := []string{}
 	for _, nonReporter := range nonReporters {
-		nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("@%v", nonReporter.SlackUserID))
+		nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("<@%v>", nonReporter.SlackUserID))
 	}
 	logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
