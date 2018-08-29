@@ -48,9 +48,9 @@ type Translation struct {
 
 const (
 	NotificationInterval   = 30
-	ReminderRepeatsMax     = 5
+	ReminderRepeatsMax     = 1
 	RemindManager          = 3
-	MorningRooksReportTime = "10:40"
+	MorningRooksReportTime = "14:41"
 )
 
 // NewNotifier creates a new notifier
@@ -168,7 +168,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 	nonReportersSlackIDs := []string{}
 	for _, nonReporter := range nonReporters {
-		nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("@%v", nonReporter.SlackUserID))
+		nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("<@%v>", nonReporter.SlackUserID))
 	}
 	logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 

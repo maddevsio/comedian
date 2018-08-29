@@ -74,10 +74,10 @@ func TestNotifier(t *testing.T) {
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey! We are still waiting standup for today from you: <@userID1>, <@userID2>", ch.LastMessage)
 
 	n.SendChannelNotification(channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: In this channel not all standupers wrote standup today, shame on you: userID1, userID2.", ch.LastMessage)
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: In this channel not all standupers wrote standup today, shame on you: <@userID1>, <@userID2>.", ch.LastMessage)
 
 	n.NotifyChannels()
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: In this channel not all standupers wrote standup today, shame on you: userID1, userID2.", ch.LastMessage)
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: In this channel not all standupers wrote standup today, shame on you: <@userID1>, <@userID2>.", ch.LastMessage)
 
 	d = time.Date(2018, 1, 1, 9, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
