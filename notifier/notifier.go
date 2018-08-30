@@ -23,13 +23,13 @@ import (
 
 // Notifier struct is used to notify users about upcoming or skipped standups
 type Notifier struct {
-	Chat          chat.Chat
-	DB            storage.Storage
-	Config        config.Config
-	ReportTime    time.Time
-	CheckInterval uint64
-	T             Translation
+	Chat   chat.Chat
+	DB     storage.Storage
+	Config config.Config
+	T      Translation
 }
+
+const notifierInterval = 10
 
 //Translation struct to get translation data
 type Translation struct {
@@ -47,14 +47,6 @@ type Translation struct {
 	notifyDirectMessage string
 }
 
-const (
-	NotificationInterval   = 10
-	ReminderRepeatsMax     = 5
-	RemindManager          = 3
-	warningTime            = 5
-	MorningRooksReportTime = "15:25"
-)
-
 // NewNotifier creates a new notifier
 func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	conn, err := storage.NewMySQL(c)
@@ -62,27 +54,21 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 		logrus.Errorf("notifier: NewMySQL failed: %v\n", err)
 		return nil, err
 	}
-	r, err := time.Parse("15:04", c.ReportTime)
-	if err != nil {
-		logrus.Errorf("notifier: time.Parse failed: %v\n", err)
-		return nil, err
-	}
-
 	translation, err := getTranslation()
 	if err != nil {
 		logrus.Errorf("notifier: getTranslation failed: %v\n", err)
 		return nil, err
 	}
 
-	notifier := &Notifier{Chat: chat, DB: conn, Config: c, ReportTime: r, CheckInterval: c.NotifierCheckInterval, T: translation}
+	notifier := &Notifier{Chat: chat, DB: conn, Config: c, T: translation}
 	logrus.Infof("notifier: Created Notifier: %v", notifier)
 	return notifier, nil
 }
 
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
-	gocron.Every(n.CheckInterval).Seconds().Do(n.NotifyChannels)
-	gocron.Every(1).Day().At(MorningRooksReportTime).Do(n.RevealRooks)
+	gocron.Every(60).Seconds().Do(n.NotifyChannels)
+	gocron.Every(1).Day().At(n.Config.ReportTime).Do(n.RevealRooks)
 	channel := gocron.Start()
 	for {
 		report := <-channel
@@ -106,7 +92,7 @@ func (n *Notifier) RevealRooks() {
 		worklogs, commits, isNonReporter, err := n.checkUser(user, timeFrom, currentTime)
 		fails := ""
 		if err != nil {
-			logrus.Errorf("notifier: checkMotherFucker failed: %v\n", err)
+			logrus.Errorf("notifier: checkUser failed: %v\n", err)
 		}
 		if worklogs < 8 {
 			fails += fmt.Sprintf(n.T.noWorklogs, worklogs) + ", "
@@ -142,12 +128,11 @@ func (n *Notifier) NotifyChannels() {
 	for _, st := range standupTimes {
 		channelID := st.ChannelID
 		standupTime := time.Unix(st.Time, 0)
-		warningTime := time.Unix(st.Time-warningTime*60, 0)
+		warningTime := time.Unix(st.Time-n.Config.ReminderTime*60, 0)
 		currTime := time.Now()
 		if currTime.Hour() == warningTime.Hour() && currTime.Minute() == warningTime.Minute() {
 			n.SendWarning(channelID)
 		}
-
 		if currTime.Hour() == standupTime.Hour() && currTime.Minute() == standupTime.Minute() {
 			n.SendChannelNotification(channelID)
 		}
@@ -189,7 +174,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 		n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
 
-		if repeats <= ReminderRepeatsMax && len(nonReporters) > 0 {
+		if repeats <= n.Config.ReminderRepeatsMax && len(nonReporters) > 0 {
 			repeats++
 			err := errors.New("Continue backoff")
 			return err
@@ -198,7 +183,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		return nil
 	}
 
-	b := backoff.NewConstantBackOff(NotificationInterval * time.Minute)
+	b := backoff.NewConstantBackOff(time.Duration(n.Config.NotifierInterval) * time.Minute)
 	err = backoff.Retry(notifyNotAll, b)
 	if err != nil {
 		logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
@@ -220,7 +205,7 @@ func (n *Notifier) SendWarning(channelID string) {
 	for _, user := range nonReporters {
 		slackUserID = append(slackUserID, "<@"+user.SlackUserID+">")
 	}
-	err = n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyUsersWarning, strings.Join(slackUserID, ", "), warningTime))
+	err = n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyUsersWarning, strings.Join(slackUserID, ", "), n.Config.ReminderTime))
 	if err != nil {
 		logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
 	}

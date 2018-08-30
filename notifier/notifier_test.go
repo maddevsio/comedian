@@ -32,6 +32,9 @@ func (c *ChatStub) SendUserMessage(userID, message string) error {
 
 func TestNotifier(t *testing.T) {
 	c, err := config.Get()
+	c.ReminderRepeatsMax = 0
+	c.ReminderTime = 0
+	c.NotifierInterval = 0
 	assert.NoError(t, err)
 	ch := &ChatStub{}
 	n, err := NewNotifier(c, ch)
@@ -71,7 +74,7 @@ func TestNotifier(t *testing.T) {
 	assert.Equal(t, 2, len(NonReporters))
 
 	n.SendWarning(channelID)
-	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, <@userID1>, <@userID2>! 5 minutes to deadline and the team is still waiting for standups from you!", ch.LastMessage)
+	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, <@userID1>, <@userID2>! 0 minutes to deadline and the team is still waiting for standups from you!", ch.LastMessage)
 
 	n.SendChannelNotification(channelID)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: In this channel not all standupers wrote standup today, shame on you: <@userID1>, <@userID2>.", ch.LastMessage)
