@@ -203,7 +203,7 @@ func (r *Reporter) ChanRepsToStr(reportEntries []reportEntry) string {
 			currentDateTo.Format("2006-01-02"))
 		for _, standup := range value.ReportContents[0].Standups {
 
-			report += fmt.Sprintf(r.T.reportStandupFromUser, standup.Username, standup.Comment)
+			report += fmt.Sprintf(r.T.reportStandupFromUser, standup.UsernameID, standup.Comment)
 		}
 		for _, user := range value.ReportContents[0].NonReporters {
 			report += fmt.Sprintf(r.T.reportIgnoredStandup, user.SlackName)

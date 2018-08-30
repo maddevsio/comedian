@@ -190,7 +190,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	text, err = r.StandupReportByProjectAndUser(channelID, user1, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 
-	assert.Equal(t, fmt.Sprintf("Report on project: <#QWERTY123>, and user: <@user1>\n\n\n\nReport from %v to %v:\n\nStandup from <@user1>:\nmy standup\n\n\nCommits for period: 0 \nMerges for period: 0\n", dateToText, dateNextText), text)
+	assert.Equal(t, fmt.Sprintf("Report on project: <#QWERTY123>, and user: <@user1>\n\n\n\nReport from %v to %v:\n\nStandup from <@userID1>:\nmy standup\n\n\nCommits for period: 0 \nMerges for period: 0\n", dateToText, dateNextText), text)
 	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
 	assert.NoError(t, r.DB.DeleteStandupUserByUsername(user1.SlackName, user1.ChannelID))
 }
