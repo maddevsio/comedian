@@ -58,6 +58,7 @@ type Storage interface {
 
 	GetNonReporter(string, string, time.Time, time.Time) ([]model.StandupUser, error)
 
+	//CheckNonReporter checks if a user is non reporter
 	CheckNonReporter(model.StandupUser, time.Time, time.Time) (bool, error)
 
 	// DeleteStandupUser deletes standup_users entry from database

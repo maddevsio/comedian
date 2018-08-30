@@ -85,15 +85,11 @@ func (n *Notifier) RevealRooks() {
 	}
 	text := ""
 	for _, user := range allUsers {
-
-		if err != nil {
-			logrus.Errorf("notifier: GetMN failed: %v\n", err)
-		}
 		worklogs, commits, isNonReporter, err := n.checkUser(user, timeFrom, currentTime)
-		fails := ""
 		if err != nil {
 			logrus.Errorf("notifier: checkUser failed: %v\n", err)
 		}
+		fails := ""
 		if worklogs < 8 {
 			fails += fmt.Sprintf(n.T.noWorklogs, worklogs) + ", "
 		} else {
@@ -110,7 +106,7 @@ func (n *Notifier) RevealRooks() {
 			fails += n.T.hasStandup
 		}
 		if (worklogs < 8) || (commits == 0) || (isNonReporter == true) {
-			text += fmt.Sprintf(n.T.isRook, user.SlackUserID, fails)
+			text += fmt.Sprintf(n.T.isRook, user.SlackUserID, user.ChannelID, fails)
 		}
 	}
 	n.Chat.SendMessage(n.Config.ChanGeneral, text)

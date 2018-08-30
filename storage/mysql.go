@@ -212,19 +212,20 @@ func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([
 }
 
 func (m *MySQL) CheckNonReporter(user model.StandupUser, dateFrom, dateTo time.Time) (bool, error) {
-	us := []model.StandupUser{}
-	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
-								on s.username_id = r.slack_user_id where s.created BETWEEN ? AND ?`, dateFrom, dateTo)
+	fmt.Println(dateFrom)
+	fmt.Println(dateTo)
+	fmt.Println(user.ChannelID, user.SlackUserID)
+	var id int
+	err := m.conn.Get(&id, `SELECT id FROM standup where channel_id=? and username_id=? and created between ? and ?`, user.ChannelID, user.SlackUserID, dateFrom, dateTo)
 	if err != nil {
+		fmt.Println(err)
 		return true, err
 	}
-	for _, u := range us {
-		if user.SlackUserID == u.SlackUserID {
-			return false, nil
-		} else {
-			return true, nil
-		}
+	fmt.Println(id)
+	if id != 0 {
+		return false, nil
 	}
+	fmt.Println("Anyway the user is a rook!")
 	return true, nil
 }
 
