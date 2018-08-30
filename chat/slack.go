@@ -211,8 +211,8 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 	err = s.SendMessage(channelID, message)
 	if err != nil {
 		logrus.Errorf("slack: SendMessage failed: %v\n", err)
+		return err
 	}
-	logrus.Info("slack: Message sent\n")
 	return err
 }
 

@@ -256,7 +256,7 @@ func (m *MySQL) GetNonReporter(userID, channelID string, dateFrom, dateTo time.T
 // ListStandupUsersByChannelID returns array of standup entries from database
 func (m *MySQL) ListStandupUsersByChannelID(channelID string) ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=?", channelID)
+	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=? AND role!='admin'", channelID)
 	return items, err
 }
 

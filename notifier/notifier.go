@@ -2,6 +2,7 @@ package notifier
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -47,7 +48,7 @@ type Translation struct {
 }
 
 const (
-	NotificationInterval   = 2
+	NotificationInterval   = 10
 	ReminderRepeatsMax     = 5
 	RemindManager          = 3
 	warningTime            = 5
@@ -159,52 +160,49 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	if err != nil {
 		logrus.Errorf("notifier: getNonReporters failed: %v\n", err)
 	}
+	// if everyone wrote their standups display all done message!
 	if len(nonReporters) == 0 {
-		n.Chat.SendMessage(channelID, n.T.notifyAllDone)
+		err := n.Chat.SendMessage(channelID, n.T.notifyAllDone)
+		if err != nil {
+			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
+		}
 		return
 	}
 
+	// othervise DM non reporters
 	n.DMNonReporters(nonReporters)
 
-	nonReportersSlackIDs := []string{}
-	for _, nonReporter := range nonReporters {
-		nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("<@%v>", nonReporter.SlackUserID))
-	}
-	logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
+	repeats := 0
 
 	notifyNotAll := func() error {
-		// Comedian will notify non reporters 5 times with 30 minutes interval.
-		err := n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
-		if err != nil {
+		nonReporters, _ := getNonReporters(n.DB, channelID)
+		if len(nonReporters) == 0 {
+			n.Chat.SendMessage(channelID, n.T.notifyAllDone)
+			return nil
+		}
+
+		nonReportersSlackIDs := []string{}
+		for _, nonReporter := range nonReporters {
+			nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("<@%v>", nonReporter.SlackUserID))
+		}
+		logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
+
+		n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
+
+		if repeats <= ReminderRepeatsMax && len(nonReporters) > 0 {
+			repeats++
+			err := errors.New("Continue backoff")
 			return err
 		}
+		logrus.Info("Stop backoff")
 		return nil
 	}
 
-	b := &backoff.ExponentialBackOff{
-		InitialInterval:     NotificationInterval * time.Minute,
-		RandomizationFactor: 0.0,
-		Multiplier:          1,
-		MaxInterval:         ReminderRepeatsMax,
-	}
-
-	b = backoff.NewExponentialBackOff()
+	b := backoff.NewConstantBackOff(NotificationInterval * time.Minute)
 	err = backoff.Retry(notifyNotAll, b)
 	if err != nil {
 		logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
 	}
-
-	// for i := 0; i <= ReminderRepeatsMax; i++ {
-
-	// 	if i == RemindManager {
-	// 		// after 3 reminders Comedian sends direct message to Manager notifiing about missed standups
-	// 		err = n.Chat.SendUserMessage(n.Config.ManagerSlackUserID, fmt.Sprintf(n.T.notifyManagerNotAll, n.Config.ManagerSlackUserID, channelID, strings.Join(nonReportersSlackIDs, ", ")))
-	// 		if err != nil {
-	// 			logrus.Errorf("notifier: n.Chat.SendUserMessage failed: %v\n", err)
-	// 		}
-	// 	}
-	// }
-
 }
 
 // SendWarning reminds users in chat about upcoming standups
