@@ -78,12 +78,18 @@ func (n *Notifier) Start() error {
 
 // RevealRooks displays data about rooks in channel general
 func (n *Notifier) RevealRooks() {
-	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
+	currentTime := time.Now()
+	// check if today is not saturday or sunday. During these days no notificatoins!
+	if int(currentTime.Weekday()) == 6 || int(currentTime.Weekday()) == 0 {
 		logrus.Info("It is Weekend!!! Do not disturb!!!")
 		return
 	}
-	currentTime := time.Now()
 	timeFrom := currentTime.AddDate(0, 0, -1)
+	// if today is monday, check 3 days of performance for user
+	if int(currentTime.Weekday()) == 1 {
+		timeFrom := currentTime.AddDate(0, 0, -3)
+	}
+
 	allUsers, err := n.DB.ListAllStandupUsers()
 	if err != nil {
 		logrus.Errorf("notifier: GetNonReporters failed: %v\n", err)
