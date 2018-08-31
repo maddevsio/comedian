@@ -16,7 +16,6 @@ import (
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/reporting"
 	"github.com/maddevsio/comedian/storage"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,7 +23,7 @@ import (
 type REST struct {
 	db      storage.Storage
 	e       *echo.Echo
-	c       config.Config
+	Conf    config.Config
 	decoder *schema.Decoder
 }
 
@@ -41,8 +40,6 @@ const (
 	commandReportByProjectAndUser = "/report_by_project_and_user"
 )
 
-var localizer *i18n.Localizer
-
 // NewRESTAPI creates API for Slack commands
 func NewRESTAPI(c config.Config) (*REST, error) {
 	e := echo.New()
@@ -56,17 +53,10 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 	r := &REST{
 		db:      conn,
 		e:       e,
-		c:       c,
+		Conf:    c,
 		decoder: decoder,
 	}
 	r.initEndpoints()
-
-	localizer, err = config.GetLocalizer()
-	if err != nil {
-		logrus.Errorf("rest: GetLocalizer failed: %v\n", err)
-		return nil, err
-	}
-
 	return r, nil
 }
 
@@ -76,7 +66,7 @@ func (r *REST) initEndpoints() {
 
 // Start starts http server
 func (r *REST) Start() error {
-	return r.e.Start(r.c.HTTPBindAddr)
+	return r.e.Start(r.Conf.HTTPBindAddr)
 }
 
 func (r *REST) handleCommands(c echo.Context) error {
@@ -89,12 +79,8 @@ func (r *REST) handleCommands(c echo.Context) error {
 	userIsAdmin := r.db.IsAdmin(slackUserID, channelID)
 	logrus.Infof("rest: FormParams info: %v", form)
 	logrus.Infof("rest: isAdmin: %v", userIsAdmin)
-	if (slackUserID != r.c.ManagerSlackUserID) && (userIsAdmin == false) {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "accessDenied"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, text)
+	if (slackUserID != r.Conf.ManagerSlackUserID) && (userIsAdmin == false) {
+		return c.String(http.StatusOK, r.Conf.Translate.AccessDenied)
 	}
 	if command := form.Get("command"); command != "" {
 		switch command {
@@ -154,28 +140,16 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		}
 	}
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, fmt.Sprintf(text))
+		return c.String(http.StatusOK, r.Conf.Translate.UserExist)
 	}
 	st, err := r.db.ListStandupTime(ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: ListStandupTime failed: %v\n", err)
 	}
 	if st.Time == int64(0) {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addUserNoStandupTime"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, fmt.Sprintf(text, userName))
+		return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddUserNoStandupTime, userName))
 	}
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addUser"})
-	if err != nil {
-		logrus.Errorf("rest: Localize failed: %v\n", err)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(text, userName))
+	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddUser, userName))
 }
 
 func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
@@ -207,17 +181,9 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 		}
 	}
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, fmt.Sprintf(text))
+		return c.String(http.StatusOK, r.Conf.Translate.UserExist)
 	}
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addAdmin"})
-	if err != nil {
-		logrus.Errorf("rest: Localize failed: %v\n", err)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(text, userName))
+	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddAdmin, userName))
 }
 
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
@@ -237,11 +203,7 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: DeleteStandupUserByUsername failed: %v\n", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
 	}
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "deleteUser"})
-	if err != nil {
-		logrus.Errorf("rest: Localize failed: %v\n", err)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(text, userName))
+	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.DeleteUser, userName))
 }
 
 func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
@@ -260,24 +222,14 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: ListStandupUsersByChannelID: %v\n", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v\n", err))
 	}
-
 	var userNames []string
 	for _, user := range users {
 		userNames = append(userNames, "<@"+user.SlackName+">")
 	}
-
 	if len(userNames) < 1 {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "listNoStandupers"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, text)
+		return c.String(http.StatusOK, r.Conf.Translate.ListNoStandupers)
 	}
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "listStandupers"})
-	if err != nil {
-		logrus.Errorf("rest: Localize failed: %v\n", err)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(text, strings.Join(userNames, ", ")))
+	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.ListStandupers, strings.Join(userNames, ", ")))
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {
@@ -321,18 +273,9 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		return err
 	}
 	if len(st) == 0 {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addStandupTimeNoUsers"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
+		return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddStandupTimeNoUsers, standupTime.Time))
 	}
-
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "addStandupTime"})
-	if err != nil {
-		logrus.Errorf("rest: Localize failed: %v\n", err)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
+	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddStandupTime, standupTime.Time))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
@@ -353,17 +296,9 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if len(st) != 0 {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "removeStandupTimeWithUsers"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, fmt.Sprintf(text))
+		return c.String(http.StatusOK, r.Conf.Translate.RemoveStandupTimeWithUsers)
 	}
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "removeStandupTime"})
-	if err != nil {
-		logrus.Errorf("rest: Localize failed: %v\n", err)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(text, ca.ChannelName))
+	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.RemoveStandupTime, ca.ChannelName))
 }
 
 func (r *REST) listTime(c echo.Context, f url.Values) error {
@@ -381,20 +316,12 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 	if err != nil {
 		logrus.Errorf("rest: ListStandupTime failed: %v\n", err)
 		if err.Error() == "sql: no rows in result set" {
-			text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "showNoStandupTime"})
-			if err != nil {
-				logrus.Errorf("rest: Localize failed: %v\n", err)
-			}
-			return c.String(http.StatusOK, fmt.Sprintf(text))
+			return c.String(http.StatusOK, r.Conf.Translate.ShowNoStandupTime)
 		} else {
 			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v\n", err))
 		}
 	}
-	text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "showStandupTime"})
-	if err != nil {
-		logrus.Errorf("rest: Localize failed: %v\n", err)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(text, standupTime.Time))
+	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.ShowStandupTime, standupTime.Time))
 }
 
 ///report_by_project #collector-test 2018-07-24 2018-07-26
@@ -410,11 +337,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 3 {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "wrongNArgs"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, text)
+		return c.String(http.StatusOK, r.Conf.Translate.WrongNArgs)
 	}
 	channel := commandParams[0]
 	channelSeparate := strings.Split(channel, "|")
@@ -435,7 +358,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	rep, err := reporting.NewReporter(r.c)
+	rep, err := reporting.NewReporter(r.Conf)
 	if err != nil {
 		logrus.Errorf("rest: NewReporter failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -461,11 +384,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 3 {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, text)
+		return c.String(http.StatusOK, r.Conf.Translate.UserExist)
 	}
 	userfull := commandParams[0]
 	result := strings.Split(userfull, "|")
@@ -491,7 +410,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	rep, err := reporting.NewReporter(r.c)
+	rep, err := reporting.NewReporter(r.Conf)
 	if err != nil {
 		logrus.Errorf("rest: NewReporter failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -517,11 +436,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 4 {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "userExist"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, text)
+		return c.String(http.StatusOK, r.Conf.Translate.WrongNArgs)
 	}
 	channel := commandParams[0]
 	channelSeparate := strings.Split(channel, "|")
@@ -550,13 +465,9 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 
 	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
 	if err != nil {
-		text, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: "reportByProjectAndUser"})
-		if err != nil {
-			logrus.Errorf("rest: Localize failed: %v\n", err)
-		}
-		return c.String(http.StatusOK, text)
+		return c.String(http.StatusOK, r.Conf.Translate.ReportByProjectAndUser)
 	}
-	rep, err := reporting.NewReporter(r.c)
+	rep, err := reporting.NewReporter(r.Conf)
 	if err != nil {
 		logrus.Errorf("rest: NewReporter failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -570,14 +481,14 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byte, error) {
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.c.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.Conf.CollectorURL, getDataOn, data, dateFrom, dateTo)
 	logrus.Infof("rest: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		logrus.Errorf("rest: http.NewRequest failed: %v\n", err)
 		return nil, err
 	}
-	token := r.c.CollectorToken
+	token := r.Conf.CollectorToken
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 
 	res, err := http.DefaultClient.Do(req)

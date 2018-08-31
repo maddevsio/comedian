@@ -30,8 +30,8 @@ reportShowChannel = "В канале: <#%s>"
 reportCollectorDataUser = "\n\nКоммитов: %v \nМержей: %v\nЧасов ворклогов: %v"
 
 
-HelloManager = "Привет, менеджер!"
-StandupAccepted = "Отличная работа! Стэндап принят! Бомби дальше!"
+helloManager = "Привет, менеджер!"
+standupAccepted = "Отличная работа! Стэндап принят! Бомби дальше!"
 
 p1 = "роблем"
 p2 = "рудност"

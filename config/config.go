@@ -1,15 +1,7 @@
 package config
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"golang.org/x/text/language"
 )
 
 // Config struct used for configuration of app with env variables
@@ -26,39 +18,17 @@ type Config struct {
 	ChanGeneral        string `envconfig:"MANAGER_SLACK_CHAN_GENERAL" required:"true"`
 	ReminderRepeatsMax int    `envconfig:"REMINDER_REPEATS_MAX" required:"true" default:5`
 	ReminderTime       int64  `envconfig:"REMINDER_TIME" required:"true" default:5`
+	Translate          Translate
 	Debug              bool
 }
 
 // Get method processes env variables and fills Config struct
 func Get() (Config, error) {
 	var c Config
-	if err := envconfig.Process("comedian", &c); err != nil {
+	var err error
+	if err = envconfig.Process("comedian", &c); err != nil {
 		return c, err
 	}
+	c.Translate, err = GetTranslation(c.Language)
 	return c, nil
-}
-
-// GetLocalizer creates localizer instance that can be used by app packages to localize translations
-func GetLocalizer() (*i18n.Localizer, error) {
-	c, err := Get()
-	if err != nil {
-		return nil, err
-	}
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
-	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-
-	wd, _ := os.Getwd()
-	for !strings.HasSuffix(wd, "comedian") {
-		wd = filepath.Dir(wd)
-	}
-	_, err = bundle.LoadMessageFile(fmt.Sprintf("%s/config/ru.toml", wd))
-	if err != nil {
-		return nil, err
-	}
-	_, err = bundle.LoadMessageFile(fmt.Sprintf("%s/config/en.toml", wd))
-	if err != nil {
-		return nil, err
-	}
-	localizer := i18n.NewLocalizer(bundle, c.Language)
-	return localizer, nil
 }

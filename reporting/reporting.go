@@ -10,29 +10,14 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 )
 
 //Reporter provides db and translation to functions
 type (
 	Reporter struct {
-		DB storage.Storage
-		T  Translation
-	}
-
-	//Translation struct to get translation data
-	Translation struct {
-		reportByProjectAndUser     string
-		reportOnProjectHead        string
-		reportOnUserHead           string
-		reportOnProjectAndUserHead string
-		reportNoData               string
-		reportPeriod               string
-		reportStandupFromUser      string
-		reportIgnoredStandup       string
-		reportShowChannel          string
-		reportCollectorDataUser    string
+		DB     storage.Storage
+		Config config.Config
 	}
 
 	reportContent struct {
@@ -75,13 +60,7 @@ func NewReporter(c config.Config) (*Reporter, error) {
 		return nil, err
 	}
 
-	translation, err := getTranslation()
-	if err != nil {
-		logrus.Errorf("notifier: getTranslation failed: %v\n", err)
-		return nil, err
-	}
-
-	r := &Reporter{DB: conn, T: translation}
+	r := &Reporter{DB: conn, Config: c}
 	logrus.Infof("notifier: Created Reporter: %v", r)
 	return r, nil
 }
@@ -96,7 +75,7 @@ func (r *Reporter) StandupReportByProject(channelID string, dateFrom, dateTo tim
 	}
 	logrus.Infof("report entries: %#v\n", reportEntries)
 
-	report := fmt.Sprintf(r.T.reportOnProjectHead, channel)
+	report := fmt.Sprintf(r.Config.Translate.ReportOnProjectHead, channel)
 	report += r.ChanRepsToStr(reportEntries)
 
 	var dataP ProjectData
@@ -114,13 +93,13 @@ func (r *Reporter) StandupReportByUser(user model.StandupUser, dateFrom, dateTo 
 		return "Error!", err
 	}
 	logrus.Infof("reporting: report entries: %#v\n", reportEntries)
-	report := fmt.Sprintf(r.T.reportOnUserHead, user.SlackName)
+	report := fmt.Sprintf(r.Config.Translate.ReportOnUserHead, user.SlackName)
 	report += r.UserRepsToStr(reportEntries)
 
 	var dataU UserData
 	json.Unmarshal(collectorData, &dataU)
 
-	report += fmt.Sprintf(r.T.reportCollectorDataUser, dataU.TotalCommits, dataU.TotalMerges, dataU.Worklogs/3600)
+	report += fmt.Sprintf(r.Config.Translate.ReportCollectorDataUser, dataU.TotalCommits, dataU.TotalMerges, dataU.Worklogs/3600)
 
 	return report, nil
 }
@@ -135,7 +114,7 @@ func (r *Reporter) StandupReportByProjectAndUser(channelID string, user model.St
 	}
 	logrus.Infof("reporting: report entries: %#v\n", reportEntries)
 
-	report := fmt.Sprintf(r.T.reportOnProjectAndUserHead, channel, user.SlackName)
+	report := fmt.Sprintf(r.Config.Translate.ReportOnProjectAndUserHead, channel, user.SlackName)
 	report += r.ChanRepsToStr(reportEntries)
 
 	var dataPU ProjectUserData
@@ -193,20 +172,20 @@ func (r *Reporter) ChanReports(channelID string, dateFrom, dateTo time.Time) ([]
 func (r *Reporter) ChanRepsToStr(reportEntries []reportEntry) string {
 	var report string
 	if len(reportEntries) == 0 {
-		return report + r.T.reportNoData
+		return report + r.Config.Translate.ReportNoData
 	}
 
 	for _, value := range reportEntries {
 		currentDateFrom := value.DateFrom
 		currentDateTo := value.DateTo
-		report += fmt.Sprintf(r.T.reportPeriod, currentDateFrom.Format("2006-01-02"),
+		report += fmt.Sprintf(r.Config.Translate.ReportPeriod, currentDateFrom.Format("2006-01-02"),
 			currentDateTo.Format("2006-01-02"))
 		for _, standup := range value.ReportContents[0].Standups {
 
-			report += fmt.Sprintf(r.T.reportStandupFromUser, standup.UsernameID, standup.Comment)
+			report += fmt.Sprintf(r.Config.Translate.ReportStandupFromUser, standup.UsernameID, standup.Comment)
 		}
 		for _, user := range value.ReportContents[0].NonReporters {
-			report += fmt.Sprintf(r.T.reportIgnoredStandup, user.SlackName)
+			report += fmt.Sprintf(r.Config.Translate.ReportIgnoredStandup, user.SlackName)
 		}
 	}
 	return report
@@ -271,7 +250,7 @@ func (r *Reporter) UserRepsToStr(reportEntries []reportEntry) string {
 		}
 	}
 	if emptyReport {
-		return report + r.T.reportNoData
+		return report + r.Config.Translate.ReportNoData
 	}
 
 	for _, value := range reportEntries {
@@ -281,15 +260,15 @@ func (r *Reporter) UserRepsToStr(reportEntries []reportEntry) string {
 		currentDateFrom := value.DateFrom
 		currentDateTo := value.DateTo
 
-		report += fmt.Sprintf(r.T.reportPeriod, currentDateFrom.Format("2006-01-02"),
+		report += fmt.Sprintf(r.Config.Translate.ReportPeriod, currentDateFrom.Format("2006-01-02"),
 			currentDateTo.Format("2006-01-02"))
 		for _, reportContent := range value.ReportContents {
-			report += fmt.Sprintf(r.T.reportShowChannel, reportContent.Channel)
+			report += fmt.Sprintf(r.Config.Translate.ReportShowChannel, reportContent.Channel)
 			for _, standup := range reportContent.Standups {
 				report += standup.Comment + "\n"
 			}
 			for _, user := range reportContent.NonReporters {
-				report += fmt.Sprintf(r.T.reportIgnoredStandup, user.SlackName)
+				report += fmt.Sprintf(r.Config.Translate.ReportIgnoredStandup, user.SlackName)
 			}
 			report += "\n"
 
@@ -363,41 +342,4 @@ func setupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
 	dateDiff := dateToRounded.Sub(dateFromRounded)
 	numberOfDays := int(dateDiff.Hours() / 24)
 	return dateFromRounded, numberOfDays, nil
-}
-
-func getTranslation() (Translation, error) {
-	localizer, err := config.GetLocalizer()
-	if err != nil {
-		logrus.Errorf("slack: GetLocalizer failed: %v\n", err)
-		return Translation{}, err
-	}
-	m := make(map[string]string)
-	r := []string{
-		"reportByProjectAndUser", "reportOnProjectHead", "reportOnUserHead",
-		"reportOnProjectAndUserHead", "reportNoData", "reportPeriod",
-		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel",
-		"reportCollectorDataUser"}
-
-	for _, t := range r {
-		translated, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: t})
-		if err != nil {
-			logrus.Errorf("slack: Localize failed: %v\n", err)
-			return Translation{}, err
-		}
-		m[t] = translated
-	}
-
-	t := Translation{
-		reportByProjectAndUser:     m["reportByProjectAndUser"],
-		reportOnProjectHead:        m["reportOnProjectHead"],
-		reportOnUserHead:           m["reportOnUserHead"],
-		reportOnProjectAndUserHead: m["reportOnProjectAndUserHead"],
-		reportNoData:               m["reportNoData"],
-		reportPeriod:               m["reportPeriod"],
-		reportStandupFromUser:      m["reportStandupFromUser"],
-		reportIgnoredStandup:       m["reportIgnoredStandup"],
-		reportShowChannel:          m["reportShowChannel"],
-		reportCollectorDataUser:    m["reportCollectorDataUser"],
-	}
-	return t, nil
 }

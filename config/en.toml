@@ -30,8 +30,8 @@ reportShowChannel = "In channel: <#%s>\n"
 reportCollectorDataUser = "\n\nCommits for period: %v \nMerges for period: %v\nLogged Hours: %v"
 
 
-HelloManager = "Hello, Manager!"
-StandupAccepted = "Good job! Standup accepted! Keep it up!"
+helloManager = "Hello, Manager!"
+standupAccepted = "Good job! Standup accepted! Keep it up!"
 
 p1 = "roblem"
 p2 = "ifficul"

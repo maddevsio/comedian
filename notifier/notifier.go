@@ -12,7 +12,6 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/reporting"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 
 	"github.com/jasonlvhit/gocron"
 	"github.com/maddevsio/comedian/chat"
@@ -26,25 +25,6 @@ type Notifier struct {
 	Chat   chat.Chat
 	DB     storage.Storage
 	Config config.Config
-	T      Translation
-}
-
-const notifierInterval = 10
-
-//Translation struct to get translation data
-type Translation struct {
-	noWorklogs          string
-	noCommits           string
-	noStandup           string
-	hasWorklogs         string
-	hasCommits          string
-	hasStandup          string
-	isRook              string
-	notifyAllDone       string
-	notifyNotAll        string
-	notifyManagerNotAll string
-	notifyUsersWarning  string
-	notifyDirectMessage string
 }
 
 // NewNotifier creates a new notifier
@@ -54,14 +34,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 		logrus.Errorf("notifier: NewMySQL failed: %v\n", err)
 		return nil, err
 	}
-	translation, err := getTranslation()
-	if err != nil {
-		logrus.Errorf("notifier: getTranslation failed: %v\n", err)
-		return nil, err
-	}
-
-	notifier := &Notifier{Chat: chat, DB: conn, Config: c, T: translation}
-	logrus.Infof("notifier: Created Notifier: %v", notifier)
+	notifier := &Notifier{Chat: chat, DB: conn, Config: c}
 	return notifier, nil
 }
 
@@ -87,9 +60,8 @@ func (n *Notifier) RevealRooks() {
 	timeFrom := currentTime.AddDate(0, 0, -1)
 	// if today is monday, check 3 days of performance for user
 	if int(currentTime.Weekday()) == 1 {
-		timeFrom := currentTime.AddDate(0, 0, -3)
+		timeFrom = currentTime.AddDate(0, 0, -3)
 	}
-
 	allUsers, err := n.DB.ListAllStandupUsers()
 	if err != nil {
 		logrus.Errorf("notifier: GetNonReporters failed: %v\n", err)
@@ -102,22 +74,22 @@ func (n *Notifier) RevealRooks() {
 		}
 		fails := ""
 		if worklogs < 8 {
-			fails += fmt.Sprintf(n.T.noWorklogs, worklogs) + ", "
+			fails += fmt.Sprintf(n.Config.Translate.NoWorklogs, worklogs) + ", "
 		} else {
-			fails += fmt.Sprintf(n.T.hasWorklogs, worklogs) + ", "
+			fails += fmt.Sprintf(n.Config.Translate.HasWorklogs, worklogs) + ", "
 		}
 		if commits == 0 {
-			fails += n.T.noCommits
+			fails += n.Config.Translate.NoCommits
 		} else {
-			fails += fmt.Sprintf(n.T.hasCommits, commits) + ", "
+			fails += fmt.Sprintf(n.Config.Translate.HasCommits, commits) + ", "
 		}
 		if isNonReporter == true {
-			fails += n.T.noStandup
+			fails += n.Config.Translate.NoStandup
 		} else {
-			fails += n.T.hasStandup
+			fails += n.Config.Translate.HasStandup
 		}
 		if (worklogs < 8) || (commits == 0) || (isNonReporter == true) {
-			text += fmt.Sprintf(n.T.isRook, user.SlackUserID, user.ChannelID, fails)
+			text += fmt.Sprintf(n.Config.Translate.IsRook, user.SlackUserID, user.ChannelID, fails)
 		}
 	}
 	n.Chat.SendMessage(n.Config.ChanGeneral, text)
@@ -163,7 +135,7 @@ func (n *Notifier) SendWarning(channelID string) {
 	for _, user := range nonReporters {
 		slackUserID = append(slackUserID, "<@"+user.SlackUserID+">")
 	}
-	err = n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyUsersWarning, strings.Join(slackUserID, ", "), n.Config.ReminderTime))
+	err = n.Chat.SendMessage(channelID, fmt.Sprintf(n.Config.Translate.NotifyUsersWarning, strings.Join(slackUserID, ", "), n.Config.ReminderTime))
 	if err != nil {
 		logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
 	}
@@ -178,7 +150,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	}
 	// if everyone wrote their standups display all done message!
 	if len(nonReporters) == 0 {
-		err := n.Chat.SendMessage(channelID, n.T.notifyAllDone)
+		err := n.Chat.SendMessage(channelID, n.Config.Translate.NotifyAllDone)
 		if err != nil {
 			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
 		}
@@ -193,7 +165,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	notifyNotAll := func() error {
 		nonReporters, _ := getNonReporters(n.DB, channelID)
 		if len(nonReporters) == 0 {
-			n.Chat.SendMessage(channelID, n.T.notifyAllDone)
+			n.Chat.SendMessage(channelID, n.Config.Translate.NotifyAllDone)
 			return nil
 		}
 
@@ -203,7 +175,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		}
 		logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
-		n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
+		n.Chat.SendMessage(channelID, fmt.Sprintf(n.Config.Translate.NotifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
 
 		if repeats <= n.Config.ReminderRepeatsMax && len(nonReporters) > 0 {
 			repeats++
@@ -226,7 +198,7 @@ func (n *Notifier) DMNonReporters(nonReporters []model.StandupUser) error {
 	//send each non reporter direct message
 	for _, nonReporter := range nonReporters {
 		logrus.Infof("notifier: Notifier Send Message to non reporter: %v", nonReporter)
-		n.Chat.SendUserMessage(nonReporter.SlackUserID, fmt.Sprintf(n.T.notifyDirectMessage, nonReporter.SlackName, nonReporter.ChannelID))
+		n.Chat.SendUserMessage(nonReporter.SlackUserID, fmt.Sprintf(n.Config.Translate.NotifyDirectMessage, nonReporter.SlackName, nonReporter.ChannelID))
 	}
 	return nil
 }
@@ -277,44 +249,4 @@ func (n *Notifier) checkUser(user model.StandupUser, timeFrom, timeTo time.Time)
 
 	return dataU.Worklogs / 3600, dataU.TotalCommits, userIsNonReporter, nil
 
-}
-
-func getTranslation() (Translation, error) {
-	localizer, err := config.GetLocalizer()
-	if err != nil {
-		logrus.Errorf("slack: GetLocalizer failed: %v\n", err)
-		return Translation{}, err
-	}
-	m := make(map[string]string)
-	r := []string{
-		"noWorklogs", "noCommits", "noStandup", "hasWorklogs",
-		"hasCommits", "hasStandup", "isRook", "notifyAllDone",
-		"notifyNotAll", "notifyManagerNotAll", "notifyUsersWarning",
-		"notifyDirectMessage",
-	}
-
-	for _, t := range r {
-		translated, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: t})
-		if err != nil {
-			logrus.Errorf("slack: Localize failed: %v\n", err)
-			return Translation{}, err
-		}
-		m[t] = translated
-	}
-
-	t := Translation{
-		noWorklogs:          m["noWorklogs"],
-		noCommits:           m["noCommits"],
-		noStandup:           m["noStandup"],
-		hasWorklogs:         m["hasWorklogs"],
-		hasCommits:          m["hasCommits"],
-		hasStandup:          m["hasStandup"],
-		isRook:              m["isRook"],
-		notifyAllDone:       m["notifyAllDone"],
-		notifyNotAll:        m["notifyNotAll"],
-		notifyManagerNotAll: m["notifyManagerNotAll"],
-		notifyUsersWarning:  m["notifyUsersWarning"],
-		notifyDirectMessage: m["notifyDirectMessage"],
-	}
-	return t, nil
 }
