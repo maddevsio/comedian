@@ -9,4 +9,4 @@ COPY comedian /
 COPY goose /
 COPY entrypoint.sh /
 ADD migrations /migrations
-ENTRYPOINT ["/entrypoint.sh"]`
+ENTRYPOINT ["/entrypoint.sh"]
