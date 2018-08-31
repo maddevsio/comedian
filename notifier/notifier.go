@@ -78,6 +78,10 @@ func (n *Notifier) Start() error {
 
 // RevealRooks displays data about rooks in channel general
 func (n *Notifier) RevealRooks() {
+	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
+		logrus.Info("It is Weekend!!! Do not disturb!!!")
+		return
+	}
 	currentTime := time.Now()
 	timeFrom := currentTime.AddDate(0, 0, -1)
 	allUsers, err := n.DB.ListAllStandupUsers()
@@ -116,7 +120,10 @@ func (n *Notifier) RevealRooks() {
 
 // NotifyChannels reminds users of channels about upcoming or missing standups
 func (n *Notifier) NotifyChannels() {
-
+	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
+		logrus.Info("It is Weekend!!! No standups!!!")
+		return
+	}
 	standupTimes, err := n.DB.ListAllStandupTime()
 	if err != nil {
 		logrus.Errorf("notifier: ListAllStandupTime failed: %v\n", err)
