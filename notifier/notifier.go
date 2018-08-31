@@ -76,6 +76,7 @@ func (n *Notifier) Start() error {
 	}
 }
 
+// RevealRooks displays data about rooks in channel general
 func (n *Notifier) RevealRooks() {
 	currentTime := time.Now()
 	timeFrom := currentTime.AddDate(0, 0, -1)
@@ -135,6 +136,27 @@ func (n *Notifier) NotifyChannels() {
 	}
 }
 
+// SendWarning reminds users in chat about upcoming standups
+func (n *Notifier) SendWarning(channelID string) {
+	nonReporters, err := getNonReporters(n.DB, channelID)
+	if err != nil {
+		logrus.Errorf("notifier: getNonReporters failed: %v\n", err)
+	}
+	if len(nonReporters) == 0 {
+		return
+	}
+
+	slackUserID := []string{}
+	for _, user := range nonReporters {
+		slackUserID = append(slackUserID, "<@"+user.SlackUserID+">")
+	}
+	err = n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyUsersWarning, strings.Join(slackUserID, ", "), n.Config.ReminderTime))
+	if err != nil {
+		logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
+	}
+
+}
+
 //SendChannelNotification starts standup reminders and direct reminders to users
 func (n *Notifier) SendChannelNotification(channelID string) {
 	nonReporters, err := getNonReporters(n.DB, channelID)
@@ -186,28 +208,6 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	}
 }
 
-// SendWarning reminds users in chat about upcoming standups
-func (n *Notifier) SendWarning(channelID string) {
-	nonReporters, err := getNonReporters(n.DB, channelID)
-	if err != nil {
-		logrus.Errorf("notifier: getNonReporters failed: %v\n", err)
-	}
-	if len(nonReporters) == 0 {
-		n.Chat.SendMessage(channelID, n.T.notifyAllDone)
-		return
-	}
-
-	slackUserID := []string{}
-	for _, user := range nonReporters {
-		slackUserID = append(slackUserID, "<@"+user.SlackUserID+">")
-	}
-	err = n.Chat.SendMessage(channelID, fmt.Sprintf(n.T.notifyUsersWarning, strings.Join(slackUserID, ", "), n.Config.ReminderTime))
-	if err != nil {
-		logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
-	}
-
-}
-
 // DMNonReporters writes DM to users who did not write standups
 func (n *Notifier) DMNonReporters(nonReporters []model.StandupUser) error {
 	//send each non reporter direct message
@@ -222,7 +222,7 @@ func (n *Notifier) DMNonReporters(nonReporters []model.StandupUser) error {
 func getNonReporters(db storage.Storage, channelID string) ([]model.StandupUser, error) {
 	currentTime := time.Now()
 	timeFrom := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
-
+	logrus.Infof("Current time: %v, timeFrom: %v", currentTime, timeFrom)
 	nonReporters, err := db.GetNonReporters(channelID, timeFrom, currentTime)
 	if err != nil {
 		logrus.Errorf("notifier: GetNonReporters failed: %v\n", err)

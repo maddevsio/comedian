@@ -197,17 +197,10 @@ func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 }
 
 func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
-	us := []model.StandupUser{}
-	err := m.conn.Select(&us, `SELECT r.* FROM standup_users r left join standup s
-								on s.username_id = r.slack_user_id and r.channel_id = ? 
-								where s.created BETWEEN ? AND ?`, channelID, dateFrom, dateTo)
-	usernames := []string{}
-	for _, user := range us {
-		usernames = append(usernames, user.SlackName)
-	}
+	nonReporterUserIDs := []string{}
+	err := m.conn.Select(&nonReporterUserIDs, `SELECT username_id FROM standup where channel_id=? and not created BETWEEN ? AND ?`, channelID, dateFrom, dateTo)
 	users := []model.StandupUser{}
-	err = m.conn.Select(&users, `SELECT * FROM standup_users where channel_id = ? and role!='admin' and username NOT IN (?) and created between ? and ?`, channelID, strings.Join(usernames, ","), dateFrom, dateTo)
-
+	err = m.conn.Select(&users, `SELECT * FROM standup_users where channel_id = ? and role!='admin' and slack_user_id IN (?)`, channelID, strings.Join(nonReporterUserIDs, ","))
 	return users, err
 }
 
