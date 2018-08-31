@@ -40,6 +40,7 @@ type Storage interface {
 	// CreateStandupUser creates standupUser entry in database
 	CreateStandupUser(model.StandupUser) (model.StandupUser, error)
 
+	// Checks if user has admin role
 	IsAdmin(string, string) bool
 
 	//FindStandupUser finds standup user
@@ -54,8 +55,10 @@ type Storage interface {
 	//FindStandupUserInChannelByUserID finds standup user in channel by Slack member ID
 	FindStandupUserInChannelByUserID(string, string) (model.StandupUser, error)
 
+	//GetNonReporters returns a list of non reporters
 	GetNonReporters(string, time.Time, time.Time) ([]model.StandupUser, error)
 
+	//GetNonReporter returns a non reporter
 	GetNonReporter(string, string, time.Time, time.Time) ([]model.StandupUser, error)
 
 	//CheckNonReporter checks if a user is non reporter
@@ -82,5 +85,6 @@ type Storage interface {
 	// ListAllStandupTime returns standup time entry for all channels from database
 	ListAllStandupTime() ([]model.StandupTime, error)
 
+	//GetAllChannels returns a list of all channels
 	GetAllChannels() ([]string, error)
 }

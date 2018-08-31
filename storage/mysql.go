@@ -37,7 +37,7 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup` (created, modified, username, comment, channel, channel_id, username_id, message_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		now().UTC(), now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.MessageTS,
+		time.Now().UTC(), time.Now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.MessageTS,
 	)
 	if err != nil {
 		return s, err
@@ -59,7 +59,7 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 	}
 	_, err = m.conn.Exec(
 		"UPDATE `standup` SET modified=?, username=?, username_id=?, comment=?, channel=?, channel_id=?, message_ts=? WHERE id=?",
-		now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.MessageTS, s.ID,
+		time.Now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.MessageTS, s.ID,
 	)
 	if err != nil {
 		return s, err
@@ -148,7 +148,7 @@ func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error
 	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
-		now().UTC(), now().UTC(), s.SlackUserID, s.SlackName, s.ChannelID, s.Channel, s.Role)
+		time.Now().UTC(), time.Now().UTC(), s.SlackUserID, s.SlackName, s.ChannelID, s.Channel, s.Role)
 	if err != nil {
 		return s, err
 	}
@@ -268,7 +268,7 @@ func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error
 	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_time` (created, channel_id, channel, standuptime) VALUES (?, ?, ?, ?)",
-		now().UTC(), s.ChannelID, s.Channel, s.Time)
+		time.Now().UTC(), s.ChannelID, s.Channel, s.Time)
 	if err != nil {
 		return s, err
 	}
@@ -309,7 +309,7 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_edit_history` (created, standup_id, standup_text) VALUES (?, ?, ?)",
-		now().UTC(), s.StandupID, s.StandupText)
+		time.Now().UTC(), s.StandupID, s.StandupText)
 	if err != nil {
 		return s, err
 	}
@@ -327,16 +327,4 @@ func (m *MySQL) GetAllChannels() ([]string, error) {
 	channels := []string{}
 	err := m.conn.Select(&channels, "SELECT DISTINCT channel_id FROM `standup_users`")
 	return channels, err
-}
-
-var nowFunc func() time.Time
-
-func init() {
-	nowFunc = func() time.Time {
-		return time.Now()
-	}
-}
-
-func now() time.Time {
-	return nowFunc().UTC()
 }
