@@ -45,16 +45,17 @@ type Translate struct {
 	NotifyUsersWarning  string
 	NotifyDirectMessage string
 
-	ReportByProjectAndUser     string
-	ReportOnProjectHead        string
-	ReportOnUserHead           string
-	ReportOnProjectAndUserHead string
-	ReportNoData               string
-	ReportPeriod               string
-	ReportStandupFromUser      string
-	ReportIgnoredStandup       string
-	ReportShowChannel          string
-	ReportCollectorDataUser    string
+	ReportByProjectAndUser       string
+	ReportOnProjectHead          string
+	ReportOnProjectCollectorData string
+	ReportOnUserHead             string
+	ReportOnProjectAndUserHead   string
+	ReportNoData                 string
+	ReportPeriod                 string
+	ReportStandupFromUser        string
+	ReportIgnoredStandup         string
+	ReportShowChannel            string
+	ReportCollectorDataUser      string
 
 	HelloManager    string
 	StandupAccepted string
@@ -101,7 +102,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"hasCommits", "hasStandup", "isRook", "notifyAllDone",
 		"notifyNotAll", "notifyManagerNotAll", "notifyUsersWarning",
 		"notifyDirectMessage",
-		"reportByProjectAndUser", "reportOnProjectHead", "reportOnUserHead",
+		"reportByProjectAndUser", "reportOnProjectHead", "reportOnProjectCollectorData", "reportOnUserHead",
 		"reportOnProjectAndUserHead", "reportNoData", "reportPeriod",
 		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel",
 		"reportCollectorDataUser",
@@ -146,37 +147,38 @@ func GetTranslation(lang string) (Translate, error) {
 		ListNoStandupers: m["listNoStandupers"],
 		ListStandupers:   m["listStandupers"],
 
-		AddStandupTimeNoUsers:      m["addStandupTimeNoUsers"],
-		AddStandupTime:             m["addStandupTime"],
-		RemoveStandupTimeWithUsers: m["removeStandupTimeWithUsers"],
-		RemoveStandupTime:          m["removeStandupTime"],
-		ShowNoStandupTime:          m["showNoStandupTime"],
-		ShowStandupTime:            m["showStandupTime"],
-		WrongNArgs:                 m["wrongNArgs"],
-		NoWorklogs:                 m["noWorklogs"],
-		NoCommits:                  m["noCommits"],
-		NoStandup:                  m["noStandup"],
-		HasWorklogs:                m["hasWorklogs"],
-		HasCommits:                 m["hasCommits"],
-		HasStandup:                 m["hasStandup"],
-		IsRook:                     m["isRook"],
-		NotifyAllDone:              m["notifyAllDone"],
-		NotifyNotAll:               m["notifyNotAll"],
-		NotifyManagerNotAll:        m["notifyManagerNotAll"],
-		NotifyUsersWarning:         m["notifyUsersWarning"],
-		NotifyDirectMessage:        m["notifyDirectMessage"],
-		ReportByProjectAndUser:     m["reportByProjectAndUser"],
-		ReportOnProjectHead:        m["reportOnProjectHead"],
-		ReportOnUserHead:           m["reportOnUserHead"],
-		ReportOnProjectAndUserHead: m["reportOnProjectAndUserHead"],
-		ReportNoData:               m["reportNoData"],
-		ReportPeriod:               m["reportPeriod"],
-		ReportStandupFromUser:      m["reportStandupFromUser"],
-		ReportIgnoredStandup:       m["reportIgnoredStandup"],
-		ReportShowChannel:          m["reportShowChannel"],
-		ReportCollectorDataUser:    m["reportCollectorDataUser"],
-		HelloManager:               m["helloManager"],
-		StandupAccepted:            m["standupAccepted"],
+		AddStandupTimeNoUsers:        m["addStandupTimeNoUsers"],
+		AddStandupTime:               m["addStandupTime"],
+		RemoveStandupTimeWithUsers:   m["removeStandupTimeWithUsers"],
+		RemoveStandupTime:            m["removeStandupTime"],
+		ShowNoStandupTime:            m["showNoStandupTime"],
+		ShowStandupTime:              m["showStandupTime"],
+		WrongNArgs:                   m["wrongNArgs"],
+		NoWorklogs:                   m["noWorklogs"],
+		NoCommits:                    m["noCommits"],
+		NoStandup:                    m["noStandup"],
+		HasWorklogs:                  m["hasWorklogs"],
+		HasCommits:                   m["hasCommits"],
+		HasStandup:                   m["hasStandup"],
+		IsRook:                       m["isRook"],
+		NotifyAllDone:                m["notifyAllDone"],
+		NotifyNotAll:                 m["notifyNotAll"],
+		NotifyManagerNotAll:          m["notifyManagerNotAll"],
+		NotifyUsersWarning:           m["notifyUsersWarning"],
+		NotifyDirectMessage:          m["notifyDirectMessage"],
+		ReportByProjectAndUser:       m["reportByProjectAndUser"],
+		ReportOnProjectHead:          m["reportOnProjectHead"],
+		ReportOnProjectCollectorData: m["reportOnProjectCollectorData"],
+		ReportOnUserHead:             m["reportOnUserHead"],
+		ReportOnProjectAndUserHead:   m["reportOnProjectAndUserHead"],
+		ReportNoData:                 m["reportNoData"],
+		ReportPeriod:                 m["reportPeriod"],
+		ReportStandupFromUser:        m["reportStandupFromUser"],
+		ReportIgnoredStandup:         m["reportIgnoredStandup"],
+		ReportShowChannel:            m["reportShowChannel"],
+		ReportCollectorDataUser:      m["reportCollectorDataUser"],
+		HelloManager:                 m["helloManager"],
+		StandupAccepted:              m["standupAccepted"],
 
 		P1: m["p1"],
 		P2: m["p2"],

@@ -106,7 +106,6 @@ func (m *MySQL) SelectStandupsFiltered(slack_user_id, channelID string, dateStar
 	items := []model.Standup{}
 	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND username_id =? AND created BETWEEN ? AND ?",
 		channelID, slack_user_id, dateStart, dateEnd)
-	fmt.Println("STANDUP:", items)
 	return items, err
 }
 
