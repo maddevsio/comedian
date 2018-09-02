@@ -80,7 +80,7 @@ type Storage interface {
 	DeleteStandupTime(string) error
 
 	// ListStandupTime returns standup time entry from database
-	ListStandupTime(string) (model.StandupTime, error)
+	GetChannelStandupTime(string) (model.StandupTime, error)
 
 	// ListAllStandupTime returns standup time entry for all channels from database
 	ListAllStandupTime() ([]model.StandupTime, error)

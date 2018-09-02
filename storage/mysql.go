@@ -36,8 +36,8 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 		return s, err
 	}
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup` (created, modified, username, comment, channel, channel_id, username_id, message_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		time.Now().UTC(), time.Now().UTC(), s.Username, s.Comment, s.Channel, s.ChannelID, s.UsernameID, s.MessageTS,
+		"INSERT INTO `standup` (created, modified, comment, channel_id, username_id, message_ts) VALUES (?, ?, ?, ?, ?, ?)",
+		time.Now().UTC(), time.Now().UTC(), s.Comment, s.ChannelID, s.UsernameID, s.MessageTS,
 	)
 	if err != nil {
 		return s, err
@@ -58,8 +58,8 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 		return s, err
 	}
 	_, err = m.conn.Exec(
-		"UPDATE `standup` SET modified=?, username=?, username_id=?, comment=?, channel=?, channel_id=?, message_ts=? WHERE id=?",
-		time.Now().UTC(), s.Username, s.UsernameID, s.Comment, s.Channel, s.ChannelID, s.MessageTS, s.ID,
+		"UPDATE `standup` SET modified=?, username_id=?, comment=?, channel_id=?, message_ts=? WHERE id=?",
+		time.Now().UTC(), s.UsernameID, s.Comment, s.ChannelID, s.MessageTS, s.ID,
 	)
 	if err != nil {
 		return s, err
@@ -119,6 +119,7 @@ func (m *MySQL) SelectStandupByUserNameForPeriod(username string, dateStart,
 	return items, err
 }
 
+// DELETE THIS METHOD!!!
 // ListStandups returns array of standup entries from database
 func (m *MySQL) ListStandups() ([]model.Standup, error) {
 	items := []model.Standup{}
@@ -281,8 +282,8 @@ func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error
 	return s, nil
 }
 
-// ListStandupTime returns standup time entry from database
-func (m *MySQL) ListStandupTime(channelID string) (model.StandupTime, error) {
+// GetChannelStandupTime returns standup time entry from database
+func (m *MySQL) GetChannelStandupTime(channelID string) (model.StandupTime, error) {
 	var time model.StandupTime
 	err := m.conn.Get(&time, "SELECT * FROM `standup_time` WHERE channel_id=?", channelID)
 	return time, err

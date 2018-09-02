@@ -39,8 +39,6 @@ func TestIsStandup(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
-	s.myUsername = "comedian"
-	assert.NoError(t, err)
 	for _, tt := range testCases {
 		_, ok := s.isStandup(tt.input)
 		if ok != tt.confirm {

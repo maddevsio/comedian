@@ -209,7 +209,7 @@ func TestCheckUser(t *testing.T) {
 	}
 
 	n.RevealRooks()
-	assert.Equal(t, fmt.Sprintf("CHAT: %s, MESSAGE: <@userID1> is a rook! (Has enough worklogs: 27, enough commits: 2, and did not write standup!!!)\n<@userID2> is a rook! (Not enough worklogs: 3, enough commits: 30, and did not write standup!!!)\n<@userID3> is a rook! (Not enough worklogs: 0, no commits at all, and did not write standup!!!)\n<@userID4> is a rook! (Has enough worklogs: 13, enough commits: 20, and did not write standup!!!)\n", n.Config.ChanGeneral), ch.LastMessage)
+	assert.Equal(t, fmt.Sprintf("CHAT: %s, MESSAGE: <@userID1> is a rook in <#QWERTY123>! (Has enough worklogs: 27, enough commits: 2, and did not write standup!!!)\n<@userID2> is a rook in <#QWERTY123>! (Not enough worklogs: 3, enough commits: 30, and did not write standup!!!)\n<@userID3> is a rook in <#QWERTY123>! (Not enough worklogs: 0, no commits at all, and did not write standup!!!)\n<@userID4> is a rook in <#QWERTY123>! (Has enough worklogs: 13, enough commits: 20, and did not write standup!!!)\n", n.Config.ChanGeneral), ch.LastMessage)
 
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u1.SlackName, u1.ChannelID))
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u2.SlackName, u2.ChannelID))

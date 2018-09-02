@@ -142,9 +142,9 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
 		return c.String(http.StatusOK, r.Conf.Translate.UserExist)
 	}
-	st, err := r.db.ListStandupTime(ca.ChannelID)
+	st, err := r.db.GetChannelStandupTime(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("rest: ListStandupTime failed: %v\n", err)
+		logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
 	}
 	if st.Time == int64(0) {
 		return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddUserNoStandupTime, userName))
@@ -312,9 +312,9 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	standupTime, err := r.db.ListStandupTime(ca.ChannelID)
+	standupTime, err := r.db.GetChannelStandupTime(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("rest: ListStandupTime failed: %v\n", err)
+		logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
 		if err.Error() == "sql: no rows in result set" {
 			return c.String(http.StatusOK, r.Conf.Translate.ShowNoStandupTime)
 		} else {
