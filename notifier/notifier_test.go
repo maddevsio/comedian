@@ -42,7 +42,7 @@ func TestNotifier(t *testing.T) {
 
 	channelID := "QWERTY123"
 
-	d := time.Date(2018, 1, 1, 10, 0, 0, 0, time.UTC)
+	d := time.Date(2018, 1, 2, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
 	su, err := n.DB.CreateStandupUser(model.StandupUser{
@@ -50,28 +50,23 @@ func TestNotifier(t *testing.T) {
 		SlackName:   "user1",
 		ChannelID:   channelID,
 		Channel:     "chanName",
+		Role:        "user",
 	})
 	assert.NoError(t, err)
+	fmt.Println(su.Created)
 	su2, err := n.DB.CreateStandupUser(model.StandupUser{
 		SlackUserID: "userID2",
 		SlackName:   "user2",
 		ChannelID:   channelID,
 		Channel:     "chanName",
+		Role:        "user",
 	})
 	assert.NoError(t, err)
-
-	st, err := n.DB.CreateStandupTime(model.StandupTime{
-		ChannelID: channelID,
-		Channel:   "chanName",
-		Time:      time.Now().Unix(),
-	})
-
-	fmt.Printf("Standup time: %v", time.Unix(st.Time, 0))
-
-	NonReporters, err := getNonReporters(n.DB, channelID)
+	fmt.Println(su2.Created)
+	nonReporters, err := n.getCurrentDayNonReporters(channelID)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, NonReporters)
-	assert.Equal(t, 2, len(NonReporters))
+	assert.NotEmpty(t, nonReporters)
+	assert.Equal(t, 2, len(nonReporters))
 
 	n.SendWarning(channelID)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Hey, <@userID1>, <@userID2>! 0 minutes to deadline and the team is still waiting for standups from you!", ch.LastMessage)
@@ -82,9 +77,12 @@ func TestNotifier(t *testing.T) {
 	n.NotifyChannels()
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: In this channel not all standupers wrote standup today, shame on you: <@userID1>, <@userID2>.", ch.LastMessage)
 
-	d = time.Date(2018, 1, 1, 9, 0, 0, 0, time.UTC)
+	d = time.Date(2018, 1, 2, 9, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
+
 	s, err := n.DB.CreateStandup(model.Standup{
+		Created:    time.Now(),
+		Modified:   time.Now(),
 		ChannelID:  channelID,
 		Comment:    "work hard",
 		UsernameID: "userID1",
@@ -95,6 +93,8 @@ func TestNotifier(t *testing.T) {
 
 	// add standup for user @user2
 	s2, err := n.DB.CreateStandup(model.Standup{
+		Created:    time.Now(),
+		Modified:   time.Now(),
 		ChannelID:  channelID,
 		Comment:    "hello world",
 		UsernameID: "userID2",
@@ -102,13 +102,18 @@ func TestNotifier(t *testing.T) {
 		MessageTS:  "qweasd",
 	})
 
+	d = time.Date(2018, 1, 2, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	nonReporters, err = n.getCurrentDayNonReporters(channelID)
+	assert.NoError(t, err)
+	assert.Empty(t, nonReporters)
+
 	n.SendChannelNotification(channelID)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
 
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
 	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))
-
-	assert.NoError(t, n.DB.DeleteStandupTime(st.ChannelID))
 
 	assert.NoError(t, n.DB.DeleteStandup(s.ID))
 	assert.NoError(t, n.DB.DeleteStandup(s2.ID))
@@ -201,10 +206,12 @@ func TestCheckUser(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		worklogs, commits, isNonReporter, err := n.checkUser(tt.user, time.Now(), time.Now())
+		worklogs, commits, err := n.getCollectorData(tt.user, time.Now(), time.Now())
 		assert.NoError(t, err)
 		assert.Equal(t, tt.worklogs, worklogs)
 		assert.Equal(t, tt.commits, commits)
+		isNonReporter, err := n.DB.CheckNonReporter(tt.user, time.Now(), time.Now())
+		assert.NoError(t, err)
 		assert.Equal(t, tt.isNonReporter, isNonReporter)
 	}
 

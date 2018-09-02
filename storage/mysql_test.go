@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -197,6 +198,7 @@ func TestCRUDStandupUser(t *testing.T) {
 
 	channels, err := db.GetAllChannels()
 	assert.NoError(t, err)
+	fmt.Println(channels)
 	assert.Equal(t, 2, len(channels))
 
 	nonReporter, err := db.GetNonReporter(su1.SlackUserID, su1.ChannelID, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
