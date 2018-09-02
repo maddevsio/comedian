@@ -69,14 +69,6 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 	return i, err
 }
 
-// SelectStandup selects standup entry from database
-func (m *MySQL) SelectStandup(id int64) (model.Standup, error) {
-	var s model.Standup
-	err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE id=?", id)
-
-	return s, err
-}
-
 // SelectStandupByMessageTS selects standup entry from database
 func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
 	var s model.Standup

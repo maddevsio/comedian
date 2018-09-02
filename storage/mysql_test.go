@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -81,9 +80,6 @@ func TestCRUDLStandup(t *testing.T) {
 	items, err := db.ListStandups()
 	assert.NoError(t, err)
 	assert.Equal(t, items[0], s)
-	selected, err := db.SelectStandup(s.ID)
-	assert.NoError(t, err)
-	assert.Equal(t, s, selected)
 	selectedByChannelID, err := db.SelectStandupsByChannelID(s2.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, s2.Comment, selectedByChannelID[0].Comment)
@@ -109,9 +105,6 @@ func TestCRUDLStandup(t *testing.T) {
 
 	assert.NoError(t, db.DeleteStandup(s.ID))
 	assert.NoError(t, db.DeleteStandup(s2.ID))
-	s, err = db.SelectStandup(s.ID)
-	assert.Equal(t, err, sql.ErrNoRows)
-	assert.Equal(t, s.ID, int64(0))
 }
 
 func TestCRUDStandupUser(t *testing.T) {

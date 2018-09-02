@@ -14,9 +14,6 @@ type Storage interface {
 	// UpdateStandup updates standup entry in database
 	UpdateStandup(model.Standup) (model.Standup, error)
 
-	// SelectStandup selects standup entry from database
-	SelectStandup(int64) (model.Standup, error)
-
 	// SelectStandupByMessageTS selects standup entry by messageTS from database
 	SelectStandupByMessageTS(string) (model.Standup, error)
 
