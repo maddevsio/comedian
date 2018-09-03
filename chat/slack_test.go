@@ -39,8 +39,6 @@ func TestIsStandup(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
-	s.myUsername = "comedian"
-	assert.NoError(t, err)
 	for _, tt := range testCases {
 		_, ok := s.isStandup(tt.input)
 		if ok != tt.confirm {
@@ -85,7 +83,7 @@ func TestSendUserMessage(t *testing.T) {
 
 	err = s.SendUserMessage("USLACKBOT", "MSG to User!")
 
-	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, s.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 
 }
 
@@ -156,6 +154,6 @@ func TestHandleMessage(t *testing.T) {
 	for _, standup := range standups {
 		s.db.DeleteStandup(standup.ID)
 	}
-	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, s.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 
 }

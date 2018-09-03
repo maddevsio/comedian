@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -24,25 +24,21 @@ func TestCRUDLStandup(t *testing.T) {
 	}
 
 	s, err := db.CreateStandup(model.Standup{
-		Channel:    "First Channel",
 		ChannelID:  "QWERTY123",
 		Comment:    "work hard",
-		Username:   "user",
 		UsernameID: "userID1",
 		MessageTS:  "qweasdzxc",
 	})
 	assert.NoError(t, err)
 
 	nots, err := db.CreateStandup(model.Standup{
-		Channel:    "First Channel",
 		ChannelID:  "QWERTY123",
 		Comment:    "",
-		Username:   "user",
 		UsernameID: "userID1",
 		MessageTS:  "",
 	})
 	assert.Error(t, err)
-	assert.NoError(t, db.DeleteStandupUserByUsername(nots.Username, nots.ChannelID))
+	assert.NoError(t, db.DeleteStandupUser(nots.Username, nots.ChannelID))
 
 	assert.Equal(t, s.Comment, "work hard")
 	s2, err := db.CreateStandup(model.Standup{
@@ -84,21 +80,9 @@ func TestCRUDLStandup(t *testing.T) {
 	items, err := db.ListStandups()
 	assert.NoError(t, err)
 	assert.Equal(t, items[0], s)
-	selected, err := db.SelectStandup(s.ID)
-	assert.NoError(t, err)
-	assert.Equal(t, s, selected)
-	selectedByChannelID, err := db.SelectStandupsByChannelID(s2.ChannelID)
-	assert.NoError(t, err)
-	assert.Equal(t, s2.Comment, selectedByChannelID[0].Comment)
-	assert.Equal(t, s2.Username, selectedByChannelID[0].Username)
-	selectedByChannelID, err = db.SelectStandupsByChannelID(s.ChannelID)
-	assert.NoError(t, err)
-	assert.Equal(t, s.Comment, selectedByChannelID[0].Comment)
-	assert.Equal(t, s.Username, selectedByChannelID[0].Username)
 	selectedByMessageTS, err := db.SelectStandupByMessageTS(s2.MessageTS)
 	assert.NoError(t, err)
 	assert.Equal(t, s2.MessageTS, selectedByMessageTS.MessageTS)
-	assert.Equal(t, s2.Username, selectedByMessageTS.Username)
 	selectedByMessageTS, err = db.SelectStandupByMessageTS(s.MessageTS)
 	assert.NoError(t, err)
 	assert.Equal(t, s.MessageTS, selectedByMessageTS.MessageTS)
@@ -108,23 +92,11 @@ func TestCRUDLStandup(t *testing.T) {
 	dateTo := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), timeNow.Minute(), timeNow.Second(), 0, time.UTC)
 	dateFrom := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 0, 0, 0, 0, time.UTC)
 
-	_, err = db.SelectStandupsForPeriod(dateFrom, dateTo)
-	assert.NoError(t, err)
-	//assert.Equal(t, 2, len(SelectStandupsForPeriod))
-
 	_, err = db.SelectStandupsByChannelIDForPeriod(s.ChannelID, dateFrom, dateTo)
 	assert.NoError(t, err)
-	//assert.Equal(t, 1, len(SelectStandupsByChannelIDForPeriod))
-
-	_, err = db.SelectStandupByUserNameForPeriod(s.Username, dateFrom, dateTo)
-	assert.NoError(t, err)
-	//assert.Equal(t, 1, len(SelectStandupByUserNameForPeriod))
 
 	assert.NoError(t, db.DeleteStandup(s.ID))
 	assert.NoError(t, db.DeleteStandup(s2.ID))
-	s, err = db.SelectStandup(s.ID)
-	assert.Equal(t, err, sql.ErrNoRows)
-	assert.Equal(t, s.ID, int64(0))
 }
 
 func TestCRUDStandupUser(t *testing.T) {
@@ -136,7 +108,7 @@ func TestCRUDStandupUser(t *testing.T) {
 	// clean up table before tests
 	standupUsers, _ := db.ListAllStandupUsers()
 	for _, user := range standupUsers {
-		db.DeleteStandupUserByUsername(user.SlackName, user.ChannelID)
+		db.DeleteStandupUser(user.SlackName, user.ChannelID)
 	}
 
 	su1, err := db.CreateStandupUser(model.StandupUser{
@@ -174,9 +146,9 @@ func TestCRUDStandupUser(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	checkNonReporter, err := db.CheckNonReporter(su3, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
+	isNonReporter, err := db.IsNonReporter(su3.SlackUserID, su3.ChannelID, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
 	assert.NoError(t, err)
-	assert.Equal(t, true, checkNonReporter)
+	assert.Equal(t, true, isNonReporter)
 
 	su4, err := db.CreateStandupUser(model.StandupUser{
 		SlackUserID: "",
@@ -185,7 +157,7 @@ func TestCRUDStandupUser(t *testing.T) {
 		Channel:     "",
 	})
 	assert.Error(t, err)
-	assert.NoError(t, db.DeleteStandupUserByUsername(su4.SlackName, su4.ChannelID))
+	assert.NoError(t, db.DeleteStandupUser(su4.SlackName, su4.ChannelID))
 
 	assert.Equal(t, "userID3", su3.SlackUserID)
 
@@ -193,23 +165,7 @@ func TestCRUDStandupUser(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(nonReporters))
 
-	user, err := db.FindStandupUser(su1.SlackName)
-	assert.NoError(t, err)
-	assert.Equal(t, "user1", user.SlackName)
-
-	susers, err := db.FindStandupUsers(su1.SlackName)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(susers))
-
-	user, err = db.FindStandupUserInChannel(su1.SlackName, su1.ChannelID)
-	assert.NoError(t, err)
-	assert.Equal(t, "user1", user.SlackName)
-	assert.Equal(t, "123qwe", user.ChannelID)
-
-	user, err = db.FindStandupUserInChannel(su2.SlackName, su1.ChannelID)
-	assert.Error(t, err)
-
-	user, err = db.FindStandupUserInChannelByUserID(su2.SlackUserID, su2.ChannelID)
+	user, err := db.FindStandupUserInChannelByUserID(su2.SlackUserID, su2.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, su2.SlackUserID, user.SlackUserID)
 
@@ -227,15 +183,12 @@ func TestCRUDStandupUser(t *testing.T) {
 
 	channels, err := db.GetAllChannels()
 	assert.NoError(t, err)
+	fmt.Println(channels)
 	assert.Equal(t, 2, len(channels))
 
-	nonReporter, err := db.GetNonReporter(su1.SlackUserID, su1.ChannelID, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(nonReporter))
-
-	assert.NoError(t, db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
-	assert.NoError(t, db.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))
-	assert.NoError(t, db.DeleteStandupUserByUsername(su3.SlackName, su3.ChannelID))
+	assert.NoError(t, db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, db.DeleteStandupUser(su2.SlackName, su2.ChannelID))
+	assert.NoError(t, db.DeleteStandupUser(su3.SlackName, su3.ChannelID))
 
 }
 
@@ -269,7 +222,7 @@ func TestCRUDStandupTime(t *testing.T) {
 	assert.Equal(t, "chanName", st.Channel)
 	assert.Equal(t, int64(12), st.Time)
 
-	time, err := db.ListStandupTime(st.ChannelID)
+	time, err := db.GetChannelStandupTime(st.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, time.Time, st.Time)
 
@@ -282,7 +235,7 @@ func TestCRUDStandupTime(t *testing.T) {
 	assert.Equal(t, int64(13), st2.Time)
 
 	st.ChannelID = "'"
-	time, err = db.ListStandupTime(st.ChannelID)
+	time, err = db.GetChannelStandupTime(st.ChannelID)
 	assert.Error(t, err)
 	st.ChannelID = "chanid"
 
@@ -297,7 +250,7 @@ func TestCRUDStandupTime(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(allStandupTimes))
 
-	time, err = db.ListStandupTime(st.ChannelID)
+	time, err = db.GetChannelStandupTime(st.ChannelID)
 	assert.Error(t, err)
 	assert.Equal(t, int64(0), time.Time)
 }

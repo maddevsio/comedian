@@ -42,9 +42,3 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, conf.ReminderTime, int64(10))
 	assert.Equal(t, conf.Debug, true)
 }
-
-func TestGetLocalizer(t *testing.T) {
-	localizer, err := GetLocalizer()
-	assert.NoError(t, err)
-	assert.NotNil(t, localizer)
-}
