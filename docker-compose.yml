@@ -3,8 +3,6 @@ version: "2.4"
 services:
   db:
     image: mysql:5.7
-    volumes:
-      - ./data/dbdump.sql:/docker-entrypoint-initdb.d/dbdump.sql
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=comedian
@@ -15,28 +13,21 @@ services:
       retries: 3
 
   comedian:
-    image: golang:1.8
-    working_dir: /go/src/github.com/maddevsio/comedian
+    build: .
     ports:
       - 80:8090
-    volumes:
-      - ./:/go/src/github.com/maddevsio/comedian
-    command: go run main.go
     environment:
-      - COMEDIAN_DB_CONNECTION_STRING=root:root@tcp(db:3306)/comedian?parseTime=true
-    depends_on:
-      db:
-        condition: service_healthy
-  tests:
-    image: golang:1.8
-    working_dir: /go/src/github.com/maddevsio/comedian
-    ports:
-      - 80:8090
-    volumes:
-      - ./:/go/src/github.com/maddevsio/comedian
-    command: go test -cover -race ./api/ ./chat/ ./config/ ./notifier/ ./reporting/ ./storage/
-    environment:
-      - COMEDIAN_DB_CONNECTION_STRING=root:root@tcp(db:3306)/comedian?parseTime=true
+      - COMEDIAN_DATABASE=root:root@tcp(db:3306)/comedian?parseTime=true
+      - COMEDIAN_SLACK_TOKEN=${COMEDIAN_SLACK_TOKEN}
+      - COMEDIAN_MANAGER_SLACK_USER_ID=${COMEDIAN_MANAGER_SLACK_USER_ID}
+      - COMEDIAN_MANAGER_SLACK_CHAN_GENERAL=${COMEDIAN_MANAGER_SLACK_CHAN_GENERAL}
+      - COMEDIAN_COLLECTOR_TOKEN=${COMEDIAN_COLLECTOR_TOKEN}
+      - COMEDIAN_COLLECTOR_URL=${COMEDIAN_COLLECTOR_URL}
+      - COMEDIAN_REPORT_TIME=${COMEDIAN_REPORT_TIME}
+      - COMEDIAN_LANGUAGE=${COMEDIAN_LANGUAGE}
+      - COMEDIAN_NOTIFIER_INTERVAL=${COMEDIAN_NOTIFIER_INTERVAL}
+      - COMEDIAN_REMINDER_REPEATS_MAX=${COMEDIAN_REMINDER_REPEATS_MAX}
+      - COMEDIAN_REMINDER_TIME=${COMEDIAN_REMINDER_TIME}
     depends_on:
       db:
         condition: service_healthy

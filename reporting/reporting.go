@@ -66,8 +66,15 @@ func (r *Reporter) StandupReportByProject(channelID string, dateFrom, dateTo tim
 				report += fmt.Sprintf("<@%v> did not submit standup!", user.SlackUserID)
 				continue
 			}
-			report += fmt.Sprintf("<@%v> submitted standup!", user.SlackUserID)
+			report += fmt.Sprintf("<@%v> submitted standup: ", user.SlackUserID)
+			standups, err := r.DB.SelectStandupsFiltered(user.SlackUserID, channel, dateFrom, dateTo)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			report += fmt.Sprintf("%v \n", standups[0].Comment)
 		}
+		report += "\n"
 	}
 
 	report += r.fetchCollectorData(collectorData)
@@ -103,7 +110,14 @@ func (r *Reporter) StandupReportByUser(user model.StandupUser, dateFrom, dateTo 
 				continue
 			}
 			report += fmt.Sprintf("In <#%v> <@%v> submitted standup!\n", channel, user.SlackUserID)
+			standups, err := r.DB.SelectStandupsFiltered(user.SlackUserID, channel, dateFrom, dateTo)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			report += fmt.Sprintf("%v \n", standups[0].Comment)
 		}
+		report += "\n"
 	}
 
 	report += r.fetchCollectorData(collectorData)
@@ -130,11 +144,16 @@ func (r *Reporter) StandupReportByProjectAndUser(channelID string, user model.St
 			continue
 		}
 		if userIsNonReporter {
-			report += fmt.Sprintf("<@%v> did not submit standup!", user.SlackUserID)
+			report += fmt.Sprintf("<@%v> did not submit standup!\n", user.SlackUserID)
 			continue
 		}
-		report += fmt.Sprintf("<@%v> submitted standup!", user.SlackUserID)
-
+		report += fmt.Sprintf("<@%v> submitted standup!\n", user.SlackUserID)
+		standups, err := r.DB.SelectStandupsFiltered(user.SlackUserID, channel, dateFrom, dateTo)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		report += fmt.Sprintf("%v \n", standups[0].Comment)
 	}
 
 	report += r.fetchCollectorData(collectorData)
