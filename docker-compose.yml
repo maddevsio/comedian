@@ -9,7 +9,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: comedian
       MYSQL_USER: comedian
-      MYSQL_PASSWORD: 
+      MYSQL_PASSWORD: comedian
     healthcheck:
       test: ["CMD-SHELL", "mysql -u comedian -pcomedian -e 'SHOW DATABASES' > /dev/null 2>&1 || exit 1"]
       interval: 10s
@@ -17,7 +17,7 @@ services:
       retries: 3
 
   comedian:
-    image: anatoliyfedorenko/comedian
+    build: .
     restart: on-failure
     ports:
       - 8080:8080
@@ -27,13 +27,15 @@ services:
       COMEDIAN_SLACK_TOKEN: ${COMEDIAN_SLACK_TOKEN}
       COMEDIAN_DATABASE: comedian:comedian@tcp(db:3306)/comedian?parseTime=true
       COMEDIAN_HTTP_BIND_ADDR: ${COMEDIAN_HTTP_BIND_ADDR}
-      COMEDIAN_NOTIFIER_CHECK_INTERVAL: ${COMEDIAN_NOTIFIER_CHECK_INTERVAL}
+      COMEDIAN_NOTIFIER_INTERVAL: ${COMEDIAN_NOTIFIER_INTERVAL}
+      COMEDIAN_HTTP_BIND_ADDR: ${COMEDIAN_HTTP_BIND_ADDR}
       COMEDIAN_MANAGER_SLACK_USER_ID: ${COMEDIAN_MANAGER_SLACK_USER_ID}
       COMEDIAN_REPORT_TIME: ${COMEDIAN_REPORT_TIME}
       COMEDIAN_LANGUAGE: ${COMEDIAN_LANGUAGE}
       COMEDIAN_COLLECTOR_TOKEN: ${COMEDIAN_COLLECTOR_TOKEN}
       COMEDIAN_COLLECTOR_URL: ${COMEDIAN_COLLECTOR_URL}
       COMEDIAN_MANAGER_SLACK_CHAN_GENERAL: ${COMEDIAN_MANAGER_SLACK_CHAN_GENERAL}
+      COMEDIAN_REMINDER_REPEATS_MAX: ${COMEDIAN_REMINDER_REPEATS_MAX}
+      COMEDIAN_REMINDER_TIME: ${COMEDIAN_REMINDER_TIME}
     depends_on:
-      db:
-        condition: service_healthy
+      - db

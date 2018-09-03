@@ -189,7 +189,7 @@ func TestHandleTimeCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 
 	//delete time
 	context, rec := getContext(DelTime)
@@ -222,7 +222,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	}{
 		{"empty text", ReportByProjectEmptyText, http.StatusOK, "`text` cannot be empty"},
 		{"empty channel ID", ReportByProjectEmptyChanID, http.StatusOK, "`channel_id` cannot be empty"},
-		{"correct", ReportByProject, http.StatusOK, "Full Report on project <#CBA2M41Q8>:\n\nNo standup data for this period\n\nCommits for period: 0 \nMerges for period: 0\n"},
+		{"correct", ReportByProject, http.StatusOK, "Full Report on project <#CBA2M41Q8>:\n\nReport for: 2018-06-25\nNo standup data for this day\nReport for: 2018-06-26\nNo standup data for this day\n"},
 	}
 
 	for _, tt := range testCases {
@@ -272,7 +272,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		{"user mess up", ReportByUserMessUser, http.StatusOK, "sql: no rows in result set"},
 		{"date from mess up", ReportByUserMessDateF, http.StatusOK, "parsing time \"2018-6-25\": month out of range"},
 		{"date to mess up", ReportByUserMessDateT, http.StatusOK, "parsing time \"2018-6-26\": month out of range"},
-		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@user1>:\n\nNo standup data for this period\n\nCommits for period: 0 \nMerges for period: 0\nLogged Hours: 0"},
+		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1>:\n\nReport for: 2018-06-25\nIn <#123qwe> <@userID1> did not submit standup!\n\nReport for: 2018-06-26\nIn <#123qwe> <@userID1> did not submit standup!\n\n"},
 	}
 
 	for _, tt := range testCases {
@@ -285,7 +285,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 
 }
 
@@ -337,7 +337,7 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 }
 
 func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
@@ -348,4 +348,18 @@ func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
 	context := e.NewContext(req, rec)
 
 	return context, rec
+}
+
+func TestSplitChannel(t *testing.T) {
+	channel := "<#CHANNELID|channelName"
+	id, name := splitChannel(channel)
+	assert.Equal(t, "CHANNELID", id)
+	assert.Equal(t, "channelName", name)
+}
+
+func TestSplitUser(t *testing.T) {
+	user := "<@SLACKUSERID|userName"
+	id, name := splitUser(user)
+	assert.Equal(t, "SLACKUSERID", id)
+	assert.Equal(t, "userName", name)
 }

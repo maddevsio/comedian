@@ -19,19 +19,20 @@ showStandupTime = "<!date^%v^Standup time is {time}|Standup time set at 12:00>"
 wrongNArgs = "Wrong number of arguments"
 reportByProjectAndUser = "This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command"
 reportOnProjectHead = "Full Report on project <#%s>:\n\n"
+reportOnProjectCollectorData = "\n\nCommits for period: %v \nMerges for period: %v\n"
 reportOnUserHead = "Full Report on user <@%s>:\n\n"
 reportOnProjectAndUserHead = "Report on project: <#%s>, and user: <@%s>\n\n"
 
 reportNoData = "No standup data for this period"
-reportPeriod = "\n\nReport from %s to %s:\n"
+reportDate = "\n\nReport from %s to %s:\n"
 reportStandupFromUser = "\nStandup from <@%s>:\n%s\n"
 reportIgnoredStandup = "\n<@%s>: ignored standup!\n"
 reportShowChannel = "In channel: <#%s>\n"
 reportCollectorDataUser = "\n\nCommits for period: %v \nMerges for period: %v\nLogged Hours: %v"
 
 
-HelloManager = "Hello, Manager!"
-StandupAccepted = "Good job! Standup accepted! Keep it up!"
+helloManager = "Hello, Manager!"
+standupAccepted = "Good job! Standup accepted! Keep it up!"
 
 p1 = "roblem"
 p2 = "ifficul"
@@ -50,7 +51,7 @@ notifyNotAll = "In this channel not all standupers wrote standup today, shame on
 notifyAllDone = "Congradulations! Everybody wrote their standups today!"
 notifyManagerAllDone = "<@%v>, in channel <#%s> all standupers have written standup today"
 notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup today, these users ignored standup today: %v."
-notifyUsersWarning = "Hey! We are still waiting standup for today from you: %s"
+notifyUsersWarning = "Hey, %v! %v minutes to deadline and the team is still waiting for standups from you!"
 notifyDirectMessage = "Hello, <@%s>! You missed the standup deadline in <#%s> channel. Please, write you standup ASAP!"
 
 noWorklogs = "Not enough worklogs: %v"
@@ -61,4 +62,4 @@ hasWorklogs = "Has enough worklogs: %v"
 hasCommits = "enough commits: %v"
 hasStandup = "yet wrote a standup, good job!"
 
-isRook = "<@%v> is a rook! (%v)\n"
+isRook = "<@%v> is a rook in <#%v>! (%v)\n"

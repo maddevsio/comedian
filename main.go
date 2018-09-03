@@ -1,12 +1,11 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	"github.com/maddevsio/comedian/api"
 	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/notifier"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {

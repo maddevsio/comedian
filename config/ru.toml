@@ -18,20 +18,20 @@ showStandupTime = "<!date^%v^Срок для стэндапов установл
 
 wrongNArgs = "Неверное количество аргументов. Перепроверьте свои данные!"
 reportByProjectAndUser = "Данный пользователь не установлен как стэндапер в этом канале. Для начала добавьте его слэшкомандой `/comdeidanadd`"
-reportOnProjectHead = "Полный отчет по проекту <#%s>:\n\n"
-reportOnUserHead = "Полный отчет по пользователю <@%s>:\n\n"
-reportOnProjectAndUserHead = "Отчет по проекту: <#%s>, пользователь: <@%s>\n\n"
+reportOnProjectHead = "Полный отчет по проекту <#%s> с %v по %v:\n\n"
+reportOnUserHead = "Полный отчет по пользователю <@%s> с %v по %v:\n\n"
+reportOnProjectAndUserHead = "Отчет по проекту: <#%s>, пользователь: <@%s> с %v по %v:\n\n"
 
 reportNoData = "Нет данных за данный период"
-reportPeriod = "\n\nОтчет с %s по %s:\n"
+reportDate = "\n\nОтчет за %s:\n"
 reportStandupFromUser = "\nСтэндап от <@%s>:\n%s\n"
 reportIgnoredStandup = "\n<@%s>: стэндап пропущен!\n"
 reportShowChannel = "В канале: <#%s>"
 reportCollectorDataUser = "\n\nКоммитов: %v \nМержей: %v\nЧасов ворклогов: %v"
 
 
-HelloManager = "Привет, менеджер!"
-StandupAccepted = "Отличная работа! Стэндап принят! Бомби дальше!"
+helloManager = "Привет, менеджер!"
+standupAccepted = "Отличная работа! Стэндап принят! Бомби дальше!"
 
 p1 = "роблем"
 p2 = "рудност"
@@ -50,7 +50,7 @@ notifyNotAll = "В этом канале не все написали стэнд
 notifyAllDone = "Поздравляю, сегодня все написали стэндапы!"
 notifyManagerAllDone = "<@%v>, в канале <#%s> все написали стэндапы сегодня"
 notifyManagerNotAll = "<@%v>, в канале <#%s> не все написали стэндапы сегодня, игнорировали: %v."
-notifyUsersWarning = "%s, я всё еще жду стэндапы от вас! Надо написать как можно скорее!"
+notifyUsersWarning = "%v, команда всё еще ждет стэндапы от вас! Осталось %v минут до дедлайна!"
 notifyDirectMessage = "Привет, <@%s>! У тебя пропущен срок по стэндапам в канале <#%s>. Пожалуйста, напиши стэндап! Чем скорее тем лучше!"
 
 
@@ -62,4 +62,4 @@ hasWorklogs = "достаточно ворклогов: %v"
 hasCommits = "коммиты есть: %v"
 hasStandup = "а стэндап есть! Молодец!"
 
-isRook = "<@%v> сграчевал! (%v)\n"
+isRook = "<@%v> сграчевал в проекте <#%v>! (%v)\n"
