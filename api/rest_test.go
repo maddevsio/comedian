@@ -222,7 +222,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	}{
 		{"empty text", ReportByProjectEmptyText, http.StatusOK, "`text` cannot be empty"},
 		{"empty channel ID", ReportByProjectEmptyChanID, http.StatusOK, "`channel_id` cannot be empty"},
-		{"correct", ReportByProject, http.StatusOK, "Full Report on project <#CBA2M41Q8>:\n\nReport for: 2018-06-25\n<@UB9AE7CL9> did not submit standup!\nReport for: 2018-06-26\n<@UB9AE7CL9> did not submit standup!\n"},
+		{"correct", ReportByProject, http.StatusOK, "Full Report on project <#CBA2M41Q8>:\n\nReport for: 2018-06-25\nNo standup data for this day\nReport for: 2018-06-26\nNo standup data for this day\n"},
 	}
 
 	for _, tt := range testCases {
