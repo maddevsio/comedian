@@ -88,8 +88,8 @@ func TestStandupReportByProject(t *testing.T) {
 
 	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
 	assert.NoError(t, r.DB.DeleteStandup(standup2.ID))
-	assert.NoError(t, r.DB.DeleteStandupUserByUsername(user1.SlackName, user1.ChannelID))
-	assert.NoError(t, r.DB.DeleteStandupUserByUsername(user2.SlackName, user2.ChannelID))
+	assert.NoError(t, r.DB.DeleteStandupUser(user1.SlackName, user1.ChannelID))
+	assert.NoError(t, r.DB.DeleteStandupUser(user2.SlackName, user2.ChannelID))
 }
 
 func TestStandupReportByUser(t *testing.T) {
@@ -145,7 +145,7 @@ func TestStandupReportByUser(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("Full Report on user <@user1>:\n\n\n\nReport from %v to %v:\nIn channel: <#QWERTY123>\nmy standup\n\n", dateToText, dateNextText), text)
 
 	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
-	assert.NoError(t, r.DB.DeleteStandupUserByUsername(user.SlackName, user.ChannelID))
+	assert.NoError(t, r.DB.DeleteStandupUser(user.SlackName, user.ChannelID))
 }
 
 func TestStandupReportByProjectAndUser(t *testing.T) {
@@ -191,5 +191,5 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 
 	assert.Equal(t, fmt.Sprintf("Report on project: <#QWERTY123>, and user: <@user1>\n\n\n\nReport from %v to %v:\n\nStandup from <@userID1>:\nmy standup\n", dateToText, dateNextText), text)
 	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
-	assert.NoError(t, r.DB.DeleteStandupUserByUsername(user1.SlackName, user1.ChannelID))
+	assert.NoError(t, r.DB.DeleteStandupUser(user1.SlackName, user1.ChannelID))
 }

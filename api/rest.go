@@ -22,9 +22,10 @@ import (
 // REST struct used to handle slack requests (slash commands)
 type REST struct {
 	db      storage.Storage
-	e       *echo.Echo
-	Conf    config.Config
+	echo    *echo.Echo
+	conf    config.Config
 	decoder *schema.Decoder
+	report  *reporting.Reporter
 }
 
 const (
@@ -48,25 +49,33 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 		logrus.Errorf("rest: NewMySQL failed: %v\n", err)
 		return nil, err
 	}
+	rep, err := reporting.NewReporter(c)
+	if err != nil {
+		logrus.Errorf("rest: NewReporter failed: %v\n", err)
+		return nil, err
+	}
+
 	decoder := schema.NewDecoder()
 	decoder.IgnoreUnknownKeys(true)
 	r := &REST{
 		db:      conn,
-		e:       e,
-		Conf:    c,
+		echo:    e,
+		conf:    c,
 		decoder: decoder,
+		report:  rep,
 	}
+
 	r.initEndpoints()
 	return r, nil
 }
 
 func (r *REST) initEndpoints() {
-	r.e.POST("/commands", r.handleCommands)
+	r.echo.POST("/commands", r.handleCommands)
 }
 
 // Start starts http server
 func (r *REST) Start() error {
-	return r.e.Start(r.Conf.HTTPBindAddr)
+	return r.echo.Start(r.conf.HTTPBindAddr)
 }
 
 func (r *REST) handleCommands(c echo.Context) error {
@@ -79,8 +88,8 @@ func (r *REST) handleCommands(c echo.Context) error {
 	userIsAdmin := r.db.IsAdmin(slackUserID, channelID)
 	logrus.Infof("rest: FormParams info: %v", form)
 	logrus.Infof("rest: isAdmin: %v", userIsAdmin)
-	if (slackUserID != r.Conf.ManagerSlackUserID) && (userIsAdmin == false) {
-		return c.String(http.StatusOK, r.Conf.Translate.AccessDenied)
+	if (slackUserID != r.conf.ManagerSlackUserID) && (userIsAdmin == false) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
 	if command := form.Get("command"); command != "" {
 		switch command {
@@ -140,16 +149,16 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		}
 	}
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
-		return c.String(http.StatusOK, r.Conf.Translate.UserExist)
+		return c.String(http.StatusOK, r.conf.Translate.UserExist)
 	}
 	st, err := r.db.GetChannelStandupTime(ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
 	}
 	if st.Time == int64(0) {
-		return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddUserNoStandupTime, userName))
+		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUserNoStandupTime, userName))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddUser, userName))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUser, userName))
 }
 
 func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
@@ -181,9 +190,9 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 		}
 	}
 	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
-		return c.String(http.StatusOK, r.Conf.Translate.UserExist)
+		return c.String(http.StatusOK, r.conf.Translate.UserExist)
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddAdmin, userName))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddAdmin, userName))
 }
 
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
@@ -203,7 +212,7 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: DeleteStandupUser failed: %v\n", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.DeleteUser, userName))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteUser, userName))
 }
 
 func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
@@ -227,9 +236,9 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 		userNames = append(userNames, "<@"+user.SlackName+">")
 	}
 	if len(userNames) < 1 {
-		return c.String(http.StatusOK, r.Conf.Translate.ListNoStandupers)
+		return c.String(http.StatusOK, r.conf.Translate.ListNoStandupers)
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.ListStandupers, strings.Join(userNames, ", ")))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userNames, ", ")))
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {
@@ -273,9 +282,9 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 		return err
 	}
 	if len(st) == 0 {
-		return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddStandupTimeNoUsers, standupTime.Time))
+		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTimeNoUsers, standupTime.Time))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.AddStandupTime, standupTime.Time))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTime, standupTime.Time))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
@@ -296,9 +305,9 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	}
 	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if len(st) != 0 {
-		return c.String(http.StatusOK, r.Conf.Translate.RemoveStandupTimeWithUsers)
+		return c.String(http.StatusOK, r.conf.Translate.RemoveStandupTimeWithUsers)
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.RemoveStandupTime, ca.ChannelName))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.RemoveStandupTime, ca.ChannelName))
 }
 
 func (r *REST) listTime(c echo.Context, f url.Values) error {
@@ -316,12 +325,12 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 	if err != nil {
 		logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
 		if err.Error() == "sql: no rows in result set" {
-			return c.String(http.StatusOK, r.Conf.Translate.ShowNoStandupTime)
+			return c.String(http.StatusOK, r.conf.Translate.ShowNoStandupTime)
 		} else {
 			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v\n", err))
 		}
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.ShowStandupTime, standupTime.Time))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ShowStandupTime, standupTime.Time))
 }
 
 ///report_by_project #collector-test 2018-07-24 2018-07-26
@@ -337,7 +346,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 3 {
-		return c.String(http.StatusOK, r.Conf.Translate.WrongNArgs)
+		return c.String(http.StatusOK, r.conf.Translate.WrongNArgs)
 	}
 	channelID, channelName := splitChannel(commandParams[0])
 
@@ -356,12 +365,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	rep, err := reporting.NewReporter(r.Conf)
-	if err != nil {
-		logrus.Errorf("rest: NewReporter failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	report, err := rep.StandupReportByProject(channelID, dateFrom, dateTo, data)
+	report, err := r.report.StandupReportByProject(channelID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProject: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -382,7 +386,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 3 {
-		return c.String(http.StatusOK, r.Conf.Translate.UserExist)
+		return c.String(http.StatusOK, r.conf.Translate.UserExist)
 	}
 	userID, userName := splitUser(commandParams[1])
 	user, err := r.db.FindStandupUser(userName)
@@ -404,12 +408,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	rep, err := reporting.NewReporter(r.Conf)
-	if err != nil {
-		logrus.Errorf("rest: NewReporter failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	report, err := rep.StandupReportByUser(user, dateFrom, dateTo, data)
+	report, err := r.report.StandupReportByUser(user, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -430,7 +429,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	}
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 4 {
-		return c.String(http.StatusOK, r.Conf.Translate.WrongNArgs)
+		return c.String(http.StatusOK, r.conf.Translate.WrongNArgs)
 	}
 	channelID, channelName := splitChannel(commandParams[0])
 	userID, _ := splitUser(commandParams[1])
@@ -453,14 +452,9 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 
 	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
 	if err != nil {
-		return c.String(http.StatusOK, r.Conf.Translate.ReportByProjectAndUser)
+		return c.String(http.StatusOK, r.conf.Translate.ReportByProjectAndUser)
 	}
-	rep, err := reporting.NewReporter(r.Conf)
-	if err != nil {
-		logrus.Errorf("rest: NewReporter failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	report, err := rep.StandupReportByProjectAndUser(channelID, user, dateFrom, dateTo, data)
+	report, err := r.report.StandupReportByProjectAndUser(channelID, user, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -469,14 +463,14 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byte, error) {
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.Conf.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.conf.CollectorURL, getDataOn, data, dateFrom, dateTo)
 	logrus.Infof("rest: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		logrus.Errorf("rest: http.NewRequest failed: %v\n", err)
 		return nil, err
 	}
-	token := r.Conf.CollectorToken
+	token := r.conf.CollectorToken
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 
 	res, err := http.DefaultClient.Do(req)

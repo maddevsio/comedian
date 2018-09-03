@@ -136,7 +136,7 @@ func (r *Reporter) parseReporstOnChannelToString(reportEntries []reportEntry) st
 	for _, value := range reportEntries {
 		currentDateFrom := value.DateFrom
 		dateTo := value.DateTo
-		report += fmt.Sprintf(r.Config.Translate.ReportPeriod, currentDateFrom.Format("2006-01-02"),
+		report += fmt.Sprintf(currentDateFrom.Format("2006-01-02"),
 			dateTo.Format("2006-01-02"))
 		for _, standup := range value.ReportContents[0].Standups {
 			report += fmt.Sprintf(r.Config.Translate.ReportStandupFromUser, standup.UsernameID, standup.Comment)
@@ -160,23 +160,27 @@ func (r *Reporter) getReportsOnUser(user model.StandupUser, dateFrom, dateTo tim
 		dateTo := dateFrom.Add(24 * time.Hour)
 
 		//can retrieve by SlackUserID. Refactor!
-		standupUsers, err := r.DB.FindStandupUsers(user.SlackName)
+		channels, err := r.DB.GetUserChannels(user.SlackUserID)
 		if err != nil {
 			return nil, err
 		}
-		reportContents := make([]reportContent, 0, len(standupUsers))
-		for _, standupUser := range standupUsers {
+		reportContents := make([]reportContent, 0, len(channels))
+		for _, channel := range channels {
 			currentDayNonReporter := []model.StandupUser{}
-			currentDayStandup, err := r.DB.SelectStandupsFiltered(standupUser.SlackUserID, standupUser.ChannelID, dateFrom, dateTo)
-			currentDayNonReporter, err = r.DB.GetNonReporter(user.SlackUserID, standupUser.ChannelID, dateFrom, dateTo)
+			currentDayStandup, err := r.DB.SelectStandupsFiltered(user.SlackUserID, channel, dateFrom, dateTo)
+			isNonReporter, err := r.DB.IsNonReporter(user.SlackUserID, channel, dateFrom, dateTo)
 			if err != nil {
 				return nil, err
+			}
+
+			if isNonReporter {
+				currentDayNonReporter = []model.StandupUser{user}
 			}
 
 			if len(currentDayNonReporter) > 0 || len(currentDayStandup) > 0 {
 				reportContents = append(reportContents,
 					reportContent{
-						Channel:      standupUser.ChannelID,
+						Channel:      channel,
 						Standups:     currentDayStandup,
 						NonReporters: currentDayNonReporter})
 			}
@@ -211,7 +215,7 @@ func (r *Reporter) parseReporstOnUserToString(reportEntries []reportEntry) strin
 		currentDateFrom := value.DateFrom
 		currentDateTo := value.DateTo
 
-		report += fmt.Sprintf(r.Config.Translate.ReportPeriod, currentDateFrom.Format("2006-01-02"),
+		report += fmt.Sprintf(currentDateFrom.Format("2006-01-02"),
 			currentDateTo.Format("2006-01-02"))
 		for _, reportContent := range value.ReportContents {
 			report += fmt.Sprintf(r.Config.Translate.ReportShowChannel, reportContent.Channel)
@@ -246,9 +250,15 @@ func (r *Reporter) getReportsOnChannelAndUser(channelID string, user model.Stand
 			return nil, err
 		}
 
-		currentDayNonReporter, err := r.DB.GetNonReporter(user.SlackUserID, channelID, dateFrom, dateTo)
+		isNonReporter, err := r.DB.IsNonReporter(user.SlackUserID, channelID, dateFrom, dateTo)
 		if err != nil {
 			return nil, err
+		}
+
+		currentDayNonReporter := []model.StandupUser{}
+
+		if isNonReporter {
+			currentDayNonReporter = []model.StandupUser{user}
 		}
 
 		if len(currentDayNonReporter) > 0 || len(currentDayStandup) > 0 {
