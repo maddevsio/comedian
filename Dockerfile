@@ -6,9 +6,8 @@ RUN  apt-get update \
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.utf8
 
-EXPOSE 8090
-
 COPY comedian /
+COPY goose /
 COPY migrations /migrations
 COPY entrypoint.sh /
 
