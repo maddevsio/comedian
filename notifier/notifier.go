@@ -72,9 +72,9 @@ func (n *Notifier) RevealRooks() {
 			logrus.Errorf("notifier: getCollectorData failed: %v\n", err)
 			return
 		}
-		isNonReporter, err := n.DB.CheckNonReporter(user, timeFrom, time.Now())
+		isNonReporter, err := n.DB.IsNonReporter(user.SlackUserID, user.ChannelID, timeFrom, time.Now())
 		if err != nil {
-			logrus.Errorf("notifier: CheckNonReporter failed: %v\n", err)
+			logrus.Errorf("notifier: IsNonReporter failed: %v\n", err)
 			return
 		}
 

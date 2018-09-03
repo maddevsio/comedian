@@ -51,7 +51,7 @@ type Translate struct {
 	ReportOnUserHead             string
 	ReportOnProjectAndUserHead   string
 	ReportNoData                 string
-	ReportPeriod                 string
+	ReportDate                   string
 	ReportStandupFromUser        string
 	ReportIgnoredStandup         string
 	ReportShowChannel            string
@@ -103,7 +103,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"notifyNotAll", "notifyManagerNotAll", "notifyUsersWarning",
 		"notifyDirectMessage",
 		"reportByProjectAndUser", "reportOnProjectHead", "reportOnProjectCollectorData", "reportOnUserHead",
-		"reportOnProjectAndUserHead", "reportNoData", "reportPeriod",
+		"reportOnProjectAndUserHead", "reportNoData", "reportDate",
 		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel",
 		"reportCollectorDataUser",
 		"helloManager", "standupAccepted",
@@ -172,7 +172,7 @@ func GetTranslation(lang string) (Translate, error) {
 		ReportOnUserHead:             m["reportOnUserHead"],
 		ReportOnProjectAndUserHead:   m["reportOnProjectAndUserHead"],
 		ReportNoData:                 m["reportNoData"],
-		ReportPeriod:                 m["reportPeriod"],
+		ReportDate:                   m["reportDate"],
 		ReportStandupFromUser:        m["reportStandupFromUser"],
 		ReportIgnoredStandup:         m["reportIgnoredStandup"],
 		ReportShowChannel:            m["reportShowChannel"],

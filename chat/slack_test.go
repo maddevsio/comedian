@@ -83,7 +83,7 @@ func TestSendUserMessage(t *testing.T) {
 
 	err = s.SendUserMessage("USLACKBOT", "MSG to User!")
 
-	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, s.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 
 }
 
@@ -154,6 +154,6 @@ func TestHandleMessage(t *testing.T) {
 	for _, standup := range standups {
 		s.db.DeleteStandup(standup.ID)
 	}
-	assert.NoError(t, s.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, s.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 
 }

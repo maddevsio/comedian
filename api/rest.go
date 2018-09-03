@@ -125,7 +125,7 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	slackUserID := strings.Replace(result[0], "<@", "", -1)
 	userName := strings.Replace(result[1], ">", "", -1)
 
-	user, err := r.db.FindStandupUserInChannel(userName, ca.ChannelID)
+	user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
 	if err != nil {
 		_, err = r.db.CreateStandupUser(model.StandupUser{
 			SlackUserID: slackUserID,
@@ -166,7 +166,7 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 	slackUserID := strings.Replace(result[0], "<@", "", -1)
 	userName := strings.Replace(result[1], ">", "", -1)
 
-	user, err := r.db.FindStandupUserInChannel(userName, ca.ChannelID)
+	user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
 	if err != nil {
 		_, err = r.db.CreateStandupUser(model.StandupUser{
 			SlackUserID: slackUserID,
@@ -198,9 +198,9 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 	}
 
 	userName := strings.Replace(ca.Text, "@", "", -1)
-	err := r.db.DeleteStandupUserByUsername(userName, ca.ChannelID)
+	err := r.db.DeleteStandupUser(userName, ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("rest: DeleteStandupUserByUsername failed: %v\n", err)
+		logrus.Errorf("rest: DeleteStandupUser failed: %v\n", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(r.Conf.Translate.DeleteUser, userName))
@@ -339,10 +339,8 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, r.Conf.Translate.WrongNArgs)
 	}
-	channel := commandParams[0]
-	channelSeparate := strings.Split(channel, "|")
-	channelID := strings.Replace(channelSeparate[0], "<", "", -1)
-	channelName := strings.Replace(channelSeparate[1], ">", "", -1)
+	channelID, channelName := splitChannel(commandParams[0])
+
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -386,13 +384,9 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, r.Conf.Translate.UserExist)
 	}
-	userfull := commandParams[0]
-	result := strings.Split(userfull, "|")
-	userName := strings.Replace(result[1], ">", "", -1)
-	slackUserID := strings.Replace(result[0], "<@", "", -1)
+	userID, userName := splitUser(commandParams[1])
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
-		logrus.Errorf("rest: FindStandupUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
@@ -405,7 +399,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	data, err := r.getCollectorData("users", slackUserID, commandParams[1], commandParams[2])
+	data, err := r.getCollectorData("users", userID, commandParams[1], commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -438,14 +432,8 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	if len(commandParams) != 4 {
 		return c.String(http.StatusOK, r.Conf.Translate.WrongNArgs)
 	}
-	channel := commandParams[0]
-	channelSeparate := strings.Split(channel, "|")
-	channelID := strings.Replace(channelSeparate[0], "<#", "", -1)
-	channelName := strings.Replace(channelSeparate[1], ">", "", -1)
-	logrus.Println("ChannelID: " + channelID)
-	userFull := strings.Split(commandParams[1], "|")
-	userID := strings.Replace(userFull[0], "<@", "", -1)
-	logrus.Println("UserID: " + userID)
+	channelID, channelName := splitChannel(commandParams[0])
+	userID, _ := splitUser(commandParams[1])
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -506,4 +494,18 @@ func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byt
 	logrus.Infof("rest: getCollectorData responce body: %s", string(body))
 	return body, nil
 
+}
+
+func splitChannel(channel string) (string, string) {
+	channelSeparate := strings.Split(channel, "|")
+	channelID := strings.Replace(channelSeparate[0], "<#", "", -1)
+	channelName := strings.Replace(channelSeparate[1], ">", "", -1)
+	return channelID, channelName
+}
+
+func splitUser(user string) (string, string) {
+	userFull := strings.Split(user, "|")
+	userID := strings.Replace(userFull[0], "<@", "", -1)
+	userName := strings.Replace(userFull[1], ">", "", -1)
+	return userID, userName
 }

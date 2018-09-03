@@ -189,7 +189,7 @@ func TestHandleTimeCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 
 	//delete time
 	context, rec := getContext(DelTime)
@@ -285,7 +285,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 
 }
 
@@ -337,7 +337,7 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupUserByUsername(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 }
 
 func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
@@ -348,4 +348,18 @@ func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
 	context := e.NewContext(req, rec)
 
 	return context, rec
+}
+
+func TestSplitChannel(t *testing.T) {
+	channel := "<#CHANNELID|channelName"
+	id, name := splitChannel(channel)
+	assert.Equal(t, "CHANNELID", id)
+	assert.Equal(t, "channelName", name)
+}
+
+func TestSplitUser(t *testing.T) {
+	user := "<@SLACKUSERID|userName"
+	id, name := splitUser(user)
+	assert.Equal(t, "SLACKUSERID", id)
+	assert.Equal(t, "userName", name)
 }

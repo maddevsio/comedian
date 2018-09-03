@@ -112,8 +112,8 @@ func TestNotifier(t *testing.T) {
 	n.SendChannelNotification(channelID)
 	assert.Equal(t, "CHAT: QWERTY123, MESSAGE: Congradulations! Everybody wrote their standups today!", ch.LastMessage)
 
-	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su.SlackName, su.ChannelID))
-	assert.NoError(t, n.DB.DeleteStandupUserByUsername(su2.SlackName, su2.ChannelID))
+	assert.NoError(t, n.DB.DeleteStandupUser(su.SlackName, su.ChannelID))
+	assert.NoError(t, n.DB.DeleteStandupUser(su2.SlackName, su2.ChannelID))
 
 	assert.NoError(t, n.DB.DeleteStandup(s.ID))
 	assert.NoError(t, n.DB.DeleteStandup(s2.ID))
@@ -130,7 +130,7 @@ func TestCheckUser(t *testing.T) {
 	users, err := n.DB.ListAllStandupUsers()
 	assert.NoError(t, err)
 	for _, user := range users {
-		assert.NoError(t, n.DB.DeleteStandupUserByUsername(user.SlackName, user.ChannelID))
+		assert.NoError(t, n.DB.DeleteStandupUser(user.SlackName, user.ChannelID))
 	}
 
 	d := time.Date(2018, 6, 24, 10, 0, 0, 0, time.UTC)
@@ -210,7 +210,7 @@ func TestCheckUser(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, tt.worklogs, worklogs)
 		assert.Equal(t, tt.commits, commits)
-		isNonReporter, err := n.DB.CheckNonReporter(tt.user, time.Now(), time.Now())
+		isNonReporter, err := n.DB.IsNonReporter(tt.user.SlackUserID, tt.user.ChannelID, time.Now(), time.Now())
 		assert.NoError(t, err)
 		assert.Equal(t, tt.isNonReporter, isNonReporter)
 	}
@@ -218,10 +218,10 @@ func TestCheckUser(t *testing.T) {
 	n.RevealRooks()
 	assert.Equal(t, fmt.Sprintf("CHAT: %s, MESSAGE: <@userID1> is a rook in <#QWERTY123>! (Has enough worklogs: 27, enough commits: 2, and did not write standup!!!)\n<@userID2> is a rook in <#QWERTY123>! (Not enough worklogs: 3, enough commits: 30, and did not write standup!!!)\n<@userID3> is a rook in <#QWERTY123>! (Not enough worklogs: 0, no commits at all, and did not write standup!!!)\n<@userID4> is a rook in <#QWERTY123>! (Has enough worklogs: 13, enough commits: 20, and did not write standup!!!)\n", n.Config.ChanGeneral), ch.LastMessage)
 
-	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u1.SlackName, u1.ChannelID))
-	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u2.SlackName, u2.ChannelID))
-	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u3.SlackName, u3.ChannelID))
-	assert.NoError(t, n.DB.DeleteStandupUserByUsername(u4.SlackName, u4.ChannelID))
+	assert.NoError(t, n.DB.DeleteStandupUser(u1.SlackName, u1.ChannelID))
+	assert.NoError(t, n.DB.DeleteStandupUser(u2.SlackName, u2.ChannelID))
+	assert.NoError(t, n.DB.DeleteStandupUser(u3.SlackName, u3.ChannelID))
+	assert.NoError(t, n.DB.DeleteStandupUser(u4.SlackName, u4.ChannelID))
 
 	assert.NoError(t, n.DB.DeleteStandupTime(st.ChannelID))
 }
