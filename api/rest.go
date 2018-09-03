@@ -86,8 +86,6 @@ func (r *REST) handleCommands(c echo.Context) error {
 	slackUserID := form.Get("user_id")
 	channelID := form.Get("channel_id")
 	userIsAdmin := r.db.IsAdmin(slackUserID, channelID)
-	logrus.Infof("rest: FormParams info: %v", form)
-	logrus.Infof("rest: isAdmin: %v", userIsAdmin)
 	if (slackUserID != r.conf.ManagerSlackUserID) && (userIsAdmin == false) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
@@ -388,7 +386,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, r.conf.Translate.UserExist)
 	}
-	userID, userName := splitUser(commandParams[1])
+	userID, userName := splitUser(commandParams[0])
 	user, err := r.db.FindStandupUser(userName)
 	if err != nil {
 		return c.String(http.StatusOK, err.Error())
