@@ -222,7 +222,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	}{
 		{"empty text", ReportByProjectEmptyText, http.StatusOK, "`text` cannot be empty"},
 		{"empty channel ID", ReportByProjectEmptyChanID, http.StatusOK, "`channel_id` cannot be empty"},
-		{"correct", ReportByProject, http.StatusOK, "Full Report on project <#CBA2M41Q8>:\n\nReport for: 2018-06-25\nNo standup data for this day\nReport for: 2018-06-26\nNo standup data for this day\n"},
+		{"correct", ReportByProject, http.StatusOK, "Full Report on project <#CBA2M41Q8>:\n\nReport for: 2018-06-25\n<@UB9AE7CL9> did not submit standup!\nReport for: 2018-06-26\n<@UB9AE7CL9> did not submit standup!\n"},
 	}
 
 	for _, tt := range testCases {
@@ -272,7 +272,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		{"user mess up", ReportByUserMessUser, http.StatusOK, "sql: no rows in result set"},
 		{"date from mess up", ReportByUserMessDateF, http.StatusOK, "parsing time \"2018-6-25\": month out of range"},
 		{"date to mess up", ReportByUserMessDateT, http.StatusOK, "parsing time \"2018-6-26\": month out of range"},
-		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1>:\n\nReport for: 2018-06-25\nIn <#123qwe> <@userID1> did not submit standup!\nReport for: 2018-06-26\nIn <#123qwe> <@userID1> did not submit standup!\n"},
+		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1>:\n\nReport for: 2018-06-25\nIn <#123qwe> <@userID1> did not submit standup!\n\nReport for: 2018-06-26\nIn <#123qwe> <@userID1> did not submit standup!\n\n"},
 	}
 
 	for _, tt := range testCases {

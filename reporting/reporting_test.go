@@ -41,7 +41,7 @@ func TestStandupReportByProject(t *testing.T) {
 	//test for no standup submitted
 	actual, err = r.StandupReportByProject(channelID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
-	expected = "Full Report on project <#QWERTY123>:\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!Report for: 2018-09-02\n<@userID1> did not submit standup!Report for: 2018-09-03\n<@userID1> did not submit standup!"
+	expected = "Full Report on project <#QWERTY123>:\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!\nReport for: 2018-09-02\n<@userID1> did not submit standup!\nReport for: 2018-09-03\n<@userID1> did not submit standup!\n"
 	assert.Equal(t, expected, actual)
 
 	//create standup for user
@@ -58,7 +58,7 @@ func TestStandupReportByProject(t *testing.T) {
 	//test if user submitted standup success
 	actual, err = r.StandupReportByProject(channelID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
-	expected = "Full Report on project <#QWERTY123>:\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!Report for: 2018-09-02\n<@userID1> did not submit standup!Report for: 2018-09-03\n<@userID1> submitted standup!"
+	expected = "Full Report on project <#QWERTY123>:\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!\nReport for: 2018-09-02\n<@userID1> did not submit standup!\nReport for: 2018-09-03\n<@userID1> submitted standup: my standup \n\n"
 	assert.Equal(t, expected, actual)
 
 	//create another user
@@ -73,7 +73,7 @@ func TestStandupReportByProject(t *testing.T) {
 	//test if one user wrote standup and the other did not
 	actual, err = r.StandupReportByProject(channelID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
-	expected = "Full Report on project <#QWERTY123>:\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!<@userID2> did not submit standup!Report for: 2018-09-02\n<@userID1> did not submit standup!<@userID2> did not submit standup!Report for: 2018-09-03\n<@userID1> submitted standup!<@userID2> did not submit standup!"
+	expected = "Full Report on project <#QWERTY123>:\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!<@userID2> did not submit standup!\nReport for: 2018-09-02\n<@userID1> did not submit standup!<@userID2> did not submit standup!\nReport for: 2018-09-03\n<@userID1> submitted standup: my standup \n<@userID2> did not submit standup!\n"
 	assert.Equal(t, expected, actual)
 
 	//create standup for user2
@@ -90,7 +90,7 @@ func TestStandupReportByProject(t *testing.T) {
 	//test if both users had written standups
 	actual, err = r.StandupReportByProject(channelID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
-	expected = "Full Report on project <#QWERTY123>:\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!<@userID2> did not submit standup!Report for: 2018-09-02\n<@userID1> did not submit standup!<@userID2> did not submit standup!Report for: 2018-09-03\n<@userID1> submitted standup!<@userID2> submitted standup!"
+	expected = "Full Report on project <#QWERTY123>:\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!<@userID2> did not submit standup!\nReport for: 2018-09-02\n<@userID1> did not submit standup!<@userID2> did not submit standup!\nReport for: 2018-09-03\n<@userID1> submitted standup: my standup \n<@userID2> submitted standup: user2 standup \n\n"
 	assert.Equal(t, expected, actual)
 
 	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
@@ -131,7 +131,7 @@ func TestStandupReportByUser(t *testing.T) {
 	_, err = r.StandupReportByUser(user, dateFrom, dateNext, data)
 	assert.Error(t, err)
 
-	expected := "Full Report on user <@userID1>:\n\nReport for: 2018-09-01\nIn <#QWERTY123> <@userID1> did not submit standup!\nReport for: 2018-09-02\nIn <#QWERTY123> <@userID1> did not submit standup!\nReport for: 2018-09-03\nIn <#QWERTY123> <@userID1> did not submit standup!\n"
+	expected := "Full Report on user <@userID1>:\n\nReport for: 2018-09-01\nIn <#QWERTY123> <@userID1> did not submit standup!\n\nReport for: 2018-09-02\nIn <#QWERTY123> <@userID1> did not submit standup!\n\nReport for: 2018-09-03\nIn <#QWERTY123> <@userID1> did not submit standup!\n\n"
 	actual, err := r.StandupReportByUser(user, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -143,7 +143,7 @@ func TestStandupReportByUser(t *testing.T) {
 		Username:   "user1",
 		MessageTS:  "123",
 	})
-	expected = "Full Report on user <@userID1>:\n\nReport for: 2018-09-01\nIn <#QWERTY123> <@userID1> did not submit standup!\nReport for: 2018-09-02\nIn <#QWERTY123> <@userID1> did not submit standup!\nReport for: 2018-09-03\nIn <#QWERTY123> <@userID1> submitted standup!\n"
+	expected = "Full Report on user <@userID1>:\n\nReport for: 2018-09-01\nIn <#QWERTY123> <@userID1> did not submit standup!\n\nReport for: 2018-09-02\nIn <#QWERTY123> <@userID1> did not submit standup!\n\nReport for: 2018-09-03\nIn <#QWERTY123> <@userID1> submitted standup!\nmy standup \n\n"
 	actual, err = r.StandupReportByUser(user, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -174,7 +174,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	data := []byte{}
 	actual, err := r.StandupReportByProjectAndUser(channelID, user1, dateFrom, dateTo, data)
 	assert.NoError(t, err)
-	expected := "Report on project: <#QWERTY123>, and user: <@userID1>\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!Report for: 2018-09-02\n<@userID1> did not submit standup!Report for: 2018-09-03\n<@userID1> did not submit standup!"
+	expected := "Report on project: <#QWERTY123>, and user: <@userID1>\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!\nReport for: 2018-09-02\n<@userID1> did not submit standup!\nReport for: 2018-09-03\n<@userID1> did not submit standup!\n"
 	assert.Equal(t, expected, actual)
 
 	standup1, err := r.DB.CreateStandup(model.Standup{
@@ -188,7 +188,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	assert.NoError(t, err)
 	actual, err = r.StandupReportByProjectAndUser(channelID, user1, dateFrom, dateTo, data)
 	assert.NoError(t, err)
-	expected = "Report on project: <#QWERTY123>, and user: <@userID1>\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!Report for: 2018-09-02\n<@userID1> did not submit standup!Report for: 2018-09-03\n<@userID1> submitted standup!"
+	expected = "Report on project: <#QWERTY123>, and user: <@userID1>\n\nReport for: 2018-09-01\n<@userID1> did not submit standup!\nReport for: 2018-09-02\n<@userID1> did not submit standup!\nReport for: 2018-09-03\n<@userID1> submitted standup!\nmy standup \n"
 	assert.Equal(t, expected, actual)
 
 	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
