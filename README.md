@@ -1,7 +1,7 @@
 # Comedian
 
 This is a stand up bot for slack. 
-The main goal of the project is a daily stand up meetings automation. There is a problem with stand up meetings offline way. People talk to each other and often they talk not about their plans, but about task specific things.
+The main goal of the project is a daily remote stand up meetings automation. There is a problem with stand up meetings offline way. People talk to each other and often they talk not about their plans, but about task specific things.
 
 ![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/maddevsio/comedian/badge.svg)](https://coveralls.io/github/maddevsio/comedian)
@@ -18,11 +18,12 @@ First things first you need to start do daily meetings in slack. Create a channe
 2. What I'm going to do today
 3. What problems I've faced.
 
-This messages should be written with @botusername mention. The comedian will store it for you and give a convinient reports for you about stand ups.
+The comedian will store it for you and give a convinient reports for you about stand ups.
 
 ## Getting started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. 
+
 ```
 mkdir -p $GOPATH/src/github.com/maddevsio/
 cd $GOPATH/src/github.com/maddevsio/
@@ -55,23 +56,8 @@ Go to "OAuth & Permissions"
 Copy Bot User OAuth Access Token
 "xoxb-___________________"
 
-Add to .env:
 
-```
-DB_NAME=comedian
-DB_USER=comedian
-DB_PASS=comedian
-COMEDIAN_SLACK_TOKEN=xoxb-__________________________
-COMEDIAN_DATABASE=comedian:comedian@(localhost:3306)/comedian?parseTime=true
-COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
-COMEDIAN_NOTIFIER_CHECK_INTERVAL=60
-COMEDIAN_MANAGER_SLACK_USER_ID=XXXYYYXXZZZ
-COMEDIAN_MANAGER_SLACK_CHAN_GENERAL=LKGJFKLGF8909
-COMEDIAN_REPORT_TIME=16:26
-COMEDIAN_LANGUAGE=en_US
-COMEDIAN_COLLECTOR_TOKEN=43io04u23423io4u234i234u23io4u23io423o
-COMEDIAN_COLLECTOR_URL=COLLECTOR_URL
-```
+Create .env file in your workspace and add the env variables from .env.example file. Change according to your needs.
 
 Run:
 ```

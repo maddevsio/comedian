@@ -5,6 +5,7 @@ services:
   db:
     image: percona/percona-server:5.7 
     restart: on-failure
+    command: --max_allowed_packet=32505856      # Set max_allowed_packet to 256M (or any other value)
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: comedian
@@ -15,6 +16,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    volumes:
+      - "./docker:/etc/mysql/conf.d"
 
   comedian:
     build: .
