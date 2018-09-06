@@ -123,7 +123,7 @@ func (n *Notifier) NotifyChannels() {
 			n.SendWarning(st.ChannelID)
 		}
 		if time.Now().Hour() == standupTime.Hour() && time.Now().Minute() == standupTime.Minute() {
-			n.SendChannelNotification(st.ChannelID)
+			go n.SendChannelNotification(st.ChannelID)
 		}
 	}
 }
@@ -179,10 +179,10 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 	// think about his code and refactor more!
 	notifyNotAll := func() error {
-		nonReporters, _ := n.getCurrentDayNonReporters(channelID)
-		if len(nonReporters) == 0 {
-			n.Chat.SendMessage(channelID, n.Config.Translate.NotifyAllDone)
-			return nil
+		nonReporters, err := n.getCurrentDayNonReporters(channelID)
+		if err != nil {
+			logrus.Errorf("notifier: n.getCurrentDayNonReporters failed: %v\n", err)
+			return err
 		}
 
 		nonReportersSlackIDs := []string{}
@@ -191,9 +191,8 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		}
 		logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
-		n.Chat.SendMessage(channelID, fmt.Sprintf(n.Config.Translate.NotifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
-
-		if repeats <= n.Config.ReminderRepeatsMax && len(nonReporters) > 0 {
+		if repeats < n.Config.ReminderRepeatsMax && len(nonReporters) > 0 {
+			n.Chat.SendMessage(channelID, fmt.Sprintf(n.Config.Translate.NotifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
 			repeats++
 			err := errors.New("Continue backoff")
 			return err
