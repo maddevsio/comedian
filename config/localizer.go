@@ -85,12 +85,14 @@ type Translate struct {
 func GetTranslation(lang string) (Translate, error) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-
-	wd, _ := os.Getwd()
-	for !strings.HasSuffix(wd, "comedian") {
+	wd, err := os.Getwd()
+	if err != nil {
+		return Translate{}, err
+	}
+	if !strings.HasSuffix(wd, "comedian") {
 		wd = filepath.Dir(wd)
 	}
-	_, err := bundle.LoadMessageFile(fmt.Sprintf("%s/config/ru.toml", wd))
+	_, err = bundle.LoadMessageFile(fmt.Sprintf("%s/config/ru.toml", wd))
 	if err != nil {
 		return Translate{}, err
 	}
