@@ -11,11 +11,6 @@ services:
       MYSQL_DATABASE: comedian
       MYSQL_USER: comedian
       MYSQL_PASSWORD: comedian
-    healthcheck:
-      test: ["CMD-SHELL", "mysql -u comedian -pcomedian -e 'SHOW DATABASES' > /dev/null 2>&1 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
     volumes:
       - "./docker:/etc/mysql/conf.d"
 

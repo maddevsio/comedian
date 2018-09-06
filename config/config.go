@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -25,10 +27,15 @@ type Config struct {
 // Get method processes env variables and fills Config struct
 func Get() (Config, error) {
 	var c Config
-	var err error
-	if err = envconfig.Process("comedian", &c); err != nil {
+	err := envconfig.Process("comedian", &c)
+	if err != nil {
 		return c, err
 	}
-	c.Translate, err = GetTranslation(c.Language)
+	t, err := GetTranslation(c.Language)
+	if err != nil {
+		return c, err
+	}
+	c.Translate = t
+	fmt.Println(c.Translate)
 	return c, nil
 }
