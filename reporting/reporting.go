@@ -42,7 +42,7 @@ func (r *Reporter) StandupReportByProject(channelID string, dateFrom, dateTo tim
 	channel := strings.Replace(channelID, "#", "", -1)
 	report := fmt.Sprintf(r.Config.Translate.ReportOnProjectHead, channel)
 
-	dateFromBegin, numberOfDays, err := setupDays(dateFrom, dateTo)
+	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
 		return "", err
 	}
@@ -50,10 +50,10 @@ func (r *Reporter) StandupReportByProject(channelID string, dateFrom, dateTo tim
 	for day := 0; day <= numberOfDays; day++ {
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
 		dateTo := dateFrom.Add(24 * time.Hour)
-		report += fmt.Sprintf("Report for: %v\n", dateFrom.Format("2006-01-02"))
+		report += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
 		standupers, err := r.DB.ListStandupUsersByChannelID(channel)
 		if err != nil || len(standupers) == 0 {
-			report += "No standup data for this day\n"
+			report += r.Config.Translate.ReportNoData
 			continue
 		}
 		for _, user := range standupers {
@@ -63,10 +63,10 @@ func (r *Reporter) StandupReportByProject(channelID string, dateFrom, dateTo tim
 				continue
 			}
 			if userIsNonReporter {
-				report += fmt.Sprintf("<@%v> did not submit standup!", user.SlackUserID)
+				report += fmt.Sprintf(r.Config.Translate.UserDidNotStandup, user.SlackUserID)
 				continue
 			}
-			report += fmt.Sprintf("<@%v> submitted standup: ", user.SlackUserID)
+			report += fmt.Sprintf(r.Config.Translate.UserDidStandup, user.SlackUserID)
 			standups, err := r.DB.SelectStandupsFiltered(user.SlackUserID, channel, dateFrom, dateTo)
 			if err != nil {
 				fmt.Println(err)
@@ -85,7 +85,7 @@ func (r *Reporter) StandupReportByProject(channelID string, dateFrom, dateTo tim
 func (r *Reporter) StandupReportByUser(user model.StandupUser, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
 	report := fmt.Sprintf(r.Config.Translate.ReportOnUserHead, user.SlackUserID)
 
-	dateFromBegin, numberOfDays, err := setupDays(dateFrom, dateTo)
+	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
 		return "", err
 	}
@@ -93,10 +93,10 @@ func (r *Reporter) StandupReportByUser(user model.StandupUser, dateFrom, dateTo 
 	for day := 0; day <= numberOfDays; day++ {
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
 		dateTo := dateFrom.Add(24 * time.Hour)
-		report += fmt.Sprintf("Report for: %v\n", dateFrom.Format("2006-01-02"))
+		report += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
 		channels, err := r.DB.GetUserChannels(user.SlackUserID)
 		if err != nil || len(channels) == 0 {
-			report += "No standup data for this day\n"
+			report += r.Config.Translate.ReportNoData
 			continue
 		}
 		for _, channel := range channels {
@@ -106,10 +106,10 @@ func (r *Reporter) StandupReportByUser(user model.StandupUser, dateFrom, dateTo 
 				continue
 			}
 			if userIsNonReporter {
-				report += fmt.Sprintf("In <#%v> <@%v> did not submit standup!\n", channel, user.SlackUserID)
+				report += fmt.Sprintf(r.Config.Translate.UserDidNotStandupInChannel, channel, user.SlackUserID)
 				continue
 			}
-			report += fmt.Sprintf("In <#%v> <@%v> submitted standup!\n", channel, user.SlackUserID)
+			report += fmt.Sprintf(r.Config.Translate.UserDidStandupInChannel, channel, user.SlackUserID)
 			standups, err := r.DB.SelectStandupsFiltered(user.SlackUserID, channel, dateFrom, dateTo)
 			if err != nil {
 				fmt.Println(err)
@@ -129,7 +129,7 @@ func (r *Reporter) StandupReportByProjectAndUser(channelID string, user model.St
 	channel := strings.Replace(channelID, "#", "", -1)
 	report := fmt.Sprintf(r.Config.Translate.ReportOnProjectAndUserHead, channel, user.SlackUserID)
 
-	dateFromBegin, numberOfDays, err := setupDays(dateFrom, dateTo)
+	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
 		return "", err
 	}
@@ -137,17 +137,17 @@ func (r *Reporter) StandupReportByProjectAndUser(channelID string, user model.St
 	for day := 0; day <= numberOfDays; day++ {
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
 		dateTo := dateFrom.Add(24 * time.Hour)
-		report += fmt.Sprintf("Report for: %v\n", dateFrom.Format("2006-01-02"))
+		report += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
 		userIsNonReporter, err := r.DB.IsNonReporter(user.SlackUserID, channel, dateFrom, dateTo)
 		if err != nil {
-			report += "No standup data for this day\n"
+			report += r.Config.Translate.ReportNoData
 			continue
 		}
 		if userIsNonReporter {
-			report += fmt.Sprintf("<@%v> did not submit standup!\n", user.SlackUserID)
+			report += fmt.Sprintf(r.Config.Translate.UserDidNotStandup, user.SlackUserID)
 			continue
 		}
-		report += fmt.Sprintf("<@%v> submitted standup!\n", user.SlackUserID)
+		report += fmt.Sprintf(r.Config.Translate.UserDidStandup, user.SlackUserID)
 		standups, err := r.DB.SelectStandupsFiltered(user.SlackUserID, channel, dateFrom, dateTo)
 		if err != nil {
 			fmt.Println(err)
@@ -173,12 +173,12 @@ func (r *Reporter) fetchCollectorData(data []byte) string {
 }
 
 //setupDays gets dates and returns their differense in days
-func setupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
+func (r *Reporter) setupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
 	if dateTo.Before(dateFrom) {
-		return time.Now(), 0, errors.New("Starting date is bigger than end date")
+		return time.Now(), 0, errors.New(r.Config.Translate.DateError1)
 	}
 	if dateTo.After(time.Now()) {
-		return time.Now(), 0, errors.New("Report end time was in the future, time range was truncated")
+		return time.Now(), 0, errors.New(r.Config.Translate.DateError2)
 	}
 	dateFromRounded := time.Date(dateFrom.Year(), dateFrom.Month(), dateFrom.Day(), 0, 0, 0, 0, time.UTC)
 	dateToRounded := time.Date(dateTo.Year(), dateTo.Month(), dateTo.Day(), 0, 0, 0, 0, time.UTC)
