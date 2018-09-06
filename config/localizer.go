@@ -56,6 +56,13 @@ type Translate struct {
 	ReportIgnoredStandup         string
 	ReportShowChannel            string
 	ReportCollectorDataUser      string
+	UserDidNotStandup            string
+	UserDidStandup               string
+	UserDidNotStandupInChannel   string
+	UserDidStandupInChannel      string
+
+	DateError1 string
+	DateError2 string
 
 	HelloManager    string
 	StandupAccepted string
@@ -125,6 +132,9 @@ func GetTranslation(lang string) (Translate, error) {
 		"showNoStandupTime",
 		"showStandupTime",
 		"wrongNArgs",
+		"dateError1", "dateError2",
+		"userDidNotStandup", "userDidStandup",
+		"userDidNotStandupInChannel", "userDidStandupInChannel",
 	}
 
 	for _, t := range r {
@@ -177,8 +187,14 @@ func GetTranslation(lang string) (Translate, error) {
 		ReportIgnoredStandup:         m["reportIgnoredStandup"],
 		ReportShowChannel:            m["reportShowChannel"],
 		ReportCollectorDataUser:      m["reportCollectorDataUser"],
+		DateError1:                   m["dateError1"],
+		DateError2:                   m["dateError2"],
 		HelloManager:                 m["helloManager"],
 		StandupAccepted:              m["standupAccepted"],
+		UserDidNotStandup:            m["userDidNotStandup"],
+		UserDidStandup:               m["userDidStandup"],
+		UserDidNotStandupInChannel:   m["userDidNotStandupInChannel"],
+		UserDidStandupInChannel:      m["userDidStandupInChannel"],
 
 		P1: m["p1"],
 		P2: m["p2"],
@@ -193,5 +209,6 @@ func GetTranslation(lang string) (Translate, error) {
 		T2: m["t2"],
 		T3: m["t3"],
 	}
+
 	return t, nil
 }
