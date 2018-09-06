@@ -141,7 +141,7 @@ func TestHandleTimeCommands(t *testing.T) {
 		responseBody string
 	}{
 		{"list time no time added", ListTime, http.StatusOK, "No standup time set for this channel yet! Please, add a standup time using `/standuptimeset` command!"},
-		{"add time (no users)", AddTime, http.StatusOK, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel>", timeInt)},
+		{"add time (no users)", AddTime, http.StatusOK, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>", timeInt)},
 		{"add time no text", AddEmptyTime, http.StatusBadRequest, "`text` cannot be empty"},
 		{"add time no channelName", AddTimeEmptyChannelName, http.StatusBadRequest, "`channel_name` cannot be empty"},
 		{"add time (no channelID)", AddTimeEmptyChannelID, http.StatusBadRequest, "`channel_id` cannot be empty"},
