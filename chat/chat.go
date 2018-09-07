@@ -5,4 +5,5 @@ type Chat interface {
 	Run() error
 	SendMessage(string, string) error
 	SendUserMessage(string, string) error
+	GetChannelName(string) (string, error)
 }

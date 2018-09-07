@@ -70,12 +70,7 @@ func (s *Slack) Run() error {
 }
 
 func (s *Slack) handleConnection() error {
-	c, err := config.Get()
-	if err != nil {
-		logrus.Errorf("slack: GetConfig: %v\n", err)
-		return err
-	}
-	s.SendUserMessage(c.ManagerSlackUserID, s.Conf.Translate.HelloManager)
+	s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 	return nil
 }
 
@@ -184,4 +179,24 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 		return err
 	}
 	return err
+}
+
+//GetChannelName returns channel name
+func (s *Slack) GetChannelName(channelID string) (string, error) {
+	name := ""
+	channel, err := s.api.GetChannelInfo(channelID)
+	if err != nil {
+		logrus.Errorf("slack: GetChannelInfo failed: %v", err)
+	}
+	if err == nil {
+		return channel.Name, nil
+	}
+	group, err := s.api.GetGroupInfo(channelID)
+	if err != nil {
+		logrus.Errorf("slack: GetGroupInfo failed: %v", err)
+	}
+	if err == nil {
+		return group.Name, nil
+	}
+	return name, err
 }

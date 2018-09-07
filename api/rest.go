@@ -146,6 +146,10 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	result := strings.Split(ca.Text, "|")
 	slackUserID := strings.Replace(result[0], "<@", "", -1)
 	userName := strings.Replace(result[1], ">", "", -1)
+	channelName, err := r.slack.GetChannelName(ca.ChannelID)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
 
 	user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
 	if err != nil {
@@ -153,7 +157,7 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 			SlackUserID: slackUserID,
 			SlackName:   userName,
 			ChannelID:   ca.ChannelID,
-			Channel:     ca.ChannelName,
+			Channel:     channelName,
 			Role:        "user",
 		})
 		if err != nil {
@@ -187,6 +191,10 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 	result := strings.Split(ca.Text, "|")
 	slackUserID := strings.Replace(result[0], "<@", "", -1)
 	userName := strings.Replace(result[1], ">", "", -1)
+	channelName, err := r.slack.GetChannelName(ca.ChannelID)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
 
 	user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
 	if err != nil {
@@ -194,14 +202,14 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 			SlackUserID: slackUserID,
 			SlackName:   userName,
 			ChannelID:   ca.ChannelID,
-			Channel:     ca.ChannelName,
+			Channel:     channelName,
 			Role:        "admin",
 		})
 		if err != nil {
 			logrus.Errorf("rest: CreateStandupUser failed: %v\n", err)
 			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
 		}
-		message := fmt.Sprintf(r.conf.Translate.PMAssigned, ca.ChannelID, ca.ChannelName)
+		message := fmt.Sprintf(r.conf.Translate.PMAssigned, ca.ChannelID, channelName)
 		err = r.slack.SendUserMessage(slackUserID, message)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
