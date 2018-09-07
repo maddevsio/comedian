@@ -38,8 +38,10 @@ Create the following commands (Request URL for all "http: // <comedian_address> 
 
 | Name | Hint | Description |
 | --- | --- | --- |
+| /adminadd | @user | Adds a new admin |
+| /adminremove | @user | Removes an admin |
+| /adminlist | - | Lists all admins |
 | /comedianadd | @user | Adds a new standuper |
-| /comedianaddadmin | @user | Adds a new admin |
 | /comedianremove | @user | Removes a standuper |
 | /comedianlist | - | Lists all standupers |
 | /standuptimeset | hh:mm | Set standup time |

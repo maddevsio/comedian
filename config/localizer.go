@@ -21,8 +21,11 @@ type Translate struct {
 	AccessDenied         string
 
 	DeleteUser       string
+	DeleteAdmin      string
 	ListNoStandupers string
+	ListNoAdmins     string
 	ListStandupers   string
+	ListAdmins       string
 
 	AddStandupTimeNoUsers      string
 	AddStandupTime             string
@@ -60,6 +63,8 @@ type Translate struct {
 	UserDidStandup               string
 	UserDidNotStandupInChannel   string
 	UserDidStandupInChannel      string
+	PMAssigned                   string
+	PMRemoved                    string
 
 	DateError1 string
 	DateError2 string
@@ -125,8 +130,11 @@ func GetTranslation(lang string) (Translate, error) {
 		"addAdmin",
 		"accessDenied",
 		"deleteUser",
+		"deleteAdmin",
 		"listNoStandupers",
+		"listNoAdmins",
 		"listStandupers",
+		"listAdmins",
 		"addStandupTimeNoUsers",
 		"addStandupTime",
 		"removeStandupTimeWithUsers",
@@ -137,6 +145,8 @@ func GetTranslation(lang string) (Translate, error) {
 		"dateError1", "dateError2",
 		"userDidNotStandup", "userDidStandup",
 		"userDidNotStandupInChannel", "userDidStandupInChannel",
+		"PMAssigned",
+		"PMRemoved",
 	}
 
 	for _, t := range r {
@@ -156,8 +166,11 @@ func GetTranslation(lang string) (Translate, error) {
 		AccessDenied:         m["accessDenied"],
 
 		DeleteUser:       m["deleteUser"],
+		DeleteAdmin:      m["deleteAdmin"],
 		ListNoStandupers: m["listNoStandupers"],
+		ListNoAdmins:     m["listNoAdmins"],
 		ListStandupers:   m["listStandupers"],
+		ListAdmins:       m["listAdmins"],
 
 		AddStandupTimeNoUsers:        m["addStandupTimeNoUsers"],
 		AddStandupTime:               m["addStandupTime"],
@@ -197,6 +210,8 @@ func GetTranslation(lang string) (Translate, error) {
 		UserDidStandup:               m["userDidStandup"],
 		UserDidNotStandupInChannel:   m["userDidNotStandupInChannel"],
 		UserDidStandupInChannel:      m["userDidStandupInChannel"],
+		PMAssigned:                   m["PMAssigned"],
+		PMRemoved:                    m["PMRemoved"],
 
 		P1: m["p1"],
 		P2: m["p2"],

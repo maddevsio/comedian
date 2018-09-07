@@ -51,8 +51,14 @@ type Storage interface {
 	// DeleteStandupUser deletes standup_users entry from database
 	DeleteStandupUser(string, string) error
 
+	// DeleteAdmin deletes standup_users entry from database
+	DeleteAdmin(string, string) error
+
 	// ListStandupUsersByChannelID returns array of standupUser entries from database
 	ListStandupUsersByChannelID(string) ([]model.StandupUser, error)
+
+	// ListAdminsByChannelID returns array of standup entries from database
+	ListAdminsByChannelID(string) ([]model.StandupUser, error)
 
 	// ListAllStandupUsers returns array of standupUser entries from database
 	ListAllStandupUsers() ([]model.StandupUser, error)

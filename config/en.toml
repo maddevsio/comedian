@@ -5,8 +5,11 @@ addAdmin = "<@%s> added as admin"
 accessDenied = "This command is not allowed for you! You are not admin"
 
 deleteUser = "<@%s> deleted"
-listNoStandupers = "No standupers in this channel! To add one, please, use /comedianadd slash command"
+deleteAdmin = "<@%s> deleted as admin"
+listNoStandupers = "No standupers in this channel! To add one, please, use `/comedianadd` slash command"
+listNoAdmins = "No admins in this channel! To add one, please, use `/adminadd` slash command"
 listStandupers = "Standupers in this channel: %v"
+listAdmins = "Admins in this channel: %v"
 
 addStandupTimeNoUsers = "<!date^%v^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"
 addStandupTime = "<!date^%v^Standup time set at {time}|Standup time set at 12:00>"
@@ -35,6 +38,7 @@ userDidNotStandup = "<@%v> did not submit standup!"
 userDidStandup = "<@%v> submitted standup: "
 userDidNotStandupInChannel = "In <#%v> <@%v> did not submit standup!"
 userDidStandupInChannel = "In <#%v> <@%v> submitted standup: "
+PMAssigned = "You have been added as an PM in <#%s|%s>"
 
 
 helloManager = "Hello, Manager!"
