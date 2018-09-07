@@ -256,12 +256,18 @@ func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
 	slackUserID := strings.Replace(result[0], "<@", "", -1)
 	userName := strings.Replace(result[1], ">", "", -1)
 
-	err := r.db.DeleteAdmin(userName, ca.ChannelID)
+	user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: DeleteStandupUser failed: %v\n", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
 	}
-	message := fmt.Sprintf(r.conf.Translate.PMRemoved, ca.ChannelID, ca.ChannelName)
+
+	err = r.db.DeleteAdmin(userName, ca.ChannelID)
+	if err != nil {
+		logrus.Errorf("rest: DeleteStandupUser failed: %v\n", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
+	}
+	message := fmt.Sprintf(r.conf.Translate.PMRemoved, user.ChannelID, user.Channel)
 	err = r.slack.SendUserMessage(slackUserID, message)
 	if err != nil {
 		logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
