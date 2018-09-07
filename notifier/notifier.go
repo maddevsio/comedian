@@ -169,7 +169,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 	// othervise Direct Message non reporters
 	for _, nonReporter := range nonReporters {
-		err := n.Chat.SendUserMessage(nonReporter.SlackUserID, fmt.Sprintf(n.Config.Translate.NotifyDirectMessage, nonReporter.SlackName, nonReporter.ChannelID))
+		err := n.Chat.SendUserMessage(nonReporter.SlackUserID, fmt.Sprintf(n.Config.Translate.NotifyDirectMessage, nonReporter.SlackName, nonReporter.ChannelID, nonReporter.Channel))
 		if err != nil {
 			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
 		}

@@ -5,14 +5,12 @@ services:
   db:
     image: percona/percona-server:5.7 
     restart: on-failure
-    command: --max_allowed_packet=32505856      # Set max_allowed_packet to 256M (or any other value)
+    command: --max_allowed_packet=32505856
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: comedian
       MYSQL_USER: comedian
       MYSQL_PASSWORD: comedian
-    volumes:
-      - "./docker:/etc/mysql/conf.d"
 
   comedian:
     build: .
@@ -22,6 +20,7 @@ services:
     links:
       - db:db
     environment:
+      TZ: Asia/Bishkek
       COMEDIAN_SLACK_TOKEN: ${COMEDIAN_SLACK_TOKEN}
       COMEDIAN_DATABASE: comedian:comedian@tcp(db:3306)/comedian?parseTime=true
       COMEDIAN_HTTP_BIND_ADDR: ${COMEDIAN_HTTP_BIND_ADDR}
