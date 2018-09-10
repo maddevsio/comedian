@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bouk/monkey"
+	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +38,9 @@ func TestNotifier(t *testing.T) {
 	c.NotifierInterval = 0
 	assert.NoError(t, err)
 	ch := &ChatStub{}
-	n, err := NewNotifier(c, ch)
+	slack, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	n, err := NewNotifier(c, slack)
 	assert.NoError(t, err)
 
 	channelID := "QWERTY123"
@@ -124,7 +127,9 @@ func TestCheckUser(t *testing.T) {
 	c.ChanGeneral = "XXXYYYZZZ"
 	assert.NoError(t, err)
 	ch := &ChatStub{}
-	n, err := NewNotifier(c, ch)
+	slack, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	n, err := NewNotifier(c, slack)
 	assert.NoError(t, err)
 
 	users, err := n.DB.ListAllStandupUsers()

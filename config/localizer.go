@@ -42,6 +42,7 @@ type Translate struct {
 	HasCommits          string
 	HasStandup          string
 	IsRook              string
+	IsRookMonday        string
 	NotifyAllDone       string
 	NotifyNotAll        string
 	NotifyManagerNotAll string
@@ -147,6 +148,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"userDidNotStandupInChannel", "userDidStandupInChannel",
 		"PMAssigned",
 		"PMRemoved",
+		"isRookMonday",
 	}
 
 	for _, t := range r {
@@ -186,6 +188,7 @@ func GetTranslation(lang string) (Translate, error) {
 		HasCommits:                   m["hasCommits"],
 		HasStandup:                   m["hasStandup"],
 		IsRook:                       m["isRook"],
+		IsRookMonday:                 m["isRookMonday"],
 		NotifyAllDone:                m["notifyAllDone"],
 		NotifyNotAll:                 m["notifyNotAll"],
 		NotifyManagerNotAll:          m["notifyManagerNotAll"],

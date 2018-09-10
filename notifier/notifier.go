@@ -64,7 +64,6 @@ func (n *Notifier) RevealRooks() {
 		logrus.Errorf("notifier: n.GetCurrentDayNonReporters failed: %v\n", err)
 		return
 	}
-	text := ""
 	for _, user := range allUsers {
 		worklogs, commits, err := n.getCollectorData(user, timeFrom, time.Now().AddDate(0, 0, -1))
 		if err != nil {
@@ -94,13 +93,13 @@ func (n *Notifier) RevealRooks() {
 			} else {
 				fails += n.Config.Translate.HasStandup
 			}
-
-			text += fmt.Sprintf(n.Config.Translate.IsRook, user.SlackUserID, user.ChannelID, user.Channel, fails)
+			text := fmt.Sprintf(n.Config.Translate.IsRook, user.SlackUserID, fails)
+			if int(time.Now().Weekday()) == 1 {
+				text = fmt.Sprintf(n.Config.Translate.IsRookMonday, user.SlackUserID, fails)
+			}
+			n.Chat.SendMessage(user.ChannelID, text)
 		}
 	}
-
-	n.Chat.SendMessage(n.Config.ChanGeneral, text)
-
 }
 
 // NotifyChannels reminds users of channels about upcoming or missing standups
@@ -219,7 +218,8 @@ func (n *Notifier) getCurrentDayNonReporters(channelID string) ([]model.StandupU
 func (n *Notifier) getCollectorData(user model.StandupUser, timeFrom, timeTo time.Time) (int, int, error) {
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", timeFrom.Year(), timeFrom.Month(), timeFrom.Day())
 	dateTo := fmt.Sprintf("%d-%02d-%02d", timeTo.Year(), timeTo.Month(), timeTo.Day())
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", n.Config.CollectorURL, "users", user.SlackUserID, dateFrom, dateTo)
+	pu := user.Channel + "/" + user.SlackUserID
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/", n.Config.CollectorURL, "projects-users", pu, dateFrom, dateTo)
 
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
