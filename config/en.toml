@@ -73,4 +73,4 @@ hasWorklogs = "Has enough worklogs: %v"
 hasCommits = "enough commits: %v"
 hasStandup = "yet wrote a standup, good job!"
 
-isRook = "<@%v> is a rook in <#%v>! (%v)\n"
+isRook = "<@%v> is a rook in <#%v|%v>! (%v)\n"
