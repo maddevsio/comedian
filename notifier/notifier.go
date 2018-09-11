@@ -94,8 +94,10 @@ func (n *Notifier) RevealRooks() {
 				fails += n.Config.Translate.HasStandup
 			}
 			text := fmt.Sprintf(n.Config.Translate.IsRook, user.SlackUserID, fails)
+			fmt.Println(text)
 			if int(time.Now().Weekday()) == 1 {
 				text = fmt.Sprintf(n.Config.Translate.IsRookMonday, user.SlackUserID, fails)
+				fmt.Println(text)
 			}
 			n.Chat.SendMessage(user.ChannelID, text)
 		}
@@ -218,8 +220,7 @@ func (n *Notifier) getCurrentDayNonReporters(channelID string) ([]model.StandupU
 func (n *Notifier) getCollectorData(user model.StandupUser, timeFrom, timeTo time.Time) (int, int, error) {
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", timeFrom.Year(), timeFrom.Month(), timeFrom.Day())
 	dateTo := fmt.Sprintf("%d-%02d-%02d", timeTo.Year(), timeTo.Month(), timeTo.Day())
-	pu := user.Channel + "/" + user.SlackUserID
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/", n.Config.CollectorURL, "projects-users", pu, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/", n.Config.CollectorURL, "users", user.SlackUserID, dateFrom, dateTo)
 
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {

@@ -161,7 +161,6 @@ func (s *Slack) SendMessage(channel, message string) error {
 		logrus.Errorf("slack: PostMessage failed: %v\n", err)
 		return err
 	}
-	logrus.Infof("slack: Slack message sent: chan:%v, message:%v\n", channel, message)
 	return err
 }
 
@@ -172,7 +171,6 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 		logrus.Errorf("slack: OpenIMChannel failed: %v\n", err)
 		return err
 	}
-	logrus.Infof("slack: Slack OpenIMChannel: %v\n", userID)
 	err = s.SendMessage(channelID, message)
 	if err != nil {
 		logrus.Errorf("slack: SendMessage failed: %v\n", err)
