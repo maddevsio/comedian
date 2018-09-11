@@ -16,9 +16,10 @@ type (
 	}
 	// ChannelIDTextForm struct used for parsing text and channel_id param
 	ChannelIDTextForm struct {
-		Command   string `schema:"command"`
-		Text      string `schema:"text"`
-		ChannelID string `schema:"channel_id"`
+		Command     string `schema:"command"`
+		Text        string `schema:"text"`
+		ChannelID   string `schema:"channel_id"`
+		ChannelName string `schema:"channel_name"`
 	}
 	// ChannelIDForm struct used for parsing channel_id param
 	ChannelIDForm struct {

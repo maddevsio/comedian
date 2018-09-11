@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -36,6 +34,5 @@ func Get() (Config, error) {
 		return c, err
 	}
 	c.Translate = t
-	fmt.Println(c.Translate)
 	return c, nil
 }

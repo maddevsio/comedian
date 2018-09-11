@@ -61,6 +61,14 @@ func TestHandleUserCommands(t *testing.T) {
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/groups.info",
+		httpmock.NewStringResponder(200, `{"ok": true,"group": {"id": "chanid", "name": "channame"}}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/channels.info",
+		httpmock.NewStringResponder(200, `{"ok": true,"channel": {"id": "chanid", "name": "channame"}}`))
+
 	testCases := []struct {
 		title        string
 		command      string
@@ -100,7 +108,7 @@ func TestHandleUserCommands(t *testing.T) {
 	}{
 		{"add user with standup time", AddUser, http.StatusOK, "<@test> added"},
 		{"delete user", DelUser, http.StatusOK, "<@test> deleted"},
-		{"list no users", ListUsers, http.StatusOK, "No standupers in this channel! To add one, please, use /comedianadd slash command"},
+		{"list no users", ListUsers, http.StatusOK, "No standupers in this channel! To add one, please, use `/comedianadd` slash command"},
 	}
 
 	for _, tt := range testCases {

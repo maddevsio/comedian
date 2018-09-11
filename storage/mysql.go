@@ -190,9 +190,22 @@ func (m *MySQL) ListStandupUsersByChannelID(channelID string) ([]model.StandupUs
 	return items, err
 }
 
+// ListAdminsByChannelID returns array of standup entries from database
+func (m *MySQL) ListAdminsByChannelID(channelID string) ([]model.StandupUser, error) {
+	items := []model.StandupUser{}
+	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=? AND role='admin'", channelID)
+	return items, err
+}
+
 // DeleteStandupUser deletes standup_users entry from database
 func (m *MySQL) DeleteStandupUser(username, channelID string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=?", username, channelID)
+	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=? AND role!='admin'", username, channelID)
+	return err
+}
+
+// DeleteAdmin deletes standup_users entry from database
+func (m *MySQL) DeleteAdmin(username, channelID string) error {
+	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=? AND role='admin'", username, channelID)
 	return err
 }
 
