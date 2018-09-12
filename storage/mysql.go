@@ -33,9 +33,15 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 	if err != nil {
 		return s, err
 	}
+	var channelName string
+	err = m.conn.Get(&channelName, "SELECT channel FROM `standup_users` where channel_id =?", s.ChannelID)
+	if err != nil {
+		return s, err
+	}
+
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup` (created, modified, comment, channel_id, username_id, message_ts) VALUES (?, ?, ?, ?, ?, ?)",
-		time.Now().UTC(), time.Now().UTC(), s.Comment, s.ChannelID, s.UsernameID, s.MessageTS,
+		"INSERT INTO `standup` (created, modified, comment, channel, channel_id, username_id, message_ts) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		time.Now().UTC(), time.Now().UTC(), s.Comment, channelName, s.ChannelID, s.UsernameID, s.MessageTS,
 	)
 	if err != nil {
 		return s, err
@@ -289,6 +295,17 @@ func (m *MySQL) GetUserChannels(slackUserID string) ([]string, error) {
 	channels := []string{}
 	err := m.conn.Select(&channels, "SELECT channel_id FROM `standup_users` where slack_user_id=?", slackUserID)
 	return channels, err
+}
+
+//GetChannelName returns channel name
+func (m *MySQL) GetChannelName(channelID string) (string, error) {
+	var channelName string
+	err := m.conn.Get(&channelName, "SELECT channel FROM `standup_users` where channel_id =?", channelID)
+	if err != nil {
+		return "", err
+	}
+
+	return channelName, err
 }
 
 // ListStandups returns array of standup entries from database

@@ -79,4 +79,7 @@ type Storage interface {
 
 	//GetUserChannels returns a list of user's channels
 	GetUserChannels(string) ([]string, error)
+
+	//GetChannelName returns channel name
+	GetChannelName(string) (string, error)
 }
