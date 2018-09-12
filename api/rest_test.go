@@ -124,6 +124,81 @@ func TestHandleUserCommands(t *testing.T) {
 	assert.NoError(t, rest.db.DeleteStandupTime(st.ChannelID))
 }
 
+func TestHandleAdminCommands(t *testing.T) {
+	AddAdmin := "user_id=UB9AE7CL9&command=/adminadd&text=<@userid|test>&channel_id=chanid&channel_name=channame"
+	AddEmptyText := "user_id=UB9AE7CL9&command=/adminadd&text="
+	AddAdminEmptyChannelID := "user_id=UB9AE7CL9&command=/adminadd&text=test&channel_id=&channel_name=channame"
+	AddAdminEmptyChannelName := "user_id=UB9AE7CL9&command=/adminadd&text=test&channel_id=chanid&channel_name="
+	DelAdmin := "user_id=UB9AE7CL9&command=/adminremove&text=<@userid|test>&channel_id=chanid"
+	ListAdmins := "user_id=UB9AE7CL9&command=/adminlist&channel_id=chanid"
+
+	c, err := config.Get()
+	rest, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/groups.info",
+		httpmock.NewStringResponder(200, `{"ok": true,"group": {"id": "chanid", "name": "channame"}}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/channels.info",
+		httpmock.NewStringResponder(200, `{"ok": true,"channel": {"id": "chanid", "name": "channame"}}`))
+
+	testCases := []struct {
+		title        string
+		command      string
+		statusCode   int
+		responseBody string
+	}{
+		{"empty channel ID", AddAdminEmptyChannelID, http.StatusBadRequest, "`channel_id` cannot be empty"},
+		{"empty channel name", AddAdminEmptyChannelName, http.StatusBadRequest, "`channel_name` cannot be empty"},
+		{"empty text", AddEmptyText, http.StatusBadRequest, "`text` cannot be empty"},
+		{"add admin no standup time", AddAdmin, http.StatusOK, "<@test> added as admin"},
+		{"list admins", ListAdmins, http.StatusOK, "Admins in this channel: <@test>"},
+		{"add admin with admin exist", AddAdmin, http.StatusOK, "User already exists!"},
+		{"delete admin", DelAdmin, http.StatusOK, "<@test> deleted as admin"},
+	}
+
+	for _, tt := range testCases {
+		context, rec := getContext(tt.command)
+		err := rest.handleCommands(context)
+		if err != nil {
+			logrus.Errorf("TestHandleUserCommands: %s failed. Error: %v\n", tt.title, err)
+		}
+		assert.Equal(t, tt.statusCode, rec.Code)
+		assert.Equal(t, tt.responseBody, rec.Body.String())
+	}
+
+	st, err := rest.db.CreateStandupTime(model.StandupTime{
+		ChannelID: "chanid",
+		Channel:   "channame",
+		Time:      int64(12),
+	})
+
+	testCases = []struct {
+		title        string
+		command      string
+		statusCode   int
+		responseBody string
+	}{
+		{"add admin with standup time", AddAdmin, http.StatusOK, "<@test> added as admin"},
+		{"delete admin", DelAdmin, http.StatusOK, "<@test> deleted as admin"},
+		{"list no admins", ListAdmins, http.StatusOK, "No admins in this channel! To add one, please, use `/adminadd` slash command"},
+	}
+
+	for _, tt := range testCases {
+		context, rec := getContext(tt.command)
+		err := rest.handleCommands(context)
+		if err != nil {
+			logrus.Errorf("TestHandleAdminCommands: %s failed. Error: %v\n", tt.title, err)
+		}
+		assert.Equal(t, tt.statusCode, rec.Code)
+		assert.Equal(t, tt.responseBody, rec.Body.String())
+	}
+
+	assert.NoError(t, rest.db.DeleteStandupTime(st.ChannelID))
+}
+
 func TestHandleTimeCommands(t *testing.T) {
 
 	AddTime := "user_id=UB9AE7CL9&command=/standuptimeset&text=12:05&channel_id=chanid&channel_name=channame"
@@ -277,7 +352,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		responseBody string
 	}{
 		{"empty text", ReportByUserEmptyText, http.StatusOK, "`text` cannot be empty"},
-		{"user mess up", ReportByUserMessUser, http.StatusOK, "sql: no rows in result set"},
+		{"user mess up", ReportByUserMessUser, http.StatusOK, "User does not exist!"},
 		{"date from mess up", ReportByUserMessDateF, http.StatusOK, "parsing time \"2018-6-25\": month out of range"},
 		{"date to mess up", ReportByUserMessDateT, http.StatusOK, "parsing time \"2018-6-26\": month out of range"},
 		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1>:\n\nReport for: 2018-06-25\nIn <#123qwe> <@userID1> did not submit standup!\nReport for: 2018-06-26\nIn <#123qwe> <@userID1> did not submit standup!\n"},

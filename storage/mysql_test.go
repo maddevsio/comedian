@@ -135,6 +135,10 @@ func TestCRUDStandupUser(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "user2", su2.SlackName)
 
+	listOfChannels, err := db.GetUserChannels(su2.SlackUserID)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(listOfChannels))
+
 	isAdmin = db.IsAdmin(su2.SlackUserID, su2.ChannelID)
 	assert.Equal(t, true, isAdmin)
 
@@ -145,6 +149,24 @@ func TestCRUDStandupUser(t *testing.T) {
 		Channel:     "channel1",
 	})
 	assert.NoError(t, err)
+
+	testCases := []struct {
+		username       string
+		expectedResult bool
+	}{
+		{"userID2", true},
+		{"userID1", true},
+		{"userID3", true},
+		{"userID22", false},
+		{"userID12", false},
+		{"us22", false},
+	}
+
+	for _, tt := range testCases {
+		result, err := db.CheckIfUserExist(tt.username)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.expectedResult, result)
+	}
 
 	isNonReporter, err := db.IsNonReporter(su3.SlackUserID, su3.ChannelID, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
 	assert.NoError(t, err)
@@ -158,8 +180,11 @@ func TestCRUDStandupUser(t *testing.T) {
 	})
 	assert.Error(t, err)
 	assert.NoError(t, db.DeleteStandupUser(su4.SlackName, su4.ChannelID))
-
 	assert.Equal(t, "userID3", su3.SlackUserID)
+
+	listOfAdmins, err := db.ListAdminsByChannelID("qwe123")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(listOfAdmins))
 
 	nonReporters, err := db.GetNonReporters(su3.ChannelID, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
 	assert.NoError(t, err)
@@ -187,7 +212,7 @@ func TestCRUDStandupUser(t *testing.T) {
 	assert.Equal(t, 2, len(channels))
 
 	assert.NoError(t, db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
-	assert.NoError(t, db.DeleteStandupUser(su2.SlackName, su2.ChannelID))
+	assert.NoError(t, db.DeleteAdmin(su2.SlackName, su2.ChannelID))
 	assert.NoError(t, db.DeleteStandupUser(su3.SlackName, su3.ChannelID))
 
 }

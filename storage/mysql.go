@@ -126,13 +126,6 @@ func (m *MySQL) FindStandupUserInChannelByUserID(usernameID, channelID string) (
 	return u, err
 }
 
-//FindStandupUser finds user in
-func (m *MySQL) FindStandupUser(username string) (model.StandupUser, error) {
-	var u model.StandupUser
-	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=?", username)
-	return u, err
-}
-
 // ListAllStandupUsers returns array of standup entries from database
 func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
@@ -168,6 +161,19 @@ func (m *MySQL) HasExistedAlready(slackUserID, channelID string, dateFrom time.T
 		return false, err
 	}
 	if id != 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+// CheckIfUserExist returns true if user existed already and therefore could submit standup
+func (m *MySQL) CheckIfUserExist(slackUserID string) (bool, error) {
+	var id []int
+	err := m.conn.Select(&id, `SELECT id FROM standup_users where slack_user_id=?`, slackUserID)
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		return false, err
+	}
+	if len(id) > 0 {
 		return true, nil
 	}
 	return false, nil

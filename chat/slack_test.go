@@ -157,3 +157,21 @@ func TestHandleMessage(t *testing.T) {
 	assert.NoError(t, s.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
 
 }
+
+func TestGetChannelName(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/channels.info", httpmock.NewStringResponder(200, `{"ok": true, "channel": {"id": "RANDOMID","name": "randomName"}}`))
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/groups.info", httpmock.NewStringResponder(200, `{"ok": true, "group": {"id": "RANDOMID","name": "randomName"}}`))
+
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := NewSlack(c)
+	assert.NoError(t, err)
+
+	chanName, err := s.GetChannelName("RANDOMID")
+	assert.NoError(t, err)
+	assert.Equal(t, "randomName", chanName)
+}
