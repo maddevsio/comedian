@@ -130,15 +130,15 @@ func TestStandupReportByUser(t *testing.T) {
 
 	data := []byte{}
 
-	_, err = r.StandupReportByUser(user, dateTo, dateFrom, data)
+	_, err = r.StandupReportByUser(user.SlackUserID, dateTo, dateFrom, data)
 	assert.Error(t, err)
-	_, err = r.StandupReportByUser(user, dateNext, dateTo, data)
+	_, err = r.StandupReportByUser(user.SlackUserID, dateNext, dateTo, data)
 	assert.Error(t, err)
-	_, err = r.StandupReportByUser(user, dateFrom, dateNext, data)
+	_, err = r.StandupReportByUser(user.SlackUserID, dateFrom, dateNext, data)
 	assert.Error(t, err)
 
 	expected := "Full Report on user <@userID1>:\n\nReport for: 2018-06-03\nIn <#QWERTY123> <@userID1> did not submit standup!\nReport for: 2018-06-04\nIn <#QWERTY123> <@userID1> did not submit standup!\nReport for: 2018-06-05\nIn <#QWERTY123> <@userID1> did not submit standup!\n"
-	actual, err := r.StandupReportByUser(user, dateFrom, dateTo, data)
+	actual, err := r.StandupReportByUser(user.SlackUserID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 
@@ -150,7 +150,7 @@ func TestStandupReportByUser(t *testing.T) {
 		MessageTS:  "123",
 	})
 	expected = "Full Report on user <@userID1>:\n\nReport for: 2018-06-03\nIn <#QWERTY123> <@userID1> did not submit standup!\nReport for: 2018-06-04\nIn <#QWERTY123> <@userID1> submitted standup: my standup \n\nReport for: 2018-06-05\nIn <#QWERTY123> <@userID1> submitted standup: my standup \n\n"
-	actual, err = r.StandupReportByUser(user, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByUser(user.SlackUserID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 

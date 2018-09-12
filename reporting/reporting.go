@@ -82,8 +82,8 @@ func (r *Reporter) StandupReportByProject(channelID string, dateFrom, dateTo tim
 }
 
 // StandupReportByUser creates a standup report for a specified period of time
-func (r *Reporter) StandupReportByUser(user model.StandupUser, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
-	report := fmt.Sprintf(r.Config.Translate.ReportOnUserHead, user.SlackUserID)
+func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
+	report := fmt.Sprintf(r.Config.Translate.ReportOnUserHead, slackUserID)
 
 	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
@@ -94,23 +94,23 @@ func (r *Reporter) StandupReportByUser(user model.StandupUser, dateFrom, dateTo 
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
 		dateTo := dateFrom.Add(24 * time.Hour)
 		report += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
-		channels, err := r.DB.GetUserChannels(user.SlackUserID)
+		channels, err := r.DB.GetUserChannels(slackUserID)
 		if err != nil || len(channels) == 0 {
 			report += r.Config.Translate.ReportNoData
 			continue
 		}
 		for _, channel := range channels {
-			userIsNonReporter, err := r.DB.IsNonReporter(user.SlackUserID, channel, dateFrom, dateTo)
+			userIsNonReporter, err := r.DB.IsNonReporter(slackUserID, channel, dateFrom, dateTo)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
 			if userIsNonReporter {
-				report += fmt.Sprintf(r.Config.Translate.UserDidNotStandupInChannel, channel, user.SlackUserID)
+				report += fmt.Sprintf(r.Config.Translate.UserDidNotStandupInChannel, channel, slackUserID)
 				continue
 			}
-			report += fmt.Sprintf(r.Config.Translate.UserDidStandupInChannel, channel, user.SlackUserID)
-			standups, err := r.DB.SelectStandupsFiltered(user.SlackUserID, channel, dateFrom, dateTo)
+			report += fmt.Sprintf(r.Config.Translate.UserDidStandupInChannel, channel, slackUserID)
+			standups, err := r.DB.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
 			if err != nil {
 				fmt.Println(err)
 				continue

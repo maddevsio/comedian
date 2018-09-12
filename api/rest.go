@@ -474,10 +474,10 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, r.conf.Translate.UserExist)
 	}
-	userID, userName := splitUser(commandParams[0])
-	user, err := r.db.FindStandupUser(userName)
-	if err != nil {
-		return c.String(http.StatusOK, err.Error())
+	userID, _ := splitUser(commandParams[0])
+	exist, err := r.db.CheckIfUserExist(userID)
+	if err != nil || !exist {
+		return c.String(http.StatusOK, "User does not exist!")
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
@@ -494,7 +494,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := r.report.StandupReportByUser(user, dateFrom, dateTo, data)
+	report, err := r.report.StandupReportByUser(userID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())

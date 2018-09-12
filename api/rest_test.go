@@ -352,7 +352,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		responseBody string
 	}{
 		{"empty text", ReportByUserEmptyText, http.StatusOK, "`text` cannot be empty"},
-		{"user mess up", ReportByUserMessUser, http.StatusOK, "sql: no rows in result set"},
+		{"user mess up", ReportByUserMessUser, http.StatusOK, "User does not exist!"},
 		{"date from mess up", ReportByUserMessDateF, http.StatusOK, "parsing time \"2018-6-25\": month out of range"},
 		{"date to mess up", ReportByUserMessDateT, http.StatusOK, "parsing time \"2018-6-26\": month out of range"},
 		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1>:\n\nReport for: 2018-06-25\nIn <#123qwe> <@userID1> did not submit standup!\nReport for: 2018-06-26\nIn <#123qwe> <@userID1> did not submit standup!\n"},

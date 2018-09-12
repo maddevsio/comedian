@@ -34,9 +34,6 @@ type Storage interface {
 	// Checks if user has admin role
 	IsAdmin(string, string) bool
 
-	//FindStandupUser finds standup user
-	FindStandupUser(username string) (model.StandupUser, error)
-
 	//FindStandupUserInChannelByUserID finds standup user in channel by Slack member ID
 	FindStandupUserInChannelByUserID(string, string) (model.StandupUser, error)
 
@@ -47,6 +44,8 @@ type Storage interface {
 	IsNonReporter(string, string, time.Time, time.Time) (bool, error)
 
 	HasExistedAlready(string, string, time.Time) (bool, error)
+
+	CheckIfUserExist(string) (bool, error)
 
 	// DeleteStandupUser deletes standup_users entry from database
 	DeleteStandupUser(string, string) error
