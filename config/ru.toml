@@ -26,7 +26,7 @@ reportOnProjectHead = "Полный отчет по проекту <#%s|%s> с %
 reportOnUserHead = "Полный отчет по пользователю <@%s> с %v по %v:\n\n"
 reportOnProjectAndUserHead = "Отчет по проекту: <#%s|s>, пользователь: <@%s> с %v по %v:\n\n"
 
-reportNoData = "Нет данных за данный день"
+reportNoData = "Нет данных за данный период"
 reportDate = "Отчет за %s:\n"
 reportStandupFromUser = "\nСтэндап от <@%s>:\n%s\n"
 reportIgnoredStandup = "\n<@%s>: стэндап пропущен!\n"
