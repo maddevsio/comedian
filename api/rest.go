@@ -256,13 +256,28 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	userName := strings.Replace(ca.Text, "@", "", -1)
-	err := r.db.DeleteStandupUser(userName, ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: DeleteStandupUser failed: %v\n", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
+	users := strings.Split(ca.Text, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteUser, userName))
+
+	for _, u := range users {
+		slackUserID, userName := splitUser(u)
+		user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
+		if err != nil {
+			logrus.Errorf("rest: FindStandupUserInChannelByUserID failed: %v\n", err)
+			c.String(http.StatusOK, fmt.Sprintf("Пользователь <@%v> не стэндапит в этом канале\n", slackUserID))
+			continue
+		}
+		err = r.db.DeleteStandupUser(user.SlackName, ca.ChannelID)
+		if err != nil {
+			logrus.Errorf("rest: DeleteStandupUser failed: %v\n", err)
+			c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
+			continue
+		}
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteUser, userName))
+	}
+	return nil
 }
 
 func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
