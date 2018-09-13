@@ -65,6 +65,9 @@ type Storage interface {
 	// CreateStandupTime creates standup time entry in database
 	CreateStandupTime(model.StandupTime) (model.StandupTime, error)
 
+	// UpdateStandupTime creates standup time entry in database
+	UpdateStandupTime(model.StandupTime) (model.StandupTime, error)
+
 	// DeleteStandupTime deletes time entry from database
 	DeleteStandupTime(string) error
 

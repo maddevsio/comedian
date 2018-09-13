@@ -242,6 +242,24 @@ func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error
 	return s, nil
 }
 
+// UpdateStandupTime updates time entry in database
+func (m *MySQL) UpdateStandupTime(s model.StandupTime) (model.StandupTime, error) {
+	err := s.Validate()
+	if err != nil {
+		return s, err
+	}
+	_, err = m.conn.Exec("UPDATE `standup_time` SET standuptime=? WHERE id=?", s.Time, s.ID)
+	if err != nil {
+		return s, err
+	}
+	var i model.StandupTime
+	err = m.conn.Get(&i, "SELECT * FROM `standup_time` WHERE id=?", s.ID)
+	if err != nil {
+		return s, err
+	}
+	return s, nil
+}
+
 // GetChannelStandupTime returns standup time entry from database
 func (m *MySQL) GetChannelStandupTime(channelID string) (model.StandupTime, error) {
 	var time model.StandupTime

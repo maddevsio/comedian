@@ -400,24 +400,30 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	currentTime := time.Now()
 	timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), hours, munites, 0, 0, time.Local).Unix()
 
-	standupTime, err := r.db.CreateStandupTime(model.StandupTime{
-		ChannelID: ca.ChannelID,
-		Channel:   ca.ChannelName,
-		Time:      timeInt,
-	})
+	st, err := r.db.GetChannelStandupTime(ca.ChannelID)
+	logrus.Infof("If channel standup time exis: %v, %v", st, err)
 	if err != nil {
-		logrus.Errorf("rest: CreateStandupTime failed: %v\n", err)
-		return err
+		logrus.Errorf("GetChannelStandupTime failed: %v", err)
+		st, _ = r.db.CreateStandupTime(model.StandupTime{
+			ChannelID: ca.ChannelID,
+			Channel:   ca.ChannelName,
+			Time:      timeInt,
+		})
+		return nil
 	}
-	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
+	st.Time = timeInt
+	_, err = r.db.UpdateStandupTime(st)
+	if err != nil {
+		logrus.Errorf("rest: UpdateStandupTime failed: %v\n", err)
+	}
+	standupUsers, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: ListStandupUsersByChannelID failed: %v\n", err)
-		return err
 	}
-	if len(st) == 0 {
-		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTimeNoUsers, standupTime.Time))
+	if len(standupUsers) == 0 {
+		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTimeNoUsers, st.Time))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTime, standupTime.Time))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTime, st.Time))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
