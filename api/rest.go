@@ -90,7 +90,9 @@ func (r *REST) Start() error {
 }
 
 func (r *REST) handleCommands(c echo.Context) error {
+	logrus.Infof("Rest context: %v", c)
 	form, err := c.FormParams()
+	logrus.Infof("Rest form: %v", form)
 	if err != nil {
 		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
 	}
@@ -132,7 +134,7 @@ func (r *REST) senderIsAdmin(form url.Values) bool {
 	slackUserID := form.Get("user_id")
 	channelID := form.Get("channel_id")
 	userIsAdmin := r.db.IsAdmin(slackUserID, channelID)
-	return (slackUserID == r.conf.ManagerSlackUserID) && (userIsAdmin == true)
+	return (slackUserID == r.conf.ManagerSlackUserID) || (userIsAdmin == true)
 }
 
 func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
