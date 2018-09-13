@@ -89,7 +89,10 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				return err
 			}
 			logrus.Infof("slack: Standup created: %v\n", standup)
-			return s.SendMessage(msg.Msg.Channel, s.Conf.Translate.StandupAccepted)
+			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
+			err = s.api.AddReaction("+1", item)
+			logrus.Errorf("slack: AddReaction failed: %v", err)
+			return err
 		}
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
