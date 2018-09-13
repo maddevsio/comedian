@@ -150,39 +150,50 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: addUserCommand Validate failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	result := strings.Split(ca.Text, "|")
-	slackUserID := strings.Replace(result[0], "<@", "", -1)
-	userName := strings.Replace(result[1], ">", "", -1)
-	channelName, err := r.slack.GetChannelName(ca.ChannelID)
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+	users := strings.Split(ca.Text, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно добавить")
 	}
+	logrus.Infof("Users: %v", users)
+	for _, u := range users {
 
-	user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
-	if err != nil {
-		_, err = r.db.CreateStandupUser(model.StandupUser{
-			SlackUserID: slackUserID,
-			SlackName:   userName,
-			ChannelID:   ca.ChannelID,
-			Channel:     channelName,
-			Role:        "user",
-		})
+		slackUserID, userName := splitUser(u)
+		channelName, err := r.slack.GetChannelName(ca.ChannelID)
 		if err != nil {
-			logrus.Errorf("rest: CreateStandupUser failed: %v\n", err)
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
+			c.String(http.StatusBadRequest, err.Error())
+		}
+		user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
+		logrus.Errorf("Rest FindStandupUserInChannelByUserID failed: %v", err)
+		if err != nil {
+			_, err = r.db.CreateStandupUser(model.StandupUser{
+				SlackUserID: slackUserID,
+				SlackName:   userName,
+				ChannelID:   ca.ChannelID,
+				Channel:     channelName,
+				Role:        "user",
+			})
+			if err != nil {
+				logrus.Errorf("rest: CreateStandupUser failed: %v\n", err)
+				c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
+				continue
+			}
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUser, userName))
+			continue
+		}
+		if user.SlackUserID == slackUserID && user.ChannelID == ca.ChannelID {
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.UserExist, slackUserID))
+			continue
+		}
+		st, err := r.db.GetChannelStandupTime(ca.ChannelID)
+		if err != nil {
+			logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
+		}
+		if st.Time == int64(0) {
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUserNoStandupTime, userName))
+			continue
 		}
 	}
-	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
-		return c.String(http.StatusOK, r.conf.Translate.UserExist)
-	}
-	st, err := r.db.GetChannelStandupTime(ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
-	}
-	if st.Time == int64(0) {
-		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUserNoStandupTime, userName))
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUser, userName))
+	return nil
 }
 
 func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
