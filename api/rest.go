@@ -434,7 +434,8 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, r.conf.Translate.WrongNArgs)
 	}
-	channelID, channelName := splitChannel(commandParams[0])
+	channelID := commandParams[0]
+	logrus.Infof("channelID: %v", channelID)
 
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
@@ -446,7 +447,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	data, err := r.getCollectorData("projects", channelName, commandParams[1], commandParams[2])
+	data, err := r.getCollectorData("projects", channelID, commandParams[1], commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())

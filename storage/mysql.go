@@ -148,15 +148,15 @@ func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([
 
 // IsNonReporter returns true if user did not submit standup in time period, false othervise
 func (m *MySQL) IsNonReporter(slackUserID, channelID string, dateFrom, dateTo time.Time) (bool, error) {
-	var id int
-	err := m.conn.Get(&id, `SELECT id FROM standup where channel_id=? and username_id=? and created between ? and ?`, channelID, slackUserID, dateFrom, dateTo)
+	var standup string
+	err := m.conn.Get(&standup, `SELECT comment FROM standup where channel_id=? and username_id=? and created between ? and ?`, channelID, slackUserID, dateFrom, dateTo)
 	if err != nil && err.Error() != "sql: no rows in result set" {
-		return true, err
+		return false, err
 	}
-	if id != 0 {
+	if standup != "" {
 		return false, nil
 	}
-	return true, nil
+	return true, err
 }
 
 // HasExistedAlready returns true if user existed already and therefore could submit standup

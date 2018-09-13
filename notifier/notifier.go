@@ -40,6 +40,7 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
 	gocron.Every(1).Day().At(n.Config.ReportTime).Do(n.RevealRooks)
+	gocron.Every(1).Day().At("23:55").Do(n.FillStandupsForNonReporters)
 	gocron.Every(60).Seconds().Do(n.NotifyChannels)
 	channel := gocron.Start()
 	for {
@@ -100,6 +101,40 @@ func (n *Notifier) RevealRooks() {
 				fmt.Println(text)
 			}
 			n.Chat.SendMessage(user.ChannelID, text)
+		}
+	}
+}
+
+// RevealRooks displays data about rooks in channel general
+func (n *Notifier) FillStandupsForNonReporters() {
+	//check if today is not saturday or sunday. During these days no notificatoins!
+	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
+		return
+	}
+	timeFrom := time.Now().AddDate(0, 0, -1)
+	allUsers, err := n.DB.ListAllStandupUsers()
+	if err != nil {
+		logrus.Errorf("notifier: n.GetCurrentDayNonReporters failed: %v\n", err)
+		return
+	}
+	for _, user := range allUsers {
+		isNonReporter, err := n.DB.IsNonReporter(user.SlackUserID, user.ChannelID, timeFrom, time.Now())
+		if err != nil {
+			logrus.Errorf("notifier: IsNonReporter failed: %v\n", err)
+			return
+		}
+		if isNonReporter {
+			standup, err := n.DB.CreateStandup(model.Standup{
+				Channel:    user.Channel,
+				ChannelID:  user.ChannelID,
+				UsernameID: user.SlackUserID,
+				Comment:    "",
+			})
+			if err != nil {
+				logrus.Errorf("notifier: CreateStandup failed: %v\n", err)
+				return
+			}
+			logrus.Infof("notifier: Empty Standup created: %v\n", standup)
 		}
 	}
 }

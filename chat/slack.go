@@ -84,11 +84,11 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				Comment:    standupText,
 				MessageTS:  msg.Msg.Timestamp,
 			})
-			logrus.Infof("slack: Standup created: %v\n", standup)
 			if err != nil {
 				logrus.Errorf("slack: CreateStandup failed: %v\n", err)
 				return err
 			}
+			logrus.Infof("slack: Standup created: %v\n", standup)
 			return s.SendMessage(msg.Msg.Channel, s.Conf.Translate.StandupAccepted)
 		}
 	case typeEditMessage:

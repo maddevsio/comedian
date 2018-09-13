@@ -51,10 +51,6 @@ type (
 
 // Validate validates Standup struct
 func (c Standup) Validate() error {
-	if c.Comment == "" {
-		err := errors.New("Standup cannot be empty")
-		return err
-	}
 	return nil
 }
 
