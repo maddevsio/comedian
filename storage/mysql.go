@@ -132,6 +132,13 @@ func (m *MySQL) FindStandupUserInChannelByUserID(usernameID, channelID string) (
 	return u, err
 }
 
+//FindStandupUserByUserName finds user in channel
+func (m *MySQL) FindStandupUserByUserName(username string) (model.StandupUser, error) {
+	var u model.StandupUser
+	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE username=? limit 1", username)
+	return u, err
+}
+
 // ListAllStandupUsers returns array of standup entries from database
 func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
 	items := []model.StandupUser{}
@@ -324,6 +331,17 @@ func (m *MySQL) GetChannelName(channelID string) (string, error) {
 	}
 
 	return channelName, err
+}
+
+//GetChannelID returns channel name
+func (m *MySQL) GetChannelID(channelName string) (string, error) {
+	var channelID string
+	err := m.conn.Get(&channelID, "SELECT channel_id FROM `standup_users` where channel=? limit 1", channelName)
+	if err != nil {
+		return "", err
+	}
+
+	return channelID, nil
 }
 
 // ListStandups returns array of standup entries from database

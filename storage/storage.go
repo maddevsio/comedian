@@ -85,4 +85,10 @@ type Storage interface {
 
 	//GetChannelName returns channel name
 	GetChannelName(string) (string, error)
+
+	//GetChannelID returns channel name
+	GetChannelID(string) (string, error)
+
+	//FindStandupUserByUserName finds user in channel
+	FindStandupUserByUserName(string) (model.StandupUser, error)
 }

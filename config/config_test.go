@@ -22,7 +22,6 @@ func TestConfig(t *testing.T) {
 	os.Setenv("COMEDIAN_LANGUAGE", "ru_RU")
 	os.Setenv("COMEDIAN_COLLECTOR_TOKEN", "cotoken")
 	os.Setenv("COMEDIAN_COLLECTOR_URL", "www.collector.some")
-	os.Setenv("COMEDIAN_MANAGER_SLACK_CHAN_GENERAL", "XXXYYYZZZ")
 	os.Setenv("COMEDIAN_REMINDER_REPEATS_MAX", "5")
 	os.Setenv("COMEDIAN_REMINDER_TIME", "10")
 
@@ -37,7 +36,6 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, conf.Language, "ru_RU")
 	assert.Equal(t, conf.CollectorToken, "cotoken")
 	assert.Equal(t, conf.CollectorURL, "www.collector.some")
-	assert.Equal(t, conf.ChanGeneral, "XXXYYYZZZ")
 	assert.Equal(t, conf.ReminderRepeatsMax, int(5))
 	assert.Equal(t, conf.ReminderTime, int64(10))
 	assert.Equal(t, conf.Debug, true)

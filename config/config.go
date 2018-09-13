@@ -15,7 +15,6 @@ type Config struct {
 	Language           string `envconfig:"LANGUAGE" required:"true" default:"en_US"`
 	CollectorURL       string `envconfig:"COLLECTOR_URL" required:"true"`
 	CollectorToken     string `envconfig:"COLLECTOR_TOKEN" required:"true"`
-	ChanGeneral        string `envconfig:"MANAGER_SLACK_CHAN_GENERAL" required:"true"`
 	ReminderRepeatsMax int    `envconfig:"REMINDER_REPEATS_MAX" required:"true" default:5`
 	ReminderTime       int64  `envconfig:"REMINDER_TIME" required:"true" default:5`
 	Translate          Translate

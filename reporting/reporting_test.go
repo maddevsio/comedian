@@ -180,7 +180,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	})
 
 	data := []byte{}
-	actual, err := r.StandupReportByProjectAndUser(channelID, user1, dateFrom, dateTo, data)
+	actual, err := r.StandupReportByProjectAndUser(channelID, user1.SlackUserID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	expected := "Report on project: <#QWERTY123|chanName>, and user: <@userID1> from 2018-06-03 to 2018-06-05\n\nReport for: 2018-06-03\n<@userID1> did not submit standup!\nReport for: 2018-06-04\n<@userID1> did not submit standup!\nReport for: 2018-06-05\n<@userID1> did not submit standup!\n"
 	assert.Equal(t, expected, actual)
@@ -194,7 +194,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	})
 
 	assert.NoError(t, err)
-	actual, err = r.StandupReportByProjectAndUser(channelID, user1, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByProjectAndUser(channelID, user1.SlackUserID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	expected = "Report on project: <#QWERTY123|chanName>, and user: <@userID1> from 2018-06-03 to 2018-06-05\n\nReport for: 2018-06-03\n<@userID1> did not submit standup!\nReport for: 2018-06-04\n<@userID1> submitted standup: my standup \nReport for: 2018-06-05\n<@userID1> submitted standup: my standup \n"
 	assert.Equal(t, expected, actual)

@@ -493,8 +493,9 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, r.conf.Translate.WrongNArgs)
 	}
-	channelID := commandParams[0]
-	logrus.Infof("channelID: %v", channelID)
+	channelName := strings.Replace(commandParams[0], "#", "", -1)
+
+	logrus.Infof("channelName: %v", channelName)
 
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
@@ -506,9 +507,15 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	data, err := r.getCollectorData("projects", channelID, commandParams[1], commandParams[2])
+	data, err := r.getCollectorData("projects", channelName, commandParams[1], commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+	channelID, err := r.db.GetChannelID(channelName)
+	logrus.Infof("channelID: %v", channelID)
+	if err != nil {
+		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 	report, err := r.report.StandupReportByProject(channelID, dateFrom, dateTo, data)
@@ -537,9 +544,9 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, r.conf.Translate.UserExist)
 	}
-	userID, _ := splitUser(commandParams[0])
-	exist, err := r.db.CheckIfUserExist(userID)
-	if err != nil || !exist {
+	username := strings.Replace(commandParams[0], "@", "", -1)
+	user, err := r.db.FindStandupUserByUserName(username)
+	if err != nil {
 		return c.String(http.StatusOK, "User does not exist!")
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
@@ -552,12 +559,12 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	data, err := r.getCollectorData("users", userID, commandParams[1], commandParams[2])
+	data, err := r.getCollectorData("users", user.SlackUserID, commandParams[1], commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := r.report.StandupReportByUser(userID, dateFrom, dateTo, data)
+	report, err := r.report.StandupReportByUser(user.SlackUserID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -606,7 +613,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	if err != nil {
 		return c.String(http.StatusOK, r.conf.Translate.ReportByProjectAndUser)
 	}
-	report, err := r.report.StandupReportByProjectAndUser(channelID, user, dateFrom, dateTo, data)
+	report, err := r.report.StandupReportByProjectAndUser(channelID, user.SlackUserID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
