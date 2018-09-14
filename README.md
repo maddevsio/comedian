@@ -38,18 +38,18 @@ Create the following commands (Request URL for all "http: // <comedian_address> 
 
 | Name | Hint | Description | Escape option |
 | --- | --- | --- | --- |
-| /adminadd | @user | Adds a new admin | selected |
-| /adminremove | @user | Removes an admin | selected |
-| /adminlist | - | Lists all admins | unselected |
-| /comedianadd | @user | Adds a new standuper | selected |
-| /comedianremove | @user | Removes a standuper | selected |
-| /comedianlist | - | Lists all standupers | unselected |
-| /standuptimeset | hh:mm | Set standup time | unselected |
-| /standuptime | - | Show standup time in current channel | unselected |
-| /standuptimeremove | - | Delete standup time in current channel | unselected |
-| /report_by_project | channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period | unselected |
-| /report_by_user | slackUserID 2017-01-01 2017-01-31 | gets all standups for specified user for time period | unselected |
-| /report_by_project_and_user | project user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | unselected |
+| /adminadd | @user | Adds a new admin | [x] |
+| /adminremove | @user | Removes an admin | [x] |
+| /adminlist | - | Lists all admins | [ ] |
+| /comedianadd | @user | Adds a new standuper | [x] |
+| /comedianremove | @user | Removes a standuper | [x] |
+| /comedianlist | - | Lists all standupers | [ ] |
+| /standuptimeset | hh:mm | Set standup time | [ ] |
+| /standuptime | - | Show standup time in current channel | [ ] |
+| /standuptimeremove | - | Delete standup time in current channel | [ ] |
+| /report_by_project | channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period | [ ] |
+| /report_by_user | slackUserID 2017-01-01 2017-01-31 | gets all standups for specified user for time period | [ ] |
+| /report_by_project_and_user | project user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | [ ] |
 
 Select "Bot users" in the menu.
 Create a new bot user.
