@@ -28,17 +28,14 @@ type Storage interface {
 	// ListStandups returns array of standup entries from database
 	ListStandups() ([]model.Standup, error)
 
-	// CreateStandupUser creates standupUser entry in database
-	CreateStandupUser(model.StandupUser) (model.StandupUser, error)
+	// CreateChannelMember creates ChannelMember entry in database
+	CreateChannelMember(model.ChannelMember) (model.ChannelMember, error)
 
-	// Checks if user has admin role
-	IsAdmin(string, string) bool
-
-	//FindStandupUserInChannelByUserID finds standup user in channel by Slack member ID
-	FindStandupUserInChannelByUserID(string, string) (model.StandupUser, error)
+	//FindChannelMemberByUserID finds standup user in channel by Slack member ID
+	FindChannelMemberByUserID(string, string) (model.ChannelMember, error)
 
 	//GetNonReporters returns a list of non reporters
-	GetNonReporters(string, time.Time, time.Time) ([]model.StandupUser, error)
+	GetNonReporters(string, time.Time, time.Time) ([]model.ChannelMember, error)
 
 	//IsNonReporter checks if a user is non reporter
 	IsNonReporter(string, string, time.Time, time.Time) (bool, error)
@@ -47,32 +44,32 @@ type Storage interface {
 
 	CheckIfUserExist(string) (bool, error)
 
-	// DeleteStandupUser deletes standup_users entry from database
-	DeleteStandupUser(string, string) error
+	// DeleteChannelMember deletes standup_users entry from database
+	DeleteChannelMember(string, string) error
 
 	// DeleteAdmin deletes standup_users entry from database
 	DeleteAdmin(string, string) error
 
-	// ListStandupUsersByChannelID returns array of standupUser entries from database
-	ListStandupUsersByChannelID(string) ([]model.StandupUser, error)
+	// ListChannelMembers returns array of ChannelMember entries from database
+	ListChannelMembers(string) ([]model.ChannelMember, error)
 
 	// ListAdminsByChannelID returns array of standup entries from database
-	ListAdminsByChannelID(string) ([]model.StandupUser, error)
+	ListAdminsByChannelID(string) ([]model.ChannelMember, error)
 
-	// ListAllStandupUsers returns array of standupUser entries from database
-	ListAllStandupUsers() ([]model.StandupUser, error)
+	// ListAllChannelMembers returns array of ChannelMember entries from database
+	ListAllChannelMembers() ([]model.ChannelMember, error)
 
 	// CreateStandupTime creates standup time entry in database
-	CreateStandupTime(model.StandupTime) (model.StandupTime, error)
+	CreateStandupTime(int64, string) error
 
 	// UpdateStandupTime creates standup time entry in database
-	UpdateStandupTime(model.StandupTime) (model.StandupTime, error)
+	UpdateStandupTime(int64, string) error
 
 	// DeleteStandupTime deletes time entry from database
 	DeleteStandupTime(string) error
 
 	// ListStandupTime returns standup time entry from database
-	GetChannelStandupTime(string) (model.StandupTime, error)
+	GetChannelStandupTime(string) (int64, error)
 
 	// ListAllStandupTime returns standup time entry for all channels from database
 	ListAllStandupTime() ([]model.StandupTime, error)
@@ -89,6 +86,6 @@ type Storage interface {
 	//GetChannelID returns channel name
 	GetChannelID(string) (string, error)
 
-	//FindStandupUserByUserName finds user in channel
-	FindStandupUserByUserName(string) (model.StandupUser, error)
+	//FindChannelMemberByUserName finds user in channel
+	FindChannelMemberByUserName(string) (model.ChannelMember, error)
 }
