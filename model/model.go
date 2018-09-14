@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"time"
 )
 
@@ -48,3 +49,34 @@ type (
 		StandupText string    `db:"standuptext" json:"standuptext"`
 	}
 )
+
+// Validate validates Standup struct
+func (c Standup) Validate() error {
+	if c.ChannelID == "" && c.UserID == "" {
+		err := errors.New("User cannot be empty")
+		return err
+	}
+	if c.Comment == "" {
+		err := errors.New("Comment cannot be empty")
+		return err
+	}
+	return nil
+}
+
+// Validate validates StandupUser struct
+func (c ChannelMember) Validate() error {
+	if c.UserID == "" && c.ChannelID == "" {
+		err := errors.New("User/Channel cannot be empty")
+		return err
+	}
+	return nil
+}
+
+// Validate validates StandupTimeHistory struct
+func (c StandupEditHistory) Validate() error {
+	if c.StandupText == "" {
+		err := errors.New("Text cannot be empty")
+		return err
+	}
+	return nil
+}

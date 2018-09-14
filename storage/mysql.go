@@ -29,8 +29,12 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 
 // CreateStandup creates standup entry in database
 func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
+	err := s.Validate()
+	if err != nil {
+		return s, err
+	}
 	var channelName string
-	err := m.conn.Get(&channelName, "SELECT channel_name FROM `channels` where channel_id =?", s.ChannelID)
+	err = m.conn.Get(&channelName, "SELECT channel_name FROM `channels` where channel_id =?", s.ChannelID)
 	if err != nil {
 		return s, err
 	}
@@ -96,6 +100,10 @@ func (m *MySQL) DeleteStandup(id int64) error {
 
 // CreateChannelMember creates comedian entry in database
 func (m *MySQL) CreateChannelMember(s model.ChannelMember) (model.ChannelMember, error) {
+	err := s.Validate()
+	if err != nil {
+		return s, err
+	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `channel_members` (user_id, channel_id, standup_time) VALUES (?, ?, ?)",
 		s.UserID, s.ChannelID, 0)
@@ -143,8 +151,8 @@ func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([
 func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Time) (bool, error) {
 	var standup string
 	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, dateFrom, dateTo)
-	if err != nil && err.Error() != "sql: no rows in result set" {
-		return false, err
+	if err != nil && err.Error() == "sql: no rows in result set" {
+		return false, nil
 	}
 	if standup != "" {
 		return false, nil
@@ -167,6 +175,7 @@ func (m *MySQL) DeleteChannelMember(userID, channelID string) error {
 
 // CreateStandupTime creates time entry in database
 func (m *MySQL) CreateStandupTime(st int64, channelID string) error {
+
 	_, err := m.conn.Exec("UPDATE `channels` SET channel_standup_time=? WHERE channel_id=?", st, channelID)
 	if err != nil {
 		return err
@@ -193,7 +202,7 @@ func (m *MySQL) GetChannelStandupTime(channelID string) (int64, error) {
 // ListAllStandupTime returns standup time entry for all channels from database
 func (m *MySQL) ListAllStandupTime() ([]int64, error) {
 	deadlines := []int64{}
-	err := m.conn.Select(&deadlines, "SELECT channel_standup_time FROM `channels`")
+	err := m.conn.Select(&deadlines, "SELECT channel_standup_time FROM `channels` where channel_standup_time>0")
 	return deadlines, err
 }
 
@@ -205,6 +214,10 @@ func (m *MySQL) DeleteStandupTime(channelID string) error {
 
 // AddToStandupHistory creates backup standup entry in standup_edit_history database
 func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEditHistory, error) {
+	err := s.Validate()
+	if err != nil {
+		return s, err
+	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standup_edit_history` (created, standup_id, standup_text) VALUES (?, ?, ?)",
 		time.Now().UTC(), s.StandupID, s.StandupText)

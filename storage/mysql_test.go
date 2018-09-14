@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -23,8 +22,15 @@ func TestCRUDLStandup(t *testing.T) {
 		db.DeleteStandup(standup.ID)
 	}
 
+	ch, err := db.CreateChannel(model.Channel{
+		ChannelID:   "QWERTY123",
+		ChannelName: "chanName1",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
 	s, err := db.CreateStandup(model.Standup{
-		ChannelID: "QWERTY123",
+		ChannelID: ch.ChannelID,
 		Comment:   "work hard",
 		UserID:    "userID1",
 		MessageTS: "qweasdzxc",
@@ -32,7 +38,7 @@ func TestCRUDLStandup(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = db.CreateStandup(model.Standup{
-		ChannelID: "QWERTY123",
+		ChannelID: ch.ChannelID,
 		Comment:   "",
 		UserID:    "userID1",
 		MessageTS: "",
@@ -41,7 +47,7 @@ func TestCRUDLStandup(t *testing.T) {
 
 	assert.Equal(t, s.Comment, "work hard")
 	s2, err := db.CreateStandup(model.Standup{
-		ChannelID: "ASDF098",
+		ChannelID: ch.ChannelID,
 		Comment:   "stubComment",
 		UserID:    "illidan",
 		MessageTS: "you are not prepared",
@@ -95,6 +101,7 @@ func TestCRUDLStandup(t *testing.T) {
 
 	assert.NoError(t, db.DeleteStandup(s.ID))
 	assert.NoError(t, db.DeleteStandup(s2.ID))
+	assert.NoError(t, db.DeleteChannel(ch.ID))
 }
 
 func TestCRUDChannelMember(t *testing.T) {
@@ -137,7 +144,7 @@ func TestCRUDChannelMember(t *testing.T) {
 
 	isNonReporter, err := db.IsNonReporter(su3.UserID, su3.ChannelID, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
 	assert.NoError(t, err)
-	assert.Equal(t, true, isNonReporter)
+	assert.Equal(t, false, isNonReporter)
 
 	su4, err := db.CreateChannelMember(model.ChannelMember{
 		UserID:    "",
@@ -161,7 +168,7 @@ func TestCRUDChannelMember(t *testing.T) {
 
 	users, err = db.ListAllChannelMembers()
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(users))
+	assert.Equal(t, 3, len(users))
 
 	users, err = db.ListChannelMembers(su1.ChannelID)
 	assert.NoError(t, err)
@@ -169,8 +176,7 @@ func TestCRUDChannelMember(t *testing.T) {
 
 	channels, err := db.GetAllChannels()
 	assert.NoError(t, err)
-	fmt.Println(channels)
-	assert.Equal(t, 2, len(channels))
+	assert.Equal(t, 0, len(channels))
 
 	assert.NoError(t, db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 	assert.NoError(t, db.DeleteChannelMember(su3.UserID, su3.ChannelID))
@@ -200,18 +206,16 @@ func TestCRUDStandupTime(t *testing.T) {
 
 	err = db.CreateStandupTime(int64(12), ch.ChannelID)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(12), ch.StandupTime)
 
 	assert.NoError(t, db.DeleteStandupTime(ch.ChannelID))
-	assert.Equal(t, 0, ch.StandupTime)
+	assert.Equal(t, int64(0), ch.StandupTime)
 
 	time, err := db.GetChannelStandupTime(ch.ChannelID)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, time)
+	assert.Equal(t, int64(0), time)
 
 	err = db.CreateStandupTime(int64(12), ch2.ChannelID)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(12), ch2.StandupTime)
 
 	time, err = db.GetChannelStandupTime(ch2.ChannelID)
 	assert.NoError(t, err)
@@ -219,7 +223,7 @@ func TestCRUDStandupTime(t *testing.T) {
 
 	allStandupTimes, err := db.ListAllStandupTime()
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(allStandupTimes))
+	assert.Equal(t, 1, len(allStandupTimes))
 
 	assert.NoError(t, db.DeleteStandupTime(ch.ChannelID))
 	assert.NoError(t, db.DeleteStandupTime(ch2.ChannelID))
@@ -227,4 +231,11 @@ func TestCRUDStandupTime(t *testing.T) {
 	allStandupTimes, err = db.ListAllStandupTime()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(allStandupTimes))
+
+	channels, err := db.GetAllChannels()
+	for _, channel := range channels {
+		ch, err := db.SelectChannel(channel)
+		assert.NoError(t, err)
+		assert.NoError(t, db.DeleteChannel(ch.ID))
+	}
 }
