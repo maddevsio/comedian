@@ -110,7 +110,6 @@ func TestNotifier(t *testing.T) {
 
 func TestCheckUser(t *testing.T) {
 	c, err := config.Get()
-	c.ChanGeneral = "XXXYYYZZZ"
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
