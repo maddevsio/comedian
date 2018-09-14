@@ -66,15 +66,16 @@ func (n *Notifier) RevealRooks() {
 		return
 	}
 	for _, user := range allUsers {
+		fmt.Println(user)
 		worklogs, commits, err := n.getCollectorData(user, timeFrom, time.Now().AddDate(0, 0, -1))
 		if err != nil {
 			logrus.Errorf("notifier: getCollectorData failed: %v\n", err)
-			return
+			continue
 		}
 		isNonReporter, err := n.DB.IsNonReporter(user.SlackUserID, user.ChannelID, timeFrom, time.Now())
 		if err != nil {
 			logrus.Errorf("notifier: IsNonReporter failed: %v\n", err)
-			return
+			continue
 		}
 
 		if (worklogs < 8) || (commits == 0) || (isNonReporter == true) {
@@ -100,12 +101,11 @@ func (n *Notifier) RevealRooks() {
 				text = fmt.Sprintf(n.Config.Translate.IsRookMonday, user.SlackUserID, fails)
 				fmt.Println(text)
 			}
-			n.Chat.SendMessage(user.ChannelID, text)
+			n.Chat.SendMessage(n.Config.ReportingChannel, text)
 		}
 	}
 }
 
-// RevealRooks displays data about rooks in channel general
 func (n *Notifier) FillStandupsForNonReporters() {
 	//check if today is not saturday or sunday. During these days no notificatoins!
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
