@@ -72,7 +72,7 @@ type Storage interface {
 	GetChannelStandupTime(string) (int64, error)
 
 	// ListAllStandupTime returns standup time entry for all channels from database
-	ListAllStandupTime() ([]model.StandupTime, error)
+	ListAllStandupTime() ([]int64, error)
 
 	//GetAllChannels returns a list of all channels
 	GetAllChannels() ([]string, error)

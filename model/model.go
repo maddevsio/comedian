@@ -21,7 +21,7 @@ type (
 		ID       int64  `db:"id" json:"id"`
 		UserName string `db:"user_name" json:"user_name"`
 		UserID   string `db:"user_id" json:"user_id"`
-		Role     int64  `db:"role" json:"role"`
+		Role     string `db:"role" json:"role"`
 	}
 
 	// Channel model used for serialization/deserialization stored Channels
