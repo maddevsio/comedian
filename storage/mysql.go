@@ -325,11 +325,10 @@ func (m *MySQL) GetUserChannels(slackUserID string) ([]string, error) {
 //GetChannelName returns channel name
 func (m *MySQL) GetChannelName(channelID string) (string, error) {
 	var channelName string
-	err := m.conn.Get(&channelName, "SELECT channel FROM `standup_users` where channel_id =?", channelID)
+	err := m.conn.Get(&channelName, "SELECT channel FROM `standup_users` where channel_id=?", channelID)
 	if err != nil {
 		return "", err
 	}
-
 	return channelName, err
 }
 
