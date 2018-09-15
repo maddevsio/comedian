@@ -295,16 +295,22 @@ func TestHandleTimeCommands(t *testing.T) {
 func TestHandleReportByProjectCommands(t *testing.T) {
 	ReportByProjectEmptyText := "user_id=UB9AE7CL9&command=/report_by_project&channel_id=<#CBA2M41Q8|chanid>&text="
 	ReportByProjectEmptyChanID := "user_id=UB9AE7CL9&command=/report_by_project&channel_id=&text=2018-06-25 2018-06-26"
-	ReportByProject := "user_id=UB9AE7CL9&command=/report_by_project&channel_id=chanid&text= <#CBA2M41Q8|chanid> 2018-06-25 2018-06-26"
+	ReportByProject := "user_id=UB9AE7CL9&command=/report_by_project&channel_id=chanid&text=#chanName 2018-06-25 2018-06-26"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "chanName",
+		ChannelID:   "chanid",
+		StandupTime: int64(0),
+	})
+
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects/chanid/2018-06-25/2018-06-26", c.CollectorURL),
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects/chanName/2018-06-25/2018-06-26", c.CollectorURL),
 		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
 
 	testCases := []struct {
@@ -315,7 +321,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	}{
 		{"empty text", ReportByProjectEmptyText, http.StatusOK, "`text` cannot be empty"},
 		{"empty channel ID", ReportByProjectEmptyChanID, http.StatusOK, "`channel_id` cannot be empty"},
-		{"correct", ReportByProject, http.StatusOK, "Full Report on project <#CBA2M41Q8>:\n\nReport for: 2018-06-25\nNo standup data for this day\nReport for: 2018-06-26\nNo standup data for this day\n"},
+		{"correct", ReportByProject, http.StatusOK, "Full Report on project #chanName from 2018-06-25 to 2018-06-26:\n\nNo standup data for this period\n"},
 	}
 
 	for _, tt := range testCases {
@@ -328,14 +334,16 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+
 }
 
 func TestHandleReportByUserCommands(t *testing.T) {
 	ReportByUserEmptyText := "user_id=UB9AE7CL9&command=/report_by_user&text="
-	ReportByUser := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@userID1|user1> 2018-06-25 2018-06-26"
-	ReportByUserMessUser := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@huiuser|huinya> 2018-06-25 2018-06-26"
-	ReportByUserMessDateF := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@userID1|user1> 2018-6-25 2018-06-26"
-	ReportByUserMessDateT := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= <@userID1|user1> 2018-06-25 2018-6-26"
+	ReportByUser := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= @user1 2018-06-25 2018-06-26"
+	ReportByUserMessUser := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= @huinya 2018-06-25 2018-06-26"
+	ReportByUserMessDateF := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= @user1 2018-6-25 2018-06-26"
+	ReportByUserMessDateT := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= @user1 2018-06-25 2018-6-26"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
@@ -347,9 +355,23 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-26", c.CollectorURL),
 		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0, "worklogs": 0}]`))
 
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "chanName",
+		ChannelID:   "123qwe",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	user, err := rest.db.CreateUser(model.User{
+		UserName: "User1",
+		UserID:   "userID1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
 	su1, err := rest.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID1",
-		ChannelID: "123qwe",
+		UserID:    user.UserID,
+		ChannelID: channel.ChannelID,
 	})
 	assert.NoError(t, err)
 
@@ -363,7 +385,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		{"user mess up", ReportByUserMessUser, http.StatusOK, "User does not exist!"},
 		{"date from mess up", ReportByUserMessDateF, http.StatusOK, "parsing time \"2018-6-25\": month out of range"},
 		{"date to mess up", ReportByUserMessDateT, http.StatusOK, "parsing time \"2018-6-26\": month out of range"},
-		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1>:\n\nReport for: 2018-06-25\nIn <#123qwe> <@userID1> did not submit standup!\nReport for: 2018-06-26\nIn <#123qwe> <@userID1> did not submit standup!\n"},
+		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1> from 2018-06-25 to 2018-06-26:\n\nNo standup data for this period\n"},
 	}
 
 	for _, tt := range testCases {
@@ -377,15 +399,17 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	}
 
 	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(user.ID))
 
 }
 
 func TestHandleReportByProjectAndUserCommands(t *testing.T) {
-	ReportByProjectAndUserEmptyText := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=<#CBA2M41Q8|chanid>&text="
-	ReportByProjectAndUser := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-06-25 2018-06-26"
-	ReportByProjectAndUserNameMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|nouser> 2018-06-25 2018-06-26"
-	ReportByProjectAndUserDateToMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-6-25 2018-06-26"
-	ReportByProjectAndUserDateFromMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= <#CBA2M41Q8|chanid> <@USERID|user1> 2018-06-25 2018-6-26"
+	ReportByProjectAndUserEmptyText := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=#chanid&text="
+	ReportByProjectAndUser := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= #chanid @user1 2018-06-25 2018-06-26"
+	ReportByProjectAndUserNameMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= #chanid @nouser 2018-06-25 2018-06-26"
+	ReportByProjectAndUserDateToMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= #chanid @user1 2018-6-25 2018-06-26"
+	ReportByProjectAndUserDateFromMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= #chanid @user1 2018-06-25 2018-6-26"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
@@ -394,12 +418,26 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects-users/chanid/USERID/2018-06-25/2018-06-26", c.CollectorURL),
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects-users/chanid/userID1/2018-06-25/2018-06-26", c.CollectorURL),
 		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
 
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "chanid",
+		ChannelID:   "123qwe",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	user, err := rest.db.CreateUser(model.User{
+		UserName: "user1",
+		UserID:   "userID1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
 	su1, err := rest.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID1",
-		ChannelID: "123qwe",
+		UserID:    user.UserID,
+		ChannelID: channel.ChannelID,
 	})
 	assert.NoError(t, err)
 
@@ -410,10 +448,10 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 		responseBody string
 	}{
 		{"empty text", ReportByProjectAndUserEmptyText, http.StatusOK, "`text` cannot be empty"},
-		{"user name mess up", ReportByProjectAndUserNameMessUp, http.StatusOK, "This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command"},
+		{"user name mess up", ReportByProjectAndUserNameMessUp, http.StatusOK, "User does not exist!"},
 		{"date from mess up", ReportByProjectAndUserDateFromMessUp, http.StatusOK, "parsing time \"2018-6-26\": month out of range"},
 		{"date to mess up", ReportByProjectAndUserDateToMessUp, http.StatusOK, "parsing time \"2018-6-25\": month out of range"},
-		{"correct", ReportByProjectAndUser, http.StatusOK, "This user is not set as a standup user in this channel. Please, first add user with `/comdeidanadd` command"},
+		{"correct", ReportByProjectAndUser, http.StatusOK, "Report on user <@userID1> in project #chanid from 2018-06-25 to 2018-06-26\n\nNo standup data for this period\n"},
 	}
 
 	for _, tt := range testCases {
@@ -427,6 +465,8 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	}
 
 	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(user.ID))
 }
 
 func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
