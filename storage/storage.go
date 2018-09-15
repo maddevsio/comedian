@@ -93,6 +93,9 @@ type Storage interface {
 	// SelectChannel selects Channel entry from database
 	SelectChannel(string) (model.Channel, error)
 
+	// GetChannels selects Channel entry from database
+	GetChannels() ([]model.Channel, error)
+
 	// DeleteChannel deletes Channel entry from database
 	DeleteChannel(int64) error
 

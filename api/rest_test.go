@@ -94,11 +94,8 @@ func TestHandleUserCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	st, err := rest.db.CreateStandupTime(model.StandupTime{
-		ChannelID: "chanid",
-		Channel:   "channame",
-		Time:      int64(12),
-	})
+	err = rest.db.CreateStandupTime(int64(12), "chanid")
+	assert.NoError(t, err)
 
 	testCases = []struct {
 		title        string
@@ -121,7 +118,7 @@ func TestHandleUserCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupTime(st.ChannelID))
+	assert.NoError(t, rest.db.DeleteStandupTime("chanid"))
 }
 
 func TestHandleAdminCommands(t *testing.T) {
@@ -169,11 +166,8 @@ func TestHandleAdminCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	st, err := rest.db.CreateStandupTime(model.StandupTime{
-		ChannelID: "chanid",
-		Channel:   "channame",
-		Time:      int64(12),
-	})
+	err = rest.db.CreateStandupTime(int64(12), "chanid")
+	assert.NoError(t, err)
 
 	testCases = []struct {
 		title        string
@@ -196,7 +190,7 @@ func TestHandleAdminCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupTime(st.ChannelID))
+	assert.NoError(t, rest.db.DeleteStandupTime("chanid"))
 }
 
 func TestHandleTimeCommands(t *testing.T) {
@@ -244,11 +238,9 @@ func TestHandleTimeCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	su1, err := rest.db.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   "chanid",
-		Channel:     "channame",
+	su1, err := rest.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: "chanid",
 	})
 	assert.NoError(t, err)
 
@@ -272,7 +264,7 @@ func TestHandleTimeCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 
 	//delete time
 	context, rec := getContext(DelTime)
@@ -337,11 +329,9 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-26", c.CollectorURL),
 		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0, "worklogs": 0}]`))
 
-	su1, err := rest.db.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   "123qwe",
-		Channel:     "channel1",
+	su1, err := rest.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: "123qwe",
 	})
 	assert.NoError(t, err)
 
@@ -368,7 +358,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 
 }
 
@@ -389,11 +379,9 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects-users/chanid/USERID/2018-06-25/2018-06-26", c.CollectorURL),
 		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
 
-	su1, err := rest.db.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   "123qwe",
-		Channel:     "channel1",
+	su1, err := rest.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: "123qwe",
 	})
 	assert.NoError(t, err)
 
@@ -420,7 +408,7 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
 
-	assert.NoError(t, rest.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 }
 
 func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
@@ -441,8 +429,8 @@ func TestSplitChannel(t *testing.T) {
 }
 
 func TestSplitUser(t *testing.T) {
-	user := "<@SLACKUSERID|userName"
+	user := "<@USERID|userName"
 	id, name := splitUser(user)
-	assert.Equal(t, "SLACKUSERID", id)
+	assert.Equal(t, "USERID", id)
 	assert.Equal(t, "userName", name)
 }

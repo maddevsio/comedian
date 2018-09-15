@@ -79,10 +79,10 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	case typeMessage:
 		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
 			standup, err := s.db.CreateStandup(model.Standup{
-				ChannelID:  msg.Channel,
-				UsernameID: msg.User,
-				Comment:    standupText,
-				MessageTS:  msg.Msg.Timestamp,
+				ChannelID: msg.Channel,
+				UserID:    msg.User,
+				Comment:   standupText,
+				MessageTS: msg.Msg.Timestamp,
 			})
 			if err != nil {
 				logrus.Errorf("slack: CreateStandup failed: %v\n", err)

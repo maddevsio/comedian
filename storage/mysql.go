@@ -33,11 +33,6 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 	if err != nil {
 		return s, err
 	}
-	var channelName string
-	err = m.conn.Get(&channelName, "SELECT channel_name FROM `channels` where channel_id =?", s.ChannelID)
-	if err != nil {
-		return s, err
-	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `standups` (created, modified, comment, channel_id, user_id, message_ts) VALUES (?, ?, ?, ?, ?, ?)",
 		time.Now().UTC(), time.Now().UTC(), s.Comment, s.ChannelID, s.UserID, s.MessageTS,
@@ -72,8 +67,10 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
 	var s model.Standup
 	err := m.conn.Get(&s, "SELECT * FROM `standups` WHERE message_ts=?", messageTS)
-
-	return s, err
+	if err != nil {
+		return s, err
+	}
+	return s, nil
 }
 
 // SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
@@ -311,6 +308,16 @@ func (m *MySQL) UpdateChannel(c model.Channel) (model.Channel, error) {
 func (m *MySQL) SelectChannel(channelID string) (model.Channel, error) {
 	var c model.Channel
 	err := m.conn.Get(&c, "SELECT * FROM `channels` WHERE channel_id=?", channelID)
+	if err != nil {
+		return c, err
+	}
+	return c, err
+}
+
+// GetChannels selects Channel entry from database
+func (m *MySQL) GetChannels() ([]model.Channel, error) {
+	var c []model.Channel
+	err := m.conn.Select(&c, "SELECT * FROM `channels`")
 	if err != nil {
 		return c, err
 	}

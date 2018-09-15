@@ -65,25 +65,26 @@ func TestSendUserMessage(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", "https://slack.com/api/im.open", httpmock.NewStringResponder(200, `{"ok": true}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
 
 	c, err := config.Get()
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 
-	su1, err := s.db.CreateStandupUser(model.StandupUser{
-		SlackUserID: "UBA5V5W9K",
-		SlackName:   "user1",
+	su1, err := s.db.CreateChannelMember(model.ChannelMember{
+		UserID:      "UBA5V5W9K",
 		ChannelID:   "123qwe",
-		Channel:     "channel1",
+		StandupTime: 0,
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, "user1", su1.SlackName)
-	assert.NotEqual(t, "userID1", su1.SlackUserID)
+	assert.Equal(t, "123qwe", su1.ChannelID)
+	assert.Equal(t, "UBA5V5W9K", su1.UserID)
 
 	err = s.SendUserMessage("USLACKBOT", "MSG to User!")
+	assert.NoError(t, err)
 
-	assert.NoError(t, s.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, s.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 
 }
 
@@ -100,18 +101,15 @@ func TestHandleMessage(t *testing.T) {
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 
-	su1, err := s.db.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   "123qwe",
-		Channel:     "testchannel",
+	su1, err := s.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: "123qwe",
 	})
 	assert.NoError(t, err)
 
 	msg := &slack.MessageEvent{}
 	msg.Text = "<@> some message"
-	msg.Channel = su1.Channel
-	msg.Username = su1.SlackName
+	msg.Channel = su1.ChannelID
 	msg.Timestamp = "1"
 
 	err = s.handleMessage(msg)
@@ -120,8 +118,8 @@ func TestHandleMessage(t *testing.T) {
 	fakeChannel := "someotherChan"
 
 	msg.Text = "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
-	msg.Channel = su1.Channel
-	msg.Username = su1.SlackName
+	msg.Channel = su1.ChannelID
+	msg.User = su1.UserID
 	msg.Timestamp = "2"
 	err = s.handleMessage(msg)
 
@@ -139,7 +137,7 @@ func TestHandleMessage(t *testing.T) {
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": false, "error": "channel_not_found"}`))
 	msg.Text = "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
 	msg.Channel = fakeChannel
-	msg.Username = su1.SlackName
+	msg.User = su1.UserID
 
 	err = s.handleMessage(msg)
 	assert.Error(t, err)
@@ -154,7 +152,7 @@ func TestHandleMessage(t *testing.T) {
 	for _, standup := range standups {
 		s.db.DeleteStandup(standup.ID)
 	}
-	assert.NoError(t, s.db.DeleteStandupUser(su1.SlackName, su1.ChannelID))
+	assert.NoError(t, s.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 
 }
 

@@ -20,7 +20,6 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.NoError(t, err)
 
 	channelID := "QWERTY123"
-	channelName := "chanName"
 
 	dateTo := time.Now()
 	dateFrom := time.Now().AddDate(0, 0, -2)
@@ -34,11 +33,9 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.Equal(t, expected, actual)
 
 	//create user who did not write standup
-	user1, err := r.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   channelID,
-		Channel:     channelName,
+	user1, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
 
@@ -49,13 +46,11 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.Equal(t, expected, actual)
 
 	//create standup for user
-	standup1, err := r.DB.CreateStandup(model.Standup{
-		Channel:    channelName,
-		ChannelID:  channelID,
-		Comment:    "my standup",
-		UsernameID: "userID1",
-		Username:   "user1",
-		MessageTS:  "123",
+	standup1, err := r.db.CreateStandup(model.Standup{
+		ChannelID: channelID,
+		Comment:   "my standup",
+		UserID:    "userID1",
+		MessageTS: "123",
 	})
 	assert.NoError(t, err)
 
@@ -66,11 +61,9 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.Equal(t, expected, actual)
 
 	//create another user
-	user2, err := r.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID2",
-		SlackName:   "user2",
-		ChannelID:   channelID,
-		Channel:     channelName,
+	user2, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID2",
+		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
 
@@ -81,13 +74,11 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.Equal(t, expected, actual)
 
 	//create standup for user2
-	standup2, err := r.DB.CreateStandup(model.Standup{
-		Channel:    channelName,
-		ChannelID:  channelID,
-		Comment:    "user2 standup",
-		UsernameID: "userID2",
-		Username:   "user2",
-		MessageTS:  "1234",
+	standup2, err := r.db.CreateStandup(model.Standup{
+		ChannelID: channelID,
+		Comment:   "user2 standup",
+		UserID:    "userID2",
+		MessageTS: "1234",
 	})
 	assert.NoError(t, err)
 
@@ -97,10 +88,10 @@ func TestStandupReportByProject(t *testing.T) {
 	expected = "Full Report on project <#QWERTY123|chanName> from 2018-06-03 to 2018-06-05:\n\nReport for: 2018-06-03\n<@userID1> did not submit standup!<@userID2> did not submit standup!\nReport for: 2018-06-04\n<@userID1> submitted standup: my standup \n<@userID2> submitted standup: user2 standup \n\nReport for: 2018-06-05\n<@userID1> submitted standup: my standup \n<@userID2> submitted standup: user2 standup \n\n"
 	assert.Equal(t, expected, actual)
 
-	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
-	assert.NoError(t, r.DB.DeleteStandup(standup2.ID))
-	assert.NoError(t, r.DB.DeleteStandupUser(user1.SlackName, user1.ChannelID))
-	assert.NoError(t, r.DB.DeleteStandupUser(user2.SlackName, user2.ChannelID))
+	assert.NoError(t, r.db.DeleteStandup(standup1.ID))
+	assert.NoError(t, r.db.DeleteStandup(standup2.ID))
+	assert.NoError(t, r.db.DeleteChannelMember(user1.UserID, user1.ChannelID))
+	assert.NoError(t, r.db.DeleteChannelMember(user2.UserID, user2.ChannelID))
 }
 
 func TestStandupReportByUser(t *testing.T) {
@@ -112,50 +103,44 @@ func TestStandupReportByUser(t *testing.T) {
 	assert.NoError(t, err)
 
 	channelID := "QWERTY123"
-	channelName := "chanName"
 
 	dateNext := time.Now().AddDate(0, 0, 1)
 	dateTo := time.Now()
 	dateFrom := time.Now().AddDate(0, 0, -2)
 
-	user, err := r.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   channelID,
-		Channel:     channelName,
-		Created:     time.Now(),
-		Modified:    time.Now(),
+	user, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
 
 	data := []byte{}
 
-	_, err = r.StandupReportByUser(user.SlackUserID, dateTo, dateFrom, data)
+	_, err = r.StandupReportByUser(user.UserID, dateTo, dateFrom, data)
 	assert.Error(t, err)
-	_, err = r.StandupReportByUser(user.SlackUserID, dateNext, dateTo, data)
+	_, err = r.StandupReportByUser(user.UserID, dateNext, dateTo, data)
 	assert.Error(t, err)
-	_, err = r.StandupReportByUser(user.SlackUserID, dateFrom, dateNext, data)
+	_, err = r.StandupReportByUser(user.UserID, dateFrom, dateNext, data)
 	assert.Error(t, err)
 
 	expected := "Full Report on user <@userID1> from 2018-06-03 to 2018-06-05:\n\nReport for: 2018-06-03\nIn <#QWERTY123|chanName> <@userID1> did not submit standup!\nReport for: 2018-06-04\nIn <#QWERTY123|chanName> <@userID1> did not submit standup!\nReport for: 2018-06-05\nIn <#QWERTY123|chanName> <@userID1> did not submit standup!\n"
-	actual, err := r.StandupReportByUser(user.SlackUserID, dateFrom, dateTo, data)
+	actual, err := r.StandupReportByUser(user.UserID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 
-	standup1, err := r.DB.CreateStandup(model.Standup{
-		ChannelID:  channelID,
-		Comment:    "my standup",
-		UsernameID: "userID1",
-		Username:   "user1",
-		MessageTS:  "123",
+	standup1, err := r.db.CreateStandup(model.Standup{
+		ChannelID: channelID,
+		Comment:   "my standup",
+		UserID:    "userID1",
+		MessageTS: "123",
 	})
 	expected = "Full Report on user <@userID1> from 2018-06-03 to 2018-06-05:\n\nReport for: 2018-06-03\nIn <#QWERTY123|chanName> <@userID1> did not submit standup!\nReport for: 2018-06-04\nIn <#QWERTY123|chanName> <@userID1> submitted standup: my standup \n\nReport for: 2018-06-05\nIn <#QWERTY123|chanName> <@userID1> submitted standup: my standup \n\n"
-	actual, err = r.StandupReportByUser(user.SlackUserID, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByUser(user.UserID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 
-	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
-	assert.NoError(t, r.DB.DeleteStandupUser(user.SlackName, user.ChannelID))
+	assert.NoError(t, r.db.DeleteStandup(standup1.ID))
+	assert.NoError(t, r.db.DeleteChannelMember(user.UserID, user.ChannelID))
 }
 
 func TestStandupReportByProjectAndUser(t *testing.T) {
@@ -167,38 +152,34 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	assert.NoError(t, err)
 
 	channelID := "QWERTY123"
-	channelName := "chanName"
 
 	dateTo := time.Now()
 	dateFrom := time.Now().AddDate(0, 0, -2)
 
-	user1, err := r.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   channelID,
-		Channel:     channelName,
+	user1, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: channelID,
 	})
 
 	data := []byte{}
-	actual, err := r.StandupReportByProjectAndUser(channelID, user1.SlackUserID, dateFrom, dateTo, data)
+	actual, err := r.StandupReportByProjectAndUser(channelID, user1.UserID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	expected := "Report on project: <#QWERTY123|chanName>, and user: <@userID1> from 2018-06-03 to 2018-06-05\n\nReport for: 2018-06-03\n<@userID1> did not submit standup!\nReport for: 2018-06-04\n<@userID1> did not submit standup!\nReport for: 2018-06-05\n<@userID1> did not submit standup!\n"
 	assert.Equal(t, expected, actual)
 
-	standup1, err := r.DB.CreateStandup(model.Standup{
-		ChannelID:  channelID,
-		Comment:    "my standup",
-		UsernameID: "userID1",
-		Username:   "user1",
-		MessageTS:  "123",
+	standup1, err := r.db.CreateStandup(model.Standup{
+		ChannelID: channelID,
+		Comment:   "my standup",
+		UserID:    "userID1",
+		MessageTS: "123",
 	})
 
 	assert.NoError(t, err)
-	actual, err = r.StandupReportByProjectAndUser(channelID, user1.SlackUserID, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByProjectAndUser(channelID, user1.UserID, dateFrom, dateTo, data)
 	assert.NoError(t, err)
 	expected = "Report on project: <#QWERTY123|chanName>, and user: <@userID1> from 2018-06-03 to 2018-06-05\n\nReport for: 2018-06-03\n<@userID1> did not submit standup!\nReport for: 2018-06-04\n<@userID1> submitted standup: my standup \nReport for: 2018-06-05\n<@userID1> submitted standup: my standup \n"
 	assert.Equal(t, expected, actual)
 
-	assert.NoError(t, r.DB.DeleteStandup(standup1.ID))
-	assert.NoError(t, r.DB.DeleteStandupUser(user1.SlackName, user1.ChannelID))
+	assert.NoError(t, r.db.DeleteStandup(standup1.ID))
+	assert.NoError(t, r.db.DeleteChannelMember(user1.UserID, user1.ChannelID))
 }
