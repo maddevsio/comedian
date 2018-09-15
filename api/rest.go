@@ -159,8 +159,6 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 				c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
 				continue
 			}
-			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUser, userName))
-			continue
 		}
 		if user.UserID == UserID && user.ChannelID == ca.ChannelID {
 			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.UserExist, UserID))
@@ -170,52 +168,14 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		if err != nil {
 			logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
 		}
+		logrus.Infof("channel standup time: %v", st)
 		if st == int64(0) {
 			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUserNoStandupTime, userName))
 			continue
 		}
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUser, userName))
 	}
 	return nil
-}
-
-func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
-	var ca FullSlackForm
-	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-	if err := ca.Validate(); err != nil {
-		logrus.Errorf("rest: addUserCommand Validate failed: %v\n", err)
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-	result := strings.Split(ca.Text, "|")
-	UserID := strings.Replace(result[0], "<@", "", -1)
-	userName := strings.Replace(result[1], ">", "", -1)
-	channelName, err := r.slack.GetChannelName(ca.ChannelID)
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	user, err := r.db.FindChannelMemberByUserID(UserID, ca.ChannelID)
-	if err != nil {
-		_, err := r.db.CreateChannelMember(model.ChannelMember{
-			UserID:    UserID,
-			ChannelID: ca.ChannelID,
-		})
-		if err != nil {
-			logrus.Errorf("rest: CreateChannelMember failed: %v\n", err)
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
-		}
-		message := fmt.Sprintf(r.conf.Translate.PMAssigned, ca.ChannelID, channelName)
-		err = r.slack.SendUserMessage(UserID, message)
-		if err != nil {
-			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
-		}
-	}
-	if user.UserID == UserID && user.ChannelID == ca.ChannelID {
-		return c.String(http.StatusOK, r.conf.Translate.UserExist)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddAdmin, userName))
 }
 
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
@@ -235,11 +195,12 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 	}
 
 	for _, u := range users {
-		UserID, userName := splitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(UserID, ca.ChannelID)
+		userID, userName := splitUser(u)
+		logrus.Infof("UserID: %v, UserName: %v", userID, userName)
+		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
 		if err != nil {
 			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
-			c.String(http.StatusOK, fmt.Sprintf("Пользователь <@%v> не стэндапит в этом канале\n", UserID))
+			c.String(http.StatusOK, fmt.Sprintf("Пользователь <@%v> не стэндапит в этом канале\n", userID))
 			continue
 		}
 		err = r.db.DeleteChannelMember(user.UserID, ca.ChannelID)
@@ -251,41 +212,6 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteUser, userName))
 	}
 	return nil
-}
-
-func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
-	return nil
-	//var ca ChannelIDTextForm
-	// if err := r.decoder.Decode(&ca, f); err != nil {
-	// 	logrus.Errorf("rest: removeAdminCommand Decode failed: %v\n", err)
-	// 	return c.String(http.StatusBadRequest, err.Error())
-	// }
-	// if err := ca.Validate(); err != nil {
-	// 	logrus.Errorf("rest: removeAdminCommand Validate failed: %v\n", err)
-	// 	return c.String(http.StatusBadRequest, err.Error())
-	// }
-
-	// result := strings.Split(ca.Text, "|")
-	// UserID := strings.Replace(result[0], "<@", "", -1)
-	// userName := strings.Replace(result[1], ">", "", -1)
-
-	// user, err := r.db.FindChannelMemberByUserID(UserID, ca.ChannelID)
-	// if err != nil {
-	// 	logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
-	// 	return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
-	// }
-
-	//err = r.db.DeleteAdmin(userName, ca.ChannelID)
-	// if err != nil {
-	// 	logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
-	// 	return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
-	// }
-	// message := fmt.Sprintf(r.conf.Translate.PMRemoved, user.ChannelID, user.Channel)
-	// err = r.slack.SendUserMessage(UserID, message)
-	// if err != nil {
-	// 	logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
-	// }
-	//return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteAdmin, userName))
 }
 
 func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
@@ -314,31 +240,109 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userIDs, ", ")))
 }
 
-func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
-	logrus.Printf("%+v\n", f)
+func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
+	var ca FullSlackForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		logrus.Errorf("rest: addUserCommand Validate failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	users := strings.Split(ca.Text, " ")
+
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно сделать админами")
+	}
+	logrus.Infof("Users: %v", users)
+	for _, u := range users {
+
+		userID, userName := splitUser(u)
+
+		user, err := r.db.SelectUser(userID)
+		if err != nil {
+			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
+			continue
+		}
+		if user.Role == "admin" {
+			c.String(http.StatusOK, "User is already admin!")
+			continue
+		}
+		user.Role = "admin"
+		_, err = r.db.UpdateUser(user)
+		if err != nil {
+			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
+		}
+		message := fmt.Sprintf("Теперь у вас есть доступ к упарвлению комедианом")
+		err = r.slack.SendUserMessage(userID, message)
+		if err != nil {
+			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+		}
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddAdmin, userName))
+	}
+
 	return nil
-	// var ca ChannelIDForm
-	// if err := r.decoder.Decode(&ca, f); err != nil {
-	// 	logrus.Errorf("rest: listUsersCommand Decode failed: %v\n", err)
-	// 	return c.String(http.StatusBadRequest, err.Error())
-	// }
-	// if err := ca.Validate(); err != nil {
-	// 	logrus.Errorf("rest: listUsersCommand Validate failed: %v\n", err)
-	// 	return c.String(http.StatusBadRequest, err.Error())
-	// }
-	// users, err := r.db.ListAdminsByChannelID(ca.ChannelID)
-	// if err != nil {
-	// 	logrus.Errorf("rest: ListChannelMembers: %v\n", err)
-	// 	return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v\n", err))
-	// }
-	// var userNames []string
-	// for _, user := range users {
-	// 	userNames = append(userNames, "<@"+user.SlackName+">")
-	// }
-	// if len(userNames) < 1 {
-	// 	return c.String(http.StatusOK, r.conf.Translate.ListNoAdmins)
-	// }
-	// return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", ")))
+}
+
+func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
+	var ca ChannelIDTextForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		logrus.Errorf("rest: removeAdminCommand Decode failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		logrus.Errorf("rest: removeAdminCommand Validate failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	users := strings.Split(ca.Text, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
+	}
+
+	for _, u := range users {
+		userID, userName := splitUser(u)
+		logrus.Infof("UserID: %v, UserName: %v", userID, userName)
+
+		user, err := r.db.SelectUser(userID)
+		if err != nil {
+			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
+			continue
+		}
+		if user.Role != "admin" {
+			c.String(http.StatusOK, "Этот пользователь не админ!")
+			continue
+		}
+		user.Role = ""
+		_, err = r.db.UpdateUser(user)
+		if err != nil {
+			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
+		}
+		message := fmt.Sprintf(r.conf.Translate.PMRemoved)
+		err = r.slack.SendUserMessage(userID, message)
+		if err != nil {
+			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+		}
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteAdmin, userName))
+	}
+	return nil
+}
+
+func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
+	admins, err := r.db.ListAdmins()
+	if err != nil {
+		logrus.Errorf("rest: ListChannelMembers: %v\n", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v\n", err))
+	}
+	var userNames []string
+	for _, admin := range admins {
+		userNames = append(userNames, "<@"+admin.UserName+">")
+	}
+	if len(userNames) < 1 {
+		return c.String(http.StatusOK, r.conf.Translate.ListNoAdmins)
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", ")))
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {

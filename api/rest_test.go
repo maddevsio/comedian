@@ -20,7 +20,6 @@ import (
 func TestHandleCommands(t *testing.T) {
 
 	noneCommand := "user_id=UB9AE7CL9"
-	noneUserID := "user_id=UB9AE7CL8"
 	emptyCommand := "user_id=UB9AE7CL9&command=/"
 
 	c, err := config.Get()
@@ -35,7 +34,6 @@ func TestHandleCommands(t *testing.T) {
 	}{
 		{"command not allowed", noneCommand, http.StatusMethodNotAllowed, "\"Command not allowed\""},
 		{"empty command", emptyCommand, http.StatusNotImplemented, "Not implemented"},
-		{"empty user_id", noneUserID, http.StatusOK, "This command is not allowed for you! You are not admin"},
 	}
 
 	for _, tt := range testCases {
@@ -54,7 +52,7 @@ func TestHandleUserCommands(t *testing.T) {
 	AddEmptyText := "user_id=UB9AE7CL9&command=/comedianadd&text="
 	AddUserEmptyChannelID := "user_id=UB9AE7CL9&command=/comedianadd&text=test&channel_id=&channel_name=channame"
 	AddUserEmptyChannelName := "user_id=UB9AE7CL9&command=/comedianadd&text=test&channel_id=chanid&channel_name="
-	DelUser := "user_id=UB9AE7CL9&command=/comedianremove&text=@test&channel_id=chanid"
+	DelUser := "user_id=UB9AE7CL9&command=/comedianremove&text=<@userid|test>&channel_id=chanid"
 	ListUsers := "user_id=UB9AE7CL9&command=/comedianlist&channel_id=chanid"
 
 	c, err := config.Get()
@@ -79,8 +77,8 @@ func TestHandleUserCommands(t *testing.T) {
 		{"empty channel name", AddUserEmptyChannelName, http.StatusBadRequest, "`channel_name` cannot be empty"},
 		{"empty text", AddEmptyText, http.StatusBadRequest, "`text` cannot be empty"},
 		{"add user no standup time", AddUser, http.StatusOK, "<@test> added, but there is no standup time for this channel"},
-		{"list users", ListUsers, http.StatusOK, "Standupers in this channel: <@test>"},
-		{"add user with user exist", AddUser, http.StatusOK, "User already exists!"},
+		{"list users", ListUsers, http.StatusOK, "Standupers in this channel: <@userid>"},
+		{"add user with user exist", AddUser, http.StatusOK, "<@userid> already assigned as standuper in this channel"},
 		{"delete user", DelUser, http.StatusOK, "<@test> deleted"},
 	}
 
@@ -93,8 +91,12 @@ func TestHandleUserCommands(t *testing.T) {
 		assert.Equal(t, tt.statusCode, rec.Code)
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
-
-	err = rest.db.CreateStandupTime(int64(12), "chanid")
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "channame",
+		ChannelID:   "chanid",
+		StandupTime: int64(0),
+	})
+	err = rest.db.CreateStandupTime(int64(12), channel.ChannelID)
 	assert.NoError(t, err)
 
 	testCases = []struct {
@@ -141,6 +143,13 @@ func TestHandleAdminCommands(t *testing.T) {
 	httpmock.RegisterResponder("POST", "https://slack.com/api/channels.info",
 		httpmock.NewStringResponder(200, `{"ok": true,"channel": {"id": "chanid", "name": "channame"}}`))
 
+	u1, err := rest.db.CreateUser(model.User{
+		UserName: "test",
+		UserID:   "userid",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
 	testCases := []struct {
 		title        string
 		command      string
@@ -152,7 +161,7 @@ func TestHandleAdminCommands(t *testing.T) {
 		{"empty text", AddEmptyText, http.StatusBadRequest, "`text` cannot be empty"},
 		{"add admin no standup time", AddAdmin, http.StatusOK, "<@test> added as admin"},
 		{"list admins", ListAdmins, http.StatusOK, "Admins in this channel: <@test>"},
-		{"add admin with admin exist", AddAdmin, http.StatusOK, "User already exists!"},
+		{"add admin with admin exist", AddAdmin, http.StatusOK, "User is already admin!"},
 		{"delete admin", DelAdmin, http.StatusOK, "<@test> deleted as admin"},
 	}
 
@@ -191,6 +200,7 @@ func TestHandleAdminCommands(t *testing.T) {
 	}
 
 	assert.NoError(t, rest.db.DeleteStandupTime("chanid"))
+	assert.NoError(t, rest.db.DeleteUser(u1.ID))
 }
 
 func TestHandleTimeCommands(t *testing.T) {
@@ -271,7 +281,6 @@ func TestHandleTimeCommands(t *testing.T) {
 	assert.NoError(t, rest.handleCommands(context))
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "standup time for channame channel deleted", rec.Body.String())
-
 }
 
 func TestHandleReportByProjectCommands(t *testing.T) {

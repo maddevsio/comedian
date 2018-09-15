@@ -351,8 +351,8 @@ func (m *MySQL) CreateUser(c model.User) (model.User, error) {
 // UpdateUser updates User entry in database
 func (m *MySQL) UpdateUser(c model.User) (model.User, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `users` SET user_name=?, user_id=? WHERE id=?",
-		c.UserName, c.UserID, c.ID,
+		"UPDATE `users` SET role=? WHERE id=?",
+		c.Role, c.ID,
 	)
 	if err != nil {
 		return c, err
@@ -376,4 +376,14 @@ func (m *MySQL) SelectUser(userID string) (model.User, error) {
 func (m *MySQL) DeleteUser(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `users` WHERE id=?", id)
 	return err
+}
+
+// ListAdmins selects User entry from database
+func (m *MySQL) ListAdmins() ([]model.User, error) {
+	var c []model.User
+	err := m.conn.Select(&c, "SELECT * FROM `users` WHERE role='admin'")
+	if err != nil {
+		return c, err
+	}
+	return c, err
 }

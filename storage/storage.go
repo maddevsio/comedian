@@ -110,4 +110,7 @@ type Storage interface {
 
 	// DeleteUser deletes User entry from database
 	DeleteUser(int64) error
+
+	// ListAdmins selects User entry from database
+	ListAdmins() ([]model.User, error)
 }

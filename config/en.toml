@@ -1,4 +1,4 @@
-userExist = "<@%v> already exists as standuper!"
+userExist = "<@%v> already assigned as standuper in this channel"
 addUserNoStandupTime = "<@%s> added, but there is no standup time for this channel"
 addUser = "<@%s> added"
 addAdmin = "<@%s> added as admin"
