@@ -55,6 +55,7 @@ func (s *Slack) Run() error {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
 			s.UpdateUsersList()
+			s.UpdateChannelsList()
 			s.handleConnection()
 		case *slack.MessageEvent:
 			s.handleMessage(ev)
@@ -233,6 +234,25 @@ func (s *Slack) UpdateUsersList() {
 		}
 		if user.Deleted {
 			s.db.DeleteUser(u.ID)
+		}
+		continue
+	}
+}
+
+//UpdateChannelsList updates users in workspace
+func (s *Slack) UpdateChannelsList() {
+	params := slack.GetConversationsParameters{
+		Types: []string{"public_channel", "private_channel"},
+	}
+	chans, _, _ := s.api.GetConversations(&params)
+	for _, c := range chans {
+		_, err := s.db.SelectChannel(c.ID)
+		if err != nil {
+			s.db.CreateChannel(model.Channel{
+				ChannelName: c.Name,
+				ChannelID:   c.ID,
+				StandupTime: int64(0),
+			})
 		}
 		continue
 	}
