@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/maddevsio/comedian/config"
@@ -118,12 +117,11 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 				dayInfo += fmt.Sprintf(r.Config.Translate.UserDidNotStandupInChannel, channel, channelName, slackUserID)
 				continue
 			}
-			dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandupInChannel, channel, channelName, slackUserID)
 			standup, err := r.db.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
 			if err != nil {
-				fmt.Println(err)
 				continue
 			}
+			dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandupInChannel, channel, channelName, slackUserID)
 			dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 		}
 		if dayInfo != "" {
@@ -141,40 +139,43 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 }
 
 // StandupReportByProjectAndUser creates a standup report for a specified period of time
-func (r *Reporter) StandupReportByProjectAndUser(channelID, slackUserID string, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
-	channel := strings.Replace(channelID, "#", "", -1)
-	channelName, err := r.db.GetChannelName(channel)
-	if err != nil {
-		return "", err
-	}
-	report := fmt.Sprintf(r.Config.Translate.ReportOnProjectAndUserHead, slackUserID, channelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUserID string, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
+	reportHead := fmt.Sprintf(r.Config.Translate.ReportOnProjectAndUserHead, slackUserID, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
 		return "", err
 	}
 
+	reportBody := ""
 	for day := 0; day <= numberOfDays; day++ {
+		dayInfo := ""
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
 		dateTo := dateFrom.Add(24 * time.Hour)
-		userIsNonReporter, err := r.db.IsNonReporter(slackUserID, channel, dateFrom, dateTo)
+		userIsNonReporter, err := r.db.IsNonReporter(slackUserID, channel.ChannelID, dateFrom, dateTo)
 		if err != nil {
 			continue
 		}
-		report += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
 		if userIsNonReporter {
-			report += fmt.Sprintf(r.Config.Translate.UserDidNotStandup, slackUserID)
-			report += "\n"
+			dayInfo += fmt.Sprintf(r.Config.Translate.UserDidNotStandup, slackUserID)
+			dayInfo += "\n"
 			continue
 		}
-		report += fmt.Sprintf(r.Config.Translate.UserDidStandup, slackUserID)
-		standup, err := r.db.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
+		standup, err := r.db.SelectStandupsFiltered(slackUserID, channel.ChannelID, dateFrom, dateTo)
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
-		report += fmt.Sprintf("%v \n", standup.Comment)
+		dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandup, slackUserID)
+		dayInfo += fmt.Sprintf("%v \n", standup.Comment)
+		if dayInfo != "" {
+			reportBody += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			reportBody += dayInfo
+		}
 	}
 
+	if reportBody == "" {
+		reportBody += r.Config.Translate.ReportNoData
+	}
+	report := reportHead + reportBody
 	//report += r.fetchCollectorData(collectorData)
 	return report, nil
 }

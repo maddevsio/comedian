@@ -56,10 +56,6 @@ func (c Standup) Validate() error {
 		err := errors.New("User cannot be empty")
 		return err
 	}
-	if c.Comment == "" {
-		err := errors.New("Comment cannot be empty")
-		return err
-	}
 	return nil
 }
 

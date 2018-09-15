@@ -548,9 +548,14 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 
 	channelName := strings.Replace(commandParams[0], "#", "", -1)
 	channelID, err := r.db.GetChannelID(channelName)
-
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+
+	channel, err := r.db.SelectChannel(channelID)
+	if err != nil {
+		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 
@@ -577,7 +582,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 
-	report, err := r.report.StandupReportByProjectAndUser(channelID, user.UserID, dateFrom, dateTo, data)
+	report, err := r.report.StandupReportByProjectAndUser(channel, user.UserID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
