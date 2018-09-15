@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -22,7 +23,6 @@ type (
 	// CollectorData used to parse data on user from Collector
 	CollectorData struct {
 		TotalCommits int `json:"total_commits"`
-		TotalMerges  int `json:"total_merges"`
 		Worklogs     int `json:"worklogs"`
 	}
 )
@@ -38,53 +38,48 @@ func NewReporter(c config.Config) (*Reporter, error) {
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
-func (r *Reporter) StandupReportByProject(channelID string, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
-	channelName, err := r.db.GetChannelName(channelID)
-	if err != nil {
-		logrus.Errorf("reporting:GetChannelName failed: %v", err)
-		return "", err
-	}
-	reportHead := fmt.Sprintf(r.Config.Translate.ReportOnProjectHead, channelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
-
-	reportBody := ""
+func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
+	reportHead := fmt.Sprintf(r.Config.Translate.ReportOnProjectHead, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("reporting:setupDays failed: %v", err)
 		return "", err
 	}
 
+	reportBody := ""
 	for day := 0; day <= numberOfDays; day++ {
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
 		dateTo := dateFrom.Add(24 * time.Hour)
-		standupers, err := r.db.ListChannelMembers(channelID)
-		logrus.Infof("reporting: standupers: %v, err: %v", standupers, err)
-		if err != nil || len(standupers) == 0 {
-			reportBody += r.Config.Translate.ReportNoData
+		chanMembers, err := r.db.ListChannelMembers(channel.ChannelID)
+		if err != nil || len(chanMembers) == 0 {
 			continue
 		}
 		dayInfo := ""
-		for _, user := range standupers {
-			userIsNonReporter, err := r.db.IsNonReporter(user.UserID, channelID, dateFrom, dateTo)
+		for _, member := range chanMembers {
+			userIsNonReporter, err := r.db.IsNonReporter(member.UserID, channel.ChannelID, dateFrom, dateTo)
 			if err != nil {
 				logrus.Errorf("reporting:IsNonReporter failed: %v", err)
 				continue
 			}
 			if userIsNonReporter {
-				dayInfo += fmt.Sprintf(r.Config.Translate.UserDidNotStandup, user.UserID)
+				dayInfo += fmt.Sprintf(r.Config.Translate.UserDidNotStandup, member.UserID)
 				continue
 			}
-			dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandup, user.UserID)
-			standups, err := r.db.SelectStandupsFiltered(user.UserID, channelID, dateFrom, dateTo)
+			standup, err := r.db.SelectStandupsFiltered(member.UserID, channel.ChannelID, dateFrom, dateTo)
 			if err != nil {
 				logrus.Errorf("reporting:SelectStandupsFiltered failed: %v", err)
 				continue
 			}
-			dayInfo += fmt.Sprintf("%v \n", standups[0].Comment)
+			dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandup, member.UserID)
+			dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 		}
 		if dayInfo != "" {
 			reportBody += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
 			reportBody += dayInfo
 		}
+	}
+	if reportBody == "" {
+		reportBody += r.Config.Translate.ReportNoData
 	}
 	report := reportHead + reportBody
 	//reportBody += r.fetchCollectorData(collectorData)
@@ -124,12 +119,12 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 				continue
 			}
 			dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandupInChannel, channel, channelName, slackUserID)
-			standups, err := r.db.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
+			standup, err := r.db.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
-			dayInfo += fmt.Sprintf("%v \n", standups[0].Comment)
+			dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 		}
 		if dayInfo != "" {
 			reportBody += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
@@ -172,12 +167,12 @@ func (r *Reporter) StandupReportByProjectAndUser(channelID, slackUserID string, 
 			continue
 		}
 		report += fmt.Sprintf(r.Config.Translate.UserDidStandup, slackUserID)
-		standups, err := r.db.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
+		standup, err := r.db.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		report += fmt.Sprintf("%v \n", standups[0].Comment)
+		report += fmt.Sprintf("%v \n", standup.Comment)
 	}
 
 	//report += r.fetchCollectorData(collectorData)
@@ -191,9 +186,9 @@ func (r *Reporter) fetchCollectorData(data []byte) string {
 		return ""
 	}
 	if cd.Worklogs != 0 {
-		return fmt.Sprintf(r.Config.Translate.ReportCollectorDataUser, cd.TotalCommits, cd.TotalMerges, cd.Worklogs/3600)
+		return fmt.Sprintf(r.Config.Translate.ReportCollectorDataUser, cd.TotalCommits, cd.Worklogs/3600)
 	}
-	return fmt.Sprintf(r.Config.Translate.ReportOnProjectCollectorData, cd.TotalCommits, cd.TotalMerges)
+	return fmt.Sprintf(r.Config.Translate.ReportOnProjectCollectorData, cd.TotalCommits)
 }
 
 //setupDays gets dates and returns their differense in days

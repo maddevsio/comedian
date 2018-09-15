@@ -21,7 +21,7 @@ type Storage interface {
 	SelectStandupsByChannelIDForPeriod(string, time.Time, time.Time) ([]model.Standup, error)
 
 	// SelectStandupsFiltered selects standup entrys by channel ID and time period from database
-	SelectStandupsFiltered(string, string, time.Time, time.Time) ([]model.Standup, error)
+	SelectStandupsFiltered(string, string, time.Time, time.Time) (model.Standup, error)
 
 	// DeleteStandup deletes standup entry from database
 	DeleteStandup(int64) error
@@ -44,7 +44,6 @@ type Storage interface {
 	// IsNonReporter returns true if user did not submit standup in time period, false othervise
 	IsNonReporter(string, string, time.Time, time.Time) (bool, error)
 
-	// ListChannelMembers returns array of standup entries from database
 	ListChannelMembers(string) ([]model.ChannelMember, error)
 
 	// DeleteChannelMember deletes channel_members entry from database
