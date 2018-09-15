@@ -54,6 +54,7 @@ func (s *Slack) Run() error {
 	for msg := range s.rtm.IncomingEvents {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
+			s.UpdateUsersList()
 			s.handleConnection()
 		case *slack.MessageEvent:
 			s.handleMessage(ev)
@@ -203,4 +204,36 @@ func (s *Slack) GetChannelName(channelID string) (string, error) {
 		return group.Name, nil
 	}
 	return name, err
+}
+
+//UpdateUsersList updates users in workspace
+func (s *Slack) UpdateUsersList() {
+	users, _ := s.api.GetUsers()
+	for _, user := range users {
+		if user.IsBot || user.Name == "slackbot" {
+			continue
+		}
+
+		u, err := s.db.SelectUser(user.ID)
+		if err != nil {
+			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
+				s.db.CreateUser(model.User{
+					UserName: user.Name,
+					UserID:   user.ID,
+					Role:     "admin",
+				})
+				continue
+			}
+			s.db.CreateUser(model.User{
+				UserName: user.Name,
+				UserID:   user.ID,
+				Role:     "",
+			})
+			continue
+		}
+		if user.Deleted {
+			s.db.DeleteUser(u.ID)
+		}
+		continue
+	}
 }

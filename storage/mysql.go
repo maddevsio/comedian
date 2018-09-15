@@ -333,7 +333,7 @@ func (m *MySQL) DeleteChannel(id int64) error {
 func (m *MySQL) CreateUser(c model.User) (model.User, error) {
 	res, err := m.conn.Exec(
 		"INSERT INTO `users` (user_name, user_id, role) VALUES (?, ?, ?)",
-		c.UserName, c.UserID, "user",
+		c.UserName, c.UserID, c.Role,
 	)
 	if err != nil {
 		return c, err
