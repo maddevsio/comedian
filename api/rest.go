@@ -374,18 +374,18 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	logrus.Infof("If channel standup time exis: %v, %v", st, err)
 	if err != nil {
 		logrus.Errorf("GetChannelStandupTime failed: %v", err)
-		return r.db.CreateStandupTime(timeInt, ca.ChannelID)
+		r.db.CreateStandupTime(timeInt, ca.ChannelID)
 	}
 	st = timeInt
 	err = r.db.CreateStandupTime(st, ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: UpdateStandupTime failed: %v\n", err)
 	}
-	ChannelMembers, err := r.db.ListChannelMembers(ca.ChannelID)
+	channelMembers, err := r.db.ListChannelMembers(ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: ListChannelMembers failed: %v\n", err)
 	}
-	if len(ChannelMembers) == 0 {
+	if len(channelMembers) == 0 {
 		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTimeNoUsers, st))
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTime, st))
@@ -427,12 +427,10 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 
 	standupTime, err := r.db.GetChannelStandupTime(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
-		if err.Error() == "sql: no rows in result set" {
-			return c.String(http.StatusOK, r.conf.Translate.ShowNoStandupTime)
-		} else {
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v\n", err))
-		}
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v\n", err))
+	}
+	if standupTime == int64(0) {
+		return c.String(http.StatusOK, r.conf.Translate.ShowNoStandupTime)
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ShowStandupTime, standupTime))
 }

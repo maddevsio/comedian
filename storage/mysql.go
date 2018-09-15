@@ -172,7 +172,6 @@ func (m *MySQL) DeleteChannelMember(userID, channelID string) error {
 
 // CreateStandupTime creates time entry in database
 func (m *MySQL) CreateStandupTime(st int64, channelID string) error {
-
 	_, err := m.conn.Exec("UPDATE `channels` SET channel_standup_time=? WHERE channel_id=?", st, channelID)
 	if err != nil {
 		return err
