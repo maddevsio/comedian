@@ -114,14 +114,14 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 				continue
 			}
 			if userIsNonReporter {
-				dayInfo += fmt.Sprintf(r.Config.Translate.UserDidNotStandupInChannel, channel, channelName, slackUserID)
+				dayInfo += fmt.Sprintf(r.Config.Translate.UserDidNotStandupInChannel, channelName, slackUserID)
 				continue
 			}
 			standup, err := r.db.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
 			if err != nil {
 				continue
 			}
-			dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandupInChannel, channel, channelName, slackUserID)
+			dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandupInChannel, channelName, slackUserID)
 			dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 		}
 		if dayInfo != "" {

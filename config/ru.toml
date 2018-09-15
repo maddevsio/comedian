@@ -36,10 +36,10 @@ dateError1 = "Дата начала больше чем дата конца пе
 dateError2 = "Дата конца отчёта указана в будущем времени"
 userDidNotStandup = "<@%v> не написал стэндап!\n"
 userDidStandup = "<@%v> написал стэндап!\n"
-userDidNotStandupInChannel = "В <#%v|%v> <@%v> не написал стэндап!\n"
-userDidStandupInChannel = "В <#%v|%v> <@%v> написал стэндап!\n"
-PMAssigned = "Вас назначили ПМом в <#%s|%s>"
-PMRemoved = "Вы больше не ПМ в <#%s|%s>"
+userDidNotStandupInChannel = "В #%v <@%v> не написал стэндап!\n"
+userDidStandupInChannel = "В #%v <@%v> написал стэндап!\n"
+PMAssigned = "Вас назначили ПМом в #%s"
+PMRemoved = "Вы больше не ПМ в #%s"
 
 
 helloManager = "Привет, менеджер!"
