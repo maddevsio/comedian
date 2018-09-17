@@ -463,9 +463,15 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 
-	dateFrom, dateTo, err := setUpDates(commandParams[2], commandParams[3])
+	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
-		return c.String(http.StatusOK, "Incorrect Date From or Date To formats!")
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+	dateTo, err := time.Parse("2006-01-02", commandParams[2])
+	if err != nil {
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
 	}
 
 	data, err := r.getCollectorData("projects", channel.ChannelName, commandParams[1], commandParams[2])
@@ -502,10 +508,17 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	if err != nil {
 		return c.String(http.StatusOK, "User does not exist!")
 	}
-	dateFrom, dateTo, err := setUpDates(commandParams[2], commandParams[3])
+	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
-		return c.String(http.StatusOK, "Incorrect Date From or Date To formats!")
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
 	}
+	dateTo, err := time.Parse("2006-01-02", commandParams[2])
+	if err != nil {
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+
 	data, err := r.getCollectorData("users", user.UserID, commandParams[1], commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
@@ -553,10 +566,17 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	if err != nil {
 		return c.String(http.StatusOK, "User does not exist!")
 	}
-	dateFrom, dateTo, err := setUpDates(commandParams[2], commandParams[3])
+	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
-		return c.String(http.StatusOK, "Incorrect Date From or Date To formats!")
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
 	}
+	dateTo, err := time.Parse("2006-01-02", commandParams[3])
+	if err != nil {
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+
 	userInProject := user.UserID + "/" + channelName
 
 	data, err := r.getCollectorData("user-in-project", userInProject, commandParams[2], commandParams[3])

@@ -310,8 +310,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects/chanName/2018-06-25/2018-06-26", c.CollectorURL),
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects/chanName/2018-06-25/2018-06-26/", c.CollectorURL),
 		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
 
 	testCases := []struct {
@@ -353,7 +352,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-26", c.CollectorURL),
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-26/", c.CollectorURL),
 		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0, "worklogs": 0}]`))
 
 	channel, err := rest.db.CreateChannel(model.Channel{
@@ -419,7 +418,7 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects-users/chanid/userID1/2018-06-25/2018-06-26", c.CollectorURL),
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/user-in-project/userID1/chanid/2018-06-25/2018-06-26/", c.CollectorURL),
 		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
 
 	channel, err := rest.db.CreateChannel(model.Channel{
