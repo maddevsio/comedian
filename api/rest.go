@@ -90,15 +90,11 @@ func (r *REST) Start() error {
 }
 
 func (r *REST) handleCommands(c echo.Context) error {
+	logrus.Infof("Rest context: %v", c)
 	form, err := c.FormParams()
+	logrus.Infof("Rest form: %v", form)
 	if err != nil {
 		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
-	}
-	slackUserID := form.Get("user_id")
-	channelID := form.Get("channel_id")
-	userIsAdmin := r.db.IsAdmin(slackUserID, channelID)
-	if (slackUserID != r.conf.ManagerSlackUserID) && (userIsAdmin == false) {
-		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
 	if command := form.Get("command"); command != "" {
 		switch command {
@@ -143,82 +139,43 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: addUserCommand Validate failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	result := strings.Split(ca.Text, "|")
-	slackUserID := strings.Replace(result[0], "<@", "", -1)
-	userName := strings.Replace(result[1], ">", "", -1)
-	channelName, err := r.slack.GetChannelName(ca.ChannelID)
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+	users := strings.Split(ca.Text, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно добавить")
 	}
+	logrus.Infof("Users: %v", users)
+	for _, u := range users {
 
-	user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
-	if err != nil {
-		_, err = r.db.CreateStandupUser(model.StandupUser{
-			SlackUserID: slackUserID,
-			SlackName:   userName,
-			ChannelID:   ca.ChannelID,
-			Channel:     channelName,
-			Role:        "user",
-		})
+		UserID, userName := splitUser(u)
+		user, err := r.db.FindChannelMemberByUserID(UserID, ca.ChannelID)
+		logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
 		if err != nil {
-			logrus.Errorf("rest: CreateStandupUser failed: %v\n", err)
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
+			_, err = r.db.CreateChannelMember(model.ChannelMember{
+				UserID:    UserID,
+				ChannelID: ca.ChannelID,
+			})
+			if err != nil {
+				logrus.Errorf("rest: CreateChannelMember failed: %v\n", err)
+				c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
+				continue
+			}
 		}
-	}
-	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
-		return c.String(http.StatusOK, r.conf.Translate.UserExist)
-	}
-	st, err := r.db.GetChannelStandupTime(ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
-	}
-	if st.Time == int64(0) {
-		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUserNoStandupTime, userName))
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUser, userName))
-}
-
-func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
-	var ca FullSlackForm
-	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-	if err := ca.Validate(); err != nil {
-		logrus.Errorf("rest: addUserCommand Validate failed: %v\n", err)
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-	result := strings.Split(ca.Text, "|")
-	slackUserID := strings.Replace(result[0], "<@", "", -1)
-	userName := strings.Replace(result[1], ">", "", -1)
-	channelName, err := r.slack.GetChannelName(ca.ChannelID)
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
-	if err != nil {
-		_, err := r.db.CreateStandupUser(model.StandupUser{
-			SlackUserID: slackUserID,
-			SlackName:   userName,
-			ChannelID:   ca.ChannelID,
-			Channel:     channelName,
-			Role:        "admin",
-		})
+		if user.UserID == UserID && user.ChannelID == ca.ChannelID {
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.UserExist, UserID))
+			continue
+		}
+		st, err := r.db.GetChannelStandupTime(ca.ChannelID)
 		if err != nil {
-			logrus.Errorf("rest: CreateStandupUser failed: %v\n", err)
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
+			logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
 		}
-		message := fmt.Sprintf(r.conf.Translate.PMAssigned, ca.ChannelID, channelName)
-		err = r.slack.SendUserMessage(slackUserID, message)
-		if err != nil {
-			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+		logrus.Infof("channel standup time: %v", st)
+		if st == int64(0) {
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUserNoStandupTime, userName))
+			continue
 		}
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUser, userName))
 	}
-	if user.SlackName == userName && user.ChannelID == ca.ChannelID {
-		return c.String(http.StatusOK, r.conf.Translate.UserExist)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddAdmin, userName))
+	return nil
 }
 
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
@@ -232,47 +189,29 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	userName := strings.Replace(ca.Text, "@", "", -1)
-	err := r.db.DeleteStandupUser(userName, ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: DeleteStandupUser failed: %v\n", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteUser, userName))
-}
-
-func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
-	var ca ChannelIDTextForm
-	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("rest: removeAdminCommand Decode failed: %v\n", err)
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-	if err := ca.Validate(); err != nil {
-		logrus.Errorf("rest: removeAdminCommand Validate failed: %v\n", err)
-		return c.String(http.StatusBadRequest, err.Error())
+	users := strings.Split(ca.Text, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
 	}
 
-	result := strings.Split(ca.Text, "|")
-	slackUserID := strings.Replace(result[0], "<@", "", -1)
-	userName := strings.Replace(result[1], ">", "", -1)
-
-	user, err := r.db.FindStandupUserInChannelByUserID(slackUserID, ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: DeleteStandupUser failed: %v\n", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
+	for _, u := range users {
+		userID, userName := splitUser(u)
+		logrus.Infof("UserID: %v, UserName: %v", userID, userName)
+		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
+		if err != nil {
+			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
+			c.String(http.StatusOK, fmt.Sprintf("Пользователь <@%v> не стэндапит в этом канале\n", userID))
+			continue
+		}
+		err = r.db.DeleteChannelMember(user.UserID, ca.ChannelID)
+		if err != nil {
+			logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
+			c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
+			continue
+		}
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteUser, userName))
 	}
-
-	err = r.db.DeleteAdmin(userName, ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: DeleteStandupUser failed: %v\n", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
-	}
-	message := fmt.Sprintf(r.conf.Translate.PMRemoved, user.ChannelID, user.Channel)
-	err = r.slack.SendUserMessage(slackUserID, message)
-	if err != nil {
-		logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteAdmin, userName))
+	return nil
 }
 
 func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
@@ -286,40 +225,119 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: listUsersCommand Validate failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	users, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
+	users, err := r.db.ListChannelMembers(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("rest: ListStandupUsersByChannelID: %v\n", err)
+		logrus.Errorf("rest: ListChannelMembers: %v\n", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v\n", err))
 	}
-	var userNames []string
+	var userIDs []string
 	for _, user := range users {
-		userNames = append(userNames, "<@"+user.SlackName+">")
+		userIDs = append(userIDs, "<@"+user.UserID+">")
 	}
-	if len(userNames) < 1 {
+	if len(userIDs) < 1 {
 		return c.String(http.StatusOK, r.conf.Translate.ListNoStandupers)
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userNames, ", ")))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userIDs, ", ")))
 }
 
-func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
-	logrus.Printf("%+v\n", f)
-	var ca ChannelIDForm
+func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
+	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("rest: listUsersCommand Decode failed: %v\n", err)
+		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	if err := ca.Validate(); err != nil {
-		logrus.Errorf("rest: listUsersCommand Validate failed: %v\n", err)
+		logrus.Errorf("rest: addUserCommand Validate failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	users, err := r.db.ListAdminsByChannelID(ca.ChannelID)
+	users := strings.Split(ca.Text, " ")
+
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно сделать админами")
+	}
+	logrus.Infof("Users: %v", users)
+	for _, u := range users {
+
+		userID, userName := splitUser(u)
+
+		user, err := r.db.SelectUser(userID)
+		if err != nil {
+			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
+			continue
+		}
+		if user.Role == "admin" {
+			c.String(http.StatusOK, "User is already admin!")
+			continue
+		}
+		user.Role = "admin"
+		_, err = r.db.UpdateUser(user)
+		if err != nil {
+			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
+		}
+		message := fmt.Sprintf("Теперь у вас есть доступ к упарвлению комедианом")
+		err = r.slack.SendUserMessage(userID, message)
+		if err != nil {
+			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+		}
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddAdmin, userName))
+	}
+
+	return nil
+}
+
+func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
+	var ca ChannelIDTextForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		logrus.Errorf("rest: removeAdminCommand Decode failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		logrus.Errorf("rest: removeAdminCommand Validate failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	users := strings.Split(ca.Text, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
+	}
+
+	for _, u := range users {
+		userID, userName := splitUser(u)
+		logrus.Infof("UserID: %v, UserName: %v", userID, userName)
+
+		user, err := r.db.SelectUser(userID)
+		if err != nil {
+			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
+			continue
+		}
+		if user.Role != "admin" {
+			c.String(http.StatusOK, "Этот пользователь не админ!")
+			continue
+		}
+		user.Role = ""
+		_, err = r.db.UpdateUser(user)
+		if err != nil {
+			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
+		}
+		message := fmt.Sprintf(r.conf.Translate.PMRemoved)
+		err = r.slack.SendUserMessage(userID, message)
+		if err != nil {
+			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+		}
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteAdmin, userName))
+	}
+	return nil
+}
+
+func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
+	admins, err := r.db.ListAdmins()
 	if err != nil {
-		logrus.Errorf("rest: ListStandupUsersByChannelID: %v\n", err)
+		logrus.Errorf("rest: ListChannelMembers: %v\n", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v\n", err))
 	}
 	var userNames []string
-	for _, user := range users {
-		userNames = append(userNames, "<@"+user.SlackName+">")
+	for _, admin := range admins {
+		userNames = append(userNames, "<@"+admin.UserName+">")
 	}
 	if len(userNames) < 1 {
 		return c.String(http.StatusOK, r.conf.Translate.ListNoAdmins)
@@ -328,7 +346,6 @@ func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {
-
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addTime Decode failed: %v\n", err)
@@ -353,24 +370,25 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	currentTime := time.Now()
 	timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), hours, munites, 0, 0, time.Local).Unix()
 
-	standupTime, err := r.db.CreateStandupTime(model.StandupTime{
-		ChannelID: ca.ChannelID,
-		Channel:   ca.ChannelName,
-		Time:      timeInt,
-	})
+	st, err := r.db.GetChannelStandupTime(ca.ChannelID)
+	logrus.Infof("If channel standup time exis: %v, %v", st, err)
 	if err != nil {
-		logrus.Errorf("rest: CreateStandupTime failed: %v\n", err)
-		return err
+		logrus.Errorf("GetChannelStandupTime failed: %v", err)
+		r.db.CreateStandupTime(timeInt, ca.ChannelID)
 	}
-	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
+	st = timeInt
+	err = r.db.CreateStandupTime(st, ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("rest: ListStandupUsersByChannelID failed: %v\n", err)
-		return err
+		logrus.Errorf("rest: UpdateStandupTime failed: %v\n", err)
 	}
-	if len(st) == 0 {
-		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTimeNoUsers, standupTime.Time))
+	channelMembers, err := r.db.ListChannelMembers(ca.ChannelID)
+	if err != nil {
+		logrus.Errorf("rest: ListChannelMembers failed: %v\n", err)
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTime, standupTime.Time))
+	if len(channelMembers) == 0 {
+		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTimeNoUsers, st))
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTime, st))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
@@ -389,7 +407,7 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: DeleteStandupTime failed: %v\n", err)
 		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v\n", err))
 	}
-	st, err := r.db.ListStandupUsersByChannelID(ca.ChannelID)
+	st, err := r.db.ListChannelMembers(ca.ChannelID)
 	if len(st) != 0 {
 		return c.String(http.StatusOK, r.conf.Translate.RemoveStandupTimeWithUsers)
 	}
@@ -409,14 +427,12 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 
 	standupTime, err := r.db.GetChannelStandupTime(ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
-		if err.Error() == "sql: no rows in result set" {
-			return c.String(http.StatusOK, r.conf.Translate.ShowNoStandupTime)
-		} else {
-			return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v\n", err))
-		}
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v\n", err))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ShowStandupTime, standupTime.Time))
+	if standupTime == int64(0) {
+		return c.String(http.StatusOK, r.conf.Translate.ShowNoStandupTime)
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ShowStandupTime, standupTime))
 }
 
 ///report_by_project #collector-test 2018-07-24 2018-07-26
@@ -434,7 +450,18 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, r.conf.Translate.WrongNArgs)
 	}
-	channelID, channelName := splitChannel(commandParams[0])
+	channelName := strings.Replace(commandParams[0], "#", "", -1)
+	channelID, err := r.db.GetChannelID(channelName)
+	if err != nil {
+		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+
+	channel, err := r.db.SelectChannel(channelID)
+	if err != nil {
+		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
 
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
@@ -446,12 +473,14 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	data, err := r.getCollectorData("projects", channelName, commandParams[1], commandParams[2])
+
+	data, err := r.getCollectorData("projects", channel.ChannelName, commandParams[1], commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := r.report.StandupReportByProject(channelID, dateFrom, dateTo, data)
+
+	report, err := r.report.StandupReportByProject(channel, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProject: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -474,9 +503,9 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	if len(commandParams) != 3 {
 		return c.String(http.StatusOK, r.conf.Translate.UserExist)
 	}
-	userID, _ := splitUser(commandParams[0])
-	exist, err := r.db.CheckIfUserExist(userID)
-	if err != nil || !exist {
+	username := strings.Replace(commandParams[0], "@", "", -1)
+	user, err := r.db.SelectUserByUserName(username)
+	if err != nil {
 		return c.String(http.StatusOK, "User does not exist!")
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
@@ -489,12 +518,13 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	data, err := r.getCollectorData("users", userID, commandParams[1], commandParams[2])
+
+	data, err := r.getCollectorData("users", user.UserID, commandParams[1], commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	report, err := r.report.StandupReportByUser(userID, dateFrom, dateTo, data)
+	report, err := r.report.StandupReportByUser(user.UserID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -517,8 +547,25 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	if len(commandParams) != 4 {
 		return c.String(http.StatusOK, r.conf.Translate.WrongNArgs)
 	}
-	channelID, channelName := splitChannel(commandParams[0])
-	userID, _ := splitUser(commandParams[1])
+
+	channelName := strings.Replace(commandParams[0], "#", "", -1)
+	channelID, err := r.db.GetChannelID(channelName)
+	if err != nil {
+		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+
+	channel, err := r.db.SelectChannel(channelID)
+	if err != nil {
+		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
+		return c.String(http.StatusOK, err.Error())
+	}
+
+	username := strings.Replace(commandParams[1], "@", "", -1)
+	user, err := r.db.SelectUserByUserName(username)
+	if err != nil {
+		return c.String(http.StatusOK, "User does not exist!")
+	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -529,18 +576,16 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	pu := channelName + "/" + userID
-	data, err := r.getCollectorData("projects-users", pu, commandParams[2], commandParams[3])
+
+	userInProject := user.UserID + "/" + channelName
+
+	data, err := r.getCollectorData("user-in-project", userInProject, commandParams[2], commandParams[3])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 
-	user, err := r.db.FindStandupUserInChannelByUserID(userID, channelID)
-	if err != nil {
-		return c.String(http.StatusOK, r.conf.Translate.ReportByProjectAndUser)
-	}
-	report, err := r.report.StandupReportByProjectAndUser(channelID, user, dateFrom, dateTo, data)
+	report, err := r.report.StandupReportByProjectAndUser(channel, user.UserID, dateFrom, dateTo, data)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -549,8 +594,8 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byte, error) {
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.conf.CollectorURL, getDataOn, data, dateFrom, dateTo)
-	logrus.Infof("rest: getCollectorData request URL: %s", linkURL)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/", r.conf.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	logrus.Infof("rest: getCollectorData request URL: %s\n", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		logrus.Errorf("rest: http.NewRequest failed: %v\n", err)
@@ -571,9 +616,7 @@ func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byt
 		logrus.Errorf("rest: ioutil.ReadAll(res.Body) failed: %v\n", err)
 		return nil, err
 	}
-	logrus.Infof("rest: getCollectorData responce body: %s", string(body))
 	return body, nil
-
 }
 
 func splitChannel(channel string) (string, string) {
@@ -588,4 +631,17 @@ func splitUser(user string) (string, string) {
 	userID := strings.Replace(userFull[0], "<@", "", -1)
 	userName := strings.Replace(userFull[1], ">", "", -1)
 	return userID, userName
+}
+
+func setUpDates(dateF, dateT string) (time.Time, time.Time, error) {
+	dateFrom, err := time.Parse("2006-01-02", dateF)
+	if err != nil {
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+	}
+	dateTo, err := time.Parse("2006-01-02", dateT)
+	if err != nil {
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+	}
+
+	return dateFrom, dateTo, err
 }

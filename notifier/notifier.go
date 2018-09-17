@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,7 +24,7 @@ import (
 // Notifier struct is used to notify users about upcoming or skipped standups
 type Notifier struct {
 	Chat   chat.Chat
-	DB     storage.Storage
+	db     storage.Storage
 	Config config.Config
 }
 
@@ -33,13 +34,14 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 	if err != nil {
 		return nil, err
 	}
-	notifier := &Notifier{Chat: chat, DB: conn, Config: c}
+	notifier := &Notifier{Chat: chat, db: conn, Config: c}
 	return notifier, nil
 }
 
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
 	gocron.Every(1).Day().At(n.Config.ReportTime).Do(n.RevealRooks)
+	gocron.Every(1).Day().At("23:55").Do(n.FillStandupsForNonReporters)
 	gocron.Every(60).Seconds().Do(n.NotifyChannels)
 	channel := gocron.Start()
 	for {
@@ -59,47 +61,81 @@ func (n *Notifier) RevealRooks() {
 	if int(time.Now().Weekday()) == 1 {
 		timeFrom = time.Now().AddDate(0, 0, -3)
 	}
-	allUsers, err := n.DB.ListAllStandupUsers()
+	allUsers, err := n.db.ListAllChannelMembers()
 	if err != nil {
 		logrus.Errorf("notifier: n.GetCurrentDayNonReporters failed: %v\n", err)
 		return
 	}
 	for _, user := range allUsers {
+		fmt.Println(user)
 		worklogs, commits, err := n.getCollectorData(user, timeFrom, time.Now().AddDate(0, 0, -1))
 		if err != nil {
 			logrus.Errorf("notifier: getCollectorData failed: %v\n", err)
-			return
+			continue
 		}
-		isNonReporter, err := n.DB.IsNonReporter(user.SlackUserID, user.ChannelID, timeFrom, time.Now())
+		isNonReporter, err := n.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom, time.Now())
 		if err != nil {
 			logrus.Errorf("notifier: IsNonReporter failed: %v\n", err)
-			return
+			continue
 		}
 
 		if (worklogs < 8) || (commits == 0) || (isNonReporter == true) {
 			fails := ""
 			if worklogs < 8 {
-				fails += fmt.Sprintf(n.Config.Translate.NoWorklogs, worklogs) + ", "
+				fails += fmt.Sprintf(n.Config.Translate.NoWorklogs, worklogs)
 			} else {
-				fails += fmt.Sprintf(n.Config.Translate.HasWorklogs, worklogs) + ", "
+				fails += fmt.Sprintf(n.Config.Translate.HasWorklogs, worklogs)
 			}
 			if commits == 0 {
 				fails += n.Config.Translate.NoCommits
 			} else {
-				fails += fmt.Sprintf(n.Config.Translate.HasCommits, commits) + ", "
+				fails += fmt.Sprintf(n.Config.Translate.HasCommits, commits)
 			}
 			if isNonReporter == true {
 				fails += n.Config.Translate.NoStandup
 			} else {
 				fails += n.Config.Translate.HasStandup
 			}
-			text := fmt.Sprintf(n.Config.Translate.IsRook, user.SlackUserID, fails)
-			fmt.Println(text)
+			text := fmt.Sprintf(n.Config.Translate.IsRook, user.UserID, fails)
 			if int(time.Now().Weekday()) == 1 {
-				text = fmt.Sprintf(n.Config.Translate.IsRookMonday, user.SlackUserID, fails)
-				fmt.Println(text)
+				text = fmt.Sprintf(n.Config.Translate.IsRookMonday, user.UserID, fails)
 			}
-			n.Chat.SendMessage(user.ChannelID, text)
+			n.Chat.SendMessage(n.Config.ReportingChannel, text)
+		}
+	}
+}
+
+//FillStandupsForNonReporters fills standup entries with empty standups to later recognize
+//non reporters vs those who did not have to write standups
+func (n *Notifier) FillStandupsForNonReporters() {
+	//check if today is not saturday or sunday. During these days no notificatoins!
+	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
+		return
+	}
+	timeFrom := time.Now().AddDate(0, 0, -1)
+	allUsers, err := n.db.ListAllChannelMembers()
+	if err != nil {
+		logrus.Errorf("notifier: n.GetCurrentDayNonReporters failed: %v\n", err)
+		return
+	}
+	for _, user := range allUsers {
+		isNonReporter, err := n.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom, time.Now())
+		if err != nil {
+			logrus.Errorf("notifier: IsNonReporter failed: %v\n", err)
+			return
+		}
+		if isNonReporter {
+			standup, err := n.db.CreateStandup(model.Standup{
+				ChannelID: user.ChannelID,
+				UserID:    user.UserID,
+				Comment:   "",
+				MessageTS: strconv.Itoa(int(time.Now().Unix())),
+			})
+			if err != nil {
+				logrus.Errorf("notifier: CreateStandup failed: %v\n", err)
+				return
+			}
+			logrus.Infof("notifier: Empty Standup created: %v\n", standup)
 		}
 	}
 }
@@ -109,20 +145,23 @@ func (n *Notifier) NotifyChannels() {
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
 		return
 	}
-	standupTimes, err := n.DB.ListAllStandupTime()
+	channels, err := n.db.GetChannels()
 	if err != nil {
 		logrus.Errorf("notifier: ListAllStandupTime failed: %v\n", err)
 		return
 	}
 	// For each standup time, if standup time is now, start reminder
-	for _, st := range standupTimes {
-		standupTime := time.Unix(st.Time, 0)
-		warningTime := time.Unix(st.Time-n.Config.ReminderTime*60, 0)
+	for _, channel := range channels {
+		if channel.StandupTime == 0 {
+			continue
+		}
+		standupTime := time.Unix(channel.StandupTime, 0)
+		warningTime := time.Unix(channel.StandupTime-n.Config.ReminderTime*60, 0)
 		if time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute() {
-			n.SendWarning(st.ChannelID)
+			n.SendWarning(channel.ChannelID)
 		}
 		if time.Now().Hour() == standupTime.Hour() && time.Now().Minute() == standupTime.Minute() {
-			go n.SendChannelNotification(st.ChannelID)
+			go n.SendChannelNotification(channel.ChannelID)
 		}
 	}
 }
@@ -140,7 +179,7 @@ func (n *Notifier) SendWarning(channelID string) {
 
 	nonReportersIDs := []string{}
 	for _, user := range nonReporters {
-		nonReportersIDs = append(nonReportersIDs, "<@"+user.SlackUserID+">")
+		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
 	}
 	err = n.Chat.SendMessage(channelID, fmt.Sprintf(n.Config.Translate.NotifyUsersWarning, strings.Join(nonReportersIDs, ", "), n.Config.ReminderTime))
 	if err != nil {
@@ -166,9 +205,15 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		return
 	}
 
+	channel, err := n.db.SelectChannel(channelID)
+	if err != nil {
+		logrus.Errorf("notifier: SelectChannel failed: %v\n", err)
+		return
+	}
+
 	// othervise Direct Message non reporters
 	for _, nonReporter := range nonReporters {
-		err := n.Chat.SendUserMessage(nonReporter.SlackUserID, fmt.Sprintf(n.Config.Translate.NotifyDirectMessage, nonReporter.SlackName, nonReporter.ChannelID, nonReporter.Channel))
+		err := n.Chat.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.Config.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
 		if err != nil {
 			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
 		}
@@ -185,7 +230,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 		nonReportersSlackIDs := []string{}
 		for _, nonReporter := range nonReporters {
-			nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("<@%v>", nonReporter.SlackUserID))
+			nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("<@%v>", nonReporter.UserID))
 		}
 		logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
@@ -195,7 +240,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 			err := errors.New("Continue backoff")
 			return err
 		}
-		n.notifyAdminsAboutNonReporters(channelID, nonReportersSlackIDs)
+		//n.notifyAdminsAboutNonReporters(channelID, nonReportersSlackIDs)
 		return nil
 	}
 
@@ -207,9 +252,9 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 }
 
 // getNonReporters returns a list of standupers that did not write standups
-func (n *Notifier) getCurrentDayNonReporters(channelID string) ([]model.StandupUser, error) {
+func (n *Notifier) getCurrentDayNonReporters(channelID string) ([]model.ChannelMember, error) {
 	timeFrom := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
-	nonReporters, err := n.DB.GetNonReporters(channelID, timeFrom, time.Now())
+	nonReporters, err := n.db.GetNonReporters(channelID, timeFrom, time.Now())
 	if err != nil && err != errors.New("no rows in result set") {
 		logrus.Errorf("notifier: GetNonReporters failed: %v\n", err)
 		return nil, err
@@ -217,10 +262,10 @@ func (n *Notifier) getCurrentDayNonReporters(channelID string) ([]model.StandupU
 	return nonReporters, nil
 }
 
-func (n *Notifier) getCollectorData(user model.StandupUser, timeFrom, timeTo time.Time) (int, int, error) {
+func (n *Notifier) getCollectorData(user model.ChannelMember, timeFrom, timeTo time.Time) (int, int, error) {
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", timeFrom.Year(), timeFrom.Month(), timeFrom.Day())
 	dateTo := fmt.Sprintf("%d-%02d-%02d", timeTo.Year(), timeTo.Month(), timeTo.Day())
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/", n.Config.CollectorURL, "users", user.SlackUserID, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/", n.Config.CollectorURL, "users", user.UserID, dateFrom, dateTo)
 
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
@@ -246,16 +291,16 @@ func (n *Notifier) getCollectorData(user model.StandupUser, timeFrom, timeTo tim
 	return collectorData.Worklogs / 3600, collectorData.TotalCommits, nil
 }
 
-func (n *Notifier) notifyAdminsAboutNonReporters(channelID string, nonReportersSlackIDs []string) {
-	admins, err := n.DB.ListAdminsByChannelID(channelID)
-	if err != nil {
-		logrus.Errorf("notifier: ListAdminsByChannelID failed: %v\n", err)
-		return
-	}
-	for _, admin := range admins {
-		err := n.Chat.SendUserMessage(admin.SlackUserID, fmt.Sprintf(n.Config.Translate.NotifyManagerNotAll, admin.SlackUserID, channelID, strings.Join(nonReportersSlackIDs, ", ")))
-		if err != nil {
-			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
-		}
-	}
-}
+// func (n *Notifier) notifyAdminsAboutNonReporters(channelID string, nonReportersSlackIDs []string) {
+// 	admins, err := n.db.ListAdminsByChannelID(channelID)
+// 	if err != nil {
+// 		logrus.Errorf("notifier: ListAdminsByChannelID failed: %v\n", err)
+// 		return
+// 	}
+// 	for _, admin := range admins {
+// 		err := n.Chat.SendUserMessage(admin.UserID, fmt.Sprintf(n.Config.Translate.NotifyManagerNotAll, admin.UserID, channelID, strings.Join(nonReportersSlackIDs, ", ")))
+// 		if err != nil {
+// 			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
+// 		}
+// 	}
+// }

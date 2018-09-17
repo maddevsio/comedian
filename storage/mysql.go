@@ -34,8 +34,8 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 		return s, err
 	}
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup` (created, modified, comment, channel_id, username_id, message_ts) VALUES (?, ?, ?, ?, ?, ?)",
-		time.Now().UTC(), time.Now().UTC(), s.Comment, s.ChannelID, s.UsernameID, s.MessageTS,
+		"INSERT INTO `standups` (created, modified, comment, channel_id, user_id, message_ts) VALUES (?, ?, ?, ?, ?, ?)",
+		time.Now().UTC(), time.Now().UTC(), s.Comment, s.ChannelID, s.UserID, s.MessageTS,
 	)
 	if err != nil {
 		return s, err
@@ -51,62 +51,59 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 
 // UpdateStandup updates standup entry in database
 func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
-	err := s.Validate()
-	if err != nil {
-		return s, err
-	}
-	_, err = m.conn.Exec(
-		"UPDATE `standup` SET modified=?, username_id=?, comment=?, channel_id=?, message_ts=? WHERE id=?",
-		time.Now().UTC(), s.UsernameID, s.Comment, s.ChannelID, s.MessageTS, s.ID,
+	_, err := m.conn.Exec(
+		"UPDATE `standups` SET modified=?, comment=?, message_ts=? WHERE id=?",
+		time.Now().UTC(), s.Comment, s.MessageTS, s.ID,
 	)
 	if err != nil {
 		return s, err
 	}
 	var i model.Standup
-	err = m.conn.Get(&i, "SELECT * FROM `standup` WHERE id=?", s.ID)
-
+	err = m.conn.Get(&i, "SELECT * FROM `standups` WHERE id=?", s.ID)
 	return i, err
 }
 
 // SelectStandupByMessageTS selects standup entry from database filtered by MessageTS parameter
 func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
 	var s model.Standup
-	err := m.conn.Get(&s, "SELECT * FROM `standup` WHERE message_ts=?", messageTS)
-
-	return s, err
+	err := m.conn.Get(&s, "SELECT * FROM `standups` WHERE message_ts=?", messageTS)
+	if err != nil {
+		return s, err
+	}
+	return s, nil
 }
 
 // SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
 func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND created BETWEEN ? AND ?",
+	err := m.conn.Select(&items, "SELECT * FROM `standups` WHERE channel_id=? AND created BETWEEN ? AND ?",
 		channelID, dateStart, dateEnd)
 	return items, err
 }
 
 // SelectStandupsFiltered selects standup entrys by channel ID and time period from database
-func (m *MySQL) SelectStandupsFiltered(slackUserID, channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error) {
-	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup` WHERE channel_id=? AND username_id =? AND created BETWEEN ? AND ?",
-		channelID, slackUserID, dateStart, dateEnd)
+func (m *MySQL) SelectStandupsFiltered(userID, channelID string, dateStart, dateEnd time.Time) (model.Standup, error) {
+	items := model.Standup{}
+	err := m.conn.Get(&items, "SELECT * FROM `standups` WHERE channel_id=? AND user_id =? AND created BETWEEN ? AND ? limit 1",
+		channelID, userID, dateStart, dateEnd)
 	return items, err
 }
 
 // DeleteStandup deletes standup entry from database
 func (m *MySQL) DeleteStandup(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `standup` WHERE id=?", id)
+	_, err := m.conn.Exec("DELETE FROM `standups` WHERE id=?", id)
 	return err
 }
 
-// CreateStandupUser creates comedian entry in database
-func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error) {
+// CreateChannelMember creates comedian entry in database
+func (m *MySQL) CreateChannelMember(s model.ChannelMember) (model.ChannelMember, error) {
 	err := s.Validate()
 	if err != nil {
 		return s, err
 	}
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup_users` (created, modified,slack_user_id, username, channel_id, channel, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
-		time.Now().UTC(), time.Now().UTC(), s.SlackUserID, s.SlackName, s.ChannelID, s.Channel, s.Role)
+		"INSERT INTO `channel_members` (user_id, channel_id, standup_time) VALUES (?, ?, ?)",
+		s.UserID, s.ChannelID, 0)
 	if err != nil {
 		return s, err
 	}
@@ -119,140 +116,95 @@ func (m *MySQL) CreateStandupUser(s model.StandupUser) (model.StandupUser, error
 	return s, nil
 }
 
-//FindStandupUserInChannelByUserID finds user in channel
-func (m *MySQL) FindStandupUserInChannelByUserID(usernameID, channelID string) (model.StandupUser, error) {
-	var u model.StandupUser
-	err := m.conn.Get(&u, "SELECT * FROM `standup_users` WHERE slack_user_id=? AND channel_id=?", usernameID, channelID)
+//FindChannelMemberByUserID finds user in channel
+func (m *MySQL) FindChannelMemberByUserID(userID, channelID string) (model.ChannelMember, error) {
+	var u model.ChannelMember
+	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
 	return u, err
 }
 
-// ListAllStandupUsers returns array of standup entries from database
-func (m *MySQL) ListAllStandupUsers() ([]model.StandupUser, error) {
-	items := []model.StandupUser{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup_users` where role!='admin'")
+//FindChannelMemberByUserName finds user in channel
+func (m *MySQL) FindChannelMemberByUserName(userName string) (model.ChannelMember, error) {
+	var u model.ChannelMember
+	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE user_id=(select user_id from users where user_name=?)", userName)
+	return u, err
+}
+
+// ListAllChannelMembers returns array of standup entries from database
+func (m *MySQL) ListAllChannelMembers() ([]model.ChannelMember, error) {
+	items := []model.ChannelMember{}
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members`")
 	return items, err
 }
 
 //GetNonReporters returns a list of non reporters in selected time period
-func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([]model.StandupUser, error) {
-	nonReporters := []model.StandupUser{}
-	err := m.conn.Select(&nonReporters, `SELECT * FROM standup_users where channel_id=? and role!='admin' AND slack_user_id NOT IN (SELECT username_id FROM standup where channel_id=? and created BETWEEN ? AND ?)`, channelID, channelID, dateFrom, dateTo)
+func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([]model.ChannelMember, error) {
+	nonReporters := []model.ChannelMember{}
+	err := m.conn.Select(&nonReporters, `SELECT * FROM channel_members where channel_id=? AND user_id NOT IN (SELECT user_id FROM standups where channel_id=? and created BETWEEN ? AND ?)`, channelID, channelID, dateFrom, dateTo)
 	return nonReporters, err
 }
 
 // IsNonReporter returns true if user did not submit standup in time period, false othervise
-func (m *MySQL) IsNonReporter(slackUserID, channelID string, dateFrom, dateTo time.Time) (bool, error) {
-	var id int
-	err := m.conn.Get(&id, `SELECT id FROM standup where channel_id=? and username_id=? and created between ? and ?`, channelID, slackUserID, dateFrom, dateTo)
-	if err != nil && err.Error() != "sql: no rows in result set" {
-		return true, err
-	}
-	if id != 0 {
+func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Time) (bool, error) {
+	var standup string
+	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, dateFrom, dateTo)
+	if err != nil && err.Error() == "sql: no rows in result set" {
 		return false, nil
 	}
-	return true, nil
+	if standup != "" {
+		return false, nil
+	}
+	return true, err
 }
 
-// HasExistedAlready returns true if user existed already and therefore could submit standup
-func (m *MySQL) HasExistedAlready(slackUserID, channelID string, dateFrom time.Time) (bool, error) {
-	var id int
-	err := m.conn.Get(&id, `SELECT id FROM standup_users where channel_id=? and slack_user_id=? and created <=?`, channelID, slackUserID, dateFrom)
-	if err != nil && err.Error() != "sql: no rows in result set" {
-		return false, err
-	}
-	if id != 0 {
-		return true, nil
-	}
-	return false, nil
-}
-
-// CheckIfUserExist returns true if user existed already and therefore could submit standup
-func (m *MySQL) CheckIfUserExist(slackUserID string) (bool, error) {
-	var id []int
-	err := m.conn.Select(&id, `SELECT id FROM standup_users where slack_user_id=?`, slackUserID)
-	if err != nil && err.Error() != "sql: no rows in result set" {
-		return false, err
-	}
-	if len(id) > 0 {
-		return true, nil
-	}
-	return false, nil
-}
-
-// IsAdmin checks if user in channel is of a role admin
-func (m *MySQL) IsAdmin(slackUserID, channelID string) bool {
-	var u model.StandupUser
-	err := m.conn.Get(&u, `SELECT * FROM standup_users where channel_id = ? and slack_user_id = ? and role = ?`, channelID, slackUserID, "admin")
-	if err != nil {
-		return false
-	}
-	return true
-}
-
-// ListStandupUsersByChannelID returns array of standup entries from database
-func (m *MySQL) ListStandupUsersByChannelID(channelID string) ([]model.StandupUser, error) {
-	items := []model.StandupUser{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=? AND role!='admin'", channelID)
+// ListChannelMembers returns array of standup entries from database
+func (m *MySQL) ListChannelMembers(channelID string) ([]model.ChannelMember, error) {
+	items := []model.ChannelMember{}
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=?", channelID)
 	return items, err
 }
 
-// ListAdminsByChannelID returns array of standup entries from database
-func (m *MySQL) ListAdminsByChannelID(channelID string) ([]model.StandupUser, error) {
-	items := []model.StandupUser{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup_users` WHERE channel_id=? AND role='admin'", channelID)
-	return items, err
-}
-
-// DeleteStandupUser deletes standup_users entry from database
-func (m *MySQL) DeleteStandupUser(username, channelID string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=? AND role!='admin'", username, channelID)
-	return err
-}
-
-// DeleteAdmin deletes standup_users entry from database
-func (m *MySQL) DeleteAdmin(username, channelID string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_users` WHERE username=? AND channel_id=? AND role='admin'", username, channelID)
+// DeleteChannelMember deletes channel_members entry from database
+func (m *MySQL) DeleteChannelMember(userID, channelID string) error {
+	_, err := m.conn.Exec("DELETE FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
 	return err
 }
 
 // CreateStandupTime creates time entry in database
-func (m *MySQL) CreateStandupTime(s model.StandupTime) (model.StandupTime, error) {
-	err := s.Validate()
+func (m *MySQL) CreateStandupTime(st int64, channelID string) error {
+	_, err := m.conn.Exec("UPDATE `channels` SET channel_standup_time=? WHERE channel_id=?", st, channelID)
 	if err != nil {
-		return s, err
+		return err
 	}
-	res, err := m.conn.Exec(
-		"INSERT INTO `standup_time` (created, channel_id, channel, standuptime) VALUES (?, ?, ?, ?)",
-		time.Now().UTC(), s.ChannelID, s.Channel, s.Time)
-	if err != nil {
-		return s, err
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		return s, err
-	}
-	s.ID = id
+	return nil
+}
 
-	return s, nil
+// UpdateChannelStandupTime updates time entry in database
+func (m *MySQL) UpdateChannelStandupTime(st int64, channelID string) error {
+	_, err := m.conn.Exec("UPDATE `channels` SET channel_standup_time=? WHERE channel_id=?", st, channelID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetChannelStandupTime returns standup time entry from database
-func (m *MySQL) GetChannelStandupTime(channelID string) (model.StandupTime, error) {
-	var time model.StandupTime
-	err := m.conn.Get(&time, "SELECT * FROM `standup_time` WHERE channel_id=?", channelID)
+func (m *MySQL) GetChannelStandupTime(channelID string) (int64, error) {
+	var time int64
+	err := m.conn.Get(&time, "SELECT channel_standup_time FROM `channels` WHERE channel_id=?", channelID)
 	return time, err
 }
 
 // ListAllStandupTime returns standup time entry for all channels from database
-func (m *MySQL) ListAllStandupTime() ([]model.StandupTime, error) {
-	reminders := []model.StandupTime{}
-	err := m.conn.Select(&reminders, "SELECT * FROM `standup_time`")
-	return reminders, err
+func (m *MySQL) ListAllStandupTime() ([]int64, error) {
+	deadlines := []int64{}
+	err := m.conn.Select(&deadlines, "SELECT channel_standup_time FROM `channels` where channel_standup_time>0")
+	return deadlines, err
 }
 
-// DeleteStandupTime deletes standup_time entry for channel from database
+// DeleteStandupTime deletes channels entry for channel from database
 func (m *MySQL) DeleteStandupTime(channelID string) error {
-	_, err := m.conn.Exec("DELETE FROM `standup_time` WHERE channel_id=?", channelID)
+	_, err := m.conn.Exec("UPDATE `channels` SET channel_standup_time=0 WHERE channel_id=?", channelID)
 	return err
 }
 
@@ -280,21 +232,167 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 //GetAllChannels returns list of unique channels
 func (m *MySQL) GetAllChannels() ([]string, error) {
 	channels := []string{}
-	err := m.conn.Select(&channels, "SELECT DISTINCT channel_id FROM `standup_users`")
+	err := m.conn.Select(&channels, "SELECT channel_id FROM `channels`")
 	return channels, err
 }
 
 //GetUserChannels returns list of user's channels
-func (m *MySQL) GetUserChannels(slackUserID string) ([]string, error) {
+func (m *MySQL) GetUserChannels(userID string) ([]string, error) {
 	channels := []string{}
-	err := m.conn.Select(&channels, "SELECT channel_id FROM `standup_users` where slack_user_id=?", slackUserID)
+	err := m.conn.Select(&channels, "SELECT channel_id FROM `channel_members` where user_id=?", userID)
 	return channels, err
+}
+
+//GetChannelName returns channel name
+func (m *MySQL) GetChannelName(channelID string) (string, error) {
+	var channelName string
+	err := m.conn.Get(&channelName, "SELECT channel_name FROM `channels` where channel_id=?", channelID)
+	if err != nil {
+		return "", err
+	}
+	return channelName, err
+}
+
+//GetChannelID returns channel name
+func (m *MySQL) GetChannelID(channelName string) (string, error) {
+	var channelID string
+	err := m.conn.Get(&channelID, "SELECT channel_id FROM `channels` where channel_name=?", channelName)
+	if err != nil {
+		return "", err
+	}
+	return channelID, nil
 }
 
 // ListStandups returns array of standup entries from database
 // Helper function for testing
 func (m *MySQL) ListStandups() ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standup`")
+	err := m.conn.Select(&items, "SELECT * FROM `standups`")
 	return items, err
+}
+
+// CreateChannel creates standup entry in database
+func (m *MySQL) CreateChannel(c model.Channel) (model.Channel, error) {
+	res, err := m.conn.Exec(
+		"INSERT INTO `channels` (channel_name, channel_id, channel_standup_time) VALUES (?, ?, ?)",
+		c.ChannelName, c.ChannelID, 0,
+	)
+	if err != nil {
+		return c, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return c, err
+	}
+	c.ID = id
+
+	return c, nil
+}
+
+// UpdateChannel updates Channel entry in database
+func (m *MySQL) UpdateChannel(c model.Channel) (model.Channel, error) {
+	_, err := m.conn.Exec(
+		"UPDATE `channels` SET channel_name=?, channel_id=? WHERE id=?",
+		c.ChannelName, c.ChannelID, c.ID,
+	)
+	if err != nil {
+		return c, err
+	}
+	var i model.Channel
+	err = m.conn.Get(&i, "SELECT * FROM `channels` WHERE id=?", c.ID)
+	return i, err
+}
+
+// SelectChannel selects Channel entry from database
+func (m *MySQL) SelectChannel(channelID string) (model.Channel, error) {
+	var c model.Channel
+	err := m.conn.Get(&c, "SELECT * FROM `channels` WHERE channel_id=?", channelID)
+	if err != nil {
+		return c, err
+	}
+	return c, err
+}
+
+// GetChannels selects Channel entry from database
+func (m *MySQL) GetChannels() ([]model.Channel, error) {
+	var c []model.Channel
+	err := m.conn.Select(&c, "SELECT * FROM `channels`")
+	if err != nil {
+		return c, err
+	}
+	return c, err
+}
+
+// DeleteChannel deletes Channel entry from database
+func (m *MySQL) DeleteChannel(id int64) error {
+	_, err := m.conn.Exec("DELETE FROM `channels` WHERE id=?", id)
+	return err
+}
+
+// CreateUser creates standup entry in database
+func (m *MySQL) CreateUser(c model.User) (model.User, error) {
+	res, err := m.conn.Exec(
+		"INSERT INTO `users` (user_name, user_id, role) VALUES (?, ?, ?)",
+		c.UserName, c.UserID, c.Role,
+	)
+	if err != nil {
+		return c, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return c, err
+	}
+	c.ID = id
+
+	return c, nil
+}
+
+// UpdateUser updates User entry in database
+func (m *MySQL) UpdateUser(c model.User) (model.User, error) {
+	_, err := m.conn.Exec(
+		"UPDATE `users` SET role=? WHERE id=?",
+		c.Role, c.ID,
+	)
+	if err != nil {
+		return c, err
+	}
+	var i model.User
+	err = m.conn.Get(&i, "SELECT * FROM `users` WHERE id=?", c.ID)
+	return i, err
+}
+
+// SelectUser selects User entry from database
+func (m *MySQL) SelectUser(userID string) (model.User, error) {
+	var c model.User
+	err := m.conn.Get(&c, "SELECT * FROM `users` WHERE user_id=?", userID)
+	if err != nil {
+		return c, err
+	}
+	return c, err
+}
+
+// SelectUserByUserName selects User entry from database
+func (m *MySQL) SelectUserByUserName(userName string) (model.User, error) {
+	var c model.User
+	err := m.conn.Get(&c, "SELECT * FROM `users` WHERE user_name=?", userName)
+	if err != nil {
+		return c, err
+	}
+	return c, err
+}
+
+// DeleteUser deletes User entry from database
+func (m *MySQL) DeleteUser(id int64) error {
+	_, err := m.conn.Exec("DELETE FROM `users` WHERE id=?", id)
+	return err
+}
+
+// ListAdmins selects User entry from database
+func (m *MySQL) ListAdmins() ([]model.User, error) {
+	var c []model.User
+	err := m.conn.Select(&c, "SELECT * FROM `users` WHERE role='admin'")
+	if err != nil {
+		return c, err
+	}
+	return c, err
 }

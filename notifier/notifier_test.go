@@ -38,24 +38,16 @@ func TestNotifier(t *testing.T) {
 	d := time.Date(2018, 1, 2, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	su, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   channelID,
-		Channel:     "chanName",
-		Role:        "user",
+	su, err := n.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
-	fmt.Println(su.Created)
-	su2, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID2",
-		SlackName:   "user2",
-		ChannelID:   channelID,
-		Channel:     "chanName",
-		Role:        "user",
+	su2, err := n.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID2",
+		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
-	fmt.Println(su2.Created)
 	nonReporters, err := n.getCurrentDayNonReporters(channelID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, nonReporters)
@@ -70,26 +62,24 @@ func TestNotifier(t *testing.T) {
 	d = time.Date(2018, 1, 2, 9, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	s, err := n.DB.CreateStandup(model.Standup{
-		Created:    time.Now(),
-		Modified:   time.Now(),
-		ChannelID:  channelID,
-		Comment:    "work hard",
-		UsernameID: "userID1",
-		Username:   "user1",
-		MessageTS:  "qweasdzxc",
+	s, err := n.db.CreateStandup(model.Standup{
+		Created:   time.Now(),
+		Modified:  time.Now(),
+		ChannelID: channelID,
+		Comment:   "work hard",
+		UserID:    "userID1",
+		MessageTS: "qweasdzxc",
 	})
 	assert.NoError(t, err)
 
 	// add standup for user @user2
-	s2, err := n.DB.CreateStandup(model.Standup{
-		Created:    time.Now(),
-		Modified:   time.Now(),
-		ChannelID:  channelID,
-		Comment:    "hello world",
-		UsernameID: "userID2",
-		Username:   "user2",
-		MessageTS:  "qweasd",
+	s2, err := n.db.CreateStandup(model.Standup{
+		Created:   time.Now(),
+		Modified:  time.Now(),
+		ChannelID: channelID,
+		Comment:   "hello world",
+		UserID:    "userID2",
+		MessageTS: "qweasd",
 	})
 
 	d = time.Date(2018, 1, 2, 10, 0, 0, 0, time.UTC)
@@ -101,68 +91,55 @@ func TestNotifier(t *testing.T) {
 
 	n.SendChannelNotification(channelID)
 
-	assert.NoError(t, n.DB.DeleteStandupUser(su.SlackName, su.ChannelID))
-	assert.NoError(t, n.DB.DeleteStandupUser(su2.SlackName, su2.ChannelID))
+	assert.NoError(t, n.db.DeleteChannelMember(su.UserID, su.ChannelID))
+	assert.NoError(t, n.db.DeleteChannelMember(su2.UserID, su2.ChannelID))
 
-	assert.NoError(t, n.DB.DeleteStandup(s.ID))
-	assert.NoError(t, n.DB.DeleteStandup(s2.ID))
+	assert.NoError(t, n.db.DeleteStandup(s.ID))
+	assert.NoError(t, n.db.DeleteStandup(s2.ID))
 }
 
 func TestCheckUser(t *testing.T) {
 	c, err := config.Get()
-	c.ChanGeneral = "XXXYYYZZZ"
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
 	n, err := NewNotifier(c, slack)
 	assert.NoError(t, err)
 
-	users, err := n.DB.ListAllStandupUsers()
+	users, err := n.db.ListAllChannelMembers()
 	assert.NoError(t, err)
 	for _, user := range users {
-		assert.NoError(t, n.DB.DeleteStandupUser(user.SlackName, user.ChannelID))
+		assert.NoError(t, n.db.DeleteChannelMember(user.UserID, user.ChannelID))
 	}
 
 	d := time.Date(2018, 6, 24, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
 	channelID := "QWERTY123"
-	st, err := n.DB.CreateStandupTime(model.StandupTime{
-		ChannelID: channelID,
-		Channel:   "chanName",
-		Time:      time.Now().Unix(),
-	})
+	err = n.db.CreateStandupTime(time.Now().Unix(), channelID)
 
 	d = time.Date(2018, 6, 25, 0, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	u1, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID1",
-		SlackName:   "user1",
-		ChannelID:   channelID,
-		Channel:     "chanName",
+	u1, err := n.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
-	u2, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID2",
-		SlackName:   "user2",
-		ChannelID:   channelID,
-		Channel:     "chanName",
+	u2, err := n.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID2",
+		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
 
-	u3, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID3",
-		SlackName:   "user3",
-		ChannelID:   channelID,
-		Channel:     "chanName",
+	u3, err := n.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID3",
+		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
-	u4, err := n.DB.CreateStandupUser(model.StandupUser{
-		SlackUserID: "userID4",
-		SlackName:   "user4",
-		ChannelID:   channelID,
-		Channel:     "chanName",
+	u4, err := n.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID4",
+		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
 
@@ -189,16 +166,16 @@ func TestCheckUser(t *testing.T) {
 
 	testCases := []struct {
 		title         string
-		user          model.StandupUser
+		user          model.ChannelMember
 		worklogs      int
 		commits       int
 		isNonReporter bool
 		err           error
 	}{
-		{"test 1", u1, 27, 2, true, nil},
-		{"test 2", u2, 3, 30, true, nil},
-		{"test 3", u3, 0, 0, true, nil},
-		{"test 4", u4, 13, 20, true, nil},
+		{"test 1", u1, 27, 2, false, nil},
+		{"test 2", u2, 3, 30, false, nil},
+		{"test 3", u3, 0, 0, false, nil},
+		{"test 4", u4, 13, 20, false, nil},
 	}
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID1/2018-06-22/2018-06-24/", c.CollectorURL),
@@ -218,17 +195,17 @@ func TestCheckUser(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, tt.worklogs, worklogs)
 		assert.Equal(t, tt.commits, commits)
-		isNonReporter, err := n.DB.IsNonReporter(tt.user.SlackUserID, tt.user.ChannelID, time.Now(), time.Now())
+		isNonReporter, err := n.db.IsNonReporter(tt.user.UserID, tt.user.ChannelID, time.Now(), time.Now())
 		assert.NoError(t, err)
 		assert.Equal(t, tt.isNonReporter, isNonReporter)
 	}
 
 	n.RevealRooks()
 
-	assert.NoError(t, n.DB.DeleteStandupUser(u1.SlackName, u1.ChannelID))
-	assert.NoError(t, n.DB.DeleteStandupUser(u2.SlackName, u2.ChannelID))
-	assert.NoError(t, n.DB.DeleteStandupUser(u3.SlackName, u3.ChannelID))
-	assert.NoError(t, n.DB.DeleteStandupUser(u4.SlackName, u4.ChannelID))
+	assert.NoError(t, n.db.DeleteChannelMember(u1.UserID, u1.ChannelID))
+	assert.NoError(t, n.db.DeleteChannelMember(u2.UserID, u2.ChannelID))
+	assert.NoError(t, n.db.DeleteChannelMember(u3.UserID, u3.ChannelID))
+	assert.NoError(t, n.db.DeleteChannelMember(u4.UserID, u4.ChannelID))
 
-	assert.NoError(t, n.DB.DeleteStandupTime(st.ChannelID))
+	assert.NoError(t, n.db.DeleteStandupTime(channelID))
 }

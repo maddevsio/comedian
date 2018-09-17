@@ -14,69 +14,105 @@ type Storage interface {
 	// UpdateStandup updates standup entry in database
 	UpdateStandup(model.Standup) (model.Standup, error)
 
-	// SelectStandupByMessageTS selects standup entry by messageTS from database
+	// SelectStandupByMessageTS selects standup entry from database filtered by MessageTS parameter
 	SelectStandupByMessageTS(string) (model.Standup, error)
 
-	// SelectStandupsByChannelID selects standup entry by channel ID and time period from database
+	// SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
 	SelectStandupsByChannelIDForPeriod(string, time.Time, time.Time) ([]model.Standup, error)
 
-	SelectStandupsFiltered(string, string, time.Time, time.Time) ([]model.Standup, error)
+	// SelectStandupsFiltered selects standup entrys by channel ID and time period from database
+	SelectStandupsFiltered(string, string, time.Time, time.Time) (model.Standup, error)
 
 	// DeleteStandup deletes standup entry from database
 	DeleteStandup(int64) error
 
-	// ListStandups returns array of standup entries from database
-	ListStandups() ([]model.Standup, error)
+	// CreateChannelMember creates comedian entry in database
+	CreateChannelMember(model.ChannelMember) (model.ChannelMember, error)
 
-	// CreateStandupUser creates standupUser entry in database
-	CreateStandupUser(model.StandupUser) (model.StandupUser, error)
+	//FindChannelMemberByUserID finds user in channel
+	FindChannelMemberByUserID(string, string) (model.ChannelMember, error)
 
-	// Checks if user has admin role
-	IsAdmin(string, string) bool
+	//FindChannelMemberByUserName finds user in channel
+	FindChannelMemberByUserName(string) (model.ChannelMember, error)
 
-	//FindStandupUserInChannelByUserID finds standup user in channel by Slack member ID
-	FindStandupUserInChannelByUserID(string, string) (model.StandupUser, error)
+	// ListAllChannelMembers returns array of standup entries from database
+	ListAllChannelMembers() ([]model.ChannelMember, error)
 
-	//GetNonReporters returns a list of non reporters
-	GetNonReporters(string, time.Time, time.Time) ([]model.StandupUser, error)
+	//GetNonReporters returns a list of non reporters in selected time period
+	GetNonReporters(string, time.Time, time.Time) ([]model.ChannelMember, error)
 
-	//IsNonReporter checks if a user is non reporter
+	// IsNonReporter returns true if user did not submit standup in time period, false othervise
 	IsNonReporter(string, string, time.Time, time.Time) (bool, error)
 
-	HasExistedAlready(string, string, time.Time) (bool, error)
+	ListChannelMembers(string) ([]model.ChannelMember, error)
 
-	CheckIfUserExist(string) (bool, error)
+	// DeleteChannelMember deletes channel_members entry from database
+	DeleteChannelMember(string, string) error
 
-	// DeleteStandupUser deletes standup_users entry from database
-	DeleteStandupUser(string, string) error
+	// CreateStandupTime creates time entry in database
+	CreateStandupTime(int64, string) error
 
-	// DeleteAdmin deletes standup_users entry from database
-	DeleteAdmin(string, string) error
+	// UpdateChannelStandupTime updates time entry in database
+	UpdateChannelStandupTime(int64, string) error
 
-	// ListStandupUsersByChannelID returns array of standupUser entries from database
-	ListStandupUsersByChannelID(string) ([]model.StandupUser, error)
-
-	// ListAdminsByChannelID returns array of standup entries from database
-	ListAdminsByChannelID(string) ([]model.StandupUser, error)
-
-	// ListAllStandupUsers returns array of standupUser entries from database
-	ListAllStandupUsers() ([]model.StandupUser, error)
-
-	// CreateStandupTime creates standup time entry in database
-	CreateStandupTime(model.StandupTime) (model.StandupTime, error)
-
-	// DeleteStandupTime deletes time entry from database
-	DeleteStandupTime(string) error
-
-	// ListStandupTime returns standup time entry from database
-	GetChannelStandupTime(string) (model.StandupTime, error)
+	// GetChannelStandupTime returns standup time entry from database
+	GetChannelStandupTime(string) (int64, error)
 
 	// ListAllStandupTime returns standup time entry for all channels from database
-	ListAllStandupTime() ([]model.StandupTime, error)
+	ListAllStandupTime() ([]int64, error)
 
-	//GetAllChannels returns a list of all channels
+	// DeleteStandupTime deletes channels entry for channel from database
+	DeleteStandupTime(string) error
+
+	// AddToStandupHistory creates backup standup entry in standup_edit_history database
+	AddToStandupHistory(model.StandupEditHistory) (model.StandupEditHistory, error)
+
+	//GetAllChannels returns list of unique channels
 	GetAllChannels() ([]string, error)
 
-	//GetUserChannels returns a list of user's channels
+	//GetUserChannels returns list of user's channels
 	GetUserChannels(string) ([]string, error)
+
+	//GetChannelName returns channel name
+	GetChannelName(string) (string, error)
+
+	//GetChannelID returns channel name
+	GetChannelID(string) (string, error)
+
+	// ListStandups returns array of standup entries from database
+	// Helper function for testing
+	ListStandups() ([]model.Standup, error)
+
+	// CreateChannel creates standup entry in database
+	CreateChannel(model.Channel) (model.Channel, error)
+
+	// UpdateChannel updates Channel entry in database
+	UpdateChannel(model.Channel) (model.Channel, error)
+
+	// SelectChannel selects Channel entry from database
+	SelectChannel(string) (model.Channel, error)
+
+	// GetChannels selects Channel entry from database
+	GetChannels() ([]model.Channel, error)
+
+	// DeleteChannel deletes Channel entry from database
+	DeleteChannel(int64) error
+
+	// CreateUser creates standup entry in database
+	CreateUser(model.User) (model.User, error)
+
+	// UpdateUser updates User entry in database
+	UpdateUser(model.User) (model.User, error)
+
+	// SelectUser selects User entry from database
+	SelectUser(string) (model.User, error)
+
+	// SelectUserByUserName selects User entry from database
+	SelectUserByUserName(string) (model.User, error)
+
+	// DeleteUser deletes User entry from database
+	DeleteUser(int64) error
+
+	// ListAdmins selects User entry from database
+	ListAdmins() ([]model.User, error)
 }

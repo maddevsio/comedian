@@ -54,6 +54,8 @@ func (s *Slack) Run() error {
 	for msg := range s.rtm.IncomingEvents {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
+			s.UpdateUsersList()
+			s.UpdateChannelsList()
 			s.handleConnection()
 		case *slack.MessageEvent:
 			s.handleMessage(ev)
@@ -79,17 +81,23 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	case typeMessage:
 		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
 			standup, err := s.db.CreateStandup(model.Standup{
-				ChannelID:  msg.Channel,
-				UsernameID: msg.User,
-				Comment:    standupText,
-				MessageTS:  msg.Msg.Timestamp,
+				ChannelID: msg.Channel,
+				UserID:    msg.User,
+				Comment:   standupText,
+				MessageTS: msg.Msg.Timestamp,
 			})
-			logrus.Infof("slack: Standup created: %v\n", standup)
 			if err != nil {
 				logrus.Errorf("slack: CreateStandup failed: %v\n", err)
 				return err
 			}
-			return s.SendMessage(msg.Msg.Channel, s.Conf.Translate.StandupAccepted)
+			logrus.Infof("slack: Standup created: %v\n", standup)
+			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
+			err = s.api.AddReaction("heavy_check_mark", item)
+			if err != nil {
+				logrus.Errorf("slack: AddReaction failed: %v", err)
+				return err
+			}
+			return nil
 		}
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
@@ -197,4 +205,55 @@ func (s *Slack) GetChannelName(channelID string) (string, error) {
 		return group.Name, nil
 	}
 	return name, err
+}
+
+//UpdateUsersList updates users in workspace
+func (s *Slack) UpdateUsersList() {
+	users, _ := s.api.GetUsers()
+	for _, user := range users {
+		if user.IsBot || user.Name == "slackbot" {
+			continue
+		}
+
+		u, err := s.db.SelectUser(user.ID)
+		if err != nil {
+			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
+				s.db.CreateUser(model.User{
+					UserName: user.Name,
+					UserID:   user.ID,
+					Role:     "admin",
+				})
+				continue
+			}
+			s.db.CreateUser(model.User{
+				UserName: user.Name,
+				UserID:   user.ID,
+				Role:     "",
+			})
+			continue
+		}
+		if user.Deleted {
+			s.db.DeleteUser(u.ID)
+		}
+		continue
+	}
+}
+
+//UpdateChannelsList updates users in workspace
+func (s *Slack) UpdateChannelsList() {
+	params := slack.GetConversationsParameters{
+		Types: []string{"public_channel", "private_channel"},
+	}
+	chans, _, _ := s.api.GetConversations(&params)
+	for _, c := range chans {
+		_, err := s.db.SelectChannel(c.ID)
+		if err != nil {
+			s.db.CreateChannel(model.Channel{
+				ChannelName: c.Name,
+				ChannelID:   c.ID,
+				StandupTime: int64(0),
+			})
+		}
+		continue
+	}
 }

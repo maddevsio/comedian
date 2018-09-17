@@ -11,11 +11,11 @@ type Config struct {
 	HTTPBindAddr       string `envconfig:"HTTP_BIND_ADDR" required:"true" default:"0.0.0.0:8080"`
 	NotifierInterval   int    `envconfig:"NOTIFIER_INTERVAL" required:"true" default:2`
 	ManagerSlackUserID string `envconfig:"MANAGER_SLACK_USER_ID" required:"true"`
+	ReportingChannel   string `envconfig:"REPORTING_CHANNEL" required:"false"`
 	ReportTime         string `envconfig:"REPORT_TIME" required:"true" default:"13:05"`
 	Language           string `envconfig:"LANGUAGE" required:"true" default:"en_US"`
 	CollectorURL       string `envconfig:"COLLECTOR_URL" required:"true"`
 	CollectorToken     string `envconfig:"COLLECTOR_TOKEN" required:"true"`
-	ChanGeneral        string `envconfig:"MANAGER_SLACK_CHAN_GENERAL" required:"true"`
 	ReminderRepeatsMax int    `envconfig:"REMINDER_REPEATS_MAX" required:"true" default:5`
 	ReminderTime       int64  `envconfig:"REMINDER_TIME" required:"true" default:5`
 	Translate          Translate

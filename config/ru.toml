@@ -1,11 +1,12 @@
-userExist = "Этот пользователь уже существует"
-addUserNoStandupTime = "Пользователь <@%s> добавлен, но в этом канале не установлено время для стэндапов!"
-addUser = "Пользователь <@%s> добавлен"
-addAdmin = "Пользователь <@%s> добавлен как администратор"
+userExist = "<@%v> уже назначен стендапером в этом канале\n"
+addUserNoStandupTime = "Пользователь <@%s> добавлен, но в этом канале не установлено время для стэндапов!\n"
+addUser = "Пользователь <@%s> добавлен\n"
+addAdmin = "Пользователь <@%s> добавлен как администратор\n"
+accessDenied = "Эта команда не доступна вам так как вы не ПМ проекта.\n"
 
 
-deleteUser = "Пользователь <@%s> удален"
-deleteAdmin = "Админ <@%s> удален"
+deleteUser = "Пользователь <@%s> удален\n"
+deleteAdmin = "Админ <@%s> удален\n"
 listNoStandupers = "В этом канале нет стэндаперов! Чтобы добавить кого-нибдуь, используйте слэш команду `/comedianadd`"
 listNoAdmins = "В этом канале нет ПМов! Чтобы добавить нового ПМа, используйте слэш команду `/adminadd`"
 listStandupers = "Стэндаперы в канале: %v"
@@ -21,11 +22,11 @@ showStandupTime = "<!date^%v^Срок для стэндапов установл
 
 wrongNArgs = "Неверное количество аргументов. Перепроверьте свои данные!"
 reportByProjectAndUser = "Данный пользователь не установлен как стэндапер в этом канале. Для начала добавьте его слэшкомандой `/comdeidanadd`"
-reportOnProjectHead = "Полный отчет по проекту <#%s> с %v по %v:\n\n"
+reportOnProjectHead = "Полный отчет по проекту #%s с %v по %v:\n\n"
 reportOnUserHead = "Полный отчет по пользователю <@%s> с %v по %v:\n\n"
-reportOnProjectAndUserHead = "Отчет по проекту: <#%s>, пользователь: <@%s> с %v по %v:\n\n"
+reportOnProjectAndUserHead = "Отчет по пользователю <@%s> в проекте #%s с %v по %v:\n\n"
 
-reportNoData = "Нет данных за данный день"
+reportNoData = "Нет данных за данный период"
 reportDate = "Отчет за %s:\n"
 reportStandupFromUser = "\nСтэндап от <@%s>:\n%s\n"
 reportIgnoredStandup = "\n<@%s>: стэндап пропущен!\n"
@@ -35,10 +36,10 @@ dateError1 = "Дата начала больше чем дата конца пе
 dateError2 = "Дата конца отчёта указана в будущем времени"
 userDidNotStandup = "<@%v> не написал стэндап!\n"
 userDidStandup = "<@%v> написал стэндап!\n"
-userDidNotStandupInChannel = "В <#%v> <@%v> не написал стэндап!\n"
-userDidStandupInChannel = "В <#%v> <@%v> написал стэндап!\n"
-PMAssigned = "Вас назначили ПМом в <#%s|%s>"
-PMRemoved = "Вы больше не ПМ в <#%s|%s>"
+userDidNotStandupInChannel = "В #%v <@%v> не написал стэндап!\n"
+userDidStandupInChannel = "В #%v <@%v> написал стэндап!\n"
+PMAssigned = "Вас назначили ПМом в #%s"
+PMRemoved = "Вы больше не ПМ в #%s"
 
 
 helloManager = "Привет, менеджер!"
@@ -65,13 +66,13 @@ notifyUsersWarning = "%v, команда всё еще ждет стэндапы
 notifyDirectMessage = "Привет, <@%s>! У тебя пропущен срок по стэндапам в канале <#%s|%s>. Пожалуйста, напиши стэндап! Чем скорее тем лучше!"
 
 
-noWorklogs = "недостаточно ворклогов: %v"
-noCommits = "вообще нет коммитов, "
-noStandup = "и где твой стэндап?"
+noWorklogs = "недостаточно ворклогов: %v часов, "
+noCommits = "нет коммитов, "
+noStandup = "не написал стэндап!"
 
-hasWorklogs = "достаточно ворклогов: %v"
-hasCommits = "коммиты есть: %v"
-hasStandup = "а стэндап есть! Молодец!"
+hasWorklogs = "достаточно ворклогов: %v часов, "
+hasCommits = "число коммитов: %v, "
+hasStandup = "написал стэндап!"
 
 isRook = "<@%v> вчера грачевал! (%v)\n"
 isRookMonday = "<@%v> грачевал в пятницу и все выходные! (%v)\n"

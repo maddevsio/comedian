@@ -8,36 +8,37 @@ import (
 type (
 	// Standup model used for serialization/deserialization stored standups
 	Standup struct {
-		ID         int64     `db:"id" json:"id"`
-		Created    time.Time `db:"created" json:"created"`
-		Channel    string    `db:"channel" json:"channel"`
-		ChannelID  string    `db:"channel_id" json:"channelId"`
-		Modified   time.Time `db:"modified" json:"modified"`
-		UsernameID string    `db:"username_id" json:"userNameId"`
-		Username   string    `db:"username" json:"userName"`
-		Comment    string    `db:"comment" json:"comment"`
-		MessageTS  string    `db:"message_ts" json:"message_ts"`
-	}
-
-	// StandupUser model used for serialization/deserialization stored standupUsers
-	StandupUser struct {
-		ID          int64     `db:"id" json:"id"`
-		Created     time.Time `db:"created" json:"created"`
-		Modified    time.Time `db:"modified" json:"modified"`
-		SlackUserID string    `db:"slack_user_id" json:"slack_user_id"`
-		SlackName   string    `db:"username" json:"username"`
-		Channel     string    `db:"channel" json:"channel"`
-		ChannelID   string    `db:"channel_id" json:"channelId"`
-		Role        string    `db:"role" json:"role"`
-	}
-
-	// StandupTime model used for serialization/deserialization stored standupTime
-	StandupTime struct {
 		ID        int64     `db:"id" json:"id"`
 		Created   time.Time `db:"created" json:"created"`
-		Channel   string    `db:"channel" json:"channel"`
+		Modified  time.Time `db:"modified" json:"modified"`
 		ChannelID string    `db:"channel_id" json:"channelId"`
-		Time      int64     `db:"standuptime" json:"time"`
+		UserID    string    `db:"user_id" json:"userId"`
+		Comment   string    `db:"comment" json:"comment"`
+		MessageTS string    `db:"message_ts" json:"message_ts"`
+	}
+
+	// User model used for serialization/deserialization stored Users
+	User struct {
+		ID       int64  `db:"id" json:"id"`
+		UserName string `db:"user_name" json:"user_name"`
+		UserID   string `db:"user_id" json:"user_id"`
+		Role     string `db:"role" json:"role"`
+	}
+
+	// Channel model used for serialization/deserialization stored Channels
+	Channel struct {
+		ID          int64  `db:"id" json:"id"`
+		ChannelName string `db:"channel_name" json:"channel_name"`
+		ChannelID   string `db:"channel_id" json:"channel_id"`
+		StandupTime int64  `db:"channel_standup_time" json:"time"`
+	}
+
+	// ChannelMember model used for serialization/deserialization stored ChannelMembers
+	ChannelMember struct {
+		ID          int64  `db:"id" json:"id"`
+		UserID      string `db:"user_id" json:"user_id"`
+		ChannelID   string `db:"channel_id" json:"channel_id"`
+		StandupTime int64  `db:"standup_time" json:"time"`
 	}
 
 	// StandupEditHistory model used for serialization/deserialization stored standup edit history
@@ -51,26 +52,17 @@ type (
 
 // Validate validates Standup struct
 func (c Standup) Validate() error {
-	if c.Comment == "" {
-		err := errors.New("Standup cannot be empty")
-		return err
-	}
-	return nil
-}
-
-// Validate validates StandupUser struct
-func (c StandupUser) Validate() error {
-	if c.SlackName == "" && c.SlackUserID == "" {
+	if c.ChannelID == "" && c.UserID == "" {
 		err := errors.New("User cannot be empty")
 		return err
 	}
 	return nil
 }
 
-// Validate validates StandupTime struct
-func (c StandupTime) Validate() error {
-	if c.Time == 0 {
-		err := errors.New("Time cannot be empty")
+// Validate validates StandupUser struct
+func (c ChannelMember) Validate() error {
+	if c.UserID == "" && c.ChannelID == "" {
+		err := errors.New("User/Channel cannot be empty")
 		return err
 	}
 	return nil
