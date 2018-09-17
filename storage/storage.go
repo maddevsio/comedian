@@ -107,6 +107,9 @@ type Storage interface {
 	// SelectUser selects User entry from database
 	SelectUser(string) (model.User, error)
 
+	// SelectUserByUserName selects User entry from database
+	SelectUserByUserName(string) (model.User, error)
+
 	// DeleteUser deletes User entry from database
 	DeleteUser(int64) error
 

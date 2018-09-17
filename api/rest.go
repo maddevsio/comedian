@@ -463,16 +463,11 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 
-	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
+	dateFrom, dateTo, err := setUpDates(commandParams[2], commandParams[3])
 	if err != nil {
-		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
+		return c.String(http.StatusOK, "Incorrect Date From or Date To formats!")
 	}
-	dateTo, err := time.Parse("2006-01-02", commandParams[2])
-	if err != nil {
-		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
-	}
+
 	data, err := r.getCollectorData("projects", channel.ChannelName, commandParams[1], commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
@@ -503,19 +498,13 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, r.conf.Translate.UserExist)
 	}
 	username := strings.Replace(commandParams[0], "@", "", -1)
-	user, err := r.db.FindChannelMemberByUserName(username)
+	user, err := r.db.SelectUserByUserName(username)
 	if err != nil {
 		return c.String(http.StatusOK, "User does not exist!")
 	}
-	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
+	dateFrom, dateTo, err := setUpDates(commandParams[2], commandParams[3])
 	if err != nil {
-		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	dateTo, err := time.Parse("2006-01-02", commandParams[2])
-	if err != nil {
-		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
+		return c.String(http.StatusOK, "Incorrect Date From or Date To formats!")
 	}
 	data, err := r.getCollectorData("users", user.UserID, commandParams[1], commandParams[2])
 	if err != nil {
@@ -560,23 +549,17 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	}
 
 	username := strings.Replace(commandParams[1], "@", "", -1)
-	user, err := r.db.FindChannelMemberByUserName(username)
+	user, err := r.db.SelectUserByUserName(username)
 	if err != nil {
 		return c.String(http.StatusOK, "User does not exist!")
 	}
-	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
+	dateFrom, dateTo, err := setUpDates(commandParams[2], commandParams[3])
 	if err != nil {
-		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
+		return c.String(http.StatusOK, "Incorrect Date From or Date To formats!")
 	}
-	dateTo, err := time.Parse("2006-01-02", commandParams[3])
-	if err != nil {
-		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	pu := channelName + "/" + user.UserID
+	userInProject := user.UserID + "/" + channelName
 
-	data, err := r.getCollectorData("projects-users", pu, commandParams[2], commandParams[3])
+	data, err := r.getCollectorData("user-in-project", userInProject, commandParams[2], commandParams[3])
 	if err != nil {
 		logrus.Errorf("rest: getCollectorData failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -591,8 +574,8 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byte, error) {
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s", r.conf.CollectorURL, getDataOn, data, dateFrom, dateTo)
-	logrus.Infof("rest: getCollectorData request URL: %s", linkURL)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/", r.conf.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	logrus.Infof("rest: getCollectorData request URL: %s\n", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		logrus.Errorf("rest: http.NewRequest failed: %v\n", err)
@@ -613,9 +596,7 @@ func (r *REST) getCollectorData(getDataOn, data, dateFrom, dateTo string) ([]byt
 		logrus.Errorf("rest: ioutil.ReadAll(res.Body) failed: %v\n", err)
 		return nil, err
 	}
-	logrus.Infof("rest: getCollectorData responce body: %s", string(body))
 	return body, nil
-
 }
 
 func splitChannel(channel string) (string, string) {
@@ -630,4 +611,17 @@ func splitUser(user string) (string, string) {
 	userID := strings.Replace(userFull[0], "<@", "", -1)
 	userName := strings.Replace(userFull[1], ">", "", -1)
 	return userID, userName
+}
+
+func setUpDates(dateF, dateT string) (time.Time, time.Time, error) {
+	dateFrom, err := time.Parse("2006-01-02", dateF)
+	if err != nil {
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+	}
+	dateTo, err := time.Parse("2006-01-02", dateT)
+	if err != nil {
+		logrus.Errorf("rest: time.Parse failed: %v\n", err)
+	}
+
+	return dateFrom, dateTo, err
 }

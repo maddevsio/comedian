@@ -371,6 +371,16 @@ func (m *MySQL) SelectUser(userID string) (model.User, error) {
 	return c, err
 }
 
+// SelectUserByUserName selects User entry from database
+func (m *MySQL) SelectUserByUserName(userName string) (model.User, error) {
+	var c model.User
+	err := m.conn.Get(&c, "SELECT * FROM `users` WHERE user_name=?", userName)
+	if err != nil {
+		return c, err
+	}
+	return c, err
+}
+
 // DeleteUser deletes User entry from database
 func (m *MySQL) DeleteUser(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `users` WHERE id=?", id)

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -491,4 +492,38 @@ func TestSplitUser(t *testing.T) {
 	id, name := splitUser(user)
 	assert.Equal(t, "USERID", id)
 	assert.Equal(t, "userName", name)
+}
+
+func TestGetCollectorData(t *testing.T) {
+
+	// CollectorData used to parse data on user from Collector
+	type CollectorData struct {
+		TotalCommits int `json:"total_commits"`
+		Worklogs     int `json:"worklogs"`
+	}
+
+	c, err := config.Get()
+	assert.NoError(t, err)
+	rest, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+	data1, err := rest.getCollectorData("users", "UC1JNECA3", "2018-09-01", "2018-09-17")
+	assert.NoError(t, err)
+	var dataOnUser CollectorData
+	var dataOnProject CollectorData
+	var dataOnUserByProject CollectorData
+	err = json.Unmarshal(data1, &dataOnUser)
+	assert.NoError(t, err)
+	fmt.Printf("Report on user: Total Commits: %v, Total Worklogs: %v\n", dataOnUser.TotalCommits, dataOnUser.Worklogs/3600)
+
+	data2, err := rest.getCollectorData("projects", "comedian-testing", "2018-09-01", "2018-09-17")
+	assert.NoError(t, err)
+	err = json.Unmarshal(data2, &dataOnProject)
+	assert.NoError(t, err)
+	fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n", dataOnProject.TotalCommits, dataOnProject.Worklogs/3600)
+
+	data3, err := rest.getCollectorData("user-in-project", "UC1JNECA3/comedian-testing", "2018-09-01", "2018-09-17")
+	assert.NoError(t, err)
+	err = json.Unmarshal(data3, &dataOnUserByProject)
+	assert.NoError(t, err)
+	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n", dataOnUserByProject.TotalCommits, dataOnUserByProject.Worklogs/3600)
 }

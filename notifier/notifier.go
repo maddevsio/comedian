@@ -82,14 +82,14 @@ func (n *Notifier) RevealRooks() {
 		if (worklogs < 8) || (commits == 0) || (isNonReporter == true) {
 			fails := ""
 			if worklogs < 8 {
-				fails += fmt.Sprintf(n.Config.Translate.NoWorklogs, worklogs) + ", "
+				fails += fmt.Sprintf(n.Config.Translate.NoWorklogs, worklogs)
 			} else {
-				fails += fmt.Sprintf(n.Config.Translate.HasWorklogs, worklogs) + ", "
+				fails += fmt.Sprintf(n.Config.Translate.HasWorklogs, worklogs)
 			}
 			if commits == 0 {
 				fails += n.Config.Translate.NoCommits
 			} else {
-				fails += fmt.Sprintf(n.Config.Translate.HasCommits, commits) + ", "
+				fails += fmt.Sprintf(n.Config.Translate.HasCommits, commits)
 			}
 			if isNonReporter == true {
 				fails += n.Config.Translate.NoStandup
@@ -205,9 +205,15 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		return
 	}
 
+	channel, err := n.db.SelectChannel(channelID)
+	if err != nil {
+		logrus.Errorf("notifier: SelectChannel failed: %v\n", err)
+		return
+	}
+
 	// othervise Direct Message non reporters
 	for _, nonReporter := range nonReporters {
-		err := n.Chat.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.Config.Translate.NotifyDirectMessage, nonReporter.UserID, nonReporter.ChannelID))
+		err := n.Chat.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.Config.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
 		if err != nil {
 			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
 		}
