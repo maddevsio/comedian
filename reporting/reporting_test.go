@@ -29,10 +29,8 @@ func TestStandupReportByProject(t *testing.T) {
 	dateTo := time.Now()
 	dateFrom := time.Now().AddDate(0, 0, -2)
 
-	data := []byte{}
-
 	//First test when no data
-	actual, err := r.StandupReportByProject(channel, dateFrom, dateTo, data)
+	actual, err := r.StandupReportByProject(channel, dateFrom, dateTo)
 	assert.NoError(t, err)
 	expected := "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\nNo standup data for this period\n"
 	assert.Equal(t, expected, actual)
@@ -59,7 +57,7 @@ func TestStandupReportByProject(t *testing.T) {
 	monkey.Patch(time.Now, func() time.Time { return d })
 
 	//test for no standup submitted
-	actual, err = r.StandupReportByProject(channel, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByProject(channel, dateFrom, dateTo)
 	assert.NoError(t, err)
 	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\nReport for: 2018-06-04\n<@userID1> did not submit standup!\n"
 	assert.Equal(t, expected, actual)
@@ -74,7 +72,7 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.NoError(t, err)
 
 	//test if user submitted standup success
-	actual, err = r.StandupReportByProject(channel, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByProject(channel, dateFrom, dateTo)
 	assert.NoError(t, err)
 	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\nReport for: 2018-06-04\n<@userID1> did not submit standup!\nReport for: 2018-06-05\n<@userID1> submitted standup: my standup \n"
 	assert.Equal(t, expected, actual)
@@ -87,7 +85,7 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.NoError(t, err)
 
 	//test if one user wrote standup and the other did not
-	actual, err = r.StandupReportByProject(channel, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByProject(channel, dateFrom, dateTo)
 	assert.NoError(t, err)
 	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\nReport for: 2018-06-04\n<@userID1> did not submit standup!\nReport for: 2018-06-05\n<@userID1> submitted standup: my standup \n"
 	assert.Equal(t, expected, actual)
@@ -102,7 +100,7 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.NoError(t, err)
 
 	//test if both users had written standups
-	actual, err = r.StandupReportByProject(channel, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByProject(channel, dateFrom, dateTo)
 	assert.NoError(t, err)
 	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\nReport for: 2018-06-04\n<@userID1> did not submit standup!\n<@userID2> submitted standup: user2 standup \nReport for: 2018-06-05\n<@userID1> submitted standup: my standup \n<@userID2> submitted standup: user2 standup \n"
 
@@ -141,17 +139,15 @@ func TestStandupReportByUser(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	data := []byte{}
-
-	_, err = r.StandupReportByUser(user.UserID, dateTo, dateFrom, data)
+	_, err = r.StandupReportByUser(user.UserID, dateTo, dateFrom)
 	assert.Error(t, err)
-	_, err = r.StandupReportByUser(user.UserID, dateNext, dateTo, data)
+	_, err = r.StandupReportByUser(user.UserID, dateNext, dateTo)
 	assert.Error(t, err)
-	_, err = r.StandupReportByUser(user.UserID, dateFrom, dateNext, data)
+	_, err = r.StandupReportByUser(user.UserID, dateFrom, dateNext)
 	assert.Error(t, err)
 
 	expected := "Full Report on user <@userID1> from 2018-06-03 to 2018-06-05:\n\nNo standup data for this period\n"
-	actual, err := r.StandupReportByUser(user.UserID, dateFrom, dateTo, data)
+	actual, err := r.StandupReportByUser(user.UserID, dateFrom, dateTo)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 
@@ -162,7 +158,7 @@ func TestStandupReportByUser(t *testing.T) {
 		MessageTS: "123",
 	})
 	expected = "Full Report on user <@userID1> from 2018-06-03 to 2018-06-05:\n\nReport for: 2018-06-05\nIn #chanName <@userID1> submitted standup: my standup \n"
-	actual, err = r.StandupReportByUser(user.UserID, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByUser(user.UserID, dateFrom, dateTo)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 
@@ -193,8 +189,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 		ChannelID: channel.ChannelID,
 	})
 
-	data := []byte{}
-	actual, err := r.StandupReportByProjectAndUser(channel, user1.UserID, dateFrom, dateTo, data)
+	actual, err := r.StandupReportByProjectAndUser(channel, user1.UserID, dateFrom, dateTo)
 	assert.NoError(t, err)
 	expected := "Report on user <@userID1> in project #chanName from 2018-06-03 to 2018-06-05\n\nNo standup data for this period\n"
 	assert.Equal(t, expected, actual)
@@ -207,7 +202,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	actual, err = r.StandupReportByProjectAndUser(channel, user1.UserID, dateFrom, dateTo, data)
+	actual, err = r.StandupReportByProjectAndUser(channel, user1.UserID, dateFrom, dateTo)
 	assert.NoError(t, err)
 	expected = "Report on user <@userID1> in project #chanName from 2018-06-03 to 2018-06-05\n\nReport for: 2018-06-05\n<@userID1> submitted standup: my standup \n"
 	assert.Equal(t, expected, actual)

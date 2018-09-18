@@ -187,26 +187,6 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 	return err
 }
 
-//GetChannelName returns channel name
-func (s *Slack) GetChannelName(channelID string) (string, error) {
-	name := ""
-	channel, err := s.api.GetChannelInfo(channelID)
-	if err != nil {
-		logrus.Errorf("slack: GetChannelInfo failed: %v", err)
-	}
-	if err == nil {
-		return channel.Name, nil
-	}
-	group, err := s.api.GetGroupInfo(channelID)
-	if err != nil {
-		logrus.Errorf("slack: GetGroupInfo failed: %v", err)
-	}
-	if err == nil {
-		return group.Name, nil
-	}
-	return name, err
-}
-
 //UpdateUsersList updates users in workspace
 func (s *Slack) UpdateUsersList() {
 	users, _ := s.api.GetUsers()

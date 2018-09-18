@@ -1,7 +1,6 @@
 package reporting
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -13,18 +12,10 @@ import (
 )
 
 //Reporter provides db and translation to functions
-type (
-	Reporter struct {
-		db     storage.Storage
-		Config config.Config
-	}
-
-	// CollectorData used to parse data on user from Collector
-	CollectorData struct {
-		TotalCommits int `json:"total_commits"`
-		Worklogs     int `json:"worklogs"`
-	}
-)
+type Reporter struct {
+	db     storage.Storage
+	Config config.Config
+}
 
 //NewReporter creates new reporter instanse
 func NewReporter(c config.Config) (*Reporter, error) {
@@ -37,7 +28,7 @@ func NewReporter(c config.Config) (*Reporter, error) {
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
-func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
+func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateTo time.Time) (string, error) {
 	reportHead := fmt.Sprintf(r.Config.Translate.ReportOnProjectHead, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
@@ -81,12 +72,11 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 		reportBody += r.Config.Translate.ReportNoData
 	}
 	report := reportHead + reportBody
-	//reportBody += r.fetchCollectorData(collectorData)
 	return report, nil
 }
 
 // StandupReportByUser creates a standup report for a specified period of time
-func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
+func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time.Time) (string, error) {
 	reportHead := fmt.Sprintf(r.Config.Translate.ReportOnUserHead, slackUserID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	reportBody := ""
 
@@ -134,18 +124,16 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 		reportBody += r.Config.Translate.ReportNoData
 	}
 	report := reportHead + reportBody
-	//reportBody += r.fetchCollectorData(collectorData)
 	return report, nil
 }
 
 // StandupReportByProjectAndUser creates a standup report for a specified period of time
-func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUserID string, dateFrom, dateTo time.Time, collectorData []byte) (string, error) {
+func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUserID string, dateFrom, dateTo time.Time) (string, error) {
 	reportHead := fmt.Sprintf(r.Config.Translate.ReportOnProjectAndUserHead, slackUserID, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
 		return "", err
 	}
-
 	reportBody := ""
 	for day := 0; day <= numberOfDays; day++ {
 		dayInfo := ""
@@ -176,20 +164,7 @@ func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUse
 		reportBody += r.Config.Translate.ReportNoData
 	}
 	report := reportHead + reportBody
-	//report += r.fetchCollectorData(collectorData)
 	return report, nil
-}
-
-func (r *Reporter) fetchCollectorData(data []byte) string {
-	var cd CollectorData
-	err := json.Unmarshal(data, &cd)
-	if err != nil {
-		return ""
-	}
-	if cd.Worklogs != 0 {
-		return fmt.Sprintf(r.Config.Translate.ReportCollectorDataUser, cd.TotalCommits, cd.Worklogs/3600)
-	}
-	return fmt.Sprintf(r.Config.Translate.ReportOnProjectCollectorData, cd.TotalCommits)
 }
 
 //setupDays gets dates and returns their differense in days
