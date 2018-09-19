@@ -32,12 +32,13 @@ func main() {
 	}
 	go func() { log.Fatal(notifier.Start()) }()
 
+	//team monitoring servise is optional
 	if c.TeamMonitoringEnabled {
 		tm, err := teammonitoring.NewTeamMonitoring(c, slack)
 		if err != nil {
 			log.Fatal(err)
 		}
-		go func() { log.Fatal(tm.Start()) }()
+		tm.Start()
 	}
 
 	slack.Run()

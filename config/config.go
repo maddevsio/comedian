@@ -7,18 +7,18 @@ import (
 // Config struct used for configuration of app with env variables
 type Config struct {
 	SlackToken            string `envconfig:"SLACK_TOKEN" required:"true"`
-	DatabaseURL           string `envconfig:"DATABASE" required:"false" default:"comedian:comedian@/comedian?parseTime=true"`
-	HTTPBindAddr          string `envconfig:"HTTP_BIND_ADDR" required:"false" default:"0.0.0.0:8080"`
-	NotifierInterval      int    `envconfig:"NOTIFIER_INTERVAL" required:"false" default:2`
+	DatabaseURL           string `envconfig:"DATABASE" required:"true" default:"comedian:comedian@/comedian?parseTime=true"`
+	HTTPBindAddr          string `envconfig:"HTTP_BIND_ADDR" required:"true" default:"0.0.0.0:8080"`
+	NotifierInterval      int    `envconfig:"NOTIFIER_INTERVAL" required:"true" default:2`
 	ManagerSlackUserID    string `envconfig:"MANAGER_SLACK_USER_ID" required:"true"`
-	ReportingChannel      string `envconfig:"REPORTING_CHANNEL" required:"false"`
-	ReportTime            string `envconfig:"REPORT_TIME" required:"false" default:"13:05"`
-	Language              string `envconfig:"LANGUAGE" required:"false" default:"en_US"`
-	ReminderRepeatsMax    int    `envconfig:"REMINDER_REPEATS_MAX" required:"false" default:5`
-	ReminderTime          int64  `envconfig:"REMINDER_TIME" required:"false" default:5`
-	TeamMonitoringEnabled bool   `envconfig:"ENABLE_TEAM_MONITORING" required:"false" default:false`
-	CollectorURL          string `envconfig:"COLLECTOR_URL" required:"false"`
-	CollectorToken        string `envconfig:"COLLECTOR_TOKEN" required:"false"`
+	ReportingChannel      string `envconfig:"REPORTING_CHANNEL" required:"true"`
+	ReportTime            string `envconfig:"REPORT_TIME" required:"true" default:"13:05"`
+	Language              string `envconfig:"LANGUAGE" required:"true" default:"en_US"`
+	ReminderRepeatsMax    int    `envconfig:"REMINDER_REPEATS_MAX" required:"true" default:5`
+	ReminderTime          int64  `envconfig:"REMINDER_TIME" required:"true" default:5`
+	TeamMonitoringEnabled bool   `envconfig:"ENABLE_TEAM_MONITORING" required:"false" default:true`
+	CollectorURL          string `envconfig:"COLLECTOR_URL" required:"true"`
+	CollectorToken        string `envconfig:"COLLECTOR_TOKEN" required:"true"`
 	Translate             Translate
 }
 

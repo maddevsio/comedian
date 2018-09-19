@@ -38,13 +38,8 @@ func NewTeamMonitoring(c config.Config, chat chat.Chat) (*TeamMonitoring, error)
 }
 
 // Start starts all team monitoring treads
-func (tm *TeamMonitoring) Start() error {
+func (tm *TeamMonitoring) Start() {
 	gocron.Every(1).Day().At(tm.Config.ReportTime).Do(tm.RevealRooks)
-	channel := gocron.Start()
-	for {
-		report := <-channel
-		logrus.Println(report)
-	}
 }
 
 // RevealRooks displays data about rooks in channel general

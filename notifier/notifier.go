@@ -3,14 +3,12 @@ package notifier
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff"
 	"github.com/maddevsio/comedian/model"
 
-	"github.com/jasonlvhit/gocron"
 	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/storage"
@@ -36,46 +34,11 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
-	gocron.Every(1).Day().At("23:55").Do(n.FillStandupsForNonReporters)
-	gocron.Every(60).Seconds().Do(n.NotifyChannels)
-	channel := gocron.Start()
+	notificationChan := time.NewTicker(time.Second * 60).C
 	for {
-		report := <-channel
-		logrus.Println(report)
-	}
-}
-
-//FillStandupsForNonReporters fills standup entries with empty standups to later recognize
-//non reporters vs those who did not have to write standups
-func (n *Notifier) FillStandupsForNonReporters() {
-	//check if today is not saturday or sunday. During these days no notificatoins!
-	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
-		return
-	}
-	timeFrom := time.Now().AddDate(0, 0, -1)
-	allUsers, err := n.db.ListAllChannelMembers()
-	if err != nil {
-		logrus.Errorf("notifier: n.GetCurrentDayNonReporters failed: %v\n", err)
-		return
-	}
-	for _, user := range allUsers {
-		isNonReporter, err := n.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom, time.Now())
-		if err != nil {
-			logrus.Errorf("notifier: IsNonReporter failed: %v\n", err)
-			return
-		}
-		if isNonReporter {
-			standup, err := n.db.CreateStandup(model.Standup{
-				ChannelID: user.ChannelID,
-				UserID:    user.UserID,
-				Comment:   "",
-				MessageTS: strconv.Itoa(int(time.Now().Unix())),
-			})
-			if err != nil {
-				logrus.Errorf("notifier: CreateStandup failed: %v\n", err)
-				return
-			}
-			logrus.Infof("notifier: Empty Standup created: %v\n", standup)
+		select {
+		case <-notificationChan:
+			n.NotifyChannels()
 		}
 	}
 }

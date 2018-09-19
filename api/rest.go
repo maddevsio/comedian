@@ -151,7 +151,7 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		if err != nil {
 			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
 			_, err = r.db.CreateChannelMember(model.ChannelMember{
-				UserID:    user.UserID,
+				UserID:    userID,
 				ChannelID: ca.ChannelID,
 			})
 			if err != nil {
