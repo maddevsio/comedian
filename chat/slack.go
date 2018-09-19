@@ -80,6 +80,7 @@ func (s *Slack) handleConnection() error {
 }
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
+	// if user is not assigned as standuper, skip this message
 	if !s.isStanduper(msg.User, msg.Channel) {
 		logrus.Info("This user is not a standuper")
 		return nil
@@ -87,6 +88,9 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	switch msg.SubType {
 	case typeMessage:
 		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
+			if s.alreadyWroteStandupToday(msg.User, msg.Channel) {
+				return nil
+			}
 			standup, err := s.db.CreateStandup(model.Standup{
 				ChannelID: msg.Channel,
 				UserID:    msg.User,
@@ -172,11 +176,20 @@ func (s *Slack) isStandup(message string) (string, bool) {
 func (s *Slack) isStanduper(userID, channelID string) bool {
 	_, err := s.db.FindChannelMemberByUserID(userID, channelID)
 	if err != nil {
-		logrus.Error(err)
 		return false
 	}
 	return true
+}
 
+func (s *Slack) alreadyWroteStandupToday(userID, channelID string) bool {
+	timeFrom := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
+	_, err := s.db.SelectStandupsFiltered(userID, channelID, timeFrom, time.Now())
+	logrus.Infof("slack TimeFrom: %v", timeFrom)
+	if err != nil {
+		logrus.Errorf("slakc SelectStandupsFiltered failed %v", err)
+		return false
+	}
+	return true
 }
 
 // SendMessage posts a message in a specified channel
