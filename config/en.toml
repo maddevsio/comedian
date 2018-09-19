@@ -73,5 +73,5 @@ hasWorklogs = "Has enough worklogs: %v hours,"
 hasCommits = "commited: %v times,"
 hasStandup = "submitted a standup!"
 
-isRook = "<@%v> twiddled yesterday! (%v)\n"
-isRookMonday = "<@%v> twiddled from Friday till yesterday! (%v)\n"
+isRook = "<@%v> twiddled in #%v yesterday! (%v)\n"
+isRookMonday = "<@%v> twiddled in #%v from Friday till yesterday! (%v)\n"

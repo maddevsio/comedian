@@ -66,7 +66,15 @@ Run:
 make docker
 docker-compose up
 ```
+## Team Monitoring 
+Please note that Team Monitoring (TM) Servise is developed only for internal use of Mad Devs LLC, therefore when configuring Comedian, you may turn this feature off. (look at env variables) 
 
+Env variables assosiated with TM are:
+```
+COMEDIAN_ENABLE_TEAM_MONITORING=false
+COMEDIAN_COLLECTOR_TOKEN=_______________________
+COMEDIAN_COLLECTOR_URL=_________________________
+```
 
 ## The roadmap
 

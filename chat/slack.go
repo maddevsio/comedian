@@ -1,8 +1,11 @@
 package chat
 
 import (
+	"strconv"
 	"sync"
+	"time"
 
+	"github.com/jasonlvhit/gocron"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
@@ -45,8 +48,7 @@ func NewSlack(conf config.Config) (*Slack, error) {
 }
 
 // Run runs a listener loop for slack
-func (s *Slack) Run() error {
-
+func (s *Slack) Run() {
 	s.wg.Add(1)
 	go s.rtm.ManageConnection()
 	s.wg.Done()
@@ -57,6 +59,8 @@ func (s *Slack) Run() error {
 			s.UpdateUsersList()
 			s.UpdateChannelsList()
 			s.handleConnection()
+			gocron.Every(1).Day().At("23:55").Do(s.FillStandupsForNonReporters)
+			gocron.Start()
 		case *slack.MessageEvent:
 			s.handleMessage(ev)
 		case *slack.PresenceChangeEvent:
@@ -65,10 +69,9 @@ func (s *Slack) Run() error {
 			logrus.Errorf("slack: RTME: %v\n", ev)
 		case *slack.InvalidAuthEvent:
 			logrus.Info("slack: Invalid credentials")
-			return nil
+			return
 		}
 	}
-	return nil
 }
 
 func (s *Slack) handleConnection() error {
@@ -187,26 +190,6 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 	return err
 }
 
-//GetChannelName returns channel name
-func (s *Slack) GetChannelName(channelID string) (string, error) {
-	name := ""
-	channel, err := s.api.GetChannelInfo(channelID)
-	if err != nil {
-		logrus.Errorf("slack: GetChannelInfo failed: %v", err)
-	}
-	if err == nil {
-		return channel.Name, nil
-	}
-	group, err := s.api.GetGroupInfo(channelID)
-	if err != nil {
-		logrus.Errorf("slack: GetGroupInfo failed: %v", err)
-	}
-	if err == nil {
-		return group.Name, nil
-	}
-	return name, err
-}
-
 //UpdateUsersList updates users in workspace
 func (s *Slack) UpdateUsersList() {
 	users, _ := s.api.GetUsers()
@@ -255,5 +238,41 @@ func (s *Slack) UpdateChannelsList() {
 			})
 		}
 		continue
+	}
+}
+
+//FillStandupsForNonReporters fills standup entries with empty standups to later recognize
+//non reporters vs those who did not have to write standups
+func (s *Slack) FillStandupsForNonReporters() {
+	logrus.Println("FillStandupsForNonReporters!")
+	//check if today is not saturday or sunday. During these days no notificatoins!
+	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
+		return
+	}
+	timeFrom := time.Now().AddDate(0, 0, -1)
+	allUsers, err := s.db.ListAllChannelMembers()
+	if err != nil {
+		logrus.Errorf("notifier: s.GetCurrentDayNonReporters failed: %v\n", err)
+		return
+	}
+	for _, user := range allUsers {
+		isNonReporter, err := s.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom, time.Now())
+		if err != nil {
+			logrus.Errorf("notifier: IsNonReporter failed: %v\n", err)
+			return
+		}
+		if isNonReporter {
+			standup, err := s.db.CreateStandup(model.Standup{
+				ChannelID: user.ChannelID,
+				UserID:    user.UserID,
+				Comment:   "",
+				MessageTS: strconv.Itoa(int(time.Now().Unix())),
+			})
+			if err != nil {
+				logrus.Errorf("notifier: CreateStandup failed: %v\n", err)
+				return
+			}
+			logrus.Infof("notifier: Empty Standup created: %v\n", standup)
+		}
 	}
 }

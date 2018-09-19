@@ -167,40 +167,20 @@ func TestCheckUser(t *testing.T) {
 	testCases := []struct {
 		title         string
 		user          model.ChannelMember
-		worklogs      int
-		commits       int
 		isNonReporter bool
 		err           error
 	}{
-		{"test 1", u1, 27, 2, false, nil},
-		{"test 2", u2, 3, 30, false, nil},
-		{"test 3", u3, 0, 0, false, nil},
-		{"test 4", u4, 13, 20, false, nil},
+		{"test 1", u1, false, nil},
+		{"test 2", u2, false, nil},
+		{"test 3", u3, false, nil},
+		{"test 4", u4, false, nil},
 	}
 
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID1/2018-06-22/2018-06-24/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `{"total_commits": 2, "total_merges": 1, "worklogs": 100000}`))
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID2/2018-06-22/2018-06-24/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `{"total_commits": 2, "total_merges": 1, "worklogs": 100000}`))
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID3/2018-06-22/2018-06-24/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `{"total_commits": 2, "total_merges": 1, "worklogs": 100000}`))
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID4/2018-06-22/2018-06-24/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `{"total_commits": 2, "total_merges": 1, "worklogs": 100000}`))
-
 	for _, tt := range testCases {
-		worklogs, commits, err := n.getCollectorData(tt.user, time.Now(), time.Now())
-		assert.NoError(t, err)
-		assert.Equal(t, tt.worklogs, worklogs)
-		assert.Equal(t, tt.commits, commits)
 		isNonReporter, err := n.db.IsNonReporter(tt.user.UserID, tt.user.ChannelID, time.Now(), time.Now())
 		assert.NoError(t, err)
 		assert.Equal(t, tt.isNonReporter, isNonReporter)
 	}
-
-	n.RevealRooks()
 
 	assert.NoError(t, n.db.DeleteChannelMember(u1.UserID, u1.ChannelID))
 	assert.NoError(t, n.db.DeleteChannelMember(u2.UserID, u2.ChannelID))
