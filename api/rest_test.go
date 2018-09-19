@@ -76,10 +76,10 @@ func TestHandleUserCommands(t *testing.T) {
 		{"empty channel ID", AddUserEmptyChannelID, http.StatusBadRequest, "`channel_id` cannot be empty"},
 		{"empty channel name", AddUserEmptyChannelName, http.StatusBadRequest, "`channel_name` cannot be empty"},
 		{"empty text", AddEmptyText, http.StatusBadRequest, "`text` cannot be empty"},
-		{"add user no standup time", AddUser, http.StatusOK, "<@test> added, but there is no standup time for this channel"},
+		{"add user no standup time", AddUser, http.StatusOK, "<@test> now submits standups in this channel, but there is no standup time set yet!"},
 		{"list users", ListUsers, http.StatusOK, "Standupers in this channel: <@userid>"},
 		{"add user with user exist", AddUser, http.StatusOK, "<@userid> already assigned as standuper in this channel"},
-		{"delete user", DelUser, http.StatusOK, "<@test> deleted"},
+		{"delete user", DelUser, http.StatusOK, "<@test> no longer submits standups in this channel"},
 	}
 
 	for _, tt := range testCases {
@@ -105,8 +105,8 @@ func TestHandleUserCommands(t *testing.T) {
 		statusCode   int
 		responseBody string
 	}{
-		{"add user with standup time", AddUser, http.StatusOK, "<@test> added"},
-		{"delete user", DelUser, http.StatusOK, "<@test> deleted"},
+		{"add user with standup time", AddUser, http.StatusOK, "<@test> assigned to submit standups in this channel"},
+		{"delete user", DelUser, http.StatusOK, "<@test> no longer submits standups in this channel"},
 		{"list no users", ListUsers, http.StatusOK, "No standupers in this channel! To add one, please, use `/comedianadd` slash command"},
 	}
 
@@ -160,10 +160,10 @@ func TestHandleAdminCommands(t *testing.T) {
 		{"empty channel ID", AddAdminEmptyChannelID, http.StatusBadRequest, "`channel_id` cannot be empty"},
 		{"empty channel name", AddAdminEmptyChannelName, http.StatusBadRequest, "`channel_name` cannot be empty"},
 		{"empty text", AddEmptyText, http.StatusBadRequest, "`text` cannot be empty"},
-		{"add admin no standup time", AddAdmin, http.StatusOK, "<@test> added as admin"},
+		{"add admin no standup time", AddAdmin, http.StatusOK, "<@test> was granted admin access"},
 		{"list admins", ListAdmins, http.StatusOK, "Admins in this channel: <@test>"},
 		{"add admin with admin exist", AddAdmin, http.StatusOK, "User is already admin!"},
-		{"delete admin", DelAdmin, http.StatusOK, "<@test> deleted as admin"},
+		{"delete admin", DelAdmin, http.StatusOK, "<@test> was removed as admin"},
 	}
 
 	for _, tt := range testCases {
@@ -185,8 +185,8 @@ func TestHandleAdminCommands(t *testing.T) {
 		statusCode   int
 		responseBody string
 	}{
-		{"add admin with standup time", AddAdmin, http.StatusOK, "<@test> added as admin"},
-		{"delete admin", DelAdmin, http.StatusOK, "<@test> deleted as admin"},
+		{"add admin with standup time", AddAdmin, http.StatusOK, "<@test> was granted admin access"},
+		{"delete admin", DelAdmin, http.StatusOK, "<@test> was removed as admin"},
 		{"list no admins", ListAdmins, http.StatusOK, "No admins in this channel! To add one, please, use `/adminadd` slash command"},
 	}
 
@@ -477,51 +477,3 @@ func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
 
 	return context, rec
 }
-
-func TestSplitChannel(t *testing.T) {
-	channel := "<#CHANNELID|channelName"
-	id, name := splitChannel(channel)
-	assert.Equal(t, "CHANNELID", id)
-	assert.Equal(t, "channelName", name)
-}
-
-func TestSplitUser(t *testing.T) {
-	user := "<@USERID|userName"
-	id, name := splitUser(user)
-	assert.Equal(t, "USERID", id)
-	assert.Equal(t, "userName", name)
-}
-
-// func TestGetCollectorData(t *testing.T) {
-
-// 	// CollectorData used to parse data on user from Collector
-// 	type CollectorData struct {
-// 		TotalCommits int `json:"total_commits"`
-// 		Worklogs     int `json:"worklogs"`
-// 	}
-
-// 	c, err := config.Get()
-// 	assert.NoError(t, err)
-// 	rest, err := NewRESTAPI(c)
-// 	assert.NoError(t, err)
-// 	data1, err := rest.getCollectorData("users", "UC1JNECA3", "2018-09-01", "2018-09-17")
-// 	assert.NoError(t, err)
-// 	var dataOnUser CollectorData
-// 	var dataOnProject CollectorData
-// 	var dataOnUserByProject CollectorData
-// 	err = json.Unmarshal(data1, &dataOnUser)
-// 	assert.NoError(t, err)
-// 	fmt.Printf("Report on user: Total Commits: %v, Total Worklogs: %v\n", dataOnUser.TotalCommits, dataOnUser.Worklogs/3600)
-
-// 	data2, err := rest.getCollectorData("projects", "comedian-testing", "2018-09-01", "2018-09-17")
-// 	assert.NoError(t, err)
-// 	err = json.Unmarshal(data2, &dataOnProject)
-// 	assert.NoError(t, err)
-// 	fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n", dataOnProject.TotalCommits, dataOnProject.Worklogs/3600)
-
-// 	data3, err := rest.getCollectorData("user-in-project", "UC1JNECA3/comedian-testing", "2018-09-01", "2018-09-17")
-// 	assert.NoError(t, err)
-// 	err = json.Unmarshal(data3, &dataOnUserByProject)
-// 	assert.NoError(t, err)
-// 	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n", dataOnUserByProject.TotalCommits, dataOnUserByProject.Worklogs/3600)
-// }

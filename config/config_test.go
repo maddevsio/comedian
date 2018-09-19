@@ -40,5 +40,4 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, conf.CollectorURL, "www.collector.some")
 	assert.Equal(t, conf.ReminderRepeatsMax, int(5))
 	assert.Equal(t, conf.ReminderTime, int64(10))
-	assert.Equal(t, conf.Debug, true)
 }
