@@ -17,6 +17,18 @@ type Reporter struct {
 	Config config.Config
 }
 
+//Report used to generate report structure
+type Report struct {
+	ReportHead string
+	ReportBody []ReportBodyContent
+}
+
+//ReportBodyContent used to generate report body content
+type ReportBodyContent struct {
+	Date time.Time
+	Text string
+}
+
 //NewReporter creates new reporter instanse
 func NewReporter(c config.Config) (*Reporter, error) {
 	conn, err := storage.NewMySQL(c)
@@ -28,15 +40,14 @@ func NewReporter(c config.Config) (*Reporter, error) {
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
-func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateTo time.Time) (string, error) {
-	reportHead := fmt.Sprintf(r.Config.Translate.ReportOnProjectHead, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateTo time.Time) (Report, error) {
+	report := Report{}
+	report.ReportHead = fmt.Sprintf(r.Config.Translate.ReportOnProjectHead, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("reporting:setupDays failed: %v", err)
-		return "", err
+		return report, err
 	}
-
-	reportBody := ""
 	for day := 0; day <= numberOfDays; day++ {
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
 		dateTo := dateFrom.Add(24 * time.Hour)
@@ -64,25 +75,22 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 			dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 		}
 		if dayInfo != "" {
-			reportBody += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
-			reportBody += dayInfo
+			text := fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			text += dayInfo
+			rbc := ReportBodyContent{dateFrom, text}
+			report.ReportBody = append(report.ReportBody, rbc)
 		}
 	}
-	if reportBody == "" {
-		reportBody += r.Config.Translate.ReportNoData
-	}
-	report := reportHead + reportBody
 	return report, nil
 }
 
 // StandupReportByUser creates a standup report for a specified period of time
-func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time.Time) (string, error) {
-	reportHead := fmt.Sprintf(r.Config.Translate.ReportOnUserHead, slackUserID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
-	reportBody := ""
-
+func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time.Time) (Report, error) {
+	report := Report{}
+	report.ReportHead = fmt.Sprintf(r.Config.Translate.ReportOnUserHead, slackUserID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
-		return "", err
+		return report, err
 	}
 	for day := 0; day <= numberOfDays; day++ {
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
@@ -90,7 +98,6 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 		// начало
 		channels, err := r.db.GetUserChannels(slackUserID)
 		if err != nil || len(channels) == 0 {
-			reportBody += r.Config.Translate.ReportNoData
 			continue
 		}
 		dayInfo := ""
@@ -115,26 +122,23 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 			dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 		}
 		if dayInfo != "" {
-			reportBody += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
-			reportBody += dayInfo
+			text := fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			text += dayInfo
+			rbc := ReportBodyContent{dateFrom, text}
+			report.ReportBody = append(report.ReportBody, rbc)
 		}
 	}
-
-	if reportBody == "" {
-		reportBody += r.Config.Translate.ReportNoData
-	}
-	report := reportHead + reportBody
 	return report, nil
 }
 
 // StandupReportByProjectAndUser creates a standup report for a specified period of time
-func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUserID string, dateFrom, dateTo time.Time) (string, error) {
-	reportHead := fmt.Sprintf(r.Config.Translate.ReportOnProjectAndUserHead, slackUserID, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUserID string, dateFrom, dateTo time.Time) (Report, error) {
+	report := Report{}
+	report.ReportHead = fmt.Sprintf(r.Config.Translate.ReportOnProjectAndUserHead, slackUserID, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := r.setupDays(dateFrom, dateTo)
 	if err != nil {
-		return "", err
+		return report, err
 	}
-	reportBody := ""
 	for day := 0; day <= numberOfDays; day++ {
 		dayInfo := ""
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
@@ -155,15 +159,12 @@ func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUse
 		dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandup, slackUserID)
 		dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 		if dayInfo != "" {
-			reportBody += fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
-			reportBody += dayInfo
+			text := fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			text += dayInfo
+			rbc := ReportBodyContent{dateFrom, text}
+			report.ReportBody = append(report.ReportBody, rbc)
 		}
 	}
-
-	if reportBody == "" {
-		reportBody += r.Config.Translate.ReportNoData
-	}
-	report := reportHead + reportBody
 	return report, nil
 }
 
