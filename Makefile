@@ -17,13 +17,7 @@ build_linux:
 build_docker:
 	docker build -t comedian .
 
-tag_docker: 
-	docker tag comedian:latest anatoliyfedorenko/comedian
-
-deploy_docker:
-	docker push anatoliyfedorenko/comedian
-
-docker: build_linux build_docker tag_docker deploy_docker
+docker: build_linux build_docker
 
 migrate:
 	goose -dir migrations mysql "comedian:comedian@tcp(172.18.0.3:3306)/comedian"  up
