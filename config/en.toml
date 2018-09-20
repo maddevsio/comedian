@@ -38,8 +38,8 @@ userDidNotStandup = "<@%v> did not submit standup!\n"
 userDidStandup = "<@%v> submitted standup: "
 userDidNotStandupInChannel = "In #%v <@%v> did not submit standup!"
 userDidStandupInChannel = "In #%v <@%v> submitted standup: "
-PMAssigned = "You have been added as PM in #%s"
-PMRemoved = "You have been removed as PM in #%s"
+PMAssigned = "You have been added as Admin for Comedian"
+PMRemoved = "You have been removed as Admin from Comedian"
 
 
 helloManager = "Hello, Manager!"

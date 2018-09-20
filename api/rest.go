@@ -273,7 +273,7 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 		if err != nil {
 			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
 		}
-		message := fmt.Sprintf("Теперь у вас есть доступ к упарвлению комедианом")
+		message := r.conf.Translate.PMAssigned
 		err = r.slack.SendUserMessage(userID, message)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
