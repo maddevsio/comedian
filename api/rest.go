@@ -17,6 +17,7 @@ import (
 	"github.com/maddevsio/comedian/reporting"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/maddevsio/comedian/teammonitoring"
+	"github.com/maddevsio/comedian/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -77,7 +78,6 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 	}
 
 	r.initEndpoints()
-	fmt.Printf("Team monitoring enabled: %v", c.TeamMonitoringEnabled)
 	return r, nil
 }
 
@@ -150,7 +150,7 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		if !rg.MatchString(u) {
 			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
 		}
-		userID, userName := SplitUser(u)
+		userID, userName := utils.SplitUser(u)
 		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
 		if err != nil {
 			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
@@ -203,7 +203,7 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		if !rg.MatchString(u) {
 			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
 		}
-		userID, userName := SplitUser(u)
+		userID, userName := utils.SplitUser(u)
 		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
 		if err != nil {
 			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
@@ -268,7 +268,7 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 		if !rg.MatchString(u) {
 			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
 		}
-		userID, userName := SplitUser(u)
+		userID, userName := utils.SplitUser(u)
 		user, err := r.db.SelectUser(userID)
 		if err != nil {
 			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
@@ -315,7 +315,7 @@ func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
 		if !rg.MatchString(u) {
 			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
 		}
-		userID, userName := SplitUser(u)
+		userID, userName := utils.SplitUser(u)
 		user, err := r.db.SelectUser(userID)
 		if err != nil {
 			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
@@ -560,7 +560,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, cd.Worklogs)
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return c.String(http.StatusOK, text)
@@ -631,7 +631,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, cd.Worklogs)
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return c.String(http.StatusOK, text)
