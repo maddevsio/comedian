@@ -16,6 +16,7 @@ import (
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/reporting"
 	"github.com/maddevsio/comedian/storage"
+	"github.com/maddevsio/comedian/teammonitoring"
 	"github.com/sirupsen/logrus"
 )
 
@@ -475,7 +476,24 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: StandupReportByProject: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	return c.String(http.StatusOK, report)
+
+	text := ""
+	text += report.ReportHead
+	if len(report.ReportBody) == 0 {
+		text += r.conf.Translate.ReportNoData
+		return c.String(http.StatusOK, text)
+	}
+	for _, t := range report.ReportBody {
+		text += t.Text
+		if r.conf.TeamMonitoringEnabled {
+			cd, err := teammonitoring.GetCollectorData(r.conf, "projects", channel.ChannelName, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
+			if err != nil {
+				continue
+			}
+			text += fmt.Sprintf(r.conf.Translate.ReportOnProjectCollectorData, cd.TotalCommits)
+		}
+	}
+	return c.String(http.StatusOK, text)
 }
 
 ///report_by_user @Anatoliy 2018-07-24 2018-07-26
@@ -514,7 +532,24 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: StandupReportByUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	return c.String(http.StatusOK, report)
+
+	text := ""
+	text += report.ReportHead
+	if len(report.ReportBody) == 0 {
+		text += r.conf.Translate.ReportNoData
+		return c.String(http.StatusOK, text)
+	}
+	for _, t := range report.ReportBody {
+		text += t.Text
+		if r.conf.TeamMonitoringEnabled {
+			cd, err := teammonitoring.GetCollectorData(r.conf, "users", user.UserID, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
+			if err != nil {
+				continue
+			}
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, cd.Worklogs)
+		}
+	}
+	return c.String(http.StatusOK, text)
 }
 
 ///report_by_project_and_user #collector-test @Anatoliy 2018-07-24 2018-07-26
@@ -567,5 +602,23 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
-	return c.String(http.StatusOK, report)
+
+	text := ""
+	text += report.ReportHead
+	if len(report.ReportBody) == 0 {
+		text += r.conf.Translate.ReportNoData
+		return c.String(http.StatusOK, text)
+	}
+	for _, t := range report.ReportBody {
+		text += t.Text
+		if r.conf.TeamMonitoringEnabled {
+			data := fmt.Sprintf("%v/%v", user.UserID, channel.ChannelName)
+			cd, err := teammonitoring.GetCollectorData(r.conf, "user-in-project", data, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
+			if err != nil {
+				continue
+			}
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, cd.Worklogs)
+		}
+	}
+	return c.String(http.StatusOK, text)
 }

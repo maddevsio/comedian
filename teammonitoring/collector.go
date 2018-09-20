@@ -48,7 +48,7 @@ func (tm *TeamMonitoring) RevealRooks() {
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
 		return
 	}
-	timeFrom := time.Now()
+	timeFrom := time.Now().AddDate(0, 0, -1)
 	// if today is monday, check 3 days of performance for user
 	if int(time.Now().Weekday()) == 1 {
 		timeFrom = time.Now().AddDate(0, 0, -3)
