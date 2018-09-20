@@ -4,7 +4,6 @@ services:
   - mysql
 
 go:
-  # - 1.8.x
   - 1.9.x
   - master
 
@@ -18,6 +17,3 @@ before_install:
 
 script:
   - $HOME/gopath/bin/goveralls  -service=travis-ci
-
-env:
-- DATABASE="root@/comedian?parseTime=true" HTTP_BIND_ADDR=":8080" NOTIFIER_CHECK_INTERVAL=60 MANAGER_SLACK_USER_ID=UB9AE7CL9 REPORT_TIME="15:26"
