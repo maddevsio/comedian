@@ -11,6 +11,7 @@ import (
 	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/storage"
+	"github.com/maddevsio/comedian/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -80,12 +81,12 @@ func (tm *TeamMonitoring) RevealRooks() {
 			continue
 		}
 
-		if (data.Worklogs < 8) || (data.TotalCommits == 0) || (isNonReporter == true) {
+		if (data.Worklogs/3600 < 8) || (data.TotalCommits == 0) || (isNonReporter == true) {
 			fails := ""
-			if data.Worklogs < 8 {
-				fails += fmt.Sprintf(tm.Config.Translate.NoWorklogs, data.Worklogs)
+			if data.Worklogs/3600 < 8 {
+				fails += fmt.Sprintf(tm.Config.Translate.NoWorklogs, utils.SecondsToHuman(data.Worklogs))
 			} else {
-				fails += fmt.Sprintf(tm.Config.Translate.HasWorklogs, data.Worklogs)
+				fails += fmt.Sprintf(tm.Config.Translate.HasWorklogs, utils.SecondsToHuman(data.Worklogs))
 			}
 			if data.TotalCommits == 0 {
 				fails += tm.Config.Translate.NoCommits
