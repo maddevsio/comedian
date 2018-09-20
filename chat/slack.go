@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -56,6 +57,7 @@ func (s *Slack) Run() {
 	for msg := range s.rtm.IncomingEvents {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
+			fmt.Printf("Team monitoring enabled: %v\n", s.Conf.TeamMonitoringEnabled)
 			s.UpdateUsersList()
 			s.UpdateChannelsList()
 			s.handleConnection()

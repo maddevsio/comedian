@@ -61,6 +61,7 @@ func (tm *TeamMonitoring) RevealRooks() {
 
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", timeFrom.Year(), timeFrom.Month(), timeFrom.Day())
 
+	finalText := ""
 	for _, user := range allUsers {
 		project, err := tm.db.SelectChannel(user.ChannelID)
 		if err != nil {
@@ -100,9 +101,11 @@ func (tm *TeamMonitoring) RevealRooks() {
 			if int(time.Now().Weekday()) == 1 {
 				text = fmt.Sprintf(tm.Config.Translate.IsRookMonday, user.UserID, project.ChannelName, fails)
 			}
-			tm.Chat.SendMessage(tm.Config.ReportingChannel, text)
+			text += "\n\n"
+			finalText += text
 		}
 	}
+	tm.Chat.SendMessage(tm.Config.ReportingChannel, finalText)
 }
 
 //GetCollectorData sends api request to collector servise and returns collector object

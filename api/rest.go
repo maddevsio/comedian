@@ -47,7 +47,6 @@ const (
 
 // NewRESTAPI creates API for Slack commands
 func NewRESTAPI(c config.Config) (*REST, error) {
-	fmt.Printf("Team monitoring enabled: %v", c.TeamMonitoringEnabled)
 	e := echo.New()
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
@@ -78,6 +77,7 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 	}
 
 	r.initEndpoints()
+	fmt.Printf("Team monitoring enabled: %v", c.TeamMonitoringEnabled)
 	return r, nil
 }
 
