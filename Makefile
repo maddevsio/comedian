@@ -25,5 +25,17 @@ migrate:
 c_migration:
 	goose -dir migrations create migration_name sql
 	
-ct:
-	docker-compose run --rm comedian bash -c 'go test -cover -race ./api/ ./chat/ ./config/ ./notifier/ ./reporting/ ./storage/'
+db_clean:
+	goose -dir migrations mysql "comedian:comedian@/comedian"  reset
+	goose -dir migrations mysql "comedian:comedian@/comedian"  up
+
+run_tests:
+	go test ./storage/ -v -cover
+	go test ./chat/ -v -cover
+	go test ./notifier/ -v -cover
+	go test ./reporting/ -v -cover
+	go test ./config/ -v -cover
+	go test ./api/ -v -cover
+	go test ./teammonitoring/ -v -cover
+
+test: db_clean run_tests

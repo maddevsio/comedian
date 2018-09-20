@@ -16,7 +16,7 @@ type Config struct {
 	Language              string `envconfig:"LANGUAGE" required:"true" default:"en_US"`
 	ReminderRepeatsMax    int    `envconfig:"REMINDER_REPEATS_MAX" required:"true" default:5`
 	ReminderTime          int64  `envconfig:"REMINDER_TIME" required:"true" default:5`
-	TeamMonitoringEnabled bool   `envconfig:"ENABLE_TEAM_MONITORING" required:"false" default:true`
+	TeamMonitoringEnabled bool   `envconfig:"ENABLE_TEAM_MONITORING" required:"true" default:true`
 	CollectorURL          string `envconfig:"COLLECTOR_URL" required:"true"`
 	CollectorToken        string `envconfig:"COLLECTOR_TOKEN" required:"true"`
 	Translate             Translate

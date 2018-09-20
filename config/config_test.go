@@ -22,6 +22,7 @@ func TestConfig(t *testing.T) {
 	os.Setenv("COMEDIAN_SLACK_TOKEN", "token")
 	os.Setenv("COMEDIAN_LANGUAGE", "ru_RU")
 	os.Setenv("COMEDIAN_COLLECTOR_TOKEN", "cotoken")
+	os.Setenv("COMEDIAN_ENABLE_TEAM_MONITORING", "false")
 	os.Setenv("COMEDIAN_COLLECTOR_URL", "www.collector.some")
 	os.Setenv("COMEDIAN_REMINDER_REPEATS_MAX", "5")
 	os.Setenv("COMEDIAN_REMINDER_TIME", "10")
