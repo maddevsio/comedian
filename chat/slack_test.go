@@ -140,7 +140,7 @@ func TestHandleMessage(t *testing.T) {
 	msg.User = su1.UserID
 
 	err = s.handleMessage(msg)
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
 	err = s.handleConnection()
