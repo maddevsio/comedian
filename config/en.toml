@@ -75,3 +75,6 @@ hasStandup = "submitted a standup!"
 
 isRook = "<@%v> twiddled in #%v yesterday! (%v)\n"
 isRookMonday = "<@%v> twiddled in #%v from Friday till yesterday! (%v)\n"
+
+
+wrongUsernameError = "Seems like you misspelled username. Please, check and try command again!"

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
-
 	"strings"
 	"time"
 
@@ -145,8 +145,11 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно добавить")
 	}
 	logrus.Infof("Users: %v", users)
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
-
+		if !rg.MatchString(u) {
+			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+		}
 		userID, userName := SplitUser(u)
 		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
 		if err != nil {
@@ -195,7 +198,11 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
 	}
 
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
+		if !rg.MatchString(u) {
+			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+		}
 		userID, userName := SplitUser(u)
 		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
 		if err != nil {
@@ -256,8 +263,11 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно сделать админами")
 	}
 	logrus.Infof("Users: %v", users)
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
-
+		if !rg.MatchString(u) {
+			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+		}
 		userID, userName := SplitUser(u)
 		user, err := r.db.SelectUser(userID)
 		if err != nil {
@@ -300,7 +310,11 @@ func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
 	}
 
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
+		if !rg.MatchString(u) {
+			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+		}
 		userID, userName := SplitUser(u)
 		user, err := r.db.SelectUser(userID)
 		if err != nil {
