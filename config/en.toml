@@ -1,15 +1,15 @@
-userExist = "<@%v> already assigned as standuper in this channel"
-addUserNoStandupTime = "<@%s> now submits standups in this channel, but there is no standup time set yet!"
-addUser = "<@%s> assigned to submit standups in this channel"
-addAdmin = "<@%s> was granted admin access"
-accessDenied = "This command is not allowed for you! You are not admin"
+userExist = "<@%v> already assigned as standuper in this channel\n"
+addUserNoStandupTime = "<@%s> now submits standups in this channel, but there is no standup time set yet!\n"
+addUser = "<@%s> assigned to submit standups in this channel\n"
+addAdmin = "<@%s> was granted admin access\n"
+accessDenied = "This command is not allowed for you! You are not admin\n"
 
-deleteUser = "<@%s> no longer submits standups in this channel"
-deleteAdmin = "<@%s> was removed as admin"
+deleteUser = "<@%s> no longer submits standups in this channel\n"
+deleteAdmin = "<@%s> was removed as admin\n"
 listNoStandupers = "No standupers in this channel! To add one, please, use `/comedianadd` slash command"
 listNoAdmins = "No admins in this channel! To add one, please, use `/adminadd` slash command"
 listStandupers = "Standupers in this channel: %v"
-listAdmins = "Admins in this channel: %v"
+listAdmins = "Admins in this workspace: %v"
 
 addStandupTimeNoUsers = "<!date^%v^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"
 addStandupTime = "<!date^%v^Standup time set at {time}|Standup time set at 12:00>"
@@ -38,8 +38,8 @@ userDidNotStandup = "<@%v> did not submit standup!\n"
 userDidStandup = "<@%v> submitted standup: "
 userDidNotStandupInChannel = "In #%v <@%v> did not submit standup!"
 userDidStandupInChannel = "In #%v <@%v> submitted standup: "
-PMAssigned = "You have been added as PM in #%s"
-PMRemoved = "You have been removed as PM in #%s"
+PMAssigned = "You have been added as Admin for Comedian"
+PMRemoved = "You have been removed as Admin from Comedian"
 
 
 helloManager = "Hello, Manager!"
@@ -75,3 +75,6 @@ hasStandup = "submitted a standup!"
 
 isRook = "<@%v> twiddled in #%v yesterday! (%v)\n"
 isRookMonday = "<@%v> twiddled in #%v from Friday till yesterday! (%v)\n"
+
+
+wrongUsernameError = "Seems like you misspelled username. Please, check and try command again!"

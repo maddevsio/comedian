@@ -39,8 +39,8 @@ userDidNotStandup = "<@%v> не написал стэндап!\n"
 userDidStandup = "<@%v> написал стэндап!\n"
 userDidNotStandupInChannel = "В #%v <@%v> не написал стэндап!\n"
 userDidStandupInChannel = "В #%v <@%v> написал стэндап!\n"
-PMAssigned = "Вас назначили ПМом в #%s"
-PMRemoved = "Вы больше не ПМ в #%s"
+PMAssigned = "Вас назначили админом Комедиана"
+PMRemoved = "Вы больше не админ Комедиана"
 
 
 helloManager = "Привет, менеджер!"
@@ -77,3 +77,5 @@ hasStandup = "написал стэндап!"
 
 isRook = "<@%v> вчера грачевал в #%v! (%v)\n"
 isRookMonday = "<@%v> грачевал в пятницу и все выходные в #%v! (%v)\n"
+
+wrongUsernameError = "Кажется, вы допустили ошибку в имени пользователя. Пожалуйста, перепроверьте и попытайтесь еще раз!"

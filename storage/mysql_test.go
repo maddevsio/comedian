@@ -116,6 +116,12 @@ func TestCRUDChannelMember(t *testing.T) {
 		db.DeleteChannelMember(user.UserID, user.ChannelID)
 	}
 
+	u1, err := db.CreateUser(model.User{
+		UserName: "firstUser",
+		UserID:   "userID1",
+	})
+	assert.NoError(t, err)
+
 	su1, err := db.CreateChannelMember(model.ChannelMember{
 		UserID:      "userID1",
 		ChannelID:   "123qwe",
@@ -123,6 +129,10 @@ func TestCRUDChannelMember(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "123qwe", su1.ChannelID)
+
+	um, err := db.FindChannelMemberByUserName(u1.UserName)
+	assert.NoError(t, err)
+	assert.Equal(t, su1, um)
 
 	su2, err := db.CreateChannelMember(model.ChannelMember{
 		UserID:      "userID2",
@@ -180,6 +190,7 @@ func TestCRUDChannelMember(t *testing.T) {
 
 	assert.NoError(t, db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 	assert.NoError(t, db.DeleteChannelMember(su3.UserID, su3.ChannelID))
+	assert.NoError(t, db.DeleteUser(u1.ID))
 }
 
 func TestCRUDStandupTime(t *testing.T) {
@@ -205,6 +216,9 @@ func TestCRUDStandupTime(t *testing.T) {
 	assert.Equal(t, "chanName1", ch.ChannelName)
 
 	err = db.CreateStandupTime(int64(12), ch.ChannelID)
+	assert.NoError(t, err)
+
+	err = db.UpdateChannelStandupTime(int64(120), ch.ChannelID)
 	assert.NoError(t, err)
 
 	assert.NoError(t, db.DeleteStandupTime(ch.ChannelID))
@@ -238,4 +252,73 @@ func TestCRUDStandupTime(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NoError(t, db.DeleteChannel(ch.ID))
 	}
+}
+
+func TestCRUDChannel(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	db, err := NewMySQL(c)
+	assert.NoError(t, err)
+
+	ch, err := db.CreateChannel(model.Channel{
+		ChannelID:   "QWERTY123",
+		ChannelName: "chanName1",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	channelName, err := db.GetChannelName(ch.ChannelID)
+	assert.NoError(t, err)
+	assert.Equal(t, ch.ChannelName, channelName)
+
+	channelID, err := db.GetChannelID(ch.ChannelName)
+	assert.NoError(t, err)
+	assert.Equal(t, ch.ChannelID, channelID)
+
+	chans, err := db.GetChannels()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(chans))
+
+	assert.NoError(t, db.DeleteChannel(ch.ID))
+}
+
+func TestCRUDUser(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	db, err := NewMySQL(c)
+	assert.NoError(t, err)
+
+	user, err := db.CreateUser(model.User{
+		UserID:   "QWERTY123",
+		UserName: "chanName1",
+		Role:     "",
+	})
+
+	admin, err := db.CreateUser(model.User{
+		UserID:   "QWERTY123",
+		UserName: "chanName1",
+		Role:     "admin",
+	})
+	assert.NoError(t, err)
+
+	u1, err := db.SelectUserByUserName(user.UserName)
+	assert.NoError(t, err)
+	assert.Equal(t, user, u1)
+
+	u2, err := db.SelectUser(user.UserID)
+	assert.NoError(t, err)
+	assert.Equal(t, user, u2)
+
+	admins, err := db.ListAdmins()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(admins))
+
+	user.Role = "admin"
+
+	_, err = db.UpdateUser(user)
+	assert.NoError(t, err)
+	assert.Equal(t, "admin", user.Role)
+
+	assert.NoError(t, db.DeleteUser(user.ID))
+	assert.NoError(t, db.DeleteUser(admin.ID))
 }

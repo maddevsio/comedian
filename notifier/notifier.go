@@ -164,17 +164,3 @@ func (n *Notifier) getCurrentDayNonReporters(channelID string) ([]model.ChannelM
 	}
 	return nonReporters, nil
 }
-
-// func (n *Notifier) notifyAdminsAboutNonReporters(channelID string, nonReportersSlackIDs []string) {
-// 	admins, err := n.db.ListAdminsByChannelID(channelID)
-// 	if err != nil {
-// 		logrus.Errorf("notifier: ListAdminsByChannelID failed: %v\n", err)
-// 		return
-// 	}
-// 	for _, admin := range admins {
-// 		err := n.Chat.SendUserMessage(admin.UserID, fmt.Sprintf(n.Config.Translate.NotifyManagerNotAll, admin.UserID, channelID, strings.Join(nonReportersSlackIDs, ", ")))
-// 		if err != nil {
-// 			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
-// 		}
-// 	}
-// }

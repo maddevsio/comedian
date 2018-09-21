@@ -85,6 +85,8 @@ type Translate struct {
 	T1 string
 	T2 string
 	T3 string
+
+	WrongUsernameError string
 }
 
 // GetTranslation sets translation files for config
@@ -149,6 +151,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"PMAssigned",
 		"PMRemoved",
 		"isRookMonday",
+		"wrongUsernameError",
 	}
 
 	for _, t := range r {
@@ -228,6 +231,8 @@ func GetTranslation(lang string) (Translate, error) {
 		T1: m["t1"],
 		T2: m["t2"],
 		T3: m["t3"],
+
+		WrongUsernameError: m["wrongUsernameError"],
 	}
 
 	return t, nil

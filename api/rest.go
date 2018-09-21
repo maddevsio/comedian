@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
-
 	"strings"
 	"time"
 
@@ -17,6 +17,7 @@ import (
 	"github.com/maddevsio/comedian/reporting"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/maddevsio/comedian/teammonitoring"
+	"github.com/maddevsio/comedian/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,7 +48,6 @@ const (
 
 // NewRESTAPI creates API for Slack commands
 func NewRESTAPI(c config.Config) (*REST, error) {
-	fmt.Printf("Team monitoring enabled: %v", c.TeamMonitoringEnabled)
 	e := echo.New()
 	conn, err := storage.NewMySQL(c)
 	if err != nil {
@@ -145,9 +145,12 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно добавить")
 	}
 	logrus.Infof("Users: %v", users)
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
-
-		userID, userName := SplitUser(u)
+		if !rg.MatchString(u) {
+			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+		}
+		userID, userName := utils.SplitUser(u)
 		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
 		if err != nil {
 			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
@@ -195,8 +198,12 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
 	}
 
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
-		userID, userName := SplitUser(u)
+		if !rg.MatchString(u) {
+			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+		}
+		userID, userName := utils.SplitUser(u)
 		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
 		if err != nil {
 			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
@@ -256,9 +263,12 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно сделать админами")
 	}
 	logrus.Infof("Users: %v", users)
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
-
-		userID, userName := SplitUser(u)
+		if !rg.MatchString(u) {
+			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+		}
+		userID, userName := utils.SplitUser(u)
 		user, err := r.db.SelectUser(userID)
 		if err != nil {
 			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
@@ -273,7 +283,7 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 		if err != nil {
 			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
 		}
-		message := fmt.Sprintf("Теперь у вас есть доступ к упарвлению комедианом")
+		message := r.conf.Translate.PMAssigned
 		err = r.slack.SendUserMessage(userID, message)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
@@ -300,8 +310,12 @@ func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
 	}
 
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
-		userID, userName := SplitUser(u)
+		if !rg.MatchString(u) {
+			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+		}
+		userID, userName := utils.SplitUser(u)
 		user, err := r.db.SelectUser(userID)
 		if err != nil {
 			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
@@ -546,7 +560,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, cd.Worklogs)
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return c.String(http.StatusOK, text)
@@ -617,7 +631,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, cd.Worklogs)
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return c.String(http.StatusOK, text)
