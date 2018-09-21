@@ -289,20 +289,6 @@ func (m *MySQL) CreateChannel(c model.Channel) (model.Channel, error) {
 	return c, nil
 }
 
-// UpdateChannel updates Channel entry in database
-func (m *MySQL) UpdateChannel(c model.Channel) (model.Channel, error) {
-	_, err := m.conn.Exec(
-		"UPDATE `channels` SET channel_name=?, channel_id=? WHERE id=?",
-		c.ChannelName, c.ChannelID, c.ID,
-	)
-	if err != nil {
-		return c, err
-	}
-	var i model.Channel
-	err = m.conn.Get(&i, "SELECT * FROM `channels` WHERE id=?", c.ID)
-	return i, err
-}
-
 // SelectChannel selects Channel entry from database
 func (m *MySQL) SelectChannel(channelID string) (model.Channel, error) {
 	var c model.Channel

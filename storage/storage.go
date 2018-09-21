@@ -86,9 +86,6 @@ type Storage interface {
 	// CreateChannel creates standup entry in database
 	CreateChannel(model.Channel) (model.Channel, error)
 
-	// UpdateChannel updates Channel entry in database
-	UpdateChannel(model.Channel) (model.Channel, error)
-
 	// SelectChannel selects Channel entry from database
 	SelectChannel(string) (model.Channel, error)
 
