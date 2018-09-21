@@ -82,11 +82,7 @@ func (s *Slack) handleConnection() error {
 }
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
-	// if user is not assigned as standuper, skip this message
-	if !s.isStanduper(msg.User, msg.Channel) {
-		logrus.Info("This user is not a standuper")
-		return nil
-	}
+	logrus.Infof("New message! %v", msg)
 	switch msg.SubType {
 	case typeMessage:
 		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
@@ -170,14 +166,6 @@ func (s *Slack) isStandup(message string) (string, bool) {
 
 	logrus.Errorf("slack: This is not a standup: %v\n", message)
 	return message, false
-}
-
-func (s *Slack) isStanduper(userID, channelID string) bool {
-	_, err := s.db.FindChannelMemberByUserID(userID, channelID)
-	if err != nil {
-		return false
-	}
-	return true
 }
 
 // SendMessage posts a message in a specified channel
