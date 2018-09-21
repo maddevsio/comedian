@@ -5,6 +5,8 @@ services:
   db:
     image: percona/percona-server:5.7 
     restart: on-failure
+    volumes:
+      - "./docker:/var/lib/mysql"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: comedian
