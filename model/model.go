@@ -76,3 +76,11 @@ func (c StandupEditHistory) Validate() error {
 	}
 	return nil
 }
+
+//IsAdmin returns user status
+func (u User) IsAdmin() bool {
+	if u.Role == "admin" {
+		return true
+	}
+	return false
+}

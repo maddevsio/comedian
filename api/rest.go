@@ -97,6 +97,11 @@ func (r *REST) handleCommands(c echo.Context) error {
 	if err != nil {
 		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
 	}
+
+	if !r.userHasAccess(form.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
+
 	if command := form.Get("command"); command != "" {
 		switch command {
 		case commandAddUser:
@@ -635,4 +640,18 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		}
 	}
 	return c.String(http.StatusOK, text)
+}
+
+func (r *REST) userHasAccess(userID string) bool {
+	user, err := r.db.SelectUser(userID)
+	if err != nil {
+		logrus.Error(err)
+		return false
+	}
+	if (userID == r.conf.ManagerSlackUserID) || user.IsAdmin() {
+		logrus.Infof("User: %s has admin access!", user.UserName)
+		return true
+	}
+	logrus.Infof("User: %s does not have admin access!", user.UserName)
+	return false
 }
