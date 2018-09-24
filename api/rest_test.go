@@ -36,6 +36,13 @@ func TestHandleCommands(t *testing.T) {
 		{"empty command", emptyCommand, http.StatusNotImplemented, "Not implemented"},
 	}
 
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "Admin",
+		UserID:   "UB9AE7CL9",
+		Role:     "admin",
+	})
+	assert.NoError(t, err)
+
 	for _, tt := range testCases {
 		context, rec := getContext(tt.command)
 		err := rest.handleCommands(context)
@@ -45,6 +52,9 @@ func TestHandleCommands(t *testing.T) {
 		assert.Equal(t, tt.statusCode, rec.Code)
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
+
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
+
 }
 
 func TestHandleUserCommands(t *testing.T) {
@@ -57,6 +67,13 @@ func TestHandleUserCommands(t *testing.T) {
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "Admin",
+		UserID:   "UB9AE7CL9",
+		Role:     "admin",
+	})
 	assert.NoError(t, err)
 
 	httpmock.Activate()
@@ -122,6 +139,7 @@ func TestHandleUserCommands(t *testing.T) {
 
 	assert.NoError(t, rest.db.DeleteStandupTime("chanid"))
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 }
 
 func TestHandleAdminCommands(t *testing.T) {
@@ -134,6 +152,13 @@ func TestHandleAdminCommands(t *testing.T) {
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "Admin",
+		UserID:   "UB9AE7CL9",
+		Role:     "admin",
+	})
 	assert.NoError(t, err)
 
 	httpmock.Activate()
@@ -161,7 +186,7 @@ func TestHandleAdminCommands(t *testing.T) {
 		{"empty channel name", AddAdminEmptyChannelName, http.StatusBadRequest, "`channel_name` cannot be empty"},
 		{"empty text", AddEmptyText, http.StatusBadRequest, "`text` cannot be empty"},
 		{"add admin no standup time", AddAdmin, http.StatusOK, "<@test> was granted admin access\n"},
-		{"list admins", ListAdmins, http.StatusOK, "Admins in this workspace: <@test>"},
+		{"list admins", ListAdmins, http.StatusOK, "Admins in this workspace: <@Admin>, <@test>"},
 		{"add admin with admin exist", AddAdmin, http.StatusOK, "User is already admin!"},
 		{"delete admin", DelAdmin, http.StatusOK, "<@test> was removed as admin\n"},
 	}
@@ -187,7 +212,6 @@ func TestHandleAdminCommands(t *testing.T) {
 	}{
 		{"add admin with standup time", AddAdmin, http.StatusOK, "<@test> was granted admin access\n"},
 		{"delete admin", DelAdmin, http.StatusOK, "<@test> was removed as admin\n"},
-		{"list no admins", ListAdmins, http.StatusOK, "No admins in this channel! To add one, please, use `/adminadd` slash command"},
 	}
 
 	for _, tt := range testCases {
@@ -202,6 +226,7 @@ func TestHandleAdminCommands(t *testing.T) {
 
 	assert.NoError(t, rest.db.DeleteStandupTime("chanid"))
 	assert.NoError(t, rest.db.DeleteUser(u1.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 }
 
 func TestHandleTimeCommands(t *testing.T) {
@@ -220,6 +245,13 @@ func TestHandleTimeCommands(t *testing.T) {
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "Admin",
+		UserID:   "UB9AE7CL9",
+		Role:     "admin",
+	})
 	assert.NoError(t, err)
 
 	channel, err := rest.db.CreateChannel(model.Channel{
@@ -289,6 +321,7 @@ func TestHandleTimeCommands(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "standup time for channame channel deleted", rec.Body.String())
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 
 }
 
@@ -306,6 +339,13 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 		ChannelID:   "chanid",
 		StandupTime: int64(0),
 	})
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "Admin",
+		UserID:   "UB9AE7CL9",
+		Role:     "admin",
+	})
+	assert.NoError(t, err)
 
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
@@ -334,6 +374,7 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	}
 
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 
 }
 
@@ -350,6 +391,13 @@ func TestHandleReportByUserCommands(t *testing.T) {
 
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "Admin",
+		UserID:   "UB9AE7CL9",
+		Role:     "admin",
+	})
+	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-26/", c.CollectorURL),
 		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0, "worklogs": 0}]`))
@@ -400,6 +448,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
 	assert.NoError(t, rest.db.DeleteUser(user.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 
 }
 
@@ -412,6 +461,13 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "Admin",
+		UserID:   "UB9AE7CL9",
+		Role:     "admin",
+	})
 	assert.NoError(t, err)
 
 	httpmock.Activate()
@@ -466,6 +522,7 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
 	assert.NoError(t, rest.db.DeleteUser(user.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 }
 
 func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
