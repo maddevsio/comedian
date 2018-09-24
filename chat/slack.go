@@ -50,6 +50,12 @@ func NewSlack(conf config.Config) (*Slack, error) {
 
 // Run runs a listener loop for slack
 func (s *Slack) Run() {
+
+	fmt.Printf("Team monitoring enabled: %v\n", s.Conf.TeamMonitoringEnabled)
+	s.UpdateUsersList()
+	gocron.Every(1).Day().At("23:55").Do(s.FillStandupsForNonReporters)
+	gocron.Start()
+
 	s.wg.Add(1)
 	go s.rtm.ManageConnection()
 	s.wg.Done()
@@ -57,14 +63,11 @@ func (s *Slack) Run() {
 	for msg := range s.rtm.IncomingEvents {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
-			fmt.Printf("Team monitoring enabled: %v\n", s.Conf.TeamMonitoringEnabled)
-			s.UpdateUsersList()
-			s.UpdateChannelsList()
-			s.handleConnection()
-			gocron.Every(1).Day().At("23:55").Do(s.FillStandupsForNonReporters)
-			gocron.Start()
+			fmt.Println("Reconnected!")
 		case *slack.MessageEvent:
-			s.handleMessage(ev)
+			s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
+		case *slack.MemberJoinedChannelEvent:
+			s.handleJoin(ev.Channel)
 		case *slack.PresenceChangeEvent:
 			logrus.Infof("slack: Presence Change: %v\n", ev)
 		case *slack.RTMError:
@@ -76,9 +79,26 @@ func (s *Slack) Run() {
 	}
 }
 
-func (s *Slack) handleConnection() error {
-	s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
-	return nil
+func (s *Slack) handleJoin(channelID string) {
+	ch, err := s.db.SelectChannel(channelID)
+	if err != nil {
+		logrus.Error("No such channel found! Will create one!")
+		channel, err := s.api.GetConversationInfo(channelID, true)
+		if err != nil {
+			logrus.Error("GetConversationInfo failed: %v", err)
+		}
+		createdChannel, err := s.db.CreateChannel(model.Channel{
+			ChannelName: channel.Name,
+			ChannelID:   channel.ID,
+			StandupTime: int64(0),
+		})
+		if err != nil {
+			logrus.Error("CreateChannel failed: %v", err)
+		}
+		logrus.Infof("New Channel Created: %v", createdChannel)
+		ch = createdChannel
+	}
+	logrus.Infof("Channel: %v", ch)
 }
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
@@ -195,6 +215,7 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 
 //UpdateUsersList updates users in workspace
 func (s *Slack) UpdateUsersList() {
+	logrus.Infof("UpdateUsersList start")
 	users, _ := s.api.GetUsers()
 	for _, user := range users {
 		if user.IsBot || user.Name == "slackbot" {
@@ -220,25 +241,6 @@ func (s *Slack) UpdateUsersList() {
 		}
 		if user.Deleted {
 			s.db.DeleteUser(u.ID)
-		}
-		continue
-	}
-}
-
-//UpdateChannelsList updates users in workspace
-func (s *Slack) UpdateChannelsList() {
-	params := slack.GetConversationsParameters{
-		Types: []string{"public_channel", "private_channel"},
-	}
-	chans, _, _ := s.api.GetConversations(&params)
-	for _, c := range chans {
-		_, err := s.db.SelectChannel(c.ID)
-		if err != nil {
-			s.db.CreateChannel(model.Channel{
-				ChannelName: c.Name,
-				ChannelID:   c.ID,
-				StandupTime: int64(0),
-			})
 		}
 		continue
 	}
