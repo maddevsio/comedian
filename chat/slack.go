@@ -64,8 +64,9 @@ func (s *Slack) Run() {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
 			fmt.Println("Reconnected!")
-		case *slack.MessageEvent:
 			s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
+		case *slack.MessageEvent:
+			s.handleMessage(ev)
 		case *slack.MemberJoinedChannelEvent:
 			s.handleJoin(ev.Channel)
 		case *slack.PresenceChangeEvent:
@@ -85,7 +86,7 @@ func (s *Slack) handleJoin(channelID string) {
 		logrus.Error("No such channel found! Will create one!")
 		channel, err := s.api.GetConversationInfo(channelID, true)
 		if err != nil {
-			logrus.Error("GetConversationInfo failed: %v", err)
+			logrus.Errorf("GetConversationInfo failed: %v", err)
 		}
 		createdChannel, err := s.db.CreateChannel(model.Channel{
 			ChannelName: channel.Name,
@@ -93,7 +94,7 @@ func (s *Slack) handleJoin(channelID string) {
 			StandupTime: int64(0),
 		})
 		if err != nil {
-			logrus.Error("CreateChannel failed: %v", err)
+			logrus.Errorf("CreateChannel failed: %v", err)
 		}
 		logrus.Infof("New Channel Created: %v", createdChannel)
 		ch = createdChannel

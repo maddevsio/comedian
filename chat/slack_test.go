@@ -143,8 +143,6 @@ func TestHandleMessage(t *testing.T) {
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
-	err = s.handleConnection()
-	assert.NoError(t, err)
 
 	// clean up
 	standups, err := s.db.ListStandups()
