@@ -103,10 +103,12 @@ func (s *Slack) handleJoin(channelID string) {
 }
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
-	logrus.Infof("New message! %v", msg)
 	switch msg.SubType {
 	case typeMessage:
-		if standupText, ok := s.isStandup(msg.Msg.Text); ok {
+		text := fmt.Sprintf("%v\n", msg.Msg.Text)
+		logrus.Infof("Message text: %v", text)
+		standupText, messageIsStandup := s.isStandup(text)
+		if messageIsStandup {
 			standup, err := s.db.CreateStandup(model.Standup{
 				ChannelID: msg.Channel,
 				UserID:    msg.User,
