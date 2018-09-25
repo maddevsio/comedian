@@ -153,7 +153,7 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 
 	isNonReporter, err := db.IsNonReporter(su3.UserID, su3.ChannelID, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, false, isNonReporter)
 
 	su4, err := db.CreateChannelMember(model.ChannelMember{

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"time"
 
 	// This line is must for working MySQL database
@@ -144,17 +145,29 @@ func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([
 	return nonReporters, err
 }
 
+//SubmittedStandupToday shows if a user submitted standup today
+func (m *MySQL) SubmittedStandupToday(userID, channelID string) bool {
+	timeFrom := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local)
+	var standup string
+	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, timeFrom, time.Now())
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+	return true
+}
+
 // IsNonReporter returns true if user did not submit standup in time period, false othervise
 func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Time) (bool, error) {
 	var standup string
 	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, dateFrom, dateTo)
 	if err != nil && err.Error() == "sql: no rows in result set" {
-		return false, nil
+		return false, err
 	}
-	if standup != "" {
-		return false, nil
+	if standup == "" {
+		return true, nil
 	}
-	return true, err
+	return false, nil
 }
 
 // ListChannelMembers returns array of standup entries from database

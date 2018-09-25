@@ -178,7 +178,7 @@ func TestCheckUser(t *testing.T) {
 
 	for _, tt := range testCases {
 		isNonReporter, err := n.db.IsNonReporter(tt.user.UserID, tt.user.ChannelID, time.Now(), time.Now())
-		assert.NoError(t, err)
+		assert.Error(t, err)
 		assert.Equal(t, tt.isNonReporter, isNonReporter)
 	}
 

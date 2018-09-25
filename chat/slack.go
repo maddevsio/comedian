@@ -53,7 +53,7 @@ func (s *Slack) Run() {
 
 	fmt.Printf("Team monitoring enabled: %v\n", s.Conf.TeamMonitoringEnabled)
 	s.UpdateUsersList()
-	gocron.Every(1).Day().At("23:55").Do(s.FillStandupsForNonReporters)
+	gocron.Every(1).Day().At("23:50").Do(s.FillStandupsForNonReporters)
 	gocron.Start()
 
 	s.wg.Add(1)
@@ -69,6 +69,15 @@ func (s *Slack) Run() {
 			s.handleMessage(ev)
 		case *slack.MemberJoinedChannelEvent:
 			s.handleJoin(ev.Channel)
+		case *slack.MemberLeftChannelEvent:
+			logrus.Infof("type: %v, user: %v, channel: %v, channelType: %v, team: %v", ev.Type, ev.User, ev.Channel, ev.ChannelType, ev.Team)
+			user, err := s.api.GetUserInfo(ev.User)
+			if err != nil {
+				logrus.Errorf("GetUserInfo failed: %v", err)
+			}
+			if user.IsBot && user.Name == "comedian" {
+				logrus.Info("Comedian left the chat!")
+			}
 		case *slack.PresenceChangeEvent:
 			logrus.Infof("slack: Presence Change: %v\n", ev)
 		case *slack.RTMError:
@@ -257,19 +266,17 @@ func (s *Slack) FillStandupsForNonReporters() {
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
 		return
 	}
-	timeFrom := time.Now().AddDate(0, 0, -1)
 	allUsers, err := s.db.ListAllChannelMembers()
+	logrus.Infof("List all channel members: %v", allUsers)
 	if err != nil {
 		logrus.Errorf("notifier: s.GetCurrentDayNonReporters failed: %v\n", err)
 		return
 	}
 	for _, user := range allUsers {
-		isNonReporter, err := s.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom, time.Now())
-		if err != nil {
-			logrus.Errorf("notifier: IsNonReporter failed: %v\n", err)
-			return
-		}
-		if isNonReporter {
+
+		hasStandup := s.db.SubmittedStandupToday(user.UserID, user.ChannelID)
+		logrus.Infof("User: %v hasStandup: %v", user.UserID, hasStandup)
+		if !hasStandup {
 			standup, err := s.db.CreateStandup(model.Standup{
 				ChannelID: user.ChannelID,
 				UserID:    user.UserID,

@@ -112,4 +112,7 @@ type Storage interface {
 
 	// ListAdmins selects User entry from database
 	ListAdmins() ([]model.User, error)
+
+	//SubmittedStandupToday shows if a user submitted standup today
+	SubmittedStandupToday(string, string) bool
 }
