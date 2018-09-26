@@ -94,7 +94,7 @@ func TestHandleMessage(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `"ok": true`))
-
+	httpmock.RegisterResponder("POST", "https://slack.com/api/reactions.add", httpmock.NewStringResponder(200, `{"ok": true}`))
 	httpmock.RegisterResponder("POST", "https://slack.com/api/im.open", httpmock.NewStringResponder(200, `{"ok": true}`))
 
 	c, err := config.Get()
@@ -126,6 +126,7 @@ func TestHandleMessage(t *testing.T) {
 
 	editmsg := &slack.MessageEvent{
 		SubMessage: &slack.Msg{
+			User:      su1.UserID,
 			Text:      "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problem",
 			Timestamp: "2",
 		},
@@ -135,7 +136,6 @@ func TestHandleMessage(t *testing.T) {
 	err = s.handleMessage(editmsg)
 	assert.NoError(t, err)
 
-	httpmock.RegisterResponder("POST", "https://slack.com/api/reactions.add", httpmock.NewStringResponder(200, `{"ok": true}`))
 	msg.Text = "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
 	msg.Channel = fakeChannel
 	msg.User = su1.UserID

@@ -157,8 +157,8 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 		standupText, messageIsStandup := s.isStandup(text)
 		if messageIsStandup {
 			standup, err := s.db.CreateStandup(model.Standup{
-				ChannelID: msg.Channel,
-				UserID:    msg.User,
+				ChannelID: msg.SubMessage.Channel,
+				UserID:    msg.SubMessage.User,
 				Comment:   standupText,
 				MessageTS: msg.SubMessage.Timestamp,
 			})
