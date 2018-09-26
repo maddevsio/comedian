@@ -76,6 +76,7 @@ type Translate struct {
 	P1 string
 	P2 string
 	P3 string
+	P4 string
 
 	Y1 string
 	Y2 string
@@ -124,7 +125,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel",
 		"reportCollectorDataUser",
 		"helloManager", "standupAccepted",
-		"p1", "p2", "p3",
+		"p1", "p2", "p3", "p4",
 		"y1", "y2", "y3", "y4",
 		"t1", "t2", "t3",
 		"userExist",
@@ -222,6 +223,7 @@ func GetTranslation(lang string) (Translate, error) {
 		P1: m["p1"],
 		P2: m["p2"],
 		P3: m["p3"],
+		P4: m["p4"],
 
 		Y1: m["y1"],
 		Y2: m["y2"],

@@ -168,7 +168,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 func (s *Slack) isStandup(message string) (string, bool) {
 
 	mentionsProblem := false
-	problemKeys := []string{s.Conf.Translate.P1, s.Conf.Translate.P2, s.Conf.Translate.P3}
+	problemKeys := []string{s.Conf.Translate.P1, s.Conf.Translate.P2, s.Conf.Translate.P3, s.Conf.Translate.P4}
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
