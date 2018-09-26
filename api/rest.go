@@ -98,10 +98,6 @@ func (r *REST) handleCommands(c echo.Context) error {
 		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
 	}
 
-	if !r.userHasAccess(form.Get("user_id")) {
-		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
-	}
-
 	if command := form.Get("command"); command != "" {
 		switch command {
 		case commandAddUser:
@@ -136,6 +132,9 @@ func (r *REST) handleCommands(c echo.Context) error {
 }
 
 func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
@@ -188,6 +187,9 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: removeUserCommand Decode failed: %v\n", err)
@@ -253,6 +255,9 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
@@ -300,6 +305,9 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: removeAdminCommand Decode failed: %v\n", err)
@@ -362,6 +370,9 @@ func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addTime Decode failed: %v\n", err)
@@ -408,6 +419,9 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca ChannelForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: removeTime Decode failed: %v\n", err)
@@ -442,10 +456,8 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 	}
 
 	standupTime, err := r.db.GetChannelStandupTime(ca.ChannelID)
-	if err != nil {
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list time :%v\n", err))
-	}
-	if standupTime == int64(0) {
+	logrus.Errorf("GetChannelStandupTime failed: %v", err)
+	if err != nil || standupTime == int64(0) {
 		return c.String(http.StatusOK, r.conf.Translate.ShowNoStandupTime)
 	}
 	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ShowStandupTime, standupTime))
@@ -453,6 +465,9 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 
 ///report_by_project #collector-test 2018-07-24 2018-07-26
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: reportByProject Decode failed: %v\n", err)
@@ -517,6 +532,9 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 
 ///report_by_user @Anatoliy 2018-07-24 2018-07-26
 func (r *REST) reportByUser(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: reportByUser Decode failed: %v\n", err)
@@ -573,6 +591,9 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 
 ///report_by_project_and_user #collector-test @Anatoliy 2018-07-24 2018-07-26
 func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: reportByProjectAndUser Decode failed: %v\n", err)

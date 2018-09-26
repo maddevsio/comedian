@@ -161,12 +161,16 @@ func (m *MySQL) SubmittedStandupToday(userID, channelID string) bool {
 func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Time) (bool, error) {
 	var standup string
 	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, dateFrom, dateTo)
-	if err != nil && err.Error() == "sql: no rows in result set" {
+	fmt.Printf("IS NON REPORTER Standup: %v, err: %v", standup, err)
+	if err != nil {
+		fmt.Println("1")
 		return false, err
 	}
 	if standup == "" {
+		fmt.Println("2")
 		return true, nil
 	}
+	fmt.Println("3")
 	return false, nil
 }
 

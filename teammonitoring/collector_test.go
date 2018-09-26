@@ -29,6 +29,10 @@ func TestTeamMonitoringOnWeekEnd(t *testing.T) {
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
+	if !c.TeamMonitoringEnabled {
+		fmt.Println("Warning: Team Monitoring servise is disabled")
+		return
+	}
 	tm, err := NewTeamMonitoring(c, slack)
 	assert.NoError(t, err)
 
@@ -45,6 +49,10 @@ func TestTeamMonitoringOnMonday(t *testing.T) {
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
+	if !c.TeamMonitoringEnabled {
+		fmt.Println("Warning: Team Monitoring servise is disabled")
+		return
+	}
 	tm, err := NewTeamMonitoring(c, slack)
 	assert.NoError(t, err)
 
@@ -61,6 +69,10 @@ func TestTeamMonitoringOnWeekDay(t *testing.T) {
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
+	if !c.TeamMonitoringEnabled {
+		fmt.Println("Warning: Team Monitoring servise is disabled")
+		return
+	}
 	tm, err := NewTeamMonitoring(c, slack)
 	assert.NoError(t, err)
 

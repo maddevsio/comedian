@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
+	"github.com/bouk/monkey"
 	"github.com/labstack/echo"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/jarcoal/httpmock.v1"
 )
@@ -422,6 +422,19 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	d := time.Date(2018, 6, 25, 23, 50, 0, 0, time.Local)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	emptyStandup, err := rest.db.CreateStandup(model.Standup{
+		UserID:    user.UserID,
+		ChannelID: channel.ChannelID,
+		Comment:   "",
+	})
+	assert.NoError(t, err)
+
+	d = time.Date(2018, 6, 27, 10, 0, 0, 0, time.Local)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
 	testCases := []struct {
 		title        string
 		command      string
@@ -432,7 +445,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		{"user mess up", ReportByUserMessUser, http.StatusOK, "User does not exist!"},
 		{"date from mess up", ReportByUserMessDateF, http.StatusOK, "parsing time \"2018-6-25\": month out of range"},
 		{"date to mess up", ReportByUserMessDateT, http.StatusOK, "parsing time \"2018-6-26\": month out of range"},
-		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1> from 2018-06-25 to 2018-06-26:\n\nNo standup data for this period\n"},
+		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1> from 2018-06-25 to 2018-06-26:\n\nReport for: 2018-06-25\nIn #chanName <@userID1> did not submit standup!"},
 	}
 
 	for _, tt := range testCases {
@@ -449,7 +462,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
 	assert.NoError(t, rest.db.DeleteUser(user.ID))
 	assert.NoError(t, rest.db.DeleteUser(admin.ID))
-
+	assert.NoError(t, rest.db.DeleteStandup(emptyStandup.ID))
 }
 
 func TestHandleReportByProjectAndUserCommands(t *testing.T) {
