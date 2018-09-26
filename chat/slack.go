@@ -288,6 +288,10 @@ func (s *Slack) FillStandupsForNonReporters() {
 	}
 	for _, user := range allUsers {
 
+		if user.Created.Day() == time.Now().Day() {
+			logrus.Infof("User %v, was created today. Skip!", user)
+			continue
+		}
 		hasStandup := s.db.SubmittedStandupToday(user.UserID, user.ChannelID)
 		logrus.Infof("User: %v hasStandup: %v", user.UserID, hasStandup)
 		if !hasStandup {

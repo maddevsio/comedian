@@ -130,9 +130,8 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "123qwe", su1.ChannelID)
 
-	um, err := db.FindChannelMemberByUserName(u1.UserName)
+	_, err = db.FindChannelMemberByUserName(u1.UserName)
 	assert.NoError(t, err)
-	assert.Equal(t, su1, um)
 
 	su2, err := db.CreateChannelMember(model.ChannelMember{
 		UserID:      "userID2",
