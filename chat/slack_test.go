@@ -29,6 +29,7 @@ func TestIsStandup(t *testing.T) {
 		confirm bool
 	}{
 		{"all key words", "Yesterday managed to get docker up and running, today will complete test #100, problems: I have multilang!", true},
+		{"all key words", "Yesterday managed to get docker up and running, today will complete test #100, questions: to be or not to be?", true},
 		{"no key words", "i want to create a standup but totaly forgot the way i should write it!", false},
 		{"key words yesterday", "Yesterday it was fucking awesome!", false},
 		{"key words yesterday and today", "Вчера ломал сервер, сегодня будет охренеть много дел", false},

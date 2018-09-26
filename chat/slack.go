@@ -141,25 +141,39 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
 			logrus.Errorf("slack: SelectStandupByMessageTS failed: %v\n", err)
-			return err
+			// return err
 		}
 		standupHistory, err := s.db.AddToStandupHistory(model.StandupEditHistory{
 			StandupID:   standup.ID,
 			StandupText: standup.Comment})
 		if err != nil {
 			logrus.Errorf("slack: AddToStandupHistory failed: %v\n", err)
-			return err
+			// return err
 		}
 		logrus.Infof("slack: Slack standup history: %v\n", standupHistory)
-		if standupText, ok := s.isStandup(msg.SubMessage.Text); ok {
-			standup.Comment = standupText
 
-			standup, err = s.db.UpdateStandup(standup)
+		text := fmt.Sprintf("%v\n", msg.SubMessage.Text)
+		logrus.Infof("Message text: %v", text)
+		standupText, messageIsStandup := s.isStandup(text)
+		if messageIsStandup {
+			standup, err := s.db.CreateStandup(model.Standup{
+				ChannelID: msg.Channel,
+				UserID:    msg.User,
+				Comment:   standupText,
+				MessageTS: msg.SubMessage.Timestamp,
+			})
 			if err != nil {
-				logrus.Errorf("slack: UpdateStandup failed: %v\n", err)
+				logrus.Errorf("slack: CreateStandup failed: %v\n", err)
 				return err
 			}
-			logrus.Infof("slack: standup updated: %v\n", standup)
+			logrus.Infof("slack: Standup created: %v\n", standup)
+			item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
+			err = s.api.AddReaction("heavy_check_mark", item)
+			if err != nil {
+				logrus.Errorf("slack: AddReaction failed: %v", err)
+				return err
+			}
+			return nil
 		}
 	}
 	return nil
