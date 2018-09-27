@@ -115,9 +115,13 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	switch msg.SubType {
 	case typeMessage:
 		text := fmt.Sprintf("%v\n", msg.Msg.Text)
-		logrus.Infof("Message text: %v", text)
 		standupText, messageIsStandup := s.isStandup(text)
 		if messageIsStandup {
+			if s.db.SubmittedStandupToday(msg.User, msg.Channel) {
+				item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
+				s.api.AddReaction("point_up", item)
+				return nil
+			}
 			standup, err := s.db.CreateStandup(model.Standup{
 				ChannelID: msg.Channel,
 				UserID:    msg.User,
@@ -130,12 +134,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			}
 			logrus.Infof("slack: Standup created: %v\n", standup)
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
-			err = s.api.AddReaction("heavy_check_mark", item)
-			if err != nil {
-				logrus.Errorf("slack: AddReaction failed: %v", err)
-				return err
-			}
-			return nil
+			s.api.AddReaction("heavy_check_mark", item)
 		}
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
@@ -143,6 +142,9 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			logrus.Errorf("slack: SelectStandupByMessageTS failed: %v\n", err)
 			standupText, messageIsStandup := s.isStandup(msg.SubMessage.Text)
 			if messageIsStandup {
+				if s.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
+					return nil
+				}
 				_, err := s.db.CreateStandup(model.Standup{
 					ChannelID: msg.Channel,
 					UserID:    msg.SubMessage.User,
@@ -160,6 +162,9 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 		}
 		text, messageIsStandup := s.isStandup(msg.SubMessage.Text)
 		if messageIsStandup {
+			if s.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
+				return nil
+			}
 			standup.Comment = text
 			_, err := s.db.UpdateStandup(standup)
 			if err != nil {
