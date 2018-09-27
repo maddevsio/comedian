@@ -66,6 +66,11 @@ func (s *Slack) Run() {
 			fmt.Println("Reconnected!")
 			s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 		case *slack.MessageEvent:
+			// if user standups in the channel, accept standup
+			_, err := s.db.FindChannelMemberByUserID(ev.User, ev.Channel)
+			if err != nil {
+				continue
+			}
 			s.handleMessage(ev)
 		case *slack.MemberJoinedChannelEvent:
 			s.handleJoin(ev.Channel)
@@ -171,13 +176,6 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				logrus.Errorf("slack: UpdateStandup failed: %v\n", err)
 				return err
 			}
-			item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
-			s.api.RemoveReaction("exploding_head", item)
-			s.api.AddReaction("heavy_check_mark", item)
-		} else {
-			item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
-			s.api.RemoveReaction("heavy_check_mark", item)
-			s.api.AddReaction("exploding_head", item)
 		}
 	}
 	return nil
@@ -194,7 +192,7 @@ func (s *Slack) isStandup(message string) (string, bool) {
 	}
 
 	mentionsYesterdayWork := false
-	yesterdayWorkKeys := []string{s.Conf.Translate.Y1, s.Conf.Translate.Y2, s.Conf.Translate.Y3, s.Conf.Translate.Y4, s.Conf.Translate.Y5}
+	yesterdayWorkKeys := []string{s.Conf.Translate.Y1, s.Conf.Translate.Y2, s.Conf.Translate.Y3, s.Conf.Translate.Y4}
 	for _, work := range yesterdayWorkKeys {
 		if strings.Contains(message, work) {
 			mentionsYesterdayWork = true
