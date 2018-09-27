@@ -141,39 +141,38 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
 			logrus.Errorf("slack: SelectStandupByMessageTS failed: %v\n", err)
-			// return err
+			standupText, messageIsStandup := s.isStandup(msg.SubMessage.Text)
+			if messageIsStandup {
+				_, err := s.db.CreateStandup(model.Standup{
+					ChannelID: msg.Channel,
+					UserID:    msg.SubMessage.User,
+					Comment:   standupText,
+					MessageTS: msg.SubMessage.Timestamp,
+				})
+				if err != nil {
+					logrus.Errorf("slack: CreateStandup failed: %v\n", err)
+					return err
+				}
+				item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
+				s.api.AddReaction("heavy_check_mark", item)
+				return nil
+			}
 		}
-		standupHistory, err := s.db.AddToStandupHistory(model.StandupEditHistory{
-			StandupID:   standup.ID,
-			StandupText: standup.Comment})
-		if err != nil {
-			logrus.Errorf("slack: AddToStandupHistory failed: %v\n", err)
-			// return err
-		}
-		logrus.Infof("slack: Slack standup history: %v\n", standupHistory)
-
-		text := fmt.Sprintf("%v\n", msg.SubMessage.Text)
-		logrus.Infof("Message text: %v", text)
-		standupText, messageIsStandup := s.isStandup(text)
+		text, messageIsStandup := s.isStandup(msg.SubMessage.Text)
 		if messageIsStandup {
-			standup, err := s.db.CreateStandup(model.Standup{
-				ChannelID: msg.SubMessage.Channel,
-				UserID:    msg.SubMessage.User,
-				Comment:   standupText,
-				MessageTS: msg.SubMessage.Timestamp,
-			})
+			standup.Comment = text
+			_, err := s.db.UpdateStandup(standup)
 			if err != nil {
-				logrus.Errorf("slack: CreateStandup failed: %v\n", err)
+				logrus.Errorf("slack: UpdateStandup failed: %v\n", err)
 				return err
 			}
-			logrus.Infof("slack: Standup created: %v\n", standup)
 			item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
-			err = s.api.AddReaction("heavy_check_mark", item)
-			if err != nil {
-				logrus.Errorf("slack: AddReaction failed: %v", err)
-				return err
-			}
-			return nil
+			s.api.RemoveReaction("exploding_head", item)
+			s.api.AddReaction("heavy_check_mark", item)
+		} else {
+			item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
+			s.api.RemoveReaction("heavy_check_mark", item)
+			s.api.AddReaction("exploding_head", item)
 		}
 	}
 	return nil
