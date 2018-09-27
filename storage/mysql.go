@@ -22,6 +22,7 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 	if err != nil {
 		return nil, err
 	}
+	conn.SetConnMaxLifetime(time.Second)
 	m := &MySQL{}
 	m.conn = conn
 
