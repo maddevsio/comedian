@@ -132,7 +132,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				logrus.Errorf("slack: CreateStandup failed: %v\n", err)
 				return err
 			}
-			logrus.Infof("slack: Standup created: %v\n", standup)
+			logrus.Infof("slack: Standup created: %v\n", standup.ID)
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
 			s.api.AddReaction("heavy_check_mark", item)
 		}
@@ -194,7 +194,7 @@ func (s *Slack) isStandup(message string) (string, bool) {
 	}
 
 	mentionsYesterdayWork := false
-	yesterdayWorkKeys := []string{s.Conf.Translate.Y1, s.Conf.Translate.Y2, s.Conf.Translate.Y3, s.Conf.Translate.Y4}
+	yesterdayWorkKeys := []string{s.Conf.Translate.Y1, s.Conf.Translate.Y2, s.Conf.Translate.Y3, s.Conf.Translate.Y4, s.Conf.Translate.Y5}
 	for _, work := range yesterdayWorkKeys {
 		if strings.Contains(message, work) {
 			mentionsYesterdayWork = true
@@ -306,7 +306,7 @@ func (s *Slack) FillStandupsForNonReporters() {
 				logrus.Errorf("notifier: CreateStandup failed: %v\n", err)
 				return
 			}
-			logrus.Infof("notifier: Empty Standup created: %v\n", standup)
+			logrus.Infof("notifier: Empty Standup created: %v\n", standup.ID)
 		}
 	}
 }
