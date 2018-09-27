@@ -205,11 +205,8 @@ func (s *Slack) isStandup(message string) (string, bool) {
 	}
 
 	if mentionsProblem && mentionsYesterdayWork && mentionsTodayPlans {
-		logrus.Infof("slack: this is a standup: %v\n", message)
 		return strings.TrimSpace(message), true
 	}
-
-	logrus.Errorf("slack: This is not a standup: %v\n", message)
 	return message, false
 }
 
