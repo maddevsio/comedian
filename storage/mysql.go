@@ -118,6 +118,27 @@ func (m *MySQL) CreateChannelMember(s model.ChannelMember) (model.ChannelMember,
 	return s, nil
 }
 
+// CreatePM creates comedian entry in database
+func (m *MySQL) CreatePM(s model.ChannelMember) (model.ChannelMember, error) {
+	err := s.Validate()
+	if err != nil {
+		return s, err
+	}
+	res, err := m.conn.Exec(
+		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, created, role_in_channel) VALUES (?, ?, ?, ?,?)",
+		s.UserID, s.ChannelID, 0, time.Now(), "PM")
+	if err != nil {
+		return s, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return s, err
+	}
+	s.ID = id
+
+	return s, nil
+}
+
 //FindChannelMemberByUserID finds user in channel
 func (m *MySQL) FindChannelMemberByUserID(userID, channelID string) (model.ChannelMember, error) {
 	var u model.ChannelMember
@@ -135,14 +156,14 @@ func (m *MySQL) FindChannelMemberByUserName(userName string) (model.ChannelMembe
 // ListAllChannelMembers returns array of standup entries from database
 func (m *MySQL) ListAllChannelMembers() ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members`")
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` where role_in_channel != 'pm'")
 	return items, err
 }
 
 //GetNonReporters returns a list of non reporters in selected time period
 func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([]model.ChannelMember, error) {
 	nonReporters := []model.ChannelMember{}
-	err := m.conn.Select(&nonReporters, `SELECT * FROM channel_members where channel_id=? AND user_id NOT IN (SELECT user_id FROM standups where channel_id=? and created BETWEEN ? AND ?)`, channelID, channelID, dateFrom, dateTo)
+	err := m.conn.Select(&nonReporters, `SELECT * FROM channel_members where channel_id=? AND role_in_channel != 'pm' AND user_id NOT IN (SELECT user_id FROM standups where channel_id=? and created BETWEEN ? AND ?)`, channelID, channelID, dateFrom, dateTo)
 	return nonReporters, err
 }
 
@@ -178,7 +199,7 @@ func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Ti
 // ListChannelMembers returns array of standup entries from database
 func (m *MySQL) ListChannelMembers(channelID string) ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=?", channelID)
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel != 'pm'", channelID)
 	return items, err
 }
 
