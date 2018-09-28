@@ -188,7 +188,7 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.Equal(t, 0, len(channels))
 
 	assert.NoError(t, db.DeleteChannelMember(su1.UserID, su1.ChannelID))
-	assert.NoError(t, db.DeleteChannelMember(su3.UserID, su2.ChannelID))
+	assert.NoError(t, db.DeleteChannelMember(su2.UserID, su2.ChannelID))
 	assert.NoError(t, db.DeleteChannelMember(su3.UserID, su3.ChannelID))
 	assert.NoError(t, db.DeleteUser(u1.ID))
 
@@ -322,4 +322,56 @@ func TestCRUDUser(t *testing.T) {
 
 	assert.NoError(t, db.DeleteUser(user.ID))
 	assert.NoError(t, db.DeleteUser(admin.ID))
+}
+
+func TestPMForProject(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	db, err := NewMySQL(c)
+	assert.NoError(t, err)
+
+	ch, err := db.CreateChannel(model.Channel{
+		ChannelID:   "XYZ",
+		ChannelName: "chan",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	m1, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:    "ID1",
+		ChannelID: ch.ChannelID,
+	})
+	assert.NoError(t, err)
+	m2, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:    "ID2",
+		ChannelID: ch.ChannelID,
+	})
+	assert.NoError(t, err)
+	m3, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:    "ID3",
+		ChannelID: ch.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	pm, err := db.CreatePM(model.ChannelMember{
+		UserID:    "ID4",
+		ChannelID: ch.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	ok1 := db.UserIsPMForProject(m1.UserID, m1.ChannelID)
+	assert.Equal(t, false, ok1)
+	ok2 := db.UserIsPMForProject(m2.UserID, m2.ChannelID)
+	assert.Equal(t, false, ok2)
+	ok3 := db.UserIsPMForProject(m3.UserID, m3.ChannelID)
+	assert.Equal(t, false, ok3)
+	ok4 := db.UserIsPMForProject(pm.UserID, pm.ChannelID)
+	assert.Equal(t, true, ok4)
+
+	assert.NoError(t, db.DeleteChannelMember(m1.UserID, m1.ChannelID))
+	assert.NoError(t, db.DeleteChannelMember(m2.UserID, m2.ChannelID))
+	assert.NoError(t, db.DeleteChannelMember(m3.UserID, m3.ChannelID))
+	assert.NoError(t, db.DeleteChannelMember(pm.UserID, pm.ChannelID))
+	assert.NoError(t, db.DeleteChannel(ch.ID))
+
 }

@@ -118,27 +118,6 @@ func (m *MySQL) CreateChannelMember(s model.ChannelMember) (model.ChannelMember,
 	return s, nil
 }
 
-// CreatePM creates comedian entry in database
-func (m *MySQL) CreatePM(s model.ChannelMember) (model.ChannelMember, error) {
-	err := s.Validate()
-	if err != nil {
-		return s, err
-	}
-	res, err := m.conn.Exec(
-		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, created, role_in_channel) VALUES (?, ?, ?, ?,?)",
-		s.UserID, s.ChannelID, 0, time.Now(), "PM")
-	if err != nil {
-		return s, err
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		return s, err
-	}
-	s.ID = id
-
-	return s, nil
-}
-
 //FindChannelMemberByUserID finds user in channel
 func (m *MySQL) FindChannelMemberByUserID(userID, channelID string) (model.ChannelMember, error) {
 	var u model.ChannelMember
@@ -420,4 +399,38 @@ func (m *MySQL) ListAdmins() ([]model.User, error) {
 		return c, err
 	}
 	return c, err
+}
+
+// CreatePM creates comedian entry in database
+func (m *MySQL) CreatePM(s model.ChannelMember) (model.ChannelMember, error) {
+	err := s.Validate()
+	if err != nil {
+		return s, err
+	}
+	res, err := m.conn.Exec(
+		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, created, role_in_channel) VALUES (?, ?, ?, ?,?)",
+		s.UserID, s.ChannelID, 0, time.Now(), "PM")
+	if err != nil {
+		return s, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return s, err
+	}
+	s.ID = id
+
+	return s, nil
+}
+
+// UserIsPMForProject returns true if user is a project's PM.
+func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
+	var role string
+	err := m.conn.Get(&role, "SELECT role_in_channel FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
+	if err != nil || role == "" {
+		return false
+	}
+	if role == "PM" {
+		return true
+	}
+	return false
 }
