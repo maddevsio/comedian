@@ -35,11 +35,12 @@ type (
 
 	// ChannelMember model used for serialization/deserialization stored ChannelMembers
 	ChannelMember struct {
-		ID          int64     `db:"id" json:"id"`
-		UserID      string    `db:"user_id" json:"user_id"`
-		ChannelID   string    `db:"channel_id" json:"channel_id"`
-		StandupTime int64     `db:"standup_time" json:"time"`
-		Created     time.Time `db:"created" json:"created"`
+		ID            int64     `db:"id" json:"id"`
+		UserID        string    `db:"user_id" json:"user_id"`
+		ChannelID     string    `db:"channel_id" json:"channel_id"`
+		RoleInChannel string    `db:"role_in_channel" json:"role_in_channel"`
+		StandupTime   int64     `db:"standup_time" json:"time"`
+		Created       time.Time `db:"created" json:"created"`
 	}
 
 	// StandupEditHistory model used for serialization/deserialization stored standup edit history

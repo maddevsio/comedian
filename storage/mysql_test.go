@@ -188,8 +188,10 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.Equal(t, 0, len(channels))
 
 	assert.NoError(t, db.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, db.DeleteChannelMember(su3.UserID, su2.ChannelID))
 	assert.NoError(t, db.DeleteChannelMember(su3.UserID, su3.ChannelID))
 	assert.NoError(t, db.DeleteUser(u1.ID))
+
 }
 
 func TestCRUDStandupTime(t *testing.T) {

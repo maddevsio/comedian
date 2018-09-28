@@ -146,7 +146,11 @@ func TestGetCollectorData(t *testing.T) {
 	assert.NoError(t, err)
 	fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnProject.TotalCommits, utils.SecondsToHuman(dataOnProject.Worklogs))
 
-	dataOnUserByProject, err := GetCollectorData(c, "user-in-project", "UC1JNECA3/comedian-testing", "2018-09-25", "2018-09-25")
+	dataOnUserByProject, err := GetCollectorData(c, "user-in-project", "UC1JNECA3/comedian-testing", "2018-09-27", "2018-09-27")
+	assert.NoError(t, err)
+	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
+
+	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UBZ6Y0P5K/kaftv", "2018-09-27", "2018-09-27")
 	assert.NoError(t, err)
 	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
 }
