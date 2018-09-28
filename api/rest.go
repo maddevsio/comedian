@@ -539,7 +539,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
+		return c.String(http.StatusOK, "Неверное название проекта!")
 	}
 
 	if !r.db.UserIsPMForProject(f.Get("user_id"), channelID) && !caller.IsAdmin() {
@@ -679,7 +679,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
-		return c.String(http.StatusOK, err.Error())
+		return c.String(http.StatusOK, "Неверное название проекта!")
 	}
 
 	if !r.db.UserIsPMForProject(f.Get("user_id"), channelID) && !caller.IsAdmin() {
@@ -693,9 +693,9 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	}
 
 	username := strings.Replace(commandParams[1], "@", "", -1)
-	user, err := r.db.SelectUserByUserName(username)
+	user, err := r.db.FindChannelMemberByUserName(username)
 	if err != nil {
-		return c.String(http.StatusOK, "User does not exist!")
+		return c.String(http.StatusOK, "Пользователь не стэндапится в этом канале")
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
