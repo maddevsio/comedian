@@ -116,6 +116,9 @@ type Storage interface {
 	//SubmittedStandupToday shows if a user submitted standup today
 	SubmittedStandupToday(string, string) bool
 
+	// CreatePM creates comedian entry in database
+	CreatePM(model.ChannelMember) (model.ChannelMember, error)
+
 	// UserIsPMForProject returns true if user is a project's PM.
 	UserIsPMForProject(string, string) bool
 }

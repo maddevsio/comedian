@@ -79,7 +79,6 @@ func (n *Notifier) SendWarning(channelID string) {
 	if len(nonReporters) == 0 {
 		return
 	}
-
 	nonReportersIDs := []string{}
 	for _, user := range nonReporters {
 		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
@@ -94,6 +93,15 @@ func (n *Notifier) SendWarning(channelID string) {
 
 //SendChannelNotification starts standup reminders and direct reminders to users
 func (n *Notifier) SendChannelNotification(channelID string) {
+	members, err := n.db.ListChannelMembers(channelID)
+	if err != nil {
+		logrus.Errorf("notifier: n.db.ListChannelMembers failed: %v\n", err)
+		return
+	}
+	if len(members) == 0 {
+		logrus.Info("No standupers in this channel\n")
+		return
+	}
 	nonReporters, err := n.getCurrentDayNonReporters(channelID)
 	if err != nil {
 		logrus.Errorf("notifier: n.getCurrentDayNonReporters failed: %v\n", err)

@@ -4,6 +4,9 @@ addUser = "<@%s> assigned to submit standups in this channel\n"
 addAdmin = "<@%s> was granted admin access\n"
 accessDenied = "This command is not allowed for you! You are not admin\n"
 
+pmExists = "<@%s> was already assigned as PM in this channel"
+pmAdded = "<@%s> is assigned as PM in this channel"
+
 deleteUser = "<@%s> no longer submits standups in this channel\n"
 deleteAdmin = "<@%s> was removed as admin\n"
 listNoStandupers = "No standupers in this channel! To add one, please, use `/comedianadd` slash command"

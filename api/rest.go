@@ -33,6 +33,7 @@ type REST struct {
 
 const (
 	commandAddAdmin               = "/adminadd"
+	commandAddPM                  = "/pmadd"
 	commandRemoveAdmin            = "/adminremove"
 	commandListAdmins             = "/adminlist"
 	commandAddUser                = "/comedianadd"
@@ -97,13 +98,14 @@ func (r *REST) handleCommands(c echo.Context) error {
 	if err != nil {
 		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
 	}
-
 	if command := form.Get("command"); command != "" {
 		switch command {
 		case commandAddUser:
 			return r.addUserCommand(c, form)
 		case commandAddAdmin:
 			return r.addAdminCommand(c, form)
+		case commandAddPM:
+			return r.addPMCommand(c, form)
 		case commandRemoveUser:
 			return r.removeUserCommand(c, form)
 		case commandRemoveAdmin:
@@ -132,7 +134,7 @@ func (r *REST) handleCommands(c echo.Context) error {
 }
 
 func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id")) {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
 	var ca FullSlackForm
@@ -186,8 +188,50 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	return nil
 }
 
+func (r *REST) addPMCommand(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
+	var ca FullSlackForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		logrus.Errorf("rest: addUserCommand Validate failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	users := strings.Split(ca.Text, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно добавить")
+	}
+	logrus.Infof("Users: %v", users)
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+		}
+		userID, _ := utils.SplitUser(u)
+		isAdmin := r.db.UserIsPMForProject(userID, ca.ChannelID)
+		if !isAdmin {
+			_, err := r.db.CreatePM(model.ChannelMember{
+				UserID:    userID,
+				ChannelID: ca.ChannelID,
+			})
+			if err != nil {
+				logrus.Errorf("rest: CreatePM failed: %v\n", err)
+				c.String(http.StatusOK, fmt.Sprintf("failed to create user :%v\n", err))
+			}
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.PMAdded, userID))
+			continue
+		}
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.PMExists, userID))
+	}
+	return nil
+}
+
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id")) {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
 	var ca ChannelIDTextForm
@@ -229,7 +273,9 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
-	logrus.Printf("%+v\n", f)
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: listUsersCommand Decode failed: %v\n", err)
@@ -255,7 +301,7 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id")) {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
 	var ca FullSlackForm
@@ -305,7 +351,7 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id")) {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
 	var ca ChannelIDTextForm
@@ -354,6 +400,9 @@ func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	admins, err := r.db.ListAdmins()
 	if err != nil {
 		logrus.Errorf("rest: ListChannelMembers: %v\n", err)
@@ -370,7 +419,7 @@ func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id")) {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
 	var ca FullSlackForm
@@ -419,7 +468,7 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id")) {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
 	var ca ChannelForm
@@ -445,6 +494,9 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) listTime(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: listTime Decode failed: %v\n", err)
@@ -465,10 +517,12 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 
 ///report_by_project #collector-test 2018-07-24 2018-07-26
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id")) {
+	var ca ChannelIDTextForm
+
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
-	var ca ChannelIDTextForm
+	caller, _ := r.db.SelectUser(f.Get("user_id"))
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: reportByProject Decode failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -486,6 +540,10 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
+	}
+
+	if !r.db.UserIsPMForProject(f.Get("user_id"), channelID) && !caller.IsAdmin() {
+		return c.String(http.StatusOK, "Вам доступны отчеты только по проектам, в которых вы PM")
 	}
 
 	channel, err := r.db.SelectChannel(channelID)
@@ -532,7 +590,13 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 
 ///report_by_user @Anatoliy 2018-07-24 2018-07-26
 func (r *REST) reportByUser(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id")) {
+	caller, err := r.db.SelectUser(f.Get("user_id"))
+	if err != nil {
+		logrus.Error(err)
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
+	if (f.Get("user_id") != r.conf.ManagerSlackUserID) || !caller.IsAdmin() {
+		logrus.Infof("User: %s has admin access!", caller.UserName)
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
 	var ca FullSlackForm
@@ -591,10 +655,13 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 
 ///report_by_project_and_user #collector-test @Anatoliy 2018-07-24 2018-07-26
 func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id")) {
+	var ca FullSlackForm
+
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
-	var ca FullSlackForm
+
+	caller, _ := r.db.SelectUser(f.Get("user_id"))
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: reportByProjectAndUser Decode failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -613,6 +680,10 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
+	}
+
+	if !r.db.UserIsPMForProject(f.Get("user_id"), channelID) && !caller.IsAdmin() {
+		return c.String(http.StatusOK, "Вам доступны отчеты только по проектам, в которых вы PM")
 	}
 
 	channel, err := r.db.SelectChannel(channelID)
@@ -663,7 +734,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	return c.String(http.StatusOK, text)
 }
 
-func (r *REST) userHasAccess(userID string) bool {
+func (r *REST) userHasAccess(userID, channelID string) bool {
 	user, err := r.db.SelectUser(userID)
 	if err != nil {
 		logrus.Error(err)
@@ -671,6 +742,10 @@ func (r *REST) userHasAccess(userID string) bool {
 	}
 	if (userID == r.conf.ManagerSlackUserID) || user.IsAdmin() {
 		logrus.Infof("User: %s has admin access!", user.UserName)
+		return true
+	}
+	if r.db.UserIsPMForProject(userID, channelID) {
+		logrus.Infof("User: %s is Project PM", user.UserName)
 		return true
 	}
 	logrus.Infof("User: %s does not have admin access!", user.UserName)

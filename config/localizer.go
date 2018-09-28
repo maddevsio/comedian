@@ -18,14 +18,15 @@ type Translate struct {
 	AddUserNoStandupTime string
 	AddUser              string
 	AddAdmin             string
+	PMExists             string
+	PMAdded              string
 	AccessDenied         string
-
-	DeleteUser       string
-	DeleteAdmin      string
-	ListNoStandupers string
-	ListNoAdmins     string
-	ListStandupers   string
-	ListAdmins       string
+	DeleteUser           string
+	DeleteAdmin          string
+	ListNoStandupers     string
+	ListNoAdmins         string
+	ListStandupers       string
+	ListAdmins           string
 
 	AddStandupTimeNoUsers      string
 	AddStandupTime             string
@@ -129,6 +130,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"y1", "y2", "y3", "y4",
 		"t1", "t2", "t3",
 		"userExist",
+		"pmExists", "pmAdded",
 		"addUserNoStandupTime",
 		"addUser",
 		"addAdmin",
@@ -170,6 +172,8 @@ func GetTranslation(lang string) (Translate, error) {
 		AddUser:              m["addUser"],
 		AddAdmin:             m["addAdmin"],
 		AccessDenied:         m["accessDenied"],
+		PMExists:             m["pmExists"],
+		PMAdded:              m["pmAdded"],
 
 		DeleteUser:       m["deleteUser"],
 		DeleteAdmin:      m["deleteAdmin"],
