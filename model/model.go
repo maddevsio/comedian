@@ -43,6 +43,21 @@ type (
 		Created       time.Time `db:"created" json:"created"`
 	}
 
+	// TimeTable model used for serialization/deserialization stored timetables
+	TimeTable struct {
+		ID              int64     `db:"id" json:"id"`
+		ChannelMemberID int64     `db:"channel_member_id" json:"channel_member_id"`
+		Created         time.Time `db:"created" json:"created"`
+		Modified        time.Time `db:"modified" json:"modified"`
+		Monday          int64     `db:"monday" json:"monday"`
+		Tuesday         int64     `db:"tuesday" json:"tuesday"`
+		Wednesday       int64     `db:"wednesday" json:"wednesday"`
+		Thursday        int64     `db:"thursday" json:"thursday"`
+		Friday          int64     `db:"friday" json:"friday"`
+		Saturday        int64     `db:"saturday" json:"saturday"`
+		Sunday          int64     `db:"sunday" json:"sunday"`
+	}
+
 	// StandupEditHistory model used for serialization/deserialization stored standup edit history
 	StandupEditHistory struct {
 		ID          int64     `db:"id" json:"id"`

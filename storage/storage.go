@@ -121,4 +121,16 @@ type Storage interface {
 
 	// UserIsPMForProject returns true if user is a project's PM.
 	UserIsPMForProject(string, string) bool
+
+	// CreateUser creates standup entry in database
+	CreateTimeTable(model.TimeTable) (model.TimeTable, error)
+
+	// UpdateTimeTable updates TimeTable entry in database
+	UpdateTimeTable(model.TimeTable) (model.TimeTable, error)
+
+	// SelectTimeTable selects TimeTable entry from database
+	SelectTimeTable(string) (model.TimeTable, error)
+
+	// DeleteTimeTable deletes TimeTable entry from database
+	DeleteTimeTable(int64) error
 }
