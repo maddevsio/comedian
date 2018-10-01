@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -17,8 +18,9 @@ import (
 )
 
 var (
-	typeMessage     = ""
-	typeEditMessage = "message_changed"
+	typeMessage       = ""
+	typeEditMessage   = "message_changed"
+	typeDeleteMessage = "message_deleted"
 )
 
 // Slack struct used for storing and communicating with slack api
@@ -63,14 +65,9 @@ func (s *Slack) Run() {
 	for msg := range s.rtm.IncomingEvents {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
-			fmt.Println("Reconnected!")
+			logrus.Info("Reconnected!")
 			s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 		case *slack.MessageEvent:
-			// if user standups in the channel, accept standup
-			_, err := s.db.FindChannelMemberByUserID(ev.User, ev.Channel)
-			if err != nil {
-				continue
-			}
 			s.handleMessage(ev)
 		case *slack.MemberJoinedChannelEvent:
 			s.handleJoin(ev.Channel)
@@ -119,8 +116,16 @@ func (s *Slack) handleJoin(channelID string) {
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	switch msg.SubType {
 	case typeMessage:
-		text := fmt.Sprintf("%v\n", msg.Msg.Text)
-		standupText, messageIsStandup := s.isStandup(text)
+		_, err := s.db.FindChannelMemberByUserID(msg.User, msg.Channel)
+		if err != nil {
+			logrus.Infof("slack.go User is not a channel member: %v", err)
+			return nil
+		}
+		standupText, messageIsStandup, err := s.isStandup(msg.Msg.Text)
+		if err != nil {
+			logrus.Errorf("message is not a standup: %v", err)
+			return nil
+		}
 		if messageIsStandup {
 			if s.db.SubmittedStandupToday(msg.User, msg.Channel) {
 				item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
@@ -137,17 +142,21 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				logrus.Errorf("slack: CreateStandup failed: %v\n", err)
 				return err
 			}
-			logrus.Infof("slack: Standup created: %v\n", standup.ID)
+			logrus.Infof("Standup created #id:%v\n", standup.ID)
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
 			s.api.AddReaction("heavy_check_mark", item)
 		}
 	case typeEditMessage:
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
-			logrus.Errorf("slack: SelectStandupByMessageTS failed: %v\n", err)
-			standupText, messageIsStandup := s.isStandup(msg.SubMessage.Text)
+			standupText, messageIsStandup, err := s.isStandup(msg.SubMessage.Text)
+			if err != nil {
+				logrus.Errorf("message is not a standup: %v", err)
+				return nil
+			}
 			if messageIsStandup {
 				if s.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
+					logrus.Infof("User %v already submitted standup todain in %v\n", msg.SubMessage.User, msg.Channel)
 					return nil
 				}
 				_, err := s.db.CreateStandup(model.Standup{
@@ -160,35 +169,50 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 					logrus.Errorf("slack: CreateStandup failed: %v\n", err)
 					return err
 				}
+				logrus.Infof("Standup created #id:%v\n", standup.ID)
 				item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
 				s.api.AddReaction("heavy_check_mark", item)
 				return nil
 			}
 		}
-		text, messageIsStandup := s.isStandup(msg.SubMessage.Text)
+
+		text, messageIsStandup, err := s.isStandup(msg.SubMessage.Text)
+		if err != nil {
+			logrus.Errorf("message is not a standup: %v", err)
+			return nil
+		}
 		if messageIsStandup {
-			if s.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
-				return nil
-			}
 			standup.Comment = text
 			_, err := s.db.UpdateStandup(standup)
 			if err != nil {
 				logrus.Errorf("slack: UpdateStandup failed: %v\n", err)
 				return err
 			}
+			logrus.Infof("Standup updated #id:%v\n", standup.ID)
 		}
+
+	case typeDeleteMessage:
+		standup, err := s.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
+		if err != nil {
+			logrus.Errorf("SelectStandupByMessageTS failed: %v", err)
+			return nil
+		}
+		s.db.DeleteStandup(standup.ID)
+		logrus.Infof("Standup deleted #id:%v\n", standup.ID)
 	}
 	return nil
 }
 
-func (s *Slack) isStandup(message string) (string, bool) {
-
+func (s *Slack) isStandup(message string) (string, bool, error) {
 	mentionsProblem := false
 	problemKeys := []string{s.Conf.Translate.P1, s.Conf.Translate.P2, s.Conf.Translate.P3, s.Conf.Translate.P4}
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
 		}
+	}
+	if !mentionsProblem {
+		return "", false, errors.New("no 'problems' keywords")
 	}
 
 	mentionsYesterdayWork := false
@@ -198,6 +222,9 @@ func (s *Slack) isStandup(message string) (string, bool) {
 			mentionsYesterdayWork = true
 		}
 	}
+	if !mentionsYesterdayWork {
+		return "", false, errors.New("no 'mentionsYesterdayWork' keywords")
+	}
 
 	mentionsTodayPlans := false
 	todayPlansKeys := []string{s.Conf.Translate.T1, s.Conf.Translate.T2, s.Conf.Translate.T3}
@@ -206,11 +233,11 @@ func (s *Slack) isStandup(message string) (string, bool) {
 			mentionsTodayPlans = true
 		}
 	}
-
-	if mentionsProblem && mentionsYesterdayWork && mentionsTodayPlans {
-		return strings.TrimSpace(message), true
+	if !mentionsTodayPlans {
+		return "", false, errors.New("no 'mentionsTodayPlans' keywords")
 	}
-	return message, false
+
+	return strings.TrimSpace(message), true, nil
 }
 
 // SendMessage posts a message in a specified channel

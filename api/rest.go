@@ -518,11 +518,10 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 ///report_by_project #collector-test 2018-07-24 2018-07-26
 func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	var ca ChannelIDTextForm
-
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
-	caller, _ := r.db.SelectUser(f.Get("user_id"))
+
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: reportByProject Decode failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -540,10 +539,6 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
 		return c.String(http.StatusOK, "Неверное название проекта!")
-	}
-
-	if !r.db.UserIsPMForProject(f.Get("user_id"), channelID) && !caller.IsAdmin() {
-		return c.String(http.StatusOK, "Вам доступны отчеты только по проектам, в которых вы PM")
 	}
 
 	channel, err := r.db.SelectChannel(channelID)
@@ -590,16 +585,10 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 
 ///report_by_user @Anatoliy 2018-07-24 2018-07-26
 func (r *REST) reportByUser(c echo.Context, f url.Values) error {
-	caller, err := r.db.SelectUser(f.Get("user_id"))
-	if err != nil {
-		logrus.Error(err)
-		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
-	}
-	if (f.Get("user_id") != r.conf.ManagerSlackUserID) || !caller.IsAdmin() {
-		logrus.Infof("User: %s has admin access!", caller.UserName)
-		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
-	}
 	var ca FullSlackForm
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: reportByUser Decode failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -660,8 +649,6 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
-
-	caller, _ := r.db.SelectUser(f.Get("user_id"))
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: reportByProjectAndUser Decode failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -680,10 +667,6 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
 		return c.String(http.StatusOK, "Неверное название проекта!")
-	}
-
-	if !r.db.UserIsPMForProject(f.Get("user_id"), channelID) && !caller.IsAdmin() {
-		return c.String(http.StatusOK, "Вам доступны отчеты только по проектам, в которых вы PM")
 	}
 
 	channel, err := r.db.SelectChannel(channelID)

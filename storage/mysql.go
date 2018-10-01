@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/sirupsen/logrus"
 )
 
 // MySQL provides api for work with mysql database
@@ -152,7 +153,7 @@ func (m *MySQL) SubmittedStandupToday(userID, channelID string) bool {
 	var standup string
 	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, timeFrom, time.Now())
 	if err != nil {
-		fmt.Println(err.Error())
+		logrus.Infof("User '%v' did not write standup in channel '%v' today yet \n", userID, channelID)
 		return false
 	}
 	return true

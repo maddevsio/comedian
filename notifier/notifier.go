@@ -67,6 +67,15 @@ func (n *Notifier) NotifyChannels() {
 			go n.SendChannelNotification(channel.ChannelID)
 		}
 	}
+
+	// after notifier is done with channels, it can proceed to individual schedules
+
+	// get all users who work based on individual schedule
+	// check if their time today is a time.now
+
+	// if it is true, send them notification in their chanel!
+	// 10 min before they standup and when they standup
+
 }
 
 // SendWarning reminds users in chat about upcoming standups
