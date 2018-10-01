@@ -446,25 +446,18 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	currentTime := time.Now()
 	timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), hours, munites, 0, 0, time.Local).Unix()
 
-	st, err := r.db.GetChannelStandupTime(ca.ChannelID)
-	logrus.Infof("If channel standup time exis: %v, %v", st, err)
+	err = r.db.CreateStandupTime(timeInt, ca.ChannelID)
 	if err != nil {
-		logrus.Errorf("GetChannelStandupTime failed: %v", err)
-		r.db.CreateStandupTime(timeInt, ca.ChannelID)
-	}
-	st = timeInt
-	err = r.db.CreateStandupTime(st, ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: UpdateStandupTime failed: %v\n", err)
+		logrus.Errorf("rest: CreateStandupTime failed: %v\n", err)
 	}
 	channelMembers, err := r.db.ListChannelMembers(ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: ListChannelMembers failed: %v\n", err)
 	}
 	if len(channelMembers) == 0 {
-		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTimeNoUsers, st))
+		return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTimeNoUsers, timeInt))
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTime, st))
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddStandupTime, timeInt))
 }
 
 func (r *REST) removeTime(c echo.Context, f url.Values) error {
