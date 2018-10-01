@@ -148,7 +148,7 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	}
 	users := strings.Split(ca.Text, " ")
 	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно добавить")
+		return c.String(http.StatusBadRequest, r.conf.Translate.SelectUsersToAdd)
 	}
 	logrus.Infof("Users: %v", users)
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -203,7 +203,7 @@ func (r *REST) addPMCommand(c echo.Context, f url.Values) error {
 	}
 	users := strings.Split(ca.Text, " ")
 	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно добавить")
+		return c.String(http.StatusBadRequest, r.conf.Translate.SelectUsersToAdd)
 	}
 	logrus.Infof("Users: %v", users)
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -246,7 +246,7 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 
 	users := strings.Split(ca.Text, " ")
 	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
+		return c.String(http.StatusBadRequest, r.conf.Translate.SelectUsersToDelete)
 	}
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -258,7 +258,7 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
 		if err != nil {
 			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
-			c.String(http.StatusOK, fmt.Sprintf("Пользователь <@%v> не стэндапит в этом канале\n", userID))
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.UserDoesNotStandup, userID))
 			continue
 		}
 		err = r.db.DeleteChannelMember(user.UserID, ca.ChannelID)
@@ -316,7 +316,7 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 	users := strings.Split(ca.Text, " ")
 
 	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно сделать админами")
+		return c.String(http.StatusBadRequest, r.conf.Translate.SelectUsersToAddAsAdmin)
 	}
 	logrus.Infof("Users: %v", users)
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -327,7 +327,7 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 		userID, userName := utils.SplitUser(u)
 		user, err := r.db.SelectUser(userID)
 		if err != nil {
-			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
+			c.String(http.StatusOK, r.conf.Translate.NoSuchUserInWorkspace)
 			continue
 		}
 		if user.Role == "admin" {
@@ -366,7 +366,7 @@ func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
 
 	users := strings.Split(ca.Text, " ")
 	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, "Укажите пользователей, которых нужно удалить")
+		return c.String(http.StatusBadRequest, r.conf.Translate.SelectUsersToDelete)
 	}
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -377,11 +377,11 @@ func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
 		userID, userName := utils.SplitUser(u)
 		user, err := r.db.SelectUser(userID)
 		if err != nil {
-			c.String(http.StatusOK, "Такого пользователя нет в вашем слаке")
+			c.String(http.StatusOK, r.conf.Translate.NoSuchUserInWorkspace)
 			continue
 		}
 		if user.Role != "admin" {
-			c.String(http.StatusOK, "Этот пользователь не админ!")
+			c.String(http.StatusOK, r.conf.Translate.UserNotAdmin)
 			continue
 		}
 		user.Role = ""
@@ -666,7 +666,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
-		return c.String(http.StatusOK, "Неверное название проекта!")
+		return c.String(http.StatusOK, r.conf.Translate.WrongProjectName)
 	}
 
 	channel, err := r.db.SelectChannel(channelID)
@@ -676,9 +676,14 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	}
 
 	username := strings.Replace(commandParams[1], "@", "", -1)
-	user, err := r.db.FindChannelMemberByUserName(username)
+
+	user, err := r.db.SelectUserByUserName(username)
 	if err != nil {
-		return c.String(http.StatusOK, "Пользователь не стэндапится в этом канале")
+		return c.String(http.StatusOK, r.conf.Translate.NoSuchUserInWorkspace)
+	}
+	member, err := r.db.FindChannelMemberByUserName(user.UserName)
+	if err != nil {
+		return c.String(http.StatusOK, r.conf.Translate.UserDoesNotStandup)
 	}
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
@@ -691,7 +696,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 
-	report, err := r.report.StandupReportByProjectAndUser(channel, user.UserID, dateFrom, dateTo)
+	report, err := r.report.StandupReportByProjectAndUser(channel, member.UserID, dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("rest: StandupReportByProjectAndUser failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
@@ -706,7 +711,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	for _, t := range report.ReportBody {
 		text += t.Text
 		if r.conf.TeamMonitoringEnabled {
-			data := fmt.Sprintf("%v/%v", user.UserID, channel.ChannelName)
+			data := fmt.Sprintf("%v/%v", member.UserID, channel.ChannelName)
 			cd, err := teammonitoring.GetCollectorData(r.conf, "user-in-project", data, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
 			if err != nil {
 				continue

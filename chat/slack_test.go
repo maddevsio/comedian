@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/maddevsio/comedian/config"
@@ -42,8 +41,7 @@ func TestIsStandup(t *testing.T) {
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 	for _, tt := range testCases {
-		_, ok, err := s.isStandup(tt.input)
-		fmt.Println(err)
+		_, ok, _ := s.isStandup(tt.input)
 		if ok != tt.confirm {
 			t.Errorf("Test %s: \n input: %s,\n expected confirm: %v\n actual confirm: %v \n", tt.title, tt.input, tt.confirm, ok)
 		}

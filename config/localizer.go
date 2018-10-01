@@ -89,6 +89,14 @@ type Translate struct {
 	T3 string
 
 	WrongUsernameError string
+
+	SelectUsersToAdd        string
+	SelectUsersToDelete     string
+	UserDoesNotStandup      string
+	SelectUsersToAddAsAdmin string
+	NoSuchUserInWorkspace   string
+	UserNotAdmin            string
+	WrongProjectName        string
 }
 
 // GetTranslation sets translation files for config
@@ -155,6 +163,14 @@ func GetTranslation(lang string) (Translate, error) {
 		"PMRemoved",
 		"isRookMonday",
 		"wrongUsernameError",
+
+		"selectUsersToAdd",
+		"selectUsersToDelete",
+		"userDoesNotStandup",
+		"selectUsersToAddAsAdmin",
+		"noSuchUserInWorkspace",
+		"userNotAdmin",
+		"wrongProjectName",
 	}
 
 	for _, t := range r {
@@ -239,6 +255,14 @@ func GetTranslation(lang string) (Translate, error) {
 		T3: m["t3"],
 
 		WrongUsernameError: m["wrongUsernameError"],
+
+		SelectUsersToAdd:        m["selectUsersToAdd"],
+		SelectUsersToDelete:     m["selectUsersToDelete"],
+		UserDoesNotStandup:      m["userDoesNotStandup"],
+		SelectUsersToAddAsAdmin: m["selectUsersToAddAsAdmin"],
+		NoSuchUserInWorkspace:   m["noSuchUserInWorkspace"],
+		UserNotAdmin:            m["userNotAdmin"],
+		WrongProjectName:        m["wrongProjectName"],
 	}
 
 	return t, nil

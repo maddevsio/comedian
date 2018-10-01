@@ -82,3 +82,11 @@ isRookMonday = "<@%v> twiddled in #%v from Friday till yesterday! (%v)\n"
 
 
 wrongUsernameError = "Seems like you misspelled username. Please, check and try command again!"
+
+selectUsersToAdd = "Select users to add"
+selectUsersToDelete = "Select users to delete"
+userDoesNotStandup = "User <@%v> does not standup in this channel\n"
+selectUsersToAddAsAdmin = "Select users to add as admin"
+noSuchUserInWorkspace = "No such user in your slack!"
+userNotAdmin = "This user is not admin!"
+wrongProjectName = "Wrong project title!"

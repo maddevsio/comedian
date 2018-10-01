@@ -12,7 +12,7 @@ CREATE TABLE `timetables` (
     `thursday` INTEGER NOT NULL,
     `friday` INTEGER NOT NULL,
     `saturday` INTEGER NOT NULL,
-    `sunday` INTEGER NOT NULL,
+    `sunday` INTEGER NOT NULL
 );
 
 -- +goose Down

@@ -118,7 +118,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	case typeMessage:
 		_, err := s.db.FindChannelMemberByUserID(msg.User, msg.Channel)
 		if err != nil {
-			logrus.Infof("slack.go User is not a channel member: %v", err)
+			logrus.Info("User is not a channel member. Skip handleMessage!")
 			return nil
 		}
 		standupText, messageIsStandup, err := s.isStandup(msg.Msg.Text)
