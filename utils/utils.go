@@ -48,3 +48,10 @@ func FormatTime(t string) (hour, min int, err error) {
 	}
 	return hour, min, nil
 }
+
+//SplitTimeTalbeCommand returns set of substrings
+func SplitTimeTalbeCommand(t, on, at string) (string, string, string) {
+	a := strings.Split(t, on)
+	b := strings.Split(a[1], at)
+	return strings.TrimSpace(a[0]), strings.TrimSpace(b[0]), strings.TrimSpace(b[1])
+}

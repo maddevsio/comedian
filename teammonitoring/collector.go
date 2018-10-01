@@ -45,13 +45,13 @@ func NewTeamMonitoring(c config.Config, chat chat.Chat) (*TeamMonitoring, error)
 
 // Start starts all team monitoring treads
 func (tm *TeamMonitoring) Start() {
-	gocron.Every(1).Day().At(tm.Config.ReportTime).Do(tm.reportRooks)
+	gocron.Every(1).Day().At("14:00").Do(tm.reportRooks)
 }
 
 func (tm *TeamMonitoring) reportRooks() {
 	finalText, err := tm.RevealRooks()
-	if err != nil {
-		tm.Chat.SendMessage(tm.Config.ReportingChannel, err.Error())
+	if err != nil || finalText == "" {
+		tm.Chat.SendMessage(tm.Config.ReportingChannel, "Report is currently unavailable due to unexpected error while processing data")
 	}
 	tm.Chat.SendMessage(tm.Config.ReportingChannel, finalText)
 }
@@ -67,26 +67,26 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 	if int(time.Now().Weekday()) == 1 {
 		timeFrom = time.Now().AddDate(0, 0, -3)
 	}
+	logrus.Infof("Time from: %v", timeFrom)
 	allUsers, err := tm.db.ListAllChannelMembers()
 	if err != nil {
 		logrus.Errorf("team monitoring: tm.GetCurrentDayNonReporters failed: %v\n", err)
 		return "", err
 	}
-
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", timeFrom.Year(), timeFrom.Month(), timeFrom.Day())
-
 	finalText := ""
+
 	for _, user := range allUsers {
 		project, err := tm.db.SelectChannel(user.ChannelID)
 		if err != nil {
-			continue
+			return "", err
 		}
 		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
 
 		data, err := GetCollectorData(tm.Config, "user-in-project", userInProject, dateFrom, dateFrom)
 		if err != nil {
 			logrus.Errorf("team monitoring: getCollectorData failed: %v\n", err)
-			continue
+			return "", err
 		}
 		isNonReporter, err := tm.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom.AddDate(0, 0, -1), time.Now())
 		if err != nil {

@@ -32,16 +32,19 @@ type REST struct {
 }
 
 const (
-	commandAddAdmin               = "/adminadd"
-	commandAddPM                  = "/pmadd"
-	commandRemoveAdmin            = "/adminremove"
-	commandListAdmins             = "/adminlist"
-	commandAddUser                = "/comedianadd"
-	commandRemoveUser             = "/comedianremove"
-	commandListUsers              = "/comedianlist"
-	commandAddTime                = "/standuptimeset"
-	commandRemoveTime             = "/standuptimeremove"
-	commandListTime               = "/standuptime"
+	commandAddAdmin               = "/admin_add"
+	commandAddPM                  = "/pm_add"
+	commandRemoveAdmin            = "/admin_remove"
+	commandListAdmins             = "/admin_list"
+	commandAddUser                = "/comedian_add"
+	commandRemoveUser             = "/comedian_remove"
+	commandListUsers              = "/comedian_list"
+	commandAddTime                = "/standup_time_set"
+	commandRemoveTime             = "/standup_time_remove"
+	commandListTime               = "/standup_time"
+	commandAddTimeTable           = "/timetable_set"
+	commandRemoveTimeTable        = "/timetable_remove"
+	commandShowTimeTable          = "/timetable_show"
 	commandReportByProject        = "/report_by_project"
 	commandReportByUser           = "/report_by_user"
 	commandReportByProjectAndUser = "/report_by_project_and_user"
@@ -120,6 +123,12 @@ func (r *REST) handleCommands(c echo.Context) error {
 			return r.removeTime(c, form)
 		case commandListTime:
 			return r.listTime(c, form)
+		case commandAddTimeTable:
+			return r.addTimeTable(c, form)
+		case commandRemoveTimeTable:
+			return r.removeTimeTalbe(c, form)
+		case commandShowTimeTable:
+			return r.showTimeTable(c, form)
 		case commandReportByProject:
 			return r.reportByProject(c, form)
 		case commandReportByUser:
@@ -487,6 +496,65 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) listTime(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
+	var ca ChannelIDForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		logrus.Errorf("rest: listTime Decode failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		logrus.Errorf("rest: listTime Validate failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	standupTime, err := r.db.GetChannelStandupTime(ca.ChannelID)
+	logrus.Errorf("GetChannelStandupTime failed: %v", err)
+	if err != nil || standupTime == int64(0) {
+		return c.String(http.StatusOK, r.conf.Translate.ShowNoStandupTime)
+	}
+	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ShowStandupTime, standupTime))
+}
+
+func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
+	var ca FullSlackForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		logrus.Errorf("rest: addTime Decode failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		logrus.Errorf("rest: addTime Validate failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+}
+
+func (r *REST) removeTimeTable(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
+	var ca ChannelForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		logrus.Errorf("rest: removeTime Decode failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		logrus.Errorf("rest: removeTime Validate failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	err := r.db.DeleteStandupTime(ca.ChannelID)
+	if err != nil {
+		logrus.Errorf("rest: DeleteStandupTime failed: %v\n", err)
+		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v\n", err))
+	}
+}
+
+func (r *REST) showTimeTable(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}

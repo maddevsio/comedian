@@ -30,3 +30,37 @@ func TestSecondsToHuman(t *testing.T) {
 	}
 
 }
+
+func TestSplitTimeTalbeCommand(t *testing.T) {
+	testCases := []struct {
+		command  string
+		users    string
+		weekdays string
+		time     string
+	}{
+		{"@anatoliy on friday at 1pm", "@anatoliy", "friday", "1pm"},
+		{"@anatoliy @erik @alex on friday tuesday monday wednesday at 3pm", "@anatoliy @erik @alex", "friday tuesday monday wednesday", "3pm"},
+	}
+	for _, tt := range testCases {
+		users, weekdays, deadline := SplitTimeTalbeCommand(tt.command, " on ", " at ")
+		assert.Equal(t, tt.users, users)
+		assert.Equal(t, tt.weekdays, weekdays)
+		assert.Equal(t, tt.time, deadline)
+	}
+
+	testCasesRus := []struct {
+		command  string
+		users    string
+		weekdays string
+		time     string
+	}{
+		{"@anatoliy по пятницам в 1pm", "@anatoliy", "пятницам", "1pm"},
+		{"@anatoliy @erik @alex по понедельникам пятницам вторникам в 3pm", "@anatoliy @erik @alex", "понедельникам пятницам вторникам", "3pm"},
+	}
+	for _, tt := range testCasesRus {
+		users, weekdays, deadline := SplitTimeTalbeCommand(tt.command, " по ", " в ")
+		assert.Equal(t, tt.users, users)
+		assert.Equal(t, tt.weekdays, weekdays)
+		assert.Equal(t, tt.time, deadline)
+	}
+}
