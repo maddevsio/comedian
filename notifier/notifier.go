@@ -130,7 +130,7 @@ func (n *Notifier) SendIndividualWarning(channelMemberID int64) {
 	}
 	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
 	if !submittedStandup {
-		err = n.Chat.SendMessage(chm.ChannelID, fmt.Sprintf("Attention <@%s>! %v min before standup deadline! Hurry up!", chm.UserID, n.Config.ReminderTime))
+		err = n.Chat.SendMessage(chm.ChannelID, fmt.Sprintf(n.Config.Translate.IndividualStandupersWarning, chm.UserID, n.Config.ReminderTime))
 		if err != nil {
 			logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
 			return
@@ -249,7 +249,7 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 	notify := func() error {
 		submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
 		if repeats < n.Config.ReminderRepeatsMax && !submittedStandup {
-			n.Chat.SendMessage(channel.ChannelID, fmt.Sprintf("<@%v>, you are bad! Submit standup ASAP or I will kill that dog!", chm.UserID))
+			n.Chat.SendMessage(channel.ChannelID, fmt.Sprintf(n.Config.Translate.IndividualStandupersLate, chm.UserID))
 			repeats++
 			err := errors.New("Continue backoff")
 			return err

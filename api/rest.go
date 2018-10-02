@@ -531,10 +531,10 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: addTime Validate failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	usersText, weekdays, time := utils.SplitTimeTalbeCommand(ca.Text, " on ", " at ")
+	usersText, weekdays, time := utils.SplitTimeTalbeCommand(ca.Text, r.conf.Translate.DaysDivider, r.conf.Translate.TimeDivider)
 	users := strings.Split(usersText, " ")
 	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, "Select standupers to create their timetables")
+		return c.String(http.StatusBadRequest, r.conf.Translate.TimetableNoUsers)
 	}
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
@@ -571,11 +571,11 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 			}
 			ttNew, err = r.db.UpdateTimeTable(ttNew)
 			if err != nil {
-				c.String(http.StatusOK, fmt.Sprintf("Could not update timetable for user <@%v>: %v\n", userName, err))
+				c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.CanNotUpdateTimetable, userName, err))
 				continue
 			}
 			logrus.Infof("Timetable created id:%v", ttNew.ID)
-			c.String(http.StatusOK, fmt.Sprintf("Timetable for <@%v> created: %v \n", userID, ttNew.Show()))
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.TimetableCreated, userID, ttNew.Show()))
 			continue
 		}
 		tt, err = r.prepareTimeTable(tt, weekdays, time)
@@ -585,11 +585,11 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 		}
 		tt, err = r.db.UpdateTimeTable(tt)
 		if err != nil {
-			c.String(http.StatusOK, fmt.Sprintf("Could not update timetable for user <@%v>: %v\n", userName, err))
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.CanNotUpdateTimetable, userName, err))
 			continue
 		}
 		logrus.Infof("Timetable updated id:%v", tt.ID)
-		c.String(http.StatusOK, fmt.Sprintf("Timetable for <@%v> updated: %v \n", userID, tt.Show()))
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.TimetableUpdated, userID, tt.Show()))
 	}
 	return nil
 }
@@ -623,15 +623,15 @@ func (r *REST) showTimeTable(c echo.Context, f url.Values) error {
 
 		m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
 		if err != nil {
-			c.String(http.StatusOK, fmt.Sprintf("Seems like <@%v> is not even assigned as standuper in this channel!\n", userName))
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.NotAStanduper, userName))
 			continue
 		}
 		tt, err := r.db.SelectTimeTable(m.ID)
 		if err != nil {
-			c.String(http.StatusOK, fmt.Sprintf("<@%v> does not have a timetable!\n", userName))
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.NoTimetableSet, userName))
 			continue
 		}
-		c.String(http.StatusOK, fmt.Sprintf("Timetable for <@%v> is: %v\n", userName, tt.Show()))
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.TimetableShow, userName, tt.Show()))
 	}
 	return nil
 }
@@ -665,20 +665,20 @@ func (r *REST) removeTimeTable(c echo.Context, f url.Values) error {
 
 		m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
 		if err != nil {
-			c.String(http.StatusOK, fmt.Sprintf("Seems like <@%v> is not assigned as standuper in this channel!\n", userName))
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.NotAStanduper, userName))
 			continue
 		}
 		tt, err := r.db.SelectTimeTable(m.ID)
 		if err != nil {
-			c.String(http.StatusOK, fmt.Sprintf("<@%v> does not have a timetable!\n", userName))
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.NoTimetableSet, userName))
 			continue
 		}
 		err = r.db.DeleteTimeTable(tt.ID)
 		if err != nil {
-			c.String(http.StatusOK, fmt.Sprintf("Could not delete timetable for user <@%v>\n", userName))
+			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.CanNotDeleteTimetable, userName))
 			continue
 		}
-		c.String(http.StatusOK, fmt.Sprintf("Timetable removed for <@%v>\n", userName))
+		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.TimetableDeleted, userName))
 	}
 	return nil
 }

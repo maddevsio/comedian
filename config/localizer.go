@@ -97,6 +97,20 @@ type Translate struct {
 	NoSuchUserInWorkspace   string
 	UserNotAdmin            string
 	WrongProjectName        string
+
+	DaysDivider                 string
+	TimeDivider                 string
+	TimetableNoUsers            string
+	TimetableCreated            string
+	TimetableUpdated            string
+	CanNotUpdateTimetable       string
+	NotAStanduper               string
+	NoTimetableSet              string
+	TimetableShow               string
+	CanNotDeleteTimetable       string
+	TimetableDeleted            string
+	IndividualStandupersWarning string
+	IndividualStandupersLate    string
 }
 
 // GetTranslation sets translation files for config
@@ -171,6 +185,19 @@ func GetTranslation(lang string) (Translate, error) {
 		"noSuchUserInWorkspace",
 		"userNotAdmin",
 		"wrongProjectName",
+		"DaysDivider",
+		"TimeDivider",
+		"TimetableNoUsers",
+		"TimetableCreated",
+		"TimetableUpdated",
+		"CanNotUpdateTimetable",
+		"NotAStanduper",
+		"NoTimetableSet",
+		"TimetableShow",
+		"CanNotDeleteTimetable",
+		"TimetableDeleted",
+		"IndividualStandupersWarning",
+		"IndividualStandupersLate",
 	}
 
 	for _, t := range r {
@@ -263,6 +290,20 @@ func GetTranslation(lang string) (Translate, error) {
 		NoSuchUserInWorkspace:   m["noSuchUserInWorkspace"],
 		UserNotAdmin:            m["userNotAdmin"],
 		WrongProjectName:        m["wrongProjectName"],
+
+		DaysDivider:                 m["DaysDivider"],
+		TimeDivider:                 m["TimeDivider"],
+		TimetableNoUsers:            m["TimetableNoUsers"],
+		TimetableCreated:            m["TimetableCreated"],
+		TimetableUpdated:            m["TimetableUpdated"],
+		CanNotUpdateTimetable:       m["CanNotUpdateTimetable"],
+		NotAStanduper:               m["NotAStanduper"],
+		NoTimetableSet:              m["NoTimetableSet"],
+		TimetableShow:               m["TimetableShow"],
+		CanNotDeleteTimetable:       m["CanNotDeleteTimetable"],
+		TimetableDeleted:            m["TimetableDeleted"],
+		IndividualStandupersWarning: m["IndividualStandupersWarning"],
+		IndividualStandupersLate:    m["IndividualStandupersLate"],
 	}
 
 	return t, nil

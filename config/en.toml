@@ -90,3 +90,20 @@ selectUsersToAddAsAdmin = "Select users to add as admin"
 noSuchUserInWorkspace = "No such user in your slack!"
 userNotAdmin = "This user is not admin!"
 wrongProjectName = "Wrong project title!"
+
+DaysDivider = " on "
+TimeDivider = " at " 
+TimetableNoUsers = "Select standupers to create their timetables"
+TimetableCreated = "Timetable for <@%v> created: %v \n"
+
+TimetableUpdated = "Timetable for <@%v> updated: %v \n"
+CanNotUpdateTimetable = "Could not update timetable for user <@%v>: %v\n"
+NotAStanduper = "Seems like <@%v> is not even assigned as standuper in this channel!\n"
+NoTimetableSet = "<@%v> does not have a timetable!\n"
+TimetableShow = "Timetable for <@%v> is: %v\n"
+
+CanNotDeleteTimetable = "Could not delete timetable for user <@%v>\n"
+TimetableDeleted = "Timetable removed for <@%v>\n"
+
+IndividualStandupersWarning = "Attention <@%s>! %v min before standup deadline! Hurry up!"
+IndividualStandupersLate = "<@%v>, you are bad! Submit standup ASAP or I will kill that dog!"

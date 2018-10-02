@@ -90,3 +90,20 @@ selectUsersToAddAsAdmin = "Укажите пользователей, котор
 noSuchUserInWorkspace = "Такого пользователя нет в вашем слаке"
 userNotAdmin = "Этот пользователь не админ!"
 wrongProjectName = "Неверное название проекта!"
+
+DaysDivider = " по "
+TimeDivider = " в " 
+TimetableNoUsers = "Выберите стэндаперов!"
+TimetableCreated = "Расписание для <@%v> создано: %v \n"
+
+TimetableUpdated = "Расписание для <@%v> обновлено: %v \n"
+CanNotUpdateTimetable = "Не смог обновить расписание для <@%v>: %v\n"
+NotAStanduper = "Кажется <@%v> не стэндапит в этом канале!\n"
+NoTimetableSet = "У <@%v> не установлено расписание!\n"
+TimetableShow = "Расписание для <@%v>: %v\n"
+
+CanNotDeleteTimetable = "Не смог создать расписание для <@%v>\n"
+TimetableDeleted = "Расписание <@%v> успешно удалено! Теперь он стэндапится по общему графику\n"
+
+IndividualStandupersWarning = "Внимание <@%s>! Кажется, твоего стэндапа до сих пор нет, а через %v минут уже последний срок! Поторопись!"
+IndividualStandupersLate = "<@%v>, сроки пропущены! Пожалуйста, напиши стэндап как можно скорее!"
