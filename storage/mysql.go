@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"time"
 
 	// This line is must for working MySQL database
@@ -122,6 +123,13 @@ func (m *MySQL) CreateChannelMember(s model.ChannelMember) (model.ChannelMember,
 func (m *MySQL) FindChannelMemberByUserID(userID, channelID string) (model.ChannelMember, error) {
 	var u model.ChannelMember
 	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
+	return u, err
+}
+
+//SelectChannelMember finds user in channel
+func (m *MySQL) SelectChannelMember(id int64) (model.ChannelMember, error) {
+	var u model.ChannelMember
+	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE id=?", id)
 	return u, err
 }
 
@@ -476,4 +484,25 @@ func (m *MySQL) SelectTimeTable(ChannelMemberID int64) (model.TimeTable, error) 
 func (m *MySQL) DeleteTimeTable(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `timetables` WHERE id=?", id)
 	return err
+}
+
+//ListTimeTablesForDay returns list of chan members who has timetables
+func (m *MySQL) ListTimeTablesForDay(day string) ([]model.TimeTable, error) {
+	var tt []model.TimeTable
+	query := fmt.Sprintf("select channel_member_id, %s from timetables where %s != 0", day, day)
+	err := m.conn.Select(&tt, query)
+	if err != nil {
+		return tt, err
+	}
+	return tt, nil
+}
+
+func (m *MySQL) MemberHasTimeTable(id int64) bool {
+	var t int64
+	err := m.conn.Get(&t, "SELECT id FROM `timetables` WHERE channel_member_id=?", id)
+	if err != nil {
+		return false
+	}
+	logrus.Infof("MemberHasTimeTable ID: %v", t)
+	return true
 }

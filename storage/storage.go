@@ -32,6 +32,9 @@ type Storage interface {
 	//FindChannelMemberByUserID finds user in channel
 	FindChannelMemberByUserID(string, string) (model.ChannelMember, error)
 
+	//SelectChannelMember finds user in channel
+	SelectChannelMember(int64) (model.ChannelMember, error)
+
 	//FindChannelMemberByUserName finds user in channel
 	FindChannelMemberByUserName(string, string) (model.ChannelMember, error)
 
@@ -133,4 +136,10 @@ type Storage interface {
 
 	// DeleteTimeTable deletes TimeTable entry from database
 	DeleteTimeTable(int64) error
+
+	//ListStandupersWithTimeTablesForToday returns list of chan members who has timetables
+	ListTimeTablesForDay(string) ([]model.TimeTable, error)
+
+	//MemberHasTimeTable returns true if member has timetable
+	MemberHasTimeTable(int64) bool
 }
