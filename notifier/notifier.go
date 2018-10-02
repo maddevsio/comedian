@@ -34,13 +34,13 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
-	notificationChan := time.NewTicker(time.Second * 60).C
-	notificationTimeTable := time.NewTicker(time.Second * 60).C
+	notificationForChannels := time.NewTicker(time.Second * 60).C
+	notificationForTimeTable := time.NewTicker(time.Second * 60).C
 	for {
 		select {
-		case <-notificationChan:
+		case <-notificationForChannels:
 			n.NotifyChannels()
-		case <-notificationTimeTable:
+		case <-notificationForTimeTable:
 			n.NotifyIndividuals()
 		}
 	}
@@ -82,8 +82,8 @@ func (n *Notifier) NotifyIndividuals() {
 	}
 
 	for _, tt := range tts {
-		standupTime := time.Unix(tt.DayDeadline(day), 0)
-		warningTime := time.Unix(tt.DayDeadline(day)-n.Config.ReminderTime*60, 0)
+		standupTime := time.Unix(tt.ShowDeadlineOn(day), 0)
+		warningTime := time.Unix(tt.ShowDeadlineOn(day)-n.Config.ReminderTime*60, 0)
 		if time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute() {
 			n.SendIndividualWarning(tt.ChannelMemberID)
 		}

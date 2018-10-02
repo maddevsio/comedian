@@ -144,7 +144,7 @@ func (tt TimeTable) Show() string {
 	return timeTableString
 }
 
-func (tt TimeTable) DayDeadline(day string) int64 {
+func (tt TimeTable) ShowDeadlineOn(day string) int64 {
 	switch day {
 	case "monday":
 		return tt.Monday
