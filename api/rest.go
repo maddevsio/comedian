@@ -574,7 +574,7 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 				c.String(http.StatusOK, fmt.Sprintf("Could not update timetable for user <@%v>: %v\n", userName, err))
 				continue
 			}
-			logrus.Infof("Timetable created: %v", ttNew.ID)
+			logrus.Infof("Timetable created id:%v", ttNew.ID)
 			c.String(http.StatusOK, fmt.Sprintf("Timetable for <@%v> created: %v \n", userID, ttNew.Show()))
 			continue
 		}
@@ -588,7 +588,7 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 			c.String(http.StatusOK, fmt.Sprintf("Could not update timetable for user <@%v>: %v\n", userName, err))
 			continue
 		}
-		logrus.Infof("Timetable updated: %v", tt.ID)
+		logrus.Infof("Timetable updated id:%v", tt.ID)
 		c.String(http.StatusOK, fmt.Sprintf("Timetable for <@%v> updated: %v \n", userID, tt.Show()))
 	}
 	return nil
@@ -909,21 +909,24 @@ func (r *REST) userHasAccess(userID, channelID string) bool {
 }
 
 func (r *REST) prepareTimeTable(tt model.TimeTable, weekdays, timeText string) (model.TimeTable, error) {
-	t := strings.Split(timeText, ":")
-	if len(t) < 2 {
-		return tt, errors.New("could not parse timeText properly")
+	timeInt := int64(0)
+	if timeText != "0" {
+		t := strings.Split(timeText, ":")
+		if len(t) < 2 {
+			return tt, errors.New("could not parse timeText properly")
+		}
+		hours, err := strconv.Atoi(t[0])
+		if err != nil {
+			logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
+			return tt, err
+		}
+		munites, err := strconv.Atoi(t[1])
+		if err != nil {
+			logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
+			return tt, err
+		}
+		timeInt = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), hours, munites, 0, 0, time.Local).Unix()
 	}
-	hours, err := strconv.Atoi(t[0])
-	if err != nil {
-		logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
-		return tt, err
-	}
-	munites, err := strconv.Atoi(t[1])
-	if err != nil {
-		logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
-		return tt, err
-	}
-	timeInt := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), hours, munites, 0, 0, time.Local).Unix()
 
 	if strings.Contains(weekdays, "mon") || strings.Contains(weekdays, "пн") {
 		tt.Monday = timeInt
