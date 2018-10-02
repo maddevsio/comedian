@@ -404,13 +404,6 @@ func TestCRUDTimeTable(t *testing.T) {
 
 	_, err = db.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: m.ID,
-		Monday:          int64(0),
-		Tuesday:         int64(0),
-		Wednesday:       int64(0),
-		Thursday:        int64(0),
-		Friday:          int64(0),
-		Saturday:        int64(0),
-		Sunday:          int64(0),
 	})
 	assert.NoError(t, err)
 

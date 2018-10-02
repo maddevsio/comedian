@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -100,4 +101,45 @@ func (u User) IsAdmin() bool {
 		return true
 	}
 	return false
+}
+
+//Show shows timetable
+func (tt TimeTable) Show() string {
+	timeTableString := ""
+	if tt.Monday != 0 {
+		monday := time.Unix(tt.Monday, 0)
+		timeTableString += fmt.Sprintf("| Monday %02d:%02d ", monday.Hour(), monday.Minute())
+	}
+	if tt.Tuesday != 0 {
+		tuesday := time.Unix(tt.Tuesday, 0)
+		timeTableString += fmt.Sprintf("| Tuesday %02d:%02d ", tuesday.Hour(), tuesday.Minute())
+	}
+	if tt.Wednesday != 0 {
+		wednesday := time.Unix(tt.Wednesday, 0)
+		timeTableString += fmt.Sprintf("| Wednesday %02d:%02d ", wednesday.Hour(), wednesday.Minute())
+	}
+	if tt.Thursday != 0 {
+		thursday := time.Unix(tt.Thursday, 0)
+		timeTableString += fmt.Sprintf("| Thursday %02d:%02d ", thursday.Hour(), thursday.Minute())
+	}
+	if tt.Friday != 0 {
+		friday := time.Unix(tt.Friday, 0)
+		timeTableString += fmt.Sprintf("| Friday %02d:%02d ", friday.Hour(), friday.Minute())
+	}
+	if tt.Saturday != 0 {
+		saturday := time.Unix(tt.Saturday, 0)
+		timeTableString += fmt.Sprintf("| Saturday %02d:%02d ", saturday.Hour(), saturday.Minute())
+	}
+	if tt.Sunday != 0 {
+		sunday := time.Unix(tt.Sunday, 0)
+		timeTableString += fmt.Sprintf("| Sunday %02d:%02d ", sunday.Hour(), sunday.Minute())
+	}
+
+	if timeTableString == "" {
+		return "Currently user does not submit standups!"
+	} else {
+		timeTableString += "|"
+	}
+
+	return timeTableString
 }

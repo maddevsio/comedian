@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -530,10 +531,10 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: addTime Validate failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	usersText, _, _ := utils.SplitTimeTalbeCommand(ca.Text, " on ", " at ")
+	usersText, weekdays, time := utils.SplitTimeTalbeCommand(ca.Text, " on ", " at ")
 	users := strings.Split(usersText, " ")
 	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, "Select standupers to delete their timetables")
+		return c.String(http.StatusBadRequest, "Select standupers to create their timetables")
 	}
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
@@ -541,29 +542,56 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 			c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
 			continue
 		}
-		userID, _ := utils.SplitUser(u)
+		userID, userName := utils.SplitUser(u)
 
 		m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
 		if err != nil {
-			c.String(http.StatusOK, "Could not find this standuper!")
+			logrus.Errorf("FindChannelMemberByUserID failed: %v", err)
+			m, err = r.db.CreateChannelMember(model.ChannelMember{
+				UserID:    userID,
+				ChannelID: f.Get("channel_id"),
+			})
+			if err != nil {
+				logrus.Errorf("rest: CreateChannelMember failed: %v\n", err)
+				c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user:%v\n", err))
+				continue
+			}
+		}
+
+		tt, err := r.db.SelectTimeTable(m.ID)
+		if err != nil {
+			logrus.Infof("Timetable for this standuper does not exist. Creating...")
+			ttNew, err := r.db.CreateTimeTable(model.TimeTable{
+				ChannelMemberID: m.ID,
+			})
+			ttNew, err = r.prepareTimeTable(ttNew, weekdays, time)
+			if err != nil {
+				c.String(http.StatusOK, fmt.Sprintf("Could not fetch data into timetable for user <@%v>\n", userName))
+				continue
+			}
+			ttNew, err = r.db.UpdateTimeTable(ttNew)
+			if err != nil {
+				c.String(http.StatusOK, fmt.Sprintf("Could not update timetable for user <@%v>: %v\n", userName, err))
+				continue
+			}
+			logrus.Infof("Timetable created: %v", ttNew.ID)
+			c.String(http.StatusOK, fmt.Sprintf("Timetable for <@%v> created: %v \n", userID, ttNew.Show()))
 			continue
 		}
-		tt, err := r.db.CreateTimeTable(model.TimeTable{
-			ChannelMemberID: m.ID,
-			Monday:          int64(0),
-			Tuesday:         int64(0),
-			Wednesday:       int64(0),
-			Thursday:        int64(0),
-			Friday:          int64(0),
-			Saturday:        int64(0),
-			Sunday:          int64(0),
-		})
+		tt, err = r.prepareTimeTable(tt, weekdays, time)
 		if err != nil {
-			return c.String(http.StatusOK, "Could not create timetable")
+			c.String(http.StatusOK, fmt.Sprintf("Could not fetch data into timetable for user <@%v>\n", userName))
+			continue
 		}
-		logrus.Infof("Timetable created: %v", tt)
+		tt, err = r.db.UpdateTimeTable(tt)
+		if err != nil {
+			c.String(http.StatusOK, fmt.Sprintf("Could not update timetable for user <@%v>: %v\n", userName, err))
+			continue
+		}
+		logrus.Infof("Timetable updated: %v", tt.ID)
+		c.String(http.StatusOK, fmt.Sprintf("Timetable for <@%v> updated: %v \n", userID, tt.Show()))
 	}
-	return c.String(http.StatusOK, "Timetables for standupers were created!")
+	return nil
 }
 
 func (r *REST) showTimeTable(c echo.Context, f url.Values) error {
@@ -580,21 +608,32 @@ func (r *REST) showTimeTable(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-	if !rg.MatchString(ca.Text) {
-		return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+	users := strings.Split(ca.Text, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Select standupers to show their timetables")
 	}
-	userID, _ := utils.SplitUser(ca.Text)
 
-	m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
-	if err != nil {
-		return c.String(http.StatusOK, "Could not find this standuper!")
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+			continue
+		}
+		userID, userName := utils.SplitUser(u)
+
+		m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
+		if err != nil {
+			c.String(http.StatusOK, fmt.Sprintf("Seems like <@%v> is not even assigned as standuper in this channel!\n", userName))
+			continue
+		}
+		tt, err := r.db.SelectTimeTable(m.ID)
+		if err != nil {
+			c.String(http.StatusOK, fmt.Sprintf("<@%v> does not have a timetable!\n", userName))
+			continue
+		}
+		c.String(http.StatusOK, fmt.Sprintf("Timetable for <@%v> is: %v\n", userName, tt.Show()))
 	}
-	tt, err := r.db.SelectTimeTable(m.ID)
-	if err != nil {
-		return c.String(http.StatusOK, "Standuper does not have a timetable yet!")
-	}
-	return c.String(http.StatusOK, fmt.Sprintf("Timetable for standuper is: %v", tt))
+	return nil
 }
 
 func (r *REST) removeTimeTable(c echo.Context, f url.Values) error {
@@ -622,25 +661,26 @@ func (r *REST) removeTimeTable(c echo.Context, f url.Values) error {
 			c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
 			continue
 		}
-		userID, _ := utils.SplitUser(u)
+		userID, userName := utils.SplitUser(u)
 
 		m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
 		if err != nil {
-			c.String(http.StatusOK, "Could not find this standuper!")
+			c.String(http.StatusOK, fmt.Sprintf("Seems like <@%v> is not assigned as standuper in this channel!\n", userName))
 			continue
 		}
 		tt, err := r.db.SelectTimeTable(m.ID)
 		if err != nil {
-			c.String(http.StatusOK, "Standuper does not have a timetable yet!")
+			c.String(http.StatusOK, fmt.Sprintf("<@%v> does not have a timetable!\n", userName))
 			continue
 		}
 		err = r.db.DeleteTimeTable(tt.ID)
 		if err != nil {
-			c.String(http.StatusOK, "Could not delete timetable for user!")
+			c.String(http.StatusOK, fmt.Sprintf("Could not delete timetable for user <@%v>\n", userName))
 			continue
 		}
+		c.String(http.StatusOK, fmt.Sprintf("Timetable removed for <@%v>\n", userName))
 	}
-	return c.String(http.StatusOK, "Timetable removed for all users!")
+	return nil
 }
 
 ///report_by_project #collector-test 2018-07-24 2018-07-26
@@ -866,4 +906,45 @@ func (r *REST) userHasAccess(userID, channelID string) bool {
 	}
 	logrus.Infof("User: %s does not have admin access!", user.UserName)
 	return false
+}
+
+func (r *REST) prepareTimeTable(tt model.TimeTable, weekdays, timeText string) (model.TimeTable, error) {
+	t := strings.Split(timeText, ":")
+	if len(t) < 2 {
+		return tt, errors.New("could not parse timeText properly")
+	}
+	hours, err := strconv.Atoi(t[0])
+	if err != nil {
+		logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
+		return tt, err
+	}
+	munites, err := strconv.Atoi(t[1])
+	if err != nil {
+		logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
+		return tt, err
+	}
+	timeInt := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), hours, munites, 0, 0, time.Local).Unix()
+
+	if strings.Contains(weekdays, "mon") || strings.Contains(weekdays, "пн") {
+		tt.Monday = timeInt
+	}
+	if strings.Contains(weekdays, "tue") || strings.Contains(weekdays, "вт") {
+		tt.Tuesday = timeInt
+	}
+	if strings.Contains(weekdays, "wed") || strings.Contains(weekdays, "ср") {
+		tt.Wednesday = timeInt
+	}
+	if strings.Contains(weekdays, "thu") || strings.Contains(weekdays, "чт") {
+		tt.Thursday = timeInt
+	}
+	if strings.Contains(weekdays, "fri") || strings.Contains(weekdays, "пт") {
+		tt.Friday = timeInt
+	}
+	if strings.Contains(weekdays, "sat") || strings.Contains(weekdays, "сб") {
+		tt.Saturday = timeInt
+	}
+	if strings.Contains(weekdays, "sun") || strings.Contains(weekdays, "вс") {
+		tt.Sunday = timeInt
+	}
+	return tt, nil
 }

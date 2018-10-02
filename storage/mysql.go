@@ -431,11 +431,11 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	return false
 }
 
-// CreateUser creates standup entry in database
+// CreateTimeTable creates tt entry in database
 func (m *MySQL) CreateTimeTable(t model.TimeTable) (model.TimeTable, error) {
 	res, err := m.conn.Exec(
-		"INSERT INTO `timetables` (channel_member_id, created, modified, monday, tuesday, wednesday, thursday, friday, saturday, sunday) VALUES (?,?, ?, ?, ?, ?, ?,?, ?, ?)",
-		t.ChannelMemberID, time.Now(), time.Now(), t.Monday, t.Tuesday, t.Wednesday, t.Thursday, t.Friday, t.Saturday, t.Sunday)
+		"INSERT INTO `timetables` (channel_member_id, created, modified) VALUES (?, ?, ?)",
+		t.ChannelMemberID, time.Now(), time.Now())
 	if err != nil {
 		return t, err
 	}
