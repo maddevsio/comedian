@@ -126,9 +126,9 @@ func (m *MySQL) FindChannelMemberByUserID(userID, channelID string) (model.Chann
 }
 
 //FindChannelMemberByUserName finds user in channel
-func (m *MySQL) FindChannelMemberByUserName(userName string) (model.ChannelMember, error) {
+func (m *MySQL) FindChannelMemberByUserName(userName, channelID string) (model.ChannelMember, error) {
 	var u model.ChannelMember
-	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE user_id=(select user_id from users where user_name=?)", userName)
+	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE user_id=(select user_id from users where user_name=?) and channel_id=?", userName, channelID)
 	return u, err
 }
 
@@ -431,54 +431,39 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	return false
 }
 
-// TimeTable model used for serialization/deserialization stored timetables
-TimeTable struct {
-	ID              int64     `db:"id" json:"id"`
-	ChannelMemberID int64     `db:"channel_member_id" json:"channel_member_id"`
-	Created         time.Time `db:"created" json:"created"`
-	Modified        time.Time `db:"modified" json:"modified"`
-	Monday          int64     `db:"monday" json:"monday"`
-	Tuesday         int64     `db:"tuesday" json:"tuesday"`
-	Wednesday       int64     `db:"wednesday" json:"wednesday"`
-	Thursday        int64     `db:"thursday" json:"thursday"`
-	Friday          int64     `db:"friday" json:"friday"`
-	Saturday        int64     `db:"saturday" json:"saturday"`
-	Sunday          int64     `db:"sunday" json:"sunday"`
-}
-
 // CreateUser creates standup entry in database
 func (m *MySQL) CreateTimeTable(t model.TimeTable) (model.TimeTable, error) {
 	res, err := m.conn.Exec(
 		"INSERT INTO `timetables` (channel_member_id, created, modified, monday, tuesday, wednesday, thursday, friday, saturday, sunday) VALUES (?,?, ?, ?, ?, ?, ?,?, ?, ?)",
 		t.ChannelMemberID, time.Now(), time.Now(), t.Monday, t.Tuesday, t.Wednesday, t.Thursday, t.Friday, t.Saturday, t.Sunday)
 	if err != nil {
-		return c, err
+		return t, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return c, err
+		return t, err
 	}
-	c.ID = id
+	t.ID = id
 
-	return c, nil
+	return t, nil
 }
 
 // UpdateTimeTable updates TimeTable entry in database
 func (m *MySQL) UpdateTimeTable(t model.TimeTable) (model.TimeTable, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `timetables` set modified =?, monday =?, tuesday =?, wednesday =?, thursday =?, friday =?, saturday =?, sunday = ? where id=?", 
+		"UPDATE `timetables` set modified =?, monday =?, tuesday =?, wednesday =?, thursday =?, friday =?, saturday =?, sunday = ? where id=?",
 		time.Now(), t.Monday, t.Tuesday, t.Wednesday, t.Thursday, t.Friday, t.Saturday, t.Sunday, t.ID,
 	)
 	if err != nil {
-		return c, err
+		return t, err
 	}
 	var i model.TimeTable
-	err = m.conn.Get(&i, "SELECT * FROM `timetables` WHERE id=?", c.ID)
+	err = m.conn.Get(&i, "SELECT * FROM `timetables` WHERE id=?", t.ID)
 	return i, err
 }
 
 // SelectTimeTable selects TimeTable entry from database
-func (m *MySQL) SelectTimeTable(ChannelMemberID string) (model.TimeTable, error) {
+func (m *MySQL) SelectTimeTable(ChannelMemberID int64) (model.TimeTable, error) {
 	var c model.TimeTable
 	err := m.conn.Get(&c, "SELECT * FROM `timetables` WHERE channel_member_id=?", ChannelMemberID)
 	if err != nil {

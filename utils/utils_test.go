@@ -39,6 +39,7 @@ func TestSplitTimeTalbeCommand(t *testing.T) {
 		time     string
 	}{
 		{"@anatoliy on friday at 1pm", "@anatoliy", "friday", "1pm"},
+		{"<@UB9AE7CL9|fedorenko.tolik> on monday at 5pm", "<@UB9AE7CL9|fedorenko.tolik>", "monday", "5pm"},
 		{"@anatoliy @erik @alex on friday tuesday monday wednesday at 3pm", "@anatoliy @erik @alex", "friday tuesday monday wednesday", "3pm"},
 	}
 	for _, tt := range testCases {

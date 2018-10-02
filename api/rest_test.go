@@ -58,12 +58,12 @@ func TestHandleCommands(t *testing.T) {
 }
 
 func TestHandleUserCommands(t *testing.T) {
-	AddUser := "user_id=UB9AE7CL9&command=/comedianadd&text=<@userid|test>&channel_id=chanid&channel_name=channame"
-	AddEmptyText := "user_id=UB9AE7CL9&command=/comedianadd&text="
-	AddUserEmptyChannelID := "user_id=UB9AE7CL9&command=/comedianadd&text=test&channel_id=&channel_name=channame"
-	AddUserEmptyChannelName := "user_id=UB9AE7CL9&command=/comedianadd&text=test&channel_id=chanid&channel_name="
-	DelUser := "user_id=UB9AE7CL9&command=/comedianremove&text=<@userid|test>&channel_id=chanid"
-	ListUsers := "user_id=UB9AE7CL9&command=/comedianlist&channel_id=chanid"
+	AddUser := "user_id=UB9AE7CL9&command=/comedian_add&text=<@userid|test>&channel_id=chanid&channel_name=channame"
+	AddEmptyText := "user_id=UB9AE7CL9&command=/comedian_add&text="
+	AddUserEmptyChannelID := "user_id=UB9AE7CL9&command=/comedian_add&text=test&channel_id=&channel_name=channame"
+	AddUserEmptyChannelName := "user_id=UB9AE7CL9&command=/comedian_add&text=test&channel_id=chanid&channel_name="
+	DelUser := "user_id=UB9AE7CL9&command=/comedian_remove&text=<@userid|test>&channel_id=chanid"
+	ListUsers := "user_id=UB9AE7CL9&command=/comedian_list&channel_id=chanid"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
@@ -124,7 +124,7 @@ func TestHandleUserCommands(t *testing.T) {
 	}{
 		{"add user with standup time", AddUser, http.StatusOK, "<@test> assigned to submit standups in this channel\n"},
 		{"delete user", DelUser, http.StatusOK, "<@test> no longer submits standups in this channel\n"},
-		{"list no users", ListUsers, http.StatusOK, "No standupers in this channel! To add one, please, use `/comedianadd` slash command"},
+		{"list no users", ListUsers, http.StatusOK, "No standupers in this channel! To add one, please, use `/comedian_add` slash command"},
 	}
 
 	for _, tt := range testCases {
@@ -143,12 +143,12 @@ func TestHandleUserCommands(t *testing.T) {
 }
 
 func TestHandleAdminCommands(t *testing.T) {
-	AddAdmin := "user_id=UB9AE7CL9&command=/adminadd&text=<@userid|test>&channel_id=chanid&channel_name=channame"
-	AddEmptyText := "user_id=UB9AE7CL9&command=/adminadd&text="
-	AddAdminEmptyChannelID := "user_id=UB9AE7CL9&command=/adminadd&text=test&channel_id=&channel_name=channame"
-	AddAdminEmptyChannelName := "user_id=UB9AE7CL9&command=/adminadd&text=test&channel_id=chanid&channel_name="
-	DelAdmin := "user_id=UB9AE7CL9&command=/adminremove&text=<@userid|test>&channel_id=chanid"
-	ListAdmins := "user_id=UB9AE7CL9&command=/adminlist&channel_id=chanid"
+	AddAdmin := "user_id=UB9AE7CL9&command=/admin_add&text=<@userid|test>&channel_id=chanid&channel_name=channame"
+	AddEmptyText := "user_id=UB9AE7CL9&command=/admin_add&text="
+	AddAdminEmptyChannelID := "user_id=UB9AE7CL9&command=/admin_add&text=test&channel_id=&channel_name=channame"
+	AddAdminEmptyChannelName := "user_id=UB9AE7CL9&command=/admin_add&text=test&channel_id=chanid&channel_name="
+	DelAdmin := "user_id=UB9AE7CL9&command=/admin_remove&text=<@userid|test>&channel_id=chanid"
+	ListAdmins := "user_id=UB9AE7CL9&command=/admin_list&channel_id=chanid"
 
 	c, err := config.Get()
 	rest, err := NewRESTAPI(c)
@@ -231,15 +231,15 @@ func TestHandleAdminCommands(t *testing.T) {
 
 func TestHandleTimeCommands(t *testing.T) {
 
-	AddTime := "user_id=UB9AE7CL9&command=/standuptimeset&text=12:05&channel_id=chanid&channel_name=channame"
-	AddTimeEmptyChannelName := "user_id=UB9AE7CL9&command=/standuptimeset&text=12:05&channel_id=chanid&channel_name="
-	AddTimeEmptyChannelID := "user_id=UB9AE7CL9&command=/standuptimeset&text=12:05&channel_id=&channel_name=channame"
-	AddEmptyTime := "user_id=UB9AE7CL9&command=/standuptimeset&text=&channel_id=chanid&channel_name=channame"
-	ListTime := "user_id=UB9AE7CL9&command=/standuptime&channel_id=chanid"
-	ListTimeNoChanID := "user_id=UB9AE7CL9&command=/standuptime&channel_id="
-	DelTime := "user_id=UB9AE7CL9&command=/standuptimeremove&channel_id=chanid&channel_name=channame"
-	DelTimeNoChanID := "user_id=UB9AE7CL9&command=/standuptimeremove&channel_id=&channel_name=channame"
-	DelTimeNoChanName := "user_id=UB9AE7CL9&command=/standuptimeremove&channel_id=chanid&channel_name="
+	AddTime := "user_id=UB9AE7CL9&command=/standup_time_set&text=12:05&channel_id=chanid&channel_name=channame"
+	AddTimeEmptyChannelName := "user_id=UB9AE7CL9&command=/standup_time_set&text=12:05&channel_id=chanid&channel_name="
+	AddTimeEmptyChannelID := "user_id=UB9AE7CL9&command=/standup_time_set&text=12:05&channel_id=&channel_name=channame"
+	AddEmptyTime := "user_id=UB9AE7CL9&command=/standup_time_set&text=&channel_id=chanid&channel_name=channame"
+	ListTime := "user_id=UB9AE7CL9&command=/standup_time&channel_id=chanid"
+	ListTimeNoChanID := "user_id=UB9AE7CL9&command=/standup_time&channel_id="
+	DelTime := "user_id=UB9AE7CL9&command=/standup_time_remove&channel_id=chanid&channel_name=channame"
+	DelTimeNoChanID := "user_id=UB9AE7CL9&command=/standup_time_remove&channel_id=&channel_name=channame"
+	DelTimeNoChanName := "user_id=UB9AE7CL9&command=/standup_time_remove&channel_id=chanid&channel_name="
 	currentTime := time.Now()
 	timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 12, 5, 0, 0, time.Local).Unix()
 
@@ -266,7 +266,7 @@ func TestHandleTimeCommands(t *testing.T) {
 		statusCode   int
 		responseBody string
 	}{
-		{"list time no time added", ListTime, http.StatusOK, "No standup time set for this channel yet! Please, add a standup time using `/standuptimeset` command!"},
+		{"list time no time added", ListTime, http.StatusOK, "No standup time set for this channel yet! Please, add a standup time using `/standup_time_set` command!"},
 		{"add time (no users)", AddTime, http.StatusOK, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>", timeInt)},
 		{"add time no text", AddEmptyTime, http.StatusBadRequest, "`text` cannot be empty"},
 		{"add time no channelName", AddTimeEmptyChannelName, http.StatusBadRequest, "`channel_name` cannot be empty"},

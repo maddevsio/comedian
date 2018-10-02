@@ -126,7 +126,7 @@ func (r *REST) handleCommands(c echo.Context) error {
 		case commandAddTimeTable:
 			return r.addTimeTable(c, form)
 		case commandRemoveTimeTable:
-			return r.removeTimeTalbe(c, form)
+			return r.removeTimeTable(c, form)
 		case commandShowTimeTable:
 			return r.showTimeTable(c, form)
 		case commandReportByProject:
@@ -530,35 +530,47 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: addTime Validate failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+	usersText, _, _ := utils.SplitTimeTalbeCommand(ca.Text, " on ", " at ")
+	users := strings.Split(usersText, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Select standupers to delete their timetables")
+	}
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+			continue
+		}
+		userID, _ := utils.SplitUser(u)
 
-}
-
-func (r *REST) removeTimeTable(c echo.Context, f url.Values) error {
-	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
-		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+		m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
+		if err != nil {
+			c.String(http.StatusOK, "Could not find this standuper!")
+			continue
+		}
+		tt, err := r.db.CreateTimeTable(model.TimeTable{
+			ChannelMemberID: m.ID,
+			Monday:          int64(0),
+			Tuesday:         int64(0),
+			Wednesday:       int64(0),
+			Thursday:        int64(0),
+			Friday:          int64(0),
+			Saturday:        int64(0),
+			Sunday:          int64(0),
+		})
+		if err != nil {
+			return c.String(http.StatusOK, "Could not create timetable")
+		}
+		logrus.Infof("Timetable created: %v", tt)
 	}
-	var ca ChannelForm
-	if err := r.decoder.Decode(&ca, f); err != nil {
-		logrus.Errorf("rest: removeTime Decode failed: %v\n", err)
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-	if err := ca.Validate(); err != nil {
-		logrus.Errorf("rest: removeTime Validate failed: %v\n", err)
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	err := r.db.DeleteStandupTime(ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: DeleteStandupTime failed: %v\n", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete standup time :%v\n", err))
-	}
+	return c.String(http.StatusOK, "Timetables for standupers were created!")
 }
 
 func (r *REST) showTimeTable(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
-	var ca ChannelIDForm
+	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: listTime Decode failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
@@ -568,12 +580,67 @@ func (r *REST) showTimeTable(c echo.Context, f url.Values) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	standupTime, err := r.db.GetChannelStandupTime(ca.ChannelID)
-	logrus.Errorf("GetChannelStandupTime failed: %v", err)
-	if err != nil || standupTime == int64(0) {
-		return c.String(http.StatusOK, r.conf.Translate.ShowNoStandupTime)
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+	if !rg.MatchString(ca.Text) {
+		return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ShowStandupTime, standupTime))
+	userID, _ := utils.SplitUser(ca.Text)
+
+	m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
+	if err != nil {
+		return c.String(http.StatusOK, "Could not find this standuper!")
+	}
+	tt, err := r.db.SelectTimeTable(m.ID)
+	if err != nil {
+		return c.String(http.StatusOK, "Standuper does not have a timetable yet!")
+	}
+	return c.String(http.StatusOK, fmt.Sprintf("Timetable for standuper is: %v", tt))
+}
+
+func (r *REST) removeTimeTable(c echo.Context, f url.Values) error {
+	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
+	var ca FullSlackForm
+	if err := r.decoder.Decode(&ca, f); err != nil {
+		logrus.Errorf("rest: removeTime Decode failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if err := ca.Validate(); err != nil {
+		logrus.Errorf("rest: removeTime Validate failed: %v\n", err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	users := strings.Split(ca.Text, " ")
+	if len(users) < 1 {
+		return c.String(http.StatusBadRequest, "Select standupers to delete their timetables")
+	}
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+			continue
+		}
+		userID, _ := utils.SplitUser(u)
+
+		m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
+		if err != nil {
+			c.String(http.StatusOK, "Could not find this standuper!")
+			continue
+		}
+		tt, err := r.db.SelectTimeTable(m.ID)
+		if err != nil {
+			c.String(http.StatusOK, "Standuper does not have a timetable yet!")
+			continue
+		}
+		err = r.db.DeleteTimeTable(tt.ID)
+		if err != nil {
+			c.String(http.StatusOK, "Could not delete timetable for user!")
+			continue
+		}
+	}
+	return c.String(http.StatusOK, "Timetable removed for all users!")
 }
 
 ///report_by_project #collector-test 2018-07-24 2018-07-26
@@ -742,7 +809,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	if err != nil {
 		return c.String(http.StatusOK, r.conf.Translate.NoSuchUserInWorkspace)
 	}
-	member, err := r.db.FindChannelMemberByUserName(user.UserName)
+	member, err := r.db.FindChannelMemberByUserName(user.UserName, channelID)
 	if err != nil {
 		return c.String(http.StatusOK, r.conf.Translate.UserDoesNotStandup)
 	}

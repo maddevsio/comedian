@@ -33,7 +33,7 @@ type Storage interface {
 	FindChannelMemberByUserID(string, string) (model.ChannelMember, error)
 
 	//FindChannelMemberByUserName finds user in channel
-	FindChannelMemberByUserName(string) (model.ChannelMember, error)
+	FindChannelMemberByUserName(string, string) (model.ChannelMember, error)
 
 	// ListAllChannelMembers returns array of standup entries from database
 	ListAllChannelMembers() ([]model.ChannelMember, error)
@@ -129,7 +129,7 @@ type Storage interface {
 	UpdateTimeTable(model.TimeTable) (model.TimeTable, error)
 
 	// SelectTimeTable selects TimeTable entry from database
-	SelectTimeTable(string) (model.TimeTable, error)
+	SelectTimeTable(int64) (model.TimeTable, error)
 
 	// DeleteTimeTable deletes TimeTable entry from database
 	DeleteTimeTable(int64) error

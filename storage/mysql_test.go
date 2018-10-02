@@ -130,7 +130,7 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "123qwe", su1.ChannelID)
 
-	_, err = db.FindChannelMemberByUserName(u1.UserName)
+	_, err = db.FindChannelMemberByUserName(u1.UserName, "123qwe")
 	assert.NoError(t, err)
 
 	su2, err := db.CreateChannelMember(model.ChannelMember{
@@ -374,4 +374,56 @@ func TestPMForProject(t *testing.T) {
 	assert.NoError(t, db.DeleteChannelMember(pm.UserID, pm.ChannelID))
 	assert.NoError(t, db.DeleteChannel(ch.ID))
 
+}
+
+func TestCRUDTimeTable(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	db, err := NewMySQL(c)
+	assert.NoError(t, err)
+
+	user, err := db.CreateUser(model.User{
+		UserID:   "QWERTY123",
+		UserName: "chanName1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	channel, err := db.CreateChannel(model.Channel{
+		ChannelID:   "XYZ",
+		ChannelName: "chan",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	m, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:    user.UserID,
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	_, err = db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: m.ID,
+		Monday:          int64(0),
+		Tuesday:         int64(0),
+		Wednesday:       int64(0),
+		Thursday:        int64(0),
+		Friday:          int64(0),
+		Saturday:        int64(0),
+		Sunday:          int64(0),
+	})
+	assert.NoError(t, err)
+
+	tts, err := db.SelectTimeTable(m.ID)
+	assert.NoError(t, err)
+
+	tts.Monday = int64(10000)
+
+	_, err = db.UpdateTimeTable(tts)
+	assert.NoError(t, err)
+
+	assert.NoError(t, db.DeleteUser(user.ID))
+	assert.NoError(t, db.DeleteChannel(channel.ID))
+	assert.NoError(t, db.DeleteChannelMember(user.UserID, channel.ChannelID))
+	assert.NoError(t, db.DeleteTimeTable(tts.ID))
 }
