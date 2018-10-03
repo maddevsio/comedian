@@ -6,6 +6,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 //SplitUser divides full user object to name & id
@@ -52,4 +53,23 @@ func SplitTimeTalbeCommand(t, on, at string) (string, string, string) {
 	a := strings.Split(t, on)
 	b := strings.Split(a[1], at)
 	return strings.TrimSpace(a[0]), strings.TrimSpace(b[0]), strings.TrimSpace(b[1])
+}
+
+//PeridoToWeekdays convert dates to weekdays
+func PeriodToWeekdays(dateFrom, dateTo time.Time) ([]string, error) {
+	weekdays := []string{}
+	if dateTo.Before(dateFrom) {
+		return weekdays, errors.New("DateTo is before DateFrom")
+	}
+	if dateTo.After(time.Now()) {
+		return weekdays, errors.New("DateTo is in the future")
+	}
+	dateFromRounded := time.Date(dateFrom.Year(), dateFrom.Month(), dateFrom.Day(), 0, 0, 0, 0, time.UTC)
+	dateToRounded := time.Date(dateTo.Year(), dateTo.Month(), dateTo.Day(), 0, 0, 0, 0, time.UTC)
+	numberOfDays := int(dateToRounded.Sub(dateFromRounded).Hours() / 24)
+	for day := 0; day <= numberOfDays; day++ {
+		date := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
+		weekdays = append(weekdays, strings.ToLower(date.Weekday().String()))
+	}
+	return weekdays, nil
 }

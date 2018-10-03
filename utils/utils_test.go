@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -86,5 +87,34 @@ func TestFormatTime(t *testing.T) {
 		assert.Equal(t, tt.hour, h)
 		assert.Equal(t, tt.minute, m)
 		assert.Equal(t, tt.err, err)
+	}
+}
+
+func TestPeridoToWeekdays(t *testing.T) {
+	testCases := []struct {
+		dateFrom time.Time
+		dateTo   time.Time
+		days     []string
+		err      error
+	}{
+		{time.Date(2018, time.Now().Month(), 1, 1, 0, 0, 0, time.Local),
+			time.Date(2018, time.Now().Month(), 3, 1, 0, 0, 0, time.Local),
+			[]string{"monday", "tuesday", "wednesday"}, nil,
+		},
+		{time.Date(2018, time.Now().Month(), 4, 1, 0, 0, 0, time.Local),
+			time.Date(2018, time.Now().Month(), 3, 1, 0, 0, 0, time.Local),
+			[]string{}, errors.New("DateTo is before DateFrom"),
+		},
+		{time.Date(2018, time.Now().Month(), 1, 1, 0, 0, 0, time.Local),
+			time.Date(2018, time.Now().Month(), 5, 1, 0, 0, 0, time.Local),
+			[]string{}, errors.New("DateTo is in the future"),
+		},
+	}
+	for _, tt := range testCases {
+		days, err := PeriodToWeekdays(tt.dateFrom, tt.dateTo)
+		assert.Equal(t, tt.err, err)
+		for i, day := range tt.days {
+			assert.Equal(t, day, days[i])
+		}
 	}
 }

@@ -112,6 +112,14 @@ type Translate struct {
 	IndividualStandupersWarning string
 	IndividualStandupersLate    string
 	EmptyTimetable              string
+
+	TimetableShowMonday    string
+	TimetableShowTuesday   string
+	TimetableShowWednesday string
+	TimetableShowThursday  string
+	TimetableShowFriday    string
+	TimetableShowSaturday  string
+	TimetableShowSunday    string
 }
 
 // GetTranslation sets translation files for config
@@ -200,6 +208,13 @@ func GetTranslation(lang string) (Translate, error) {
 		"IndividualStandupersWarning",
 		"IndividualStandupersLate",
 		"EmptyTimetable",
+		"TimetableShowMonday",
+		"TimetableShowTuesday",
+		"TimetableShowWednesday",
+		"TimetableShowThursday",
+		"TimetableShowFriday",
+		"TimetableShowSaturday",
+		"TimetableShowSunday",
 	}
 
 	for _, t := range r {
@@ -307,6 +322,13 @@ func GetTranslation(lang string) (Translate, error) {
 		IndividualStandupersWarning: m["IndividualStandupersWarning"],
 		IndividualStandupersLate:    m["IndividualStandupersLate"],
 		EmptyTimetable:              m["EmptyTimetable"],
+		TimetableShowMonday:         m["TimetableShowMonday"],
+		TimetableShowTuesday:        m["TimetableShowTuesday"],
+		TimetableShowWednesday:      m["TimetableShowWednesday"],
+		TimetableShowThursday:       m["TimetableShowThursday"],
+		TimetableShowFriday:         m["TimetableShowFriday"],
+		TimetableShowSaturday:       m["TimetableShowSaturday"],
+		TimetableShowSunday:         m["TimetableShowSunday"],
 	}
 
 	return t, nil

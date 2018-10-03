@@ -108,3 +108,11 @@ TimetableDeleted = "Расписание <@%v> успешно удалено! Т
 IndividualStandupersWarning = "Внимание <@%s>! Кажется, твоего стэндапа до сих пор нет, а через %v минут уже последний срок! Поторопись!"
 IndividualStandupersLate = "<@%v>, сроки пропущены! Пожалуйста, напиши стэндап как можно скорее!"
 EmptyTimetable = "Свободный график"
+
+TimetableShowMonday = "| Понедельник %02d:%02d "
+TimetableShowTuesday = "| Вторник %02d:%02d "
+TimetableShowWednesday = "| Среда %02d:%02d "
+TimetableShowThursday = "| Четверг %02d:%02d "
+TimetableShowFriday = "| Пятница %02d:%02d "
+TimetableShowSaturday = "| Суббота %02d:%02d "
+TimetableShowSunday = "| Воскресенье %02d:%02d "

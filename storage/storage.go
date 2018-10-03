@@ -143,6 +143,6 @@ type Storage interface {
 	//MemberHasTimeTable returns true if member has timetable
 	MemberHasTimeTable(int64) bool
 
-	//MemberHasTimeTable returns true if member has timetable
-	MemberShouldBeTrackedWithin(int64, time.Time, time.Time) bool
+	//MemberShouldBeTracked returns true if member has timetable
+	MemberShouldBeTracked(int64, time.Time, time.Time) bool
 }

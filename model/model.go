@@ -111,59 +111,31 @@ func (tt TimeTable) Show() string {
 	timeTableString := ""
 	if tt.Monday != 0 {
 		monday := time.Unix(tt.Monday, 0)
-		if c.Language == "ru_RU" {
-			timeTableString += fmt.Sprintf("| Понедельник %02d:%02d ", monday.Hour(), monday.Minute())
-		} else {
-			timeTableString += fmt.Sprintf("| Monday %02d:%02d ", monday.Hour(), monday.Minute())
-		}
+		timeTableString += fmt.Sprintf(c.Translate.TimetableShowMonday, monday.Hour(), monday.Minute())
 	}
 	if tt.Tuesday != 0 {
 		tuesday := time.Unix(tt.Tuesday, 0)
-		if c.Language == "ru_RU" {
-			timeTableString += fmt.Sprintf("| Вторник %02d:%02d ", tuesday.Hour(), tuesday.Minute())
-		} else {
-			timeTableString += fmt.Sprintf("| Tuesday %02d:%02d ", tuesday.Hour(), tuesday.Minute())
-		}
+		timeTableString += fmt.Sprintf(c.Translate.TimetableShowTuesday, tuesday.Hour(), tuesday.Minute())
 	}
 	if tt.Wednesday != 0 {
 		wednesday := time.Unix(tt.Wednesday, 0)
-		if c.Language == "ru_RU" {
-			timeTableString += fmt.Sprintf("| Среда %02d:%02d ", wednesday.Hour(), wednesday.Minute())
-		} else {
-			timeTableString += fmt.Sprintf("| Wednesday %02d:%02d ", wednesday.Hour(), wednesday.Minute())
-		}
+		timeTableString += fmt.Sprintf(c.Translate.TimetableShowWednesday, wednesday.Hour(), wednesday.Minute())
 	}
 	if tt.Thursday != 0 {
 		thursday := time.Unix(tt.Thursday, 0)
-		if c.Language == "ru_RU" {
-			timeTableString += fmt.Sprintf("| Четверг %02d:%02d ", thursday.Hour(), thursday.Minute())
-		} else {
-			timeTableString += fmt.Sprintf("| Thursday %02d:%02d ", thursday.Hour(), thursday.Minute())
-		}
+		timeTableString += fmt.Sprintf(c.Translate.TimetableShowThursday, thursday.Hour(), thursday.Minute())
 	}
 	if tt.Friday != 0 {
 		friday := time.Unix(tt.Friday, 0)
-		if c.Language == "ru_RU" {
-			timeTableString += fmt.Sprintf("| Пятница %02d:%02d ", friday.Hour(), friday.Minute())
-		} else {
-			timeTableString += fmt.Sprintf("| Friday %02d:%02d ", friday.Hour(), friday.Minute())
-		}
+		timeTableString += fmt.Sprintf(c.Translate.TimetableShowFriday, friday.Hour(), friday.Minute())
 	}
 	if tt.Saturday != 0 {
 		saturday := time.Unix(tt.Saturday, 0)
-		if c.Language == "ru_RU" {
-			timeTableString += fmt.Sprintf("| Суббота %02d:%02d ", saturday.Hour(), saturday.Minute())
-		} else {
-			timeTableString += fmt.Sprintf("| Saturday %02d:%02d ", saturday.Hour(), saturday.Minute())
-		}
+		timeTableString += fmt.Sprintf(c.Translate.TimetableShowSaturday, saturday.Hour(), saturday.Minute())
 	}
 	if tt.Sunday != 0 {
 		sunday := time.Unix(tt.Sunday, 0)
-		if c.Language == "ru_RU" {
-			timeTableString += fmt.Sprintf("| Воскресенье %02d:%02d ", sunday.Hour(), sunday.Minute())
-		} else {
-			timeTableString += fmt.Sprintf("| Sunday %02d:%02d ", sunday.Hour(), sunday.Minute())
-		}
+		timeTableString += fmt.Sprintf(c.Translate.TimetableShowSunday, sunday.Hour(), sunday.Minute())
 	}
 
 	if timeTableString == "" {

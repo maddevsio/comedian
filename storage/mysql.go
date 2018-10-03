@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -507,10 +508,10 @@ func (m *MySQL) MemberHasTimeTable(id int64) bool {
 	return true
 }
 
-//MemberShouldBeTrackedWithin returns true if member has timetable
-func MemberShouldBeTrackedWithin(id int64, dateFrom, dateTo time.Time) bool {
+//MemberShouldBeTracked returns true if member should be tracked
+func (m *MySQL) MemberShouldBeTracked(id int64, dateFrom, dateTo time.Time) bool {
 	var tt model.TimeTable
-	err := m.conn.Get(&t, "SELECT * FROM `timetables` WHERE channel_member_id=?", id)
+	err := m.conn.Get(&tt, "SELECT * FROM `timetables` WHERE channel_member_id=?", id)
 	if err != nil {
 		logrus.Infof("User does not have a timetable: %v", err)
 		return true
@@ -520,5 +521,15 @@ func MemberShouldBeTrackedWithin(id int64, dateFrom, dateTo time.Time) bool {
 		return false
 	}
 	logrus.Infof("MemberHasTimeTable ID:%v not empty", tt.ID)
-
+	days, err := utils.PeriodToWeekdays(dateFrom, dateTo)
+	if err != nil {
+		logrus.Errorf("PeriodToWeekdays failed: %v", err)
+		return false
+	}
+	for _, day := range days {
+		if tt.ShowDeadlineOn(day) != 0 {
+			return true
+		}
+	}
+	return false
 }
