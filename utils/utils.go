@@ -26,25 +26,23 @@ func SecondsToHuman(input int) string {
 
 // FormatTime returns hour and minutes from string
 func FormatTime(t string) (hour, min int, err error) {
-	var er = errors.New("time format error")
+	newErr := errors.New("time format error")
 	ts := strings.Split(t, ":")
 	if len(ts) != 2 {
-		err = er
-		return
+		return 0, 0, newErr
 	}
 
 	hour, err = strconv.Atoi(ts[0])
 	if err != nil {
-		return
+		return 0, 0, newErr
 	}
 	min, err = strconv.Atoi(ts[1])
 	if err != nil {
-		return
+		return 0, 0, newErr
 	}
 
 	if hour < 0 || hour > 23 || min < 0 || min > 59 {
-		err = er
-		return
+		return 0, 0, newErr
 	}
 	return hour, min, nil
 }

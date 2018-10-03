@@ -254,6 +254,7 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 			err := errors.New("Continue backoff")
 			return err
 		}
+		logrus.Infof("User %v submitted standup!", chm.UserID)
 		return nil
 	}
 	b := backoff.NewConstantBackOff(time.Duration(n.Config.NotifierInterval) * time.Minute)

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,5 +64,27 @@ func TestSplitTimeTalbeCommand(t *testing.T) {
 		assert.Equal(t, tt.users, users)
 		assert.Equal(t, tt.weekdays, weekdays)
 		assert.Equal(t, tt.time, deadline)
+	}
+}
+
+func TestFormatTime(t *testing.T) {
+	testCases := []struct {
+		timeString string
+		hour       int
+		minute     int
+		err        error
+	}{
+		{"10:00", 10, 0, nil},
+		{"11:20", 11, 20, nil},
+		{"25:20", 0, 0, errors.New("time format error")},
+		{"25:20:30", 0, 0, errors.New("time format error")},
+		{"shit:fuck", 0, 0, errors.New("time format error")},
+		{"10:fuck", 0, 0, errors.New("time format error")},
+	}
+	for _, tt := range testCases {
+		h, m, err := FormatTime(tt.timeString)
+		assert.Equal(t, tt.hour, h)
+		assert.Equal(t, tt.minute, m)
+		assert.Equal(t, tt.err, err)
 	}
 }
