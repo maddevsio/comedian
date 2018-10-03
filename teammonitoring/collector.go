@@ -77,23 +77,28 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 	finalText := ""
 
 	for _, user := range allUsers {
+		// need to first identify if user should be tracked for this period
+		// if user does not standup at all, it would not be tracked here...
+		// do not track user if user has individual timetable and this day does not standup
+		// or timetable is empty...
 		project, err := tm.db.SelectChannel(user.ChannelID)
 		if err != nil {
 			return "", err
 		}
+		// make request for info about user in project from collector to get commits and worklogs
 		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
-
 		data, err := GetCollectorData(tm.Config, "user-in-project", userInProject, dateFrom, dateFrom)
 		if err != nil {
 			logrus.Errorf("team monitoring: getCollectorData failed: %v\n", err)
 			return "", err
 		}
-		isNonReporter, err := tm.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom.AddDate(0, 0, -1), time.Now())
+		// need to identify if user submitted standup for this period
+		isNonReporter, err := tm.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom, time.Now())
 		if err != nil {
 			logrus.Errorf("team monitoring: IsNonReporter failed: %v\n", err)
-			continue
 		}
 
+		// if logged less then 8 hours or did not commit or did not submit standup = include user in report
 		if (data.Worklogs/3600 < 8) || (data.TotalCommits == 0) || (isNonReporter == true) {
 			fails := ""
 			if data.Worklogs/3600 < 8 {

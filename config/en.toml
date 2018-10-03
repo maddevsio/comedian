@@ -107,3 +107,4 @@ TimetableDeleted = "Timetable removed for <@%v>\n"
 
 IndividualStandupersWarning = "Attention <@%s>! %v min before standup deadline! Hurry up!"
 IndividualStandupersLate = "<@%v>, you are bad! Submit standup ASAP or I will kill that dog!"
+EmptyTimetable = "Timetable is empty"

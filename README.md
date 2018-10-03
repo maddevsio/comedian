@@ -50,9 +50,9 @@ Create the following commands (Request URL for all "http: // <comedian_address> 
 | /timetable_set | @user1 @user2 on mon tue at 14:02 | Set individual standup time | V |
 | /timetable_show | @user1 @user2 | Show individual standup time for users | V |
 | /timetable_remove | @user1 @user2  | Delete individual standup time for users | V |
-| /report_by_project | channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period | - |
-| /report_by_user | slackUserID 2017-01-01 2017-01-31 | gets all standups for specified user for time period | - |
-| /report_by_project_and_user | project user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
+| /report_by_project | #channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period | - |
+| /report_by_user | @user 2017-01-01 2017-01-31 | gets all standups for specified user for time period | - |
+| /report_by_project_and_user | #project @user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
 
 Select "Bot users" in the menu.
 Create a new bot user.

@@ -111,6 +111,7 @@ type Translate struct {
 	TimetableDeleted            string
 	IndividualStandupersWarning string
 	IndividualStandupersLate    string
+	EmptyTimetable              string
 }
 
 // GetTranslation sets translation files for config
@@ -198,6 +199,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"TimetableDeleted",
 		"IndividualStandupersWarning",
 		"IndividualStandupersLate",
+		"EmptyTimetable",
 	}
 
 	for _, t := range r {
@@ -304,6 +306,7 @@ func GetTranslation(lang string) (Translate, error) {
 		TimetableDeleted:            m["TimetableDeleted"],
 		IndividualStandupersWarning: m["IndividualStandupersWarning"],
 		IndividualStandupersLate:    m["IndividualStandupersLate"],
+		EmptyTimetable:              m["EmptyTimetable"],
 	}
 
 	return t, nil

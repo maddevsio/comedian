@@ -506,3 +506,19 @@ func (m *MySQL) MemberHasTimeTable(id int64) bool {
 	logrus.Infof("MemberHasTimeTable ID: %v", t)
 	return true
 }
+
+//MemberShouldBeTrackedWithin returns true if member has timetable
+func MemberShouldBeTrackedWithin(id int64, dateFrom, dateTo time.Time) bool {
+	var tt model.TimeTable
+	err := m.conn.Get(&t, "SELECT * FROM `timetables` WHERE channel_member_id=?", id)
+	if err != nil {
+		logrus.Infof("User does not have a timetable: %v", err)
+		return true
+	}
+	if tt.IsEmpty() {
+		logrus.Infof("Timetable for %v is empty! Do not track", tt.ChannelMemberID)
+		return false
+	}
+	logrus.Infof("MemberHasTimeTable ID:%v not empty", tt.ID)
+
+}
