@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bouk/monkey"
+
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
@@ -29,6 +31,9 @@ func TestCRUDLStandup(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	submittedStandupToday := db.SubmittedStandupToday("userID1", ch.ChannelID)
+	assert.Equal(t, false, submittedStandupToday)
+
 	s, err := db.CreateStandup(model.Standup{
 		ChannelID: ch.ChannelID,
 		Comment:   "work hard",
@@ -45,6 +50,9 @@ func TestCRUDLStandup(t *testing.T) {
 		MessageTS: "",
 	})
 	assert.NoError(t, err)
+
+	d := time.Date(2018, 6, 24, 9, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
 
 	assert.Equal(t, s.Comment, "work hard")
 	s2, err := db.CreateStandup(model.Standup{
@@ -63,6 +71,12 @@ func TestCRUDLStandup(t *testing.T) {
 	upd, err = db.AddToStandupHistory(upd)
 	assert.NoError(t, err)
 
+	d = time.Date(2018, 6, 24, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	submittedStandupToday = db.SubmittedStandupToday("illidan", ch.ChannelID)
+	assert.Equal(t, true, submittedStandupToday)
+
 	upd1 := model.StandupEditHistory{
 		Created:     s.Modified,
 		StandupID:   s.ID,
@@ -72,7 +86,7 @@ func TestCRUDLStandup(t *testing.T) {
 	assert.Error(t, err)
 
 	_, err = db.SelectStandupsFiltered("userID1", "QWERTY123", time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, s.ID, upd.StandupID)
 	assert.Equal(t, s.Modified, upd.Created)
@@ -170,6 +184,13 @@ func TestCRUDChannelMember(t *testing.T) {
 	user, err := db.FindChannelMemberByUserID(su2.UserID, su2.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, su2.UserID, user.UserID)
+
+	chm, err := db.SelectChannelMember(su2.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, su2.UserID, chm.UserID)
+
+	_, err = db.SelectChannelMember(345)
+	assert.Error(t, err)
 
 	users, err := db.ListChannelMembers(su1.ChannelID)
 	assert.NoError(t, err)
@@ -402,10 +423,16 @@ func TestCRUDTimeTable(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	memberHasTimeTable := db.MemberHasTimeTable(m.ID)
+	assert.Equal(t, false, memberHasTimeTable)
+
 	_, err = db.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: m.ID,
 	})
 	assert.NoError(t, err)
+
+	memberHasTimeTable = db.MemberHasTimeTable(m.ID)
+	assert.Equal(t, true, memberHasTimeTable)
 
 	tts, err := db.SelectTimeTable(m.ID)
 	assert.NoError(t, err)
@@ -414,6 +441,10 @@ func TestCRUDTimeTable(t *testing.T) {
 
 	_, err = db.UpdateTimeTable(tts)
 	assert.NoError(t, err)
+
+	timeTables, err := db.ListTimeTablesForDay("monday")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(timeTables))
 
 	assert.NoError(t, db.DeleteUser(user.ID))
 	assert.NoError(t, db.DeleteChannel(channel.ID))
