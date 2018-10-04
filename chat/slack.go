@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -73,13 +72,6 @@ func (s *Slack) Run() {
 			s.handleJoin(ev.Channel)
 		case *slack.MemberLeftChannelEvent:
 			logrus.Infof("type: %v, user: %v, channel: %v, channelType: %v, team: %v", ev.Type, ev.User, ev.Channel, ev.ChannelType, ev.Team)
-			user, err := s.api.GetUserInfo(ev.User)
-			if err != nil {
-				logrus.Errorf("GetUserInfo failed: %v", err)
-			}
-			if user.IsBot && user.Name == "comedian" {
-				logrus.Info("Comedian left the chat!")
-			}
 		case *slack.PresenceChangeEvent:
 			logrus.Infof("slack: Presence Change: %v\n", ev)
 		case *slack.RTMError:
@@ -114,29 +106,23 @@ func (s *Slack) handleJoin(channelID string) {
 }
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
-
 	switch msg.SubType {
 	case typeMessage:
 		botUserID := fmt.Sprintf("<@%s>", s.rtm.GetInfo().User.ID)
 		if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") && !strings.Contains(msg.Msg.Text, "#стэндап") {
-			fmt.Println("Skip message!")
 			return nil
 		}
 		_, err := s.db.FindChannelMemberByUserID(msg.User, msg.Channel)
 		if err != nil {
-			s.SendEphemeralMessage(msg.Channel, msg.User, "You don't standup here! Fuck Off!")
-			return nil
-
+			return s.SendEphemeralMessage(msg.Channel, msg.User, "Ты мне очень нравишься, но ты не стэндапишь в этом канале. Попроси тебя добавить и попробуй снова! Буду ждать!")
 		}
-		standupText, messageIsStandup, err := s.isStandup(msg.Msg.Text)
-		if err != nil {
-			s.SendEphemeralMessage(msg.Channel, msg.User, "Seems that this is not a standup! What the Fuck?!")
-			return nil
+		standupText, messageIsStandup, problem := s.analizeStandup(msg.Msg.Text)
+		if problem != "" {
+			return s.SendEphemeralMessage(msg.Channel, msg.User, problem)
 		}
 		if messageIsStandup {
 			if s.db.SubmittedStandupToday(msg.User, msg.Channel) {
-				s.SendEphemeralMessage(msg.Channel, msg.User, "One day - one standup! Tomorrow is going to be another day! Or edit your previous standup :)")
-				return nil
+				return s.SendEphemeralMessage(msg.Channel, msg.User, "Один день - один стэндап. Если хочешь поменять свой стэндап, лучше отредактируй старый!")
 			}
 			standup, err := s.db.CreateStandup(model.Standup{
 				ChannelID: msg.Channel,
@@ -145,8 +131,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				MessageTS: msg.Msg.Timestamp,
 			})
 			if err != nil {
-				s.SendEphemeralMessage(msg.Channel, msg.User, "For some reasons I fucked up and did not save your standup ... ")
-				return err
+				return s.SendEphemeralMessage(msg.Channel, msg.User, "По какой-то непонятной причине я не смог сохранить твой стэндап в базе. Прости пожалуйста, и расскажи об этом ПМу!")
 			}
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
@@ -159,15 +144,13 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 		}
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
-			standupText, messageIsStandup, err := s.isStandup(msg.SubMessage.Text)
-			if err != nil {
-				logrus.Errorf("message is not a standup: %v", err)
-				return nil
+			standupText, messageIsStandup, problem := s.analizeStandup(msg.SubMessage.Text)
+			if problem != "" {
+				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
 			}
 			if messageIsStandup {
 				if s.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
-					logrus.Infof("User %v already submitted standup todain in %v\n", msg.SubMessage.User, msg.Channel)
-					return nil
+					return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, "Я вижу, что у тебя уже есть стэндап. Редактируй его, если хочешь, чтобы я его поменял!")
 				}
 				_, err := s.db.CreateStandup(model.Standup{
 					ChannelID: msg.Channel,
@@ -176,8 +159,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 					MessageTS: msg.SubMessage.Timestamp,
 				})
 				if err != nil {
-					logrus.Errorf("slack: CreateStandup failed: %v\n", err)
-					return err
+					return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, "По какой-то непонятной причине я не смог сохранить твой стэндап в базе. Прости пожалуйста, и расскажи об этом ПМу!")
 				}
 				logrus.Infof("Standup created #id:%v\n", standup.ID)
 				item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
@@ -186,17 +168,15 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			}
 		}
 
-		text, messageIsStandup, err := s.isStandup(msg.SubMessage.Text)
-		if err != nil {
-			logrus.Errorf("message is not a standup: %v", err)
-			return nil
+		text, messageIsStandup, problem := s.analizeStandup(msg.SubMessage.Text)
+		if problem != "" {
+			return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
 		}
 		if messageIsStandup {
 			standup.Comment = text
 			_, err := s.db.UpdateStandup(standup)
 			if err != nil {
-				logrus.Errorf("slack: UpdateStandup failed: %v\n", err)
-				return err
+				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, "По какой-то непонятной причине я не смог сохранить твой стэндап в базе. Прости пожалуйста, и расскажи об этом ПМу!")
 			}
 			logrus.Infof("Standup updated #id:%v\n", standup.ID)
 		}
@@ -213,7 +193,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 	return nil
 }
 
-func (s *Slack) isStandup(message string) (string, bool, error) {
+func (s *Slack) analizeStandup(message string) (string, bool, string) {
 	mentionsProblem := false
 	problemKeys := []string{s.Conf.Translate.P1, s.Conf.Translate.P2, s.Conf.Translate.P3, s.Conf.Translate.P4}
 	for _, problem := range problemKeys {
@@ -222,7 +202,7 @@ func (s *Slack) isStandup(message string) (string, bool, error) {
 		}
 	}
 	if !mentionsProblem {
-		return "", false, errors.New("no 'problems' keywords")
+		return "", false, "Не увидел твоих проблем и мне не верится, что у тебя их нет! Обяз опиши проблемы нормально!"
 	}
 
 	mentionsYesterdayWork := false
@@ -233,7 +213,7 @@ func (s *Slack) isStandup(message string) (string, bool, error) {
 		}
 	}
 	if !mentionsYesterdayWork {
-		return "", false, errors.New("no 'mentionsYesterdayWork' keywords")
+		return "", false, "Так и не понял, что ты делал вчера. Напиши подробней пожалуйста!"
 	}
 
 	mentionsTodayPlans := false
@@ -244,13 +224,12 @@ func (s *Slack) isStandup(message string) (string, bool, error) {
 		}
 	}
 	if !mentionsTodayPlans {
-		return "", false, errors.New("no 'mentionsTodayPlans' keywords")
+		return "", false, "Всё вроде как есть, но что ты будешь делать сегодня мне не ясно. Если это не ясно мне, скорее всего и команде это не ясно. Дописывай!"
 	}
-
-	return strings.TrimSpace(message), true, nil
+	return strings.TrimSpace(message), true, ""
 }
 
-// SendMessage posts a message in a specified channel
+// SendMessage posts a message in a specified channel visible for everyone
 func (s *Slack) SendMessage(channel, message string) error {
 	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{})
 	if err != nil {
@@ -260,7 +239,7 @@ func (s *Slack) SendMessage(channel, message string) error {
 	return err
 }
 
-// SendEphemeralMessage posts a message in a specified channel
+// SendEphemeralMessage posts a message in a specified channel which is visible only for selected user
 func (s *Slack) SendEphemeralMessage(channel, user, message string) error {
 	_, err := s.api.PostEphemeral(
 		channel,
@@ -274,7 +253,7 @@ func (s *Slack) SendEphemeralMessage(channel, user, message string) error {
 	return err
 }
 
-// SendUserMessage posts a message to a specific user
+// SendUserMessage Direct Message specific user
 func (s *Slack) SendUserMessage(userID, message string) error {
 	_, _, channelID, err := s.api.OpenIMChannel(userID)
 	if err != nil {
@@ -326,7 +305,6 @@ func (s *Slack) UpdateUsersList() {
 //non reporters vs those who did not have to write standups
 func (s *Slack) FillStandupsForNonReporters() {
 	logrus.Println("FillStandupsForNonReporters!")
-	//check if today is not saturday or sunday. During these days no notificatoins!
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
 		return
 	}
