@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bouk/monkey"
+
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
@@ -29,6 +31,9 @@ func TestCRUDLStandup(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	submittedStandupToday := db.SubmittedStandupToday("userID1", ch.ChannelID)
+	assert.Equal(t, false, submittedStandupToday)
+
 	s, err := db.CreateStandup(model.Standup{
 		ChannelID: ch.ChannelID,
 		Comment:   "work hard",
@@ -45,6 +50,9 @@ func TestCRUDLStandup(t *testing.T) {
 		MessageTS: "",
 	})
 	assert.NoError(t, err)
+
+	d := time.Date(2018, 6, 24, 9, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
 
 	assert.Equal(t, s.Comment, "work hard")
 	s2, err := db.CreateStandup(model.Standup{
@@ -63,6 +71,12 @@ func TestCRUDLStandup(t *testing.T) {
 	upd, err = db.AddToStandupHistory(upd)
 	assert.NoError(t, err)
 
+	d = time.Date(2018, 6, 24, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	submittedStandupToday = db.SubmittedStandupToday("illidan", ch.ChannelID)
+	assert.Equal(t, true, submittedStandupToday)
+
 	upd1 := model.StandupEditHistory{
 		Created:     s.Modified,
 		StandupID:   s.ID,
@@ -72,7 +86,7 @@ func TestCRUDLStandup(t *testing.T) {
 	assert.Error(t, err)
 
 	_, err = db.SelectStandupsFiltered("userID1", "QWERTY123", time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	assert.Equal(t, s.ID, upd.StandupID)
 	assert.Equal(t, s.Modified, upd.Created)
@@ -130,9 +144,8 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "123qwe", su1.ChannelID)
 
-	um, err := db.FindChannelMemberByUserName(u1.UserName)
+	_, err = db.FindChannelMemberByUserName(u1.UserName, "123qwe")
 	assert.NoError(t, err)
-	assert.Equal(t, su1, um)
 
 	su2, err := db.CreateChannelMember(model.ChannelMember{
 		UserID:      "userID2",
@@ -153,7 +166,7 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 
 	isNonReporter, err := db.IsNonReporter(su3.UserID, su3.ChannelID, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1))
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, false, isNonReporter)
 
 	su4, err := db.CreateChannelMember(model.ChannelMember{
@@ -172,6 +185,13 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, su2.UserID, user.UserID)
 
+	chm, err := db.SelectChannelMember(su2.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, su2.UserID, chm.UserID)
+
+	_, err = db.SelectChannelMember(345)
+	assert.Error(t, err)
+
 	users, err := db.ListChannelMembers(su1.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, users[0].UserID, su1.UserID)
@@ -189,8 +209,10 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.Equal(t, 0, len(channels))
 
 	assert.NoError(t, db.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, db.DeleteChannelMember(su2.UserID, su2.ChannelID))
 	assert.NoError(t, db.DeleteChannelMember(su3.UserID, su3.ChannelID))
 	assert.NoError(t, db.DeleteUser(u1.ID))
+
 }
 
 func TestCRUDStandupTime(t *testing.T) {
@@ -321,4 +343,111 @@ func TestCRUDUser(t *testing.T) {
 
 	assert.NoError(t, db.DeleteUser(user.ID))
 	assert.NoError(t, db.DeleteUser(admin.ID))
+}
+
+func TestPMForProject(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	db, err := NewMySQL(c)
+	assert.NoError(t, err)
+
+	ch, err := db.CreateChannel(model.Channel{
+		ChannelID:   "XYZ",
+		ChannelName: "chan",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	m1, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:    "ID1",
+		ChannelID: ch.ChannelID,
+	})
+	assert.NoError(t, err)
+	m2, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:    "ID2",
+		ChannelID: ch.ChannelID,
+	})
+	assert.NoError(t, err)
+	m3, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:    "ID3",
+		ChannelID: ch.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	pm, err := db.CreatePM(model.ChannelMember{
+		UserID:    "ID4",
+		ChannelID: ch.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	ok1 := db.UserIsPMForProject(m1.UserID, m1.ChannelID)
+	assert.Equal(t, false, ok1)
+	ok2 := db.UserIsPMForProject(m2.UserID, m2.ChannelID)
+	assert.Equal(t, false, ok2)
+	ok3 := db.UserIsPMForProject(m3.UserID, m3.ChannelID)
+	assert.Equal(t, false, ok3)
+	ok4 := db.UserIsPMForProject(pm.UserID, pm.ChannelID)
+	assert.Equal(t, true, ok4)
+
+	assert.NoError(t, db.DeleteChannelMember(m1.UserID, m1.ChannelID))
+	assert.NoError(t, db.DeleteChannelMember(m2.UserID, m2.ChannelID))
+	assert.NoError(t, db.DeleteChannelMember(m3.UserID, m3.ChannelID))
+	assert.NoError(t, db.DeleteChannelMember(pm.UserID, pm.ChannelID))
+	assert.NoError(t, db.DeleteChannel(ch.ID))
+
+}
+
+func TestCRUDTimeTable(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	db, err := NewMySQL(c)
+	assert.NoError(t, err)
+
+	user, err := db.CreateUser(model.User{
+		UserID:   "QWERTY123",
+		UserName: "chanName1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	channel, err := db.CreateChannel(model.Channel{
+		ChannelID:   "XYZ",
+		ChannelName: "chan",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	m, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:    user.UserID,
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	memberHasTimeTable := db.MemberHasTimeTable(m.ID)
+	assert.Equal(t, false, memberHasTimeTable)
+
+	_, err = db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: m.ID,
+	})
+	assert.NoError(t, err)
+
+	memberHasTimeTable = db.MemberHasTimeTable(m.ID)
+	assert.Equal(t, true, memberHasTimeTable)
+
+	tts, err := db.SelectTimeTable(m.ID)
+	assert.NoError(t, err)
+
+	tts.Monday = int64(10000)
+
+	_, err = db.UpdateTimeTable(tts)
+	assert.NoError(t, err)
+
+	timeTables, err := db.ListTimeTablesForDay("monday")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(timeTables))
+
+	assert.NoError(t, db.DeleteUser(user.ID))
+	assert.NoError(t, db.DeleteChannel(channel.ID))
+	assert.NoError(t, db.DeleteChannelMember(user.UserID, channel.ChannelID))
+	assert.NoError(t, db.DeleteTimeTable(tts.ID))
 }

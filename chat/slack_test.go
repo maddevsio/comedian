@@ -29,6 +29,7 @@ func TestIsStandup(t *testing.T) {
 		confirm bool
 	}{
 		{"all key words", "Yesterday managed to get docker up and running, today will complete test #100, problems: I have multilang!", true},
+		{"all key words", "Yesterday managed to get docker up and running, today will complete test #100, questions: to be or not to be?", true},
 		{"no key words", "i want to create a standup but totaly forgot the way i should write it!", false},
 		{"key words yesterday", "Yesterday it was fucking awesome!", false},
 		{"key words yesterday and today", "Вчера ломал сервер, сегодня будет охренеть много дел", false},
@@ -40,7 +41,7 @@ func TestIsStandup(t *testing.T) {
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 	for _, tt := range testCases {
-		_, ok := s.isStandup(tt.input)
+		_, ok, _ := s.isStandup(tt.input)
 		if ok != tt.confirm {
 			t.Errorf("Test %s: \n input: %s,\n expected confirm: %v\n actual confirm: %v \n", tt.title, tt.input, tt.confirm, ok)
 		}
@@ -93,7 +94,7 @@ func TestHandleMessage(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `"ok": true`))
-
+	httpmock.RegisterResponder("POST", "https://slack.com/api/reactions.add", httpmock.NewStringResponder(200, `{"ok": true}`))
 	httpmock.RegisterResponder("POST", "https://slack.com/api/im.open", httpmock.NewStringResponder(200, `{"ok": true}`))
 
 	c, err := config.Get()
@@ -125,6 +126,7 @@ func TestHandleMessage(t *testing.T) {
 
 	editmsg := &slack.MessageEvent{
 		SubMessage: &slack.Msg{
+			User:      su1.UserID,
 			Text:      "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problem",
 			Timestamp: "2",
 		},
@@ -134,7 +136,6 @@ func TestHandleMessage(t *testing.T) {
 	err = s.handleMessage(editmsg)
 	assert.NoError(t, err)
 
-	httpmock.RegisterResponder("POST", "https://slack.com/api/reactions.add", httpmock.NewStringResponder(200, `{"ok": true}`))
 	msg.Text = "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
 	msg.Channel = fakeChannel
 	msg.User = su1.UserID
@@ -143,8 +144,6 @@ func TestHandleMessage(t *testing.T) {
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
-	err = s.handleConnection()
-	assert.NoError(t, err)
 
 	// clean up
 	standups, err := s.db.ListStandups()

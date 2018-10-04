@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"time"
 
 	// This line is must for working MySQL database
@@ -8,6 +9,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/utils"
+	"github.com/sirupsen/logrus"
 )
 
 // MySQL provides api for work with mysql database
@@ -21,6 +24,7 @@ func NewMySQL(c config.Config) (*MySQL, error) {
 	if err != nil {
 		return nil, err
 	}
+	conn.SetConnMaxLifetime(time.Second)
 	m := &MySQL{}
 	m.conn = conn
 
@@ -102,8 +106,8 @@ func (m *MySQL) CreateChannelMember(s model.ChannelMember) (model.ChannelMember,
 		return s, err
 	}
 	res, err := m.conn.Exec(
-		"INSERT INTO `channel_members` (user_id, channel_id, standup_time) VALUES (?, ?, ?)",
-		s.UserID, s.ChannelID, 0)
+		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, created) VALUES (?, ?, ?, ?)",
+		s.UserID, s.ChannelID, 0, time.Now())
 	if err != nil {
 		return s, err
 	}
@@ -123,44 +127,63 @@ func (m *MySQL) FindChannelMemberByUserID(userID, channelID string) (model.Chann
 	return u, err
 }
 
-//FindChannelMemberByUserName finds user in channel
-func (m *MySQL) FindChannelMemberByUserName(userName string) (model.ChannelMember, error) {
+//SelectChannelMember finds user in channel
+func (m *MySQL) SelectChannelMember(id int64) (model.ChannelMember, error) {
 	var u model.ChannelMember
-	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE user_id=(select user_id from users where user_name=?)", userName)
+	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE id=?", id)
+	return u, err
+}
+
+//FindChannelMemberByUserName finds user in channel
+func (m *MySQL) FindChannelMemberByUserName(userName, channelID string) (model.ChannelMember, error) {
+	var u model.ChannelMember
+	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE user_id=(select user_id from users where user_name=?) and channel_id=?", userName, channelID)
 	return u, err
 }
 
 // ListAllChannelMembers returns array of standup entries from database
 func (m *MySQL) ListAllChannelMembers() ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members`")
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` where role_in_channel != 'pm'")
 	return items, err
 }
 
 //GetNonReporters returns a list of non reporters in selected time period
 func (m *MySQL) GetNonReporters(channelID string, dateFrom, dateTo time.Time) ([]model.ChannelMember, error) {
 	nonReporters := []model.ChannelMember{}
-	err := m.conn.Select(&nonReporters, `SELECT * FROM channel_members where channel_id=? AND user_id NOT IN (SELECT user_id FROM standups where channel_id=? and created BETWEEN ? AND ?)`, channelID, channelID, dateFrom, dateTo)
+	err := m.conn.Select(&nonReporters, `SELECT * FROM channel_members where channel_id=? AND role_in_channel != 'pm' AND user_id NOT IN (SELECT user_id FROM standups where channel_id=? and created BETWEEN ? AND ?)`, channelID, channelID, dateFrom, dateTo)
 	return nonReporters, err
+}
+
+//SubmittedStandupToday shows if a user submitted standup today
+func (m *MySQL) SubmittedStandupToday(userID, channelID string) bool {
+	timeFrom := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local)
+	var standup string
+	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, timeFrom, time.Now())
+	if err != nil {
+		logrus.Infof("User '%v' did not write standup in channel '%v' today yet \n", userID, channelID)
+		return false
+	}
+	return true
 }
 
 // IsNonReporter returns true if user did not submit standup in time period, false othervise
 func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Time) (bool, error) {
 	var standup string
 	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, dateFrom, dateTo)
-	if err != nil && err.Error() == "sql: no rows in result set" {
-		return false, nil
+	if err != nil {
+		return false, err
 	}
-	if standup != "" {
-		return false, nil
+	if standup == "" {
+		return true, nil
 	}
-	return true, err
+	return false, nil
 }
 
 // ListChannelMembers returns array of standup entries from database
 func (m *MySQL) ListChannelMembers(channelID string) ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=?", channelID)
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel != 'pm'", channelID)
 	return items, err
 }
 
@@ -381,4 +404,132 @@ func (m *MySQL) ListAdmins() ([]model.User, error) {
 		return c, err
 	}
 	return c, err
+}
+
+// CreatePM creates comedian entry in database
+func (m *MySQL) CreatePM(s model.ChannelMember) (model.ChannelMember, error) {
+	err := s.Validate()
+	if err != nil {
+		return s, err
+	}
+	res, err := m.conn.Exec(
+		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, created, role_in_channel) VALUES (?, ?, ?, ?,?)",
+		s.UserID, s.ChannelID, 0, time.Now(), "PM")
+	if err != nil {
+		return s, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return s, err
+	}
+	s.ID = id
+
+	return s, nil
+}
+
+// UserIsPMForProject returns true if user is a project's PM.
+func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
+	var role string
+	err := m.conn.Get(&role, "SELECT role_in_channel FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
+	if err != nil || role == "" {
+		return false
+	}
+	if role == "PM" {
+		return true
+	}
+	return false
+}
+
+// CreateTimeTable creates tt entry in database
+func (m *MySQL) CreateTimeTable(t model.TimeTable) (model.TimeTable, error) {
+	res, err := m.conn.Exec(
+		"INSERT INTO `timetables` (channel_member_id, created, modified) VALUES (?, ?, ?)",
+		t.ChannelMemberID, time.Now(), time.Now())
+	if err != nil {
+		return t, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return t, err
+	}
+	t.ID = id
+
+	return t, nil
+}
+
+// UpdateTimeTable updates TimeTable entry in database
+func (m *MySQL) UpdateTimeTable(t model.TimeTable) (model.TimeTable, error) {
+	_, err := m.conn.Exec(
+		"UPDATE `timetables` set modified =?, monday =?, tuesday =?, wednesday =?, thursday =?, friday =?, saturday =?, sunday = ? where id=?",
+		time.Now(), t.Monday, t.Tuesday, t.Wednesday, t.Thursday, t.Friday, t.Saturday, t.Sunday, t.ID,
+	)
+	if err != nil {
+		return t, err
+	}
+	var i model.TimeTable
+	err = m.conn.Get(&i, "SELECT * FROM `timetables` WHERE id=?", t.ID)
+	return i, err
+}
+
+// SelectTimeTable selects TimeTable entry from database
+func (m *MySQL) SelectTimeTable(ChannelMemberID int64) (model.TimeTable, error) {
+	var c model.TimeTable
+	err := m.conn.Get(&c, "SELECT * FROM `timetables` WHERE channel_member_id=?", ChannelMemberID)
+	if err != nil {
+		return c, err
+	}
+	return c, err
+}
+
+// DeleteTimeTable deletes TimeTable entry from database
+func (m *MySQL) DeleteTimeTable(id int64) error {
+	_, err := m.conn.Exec("DELETE FROM `timetables` WHERE id=?", id)
+	return err
+}
+
+//ListTimeTablesForDay returns list of chan members who has timetables
+func (m *MySQL) ListTimeTablesForDay(day string) ([]model.TimeTable, error) {
+	var tt []model.TimeTable
+	query := fmt.Sprintf("select channel_member_id, %s from timetables where %s != 0", day, day)
+	err := m.conn.Select(&tt, query)
+	if err != nil {
+		return tt, err
+	}
+	return tt, nil
+}
+
+func (m *MySQL) MemberHasTimeTable(id int64) bool {
+	var t int64
+	err := m.conn.Get(&t, "SELECT id FROM `timetables` WHERE channel_member_id=?", id)
+	if err != nil {
+		return false
+	}
+	logrus.Infof("MemberHasTimeTable ID: %v", t)
+	return true
+}
+
+//MemberShouldBeTracked returns true if member should be tracked
+func (m *MySQL) MemberShouldBeTracked(id int64, dateFrom, dateTo time.Time) bool {
+	var tt model.TimeTable
+	err := m.conn.Get(&tt, "SELECT * FROM `timetables` WHERE channel_member_id=?", id)
+	if err != nil {
+		logrus.Infof("User does not have a timetable: %v", err)
+		return true
+	}
+	if tt.IsEmpty() {
+		logrus.Infof("Timetable for %v is empty! Do not track", tt.ChannelMemberID)
+		return false
+	}
+	logrus.Infof("MemberHasTimeTable ID:%v not empty", tt.ID)
+	days, err := utils.PeriodToWeekdays(dateFrom, dateTo)
+	if err != nil {
+		logrus.Errorf("PeriodToWeekdays failed: %v", err)
+		return false
+	}
+	for _, day := range days {
+		if tt.ShowDeadlineOn(day) != 0 {
+			return true
+		}
+	}
+	return false
 }

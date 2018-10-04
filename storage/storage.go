@@ -32,8 +32,11 @@ type Storage interface {
 	//FindChannelMemberByUserID finds user in channel
 	FindChannelMemberByUserID(string, string) (model.ChannelMember, error)
 
+	//SelectChannelMember finds user in channel
+	SelectChannelMember(int64) (model.ChannelMember, error)
+
 	//FindChannelMemberByUserName finds user in channel
-	FindChannelMemberByUserName(string) (model.ChannelMember, error)
+	FindChannelMemberByUserName(string, string) (model.ChannelMember, error)
 
 	// ListAllChannelMembers returns array of standup entries from database
 	ListAllChannelMembers() ([]model.ChannelMember, error)
@@ -112,4 +115,34 @@ type Storage interface {
 
 	// ListAdmins selects User entry from database
 	ListAdmins() ([]model.User, error)
+
+	//SubmittedStandupToday shows if a user submitted standup today
+	SubmittedStandupToday(string, string) bool
+
+	// CreatePM creates comedian entry in database
+	CreatePM(model.ChannelMember) (model.ChannelMember, error)
+
+	// UserIsPMForProject returns true if user is a project's PM.
+	UserIsPMForProject(string, string) bool
+
+	// CreateUser creates standup entry in database
+	CreateTimeTable(model.TimeTable) (model.TimeTable, error)
+
+	// UpdateTimeTable updates TimeTable entry in database
+	UpdateTimeTable(model.TimeTable) (model.TimeTable, error)
+
+	// SelectTimeTable selects TimeTable entry from database
+	SelectTimeTable(int64) (model.TimeTable, error)
+
+	// DeleteTimeTable deletes TimeTable entry from database
+	DeleteTimeTable(int64) error
+
+	//ListStandupersWithTimeTablesForToday returns list of chan members who has timetables
+	ListTimeTablesForDay(string) ([]model.TimeTable, error)
+
+	//MemberHasTimeTable returns true if member has timetable
+	MemberHasTimeTable(int64) bool
+
+	//MemberShouldBeTracked returns true if member has timetable
+	MemberShouldBeTracked(int64, time.Time, time.Time) bool
 }

@@ -50,8 +50,8 @@ func (tm *TeamMonitoring) Start() {
 
 func (tm *TeamMonitoring) reportRooks() {
 	finalText, err := tm.RevealRooks()
-	if err != nil {
-		tm.Chat.SendMessage(tm.Config.ReportingChannel, err.Error())
+	if err != nil || finalText == "" {
+		tm.Chat.SendMessage(tm.Config.ReportingChannel, "Report is currently unavailable due to unexpected error while processing data")
 	}
 	tm.Chat.SendMessage(tm.Config.ReportingChannel, finalText)
 }
@@ -67,33 +67,42 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 	if int(time.Now().Weekday()) == 1 {
 		timeFrom = time.Now().AddDate(0, 0, -3)
 	}
+	logrus.Infof("Time from: %v", timeFrom)
 	allUsers, err := tm.db.ListAllChannelMembers()
 	if err != nil {
 		logrus.Errorf("team monitoring: tm.GetCurrentDayNonReporters failed: %v\n", err)
 		return "", err
 	}
-
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", timeFrom.Year(), timeFrom.Month(), timeFrom.Day())
-
 	finalText := ""
+
 	for _, user := range allUsers {
-		project, err := tm.db.SelectChannel(user.ChannelID)
-		if err != nil {
+		// need to first identify if user should be tracked for this period
+		if !tm.db.MemberShouldBeTracked(user.ID, timeFrom, time.Now()) {
+			logrus.Infof("Member %v should not be tracked! Skipping", user.UserID)
 			continue
 		}
-		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
 
+		project, err := tm.db.SelectChannel(user.ChannelID)
+		if err != nil {
+			logrus.Errorf("SelectChannel failed: %v", err)
+			continue
+		}
+		// make request for info about user in project from collector to get commits and worklogs
+		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
 		data, err := GetCollectorData(tm.Config, "user-in-project", userInProject, dateFrom, dateFrom)
 		if err != nil {
 			logrus.Errorf("team monitoring: getCollectorData failed: %v\n", err)
 			continue
 		}
-		isNonReporter, err := tm.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom.AddDate(0, 0, -1), time.Now())
+		// need to identify if user submitted standup for this period
+		isNonReporter, err := tm.db.IsNonReporter(user.UserID, user.ChannelID, timeFrom, time.Now())
 		if err != nil {
 			logrus.Errorf("team monitoring: IsNonReporter failed: %v\n", err)
 			continue
 		}
 
+		// if logged less then 8 hours or did not commit or did not submit standup = include user in report
 		if (data.Worklogs/3600 < 8) || (data.TotalCommits == 0) || (isNonReporter == true) {
 			fails := ""
 			if data.Worklogs/3600 < 8 {
@@ -125,7 +134,7 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 //GetCollectorData sends api request to collector servise and returns collector object
 func GetCollectorData(conf config.Config, getDataOn, data, dateFrom, dateTo string) (CollectorData, error) {
 	var collectorData CollectorData
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/", conf.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", conf.CollectorURL, conf.TeamDomain, getDataOn, data, dateFrom, dateTo)
 	logrus.Infof("teammonitoring: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {

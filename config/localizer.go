@@ -18,14 +18,15 @@ type Translate struct {
 	AddUserNoStandupTime string
 	AddUser              string
 	AddAdmin             string
+	PMExists             string
+	PMAdded              string
 	AccessDenied         string
-
-	DeleteUser       string
-	DeleteAdmin      string
-	ListNoStandupers string
-	ListNoAdmins     string
-	ListStandupers   string
-	ListAdmins       string
+	DeleteUser           string
+	DeleteAdmin          string
+	ListNoStandupers     string
+	ListNoAdmins         string
+	ListStandupers       string
+	ListAdmins           string
 
 	AddStandupTimeNoUsers      string
 	AddStandupTime             string
@@ -76,6 +77,7 @@ type Translate struct {
 	P1 string
 	P2 string
 	P3 string
+	P4 string
 
 	Y1 string
 	Y2 string
@@ -87,6 +89,39 @@ type Translate struct {
 	T3 string
 
 	WrongUsernameError string
+
+	SelectUsersToAdd        string
+	SelectUsersToDelete     string
+	UserDoesNotStandup      string
+	SelectUsersToAddAsAdmin string
+	NoSuchUserInWorkspace   string
+	UserNotAdmin            string
+	WrongProjectName        string
+
+	DaysDivider                 string
+	TimeDivider                 string
+	TimetableNoUsers            string
+	TimetableCreated            string
+	TimetableUpdated            string
+	CanNotUpdateTimetable       string
+	NotAStanduper               string
+	NoTimetableSet              string
+	TimetableShow               string
+	CanNotDeleteTimetable       string
+	TimetableDeleted            string
+	IndividualStandupersWarning string
+	IndividualStandupersLate    string
+	EmptyTimetable              string
+
+	TimetableShowMonday    string
+	TimetableShowTuesday   string
+	TimetableShowWednesday string
+	TimetableShowThursday  string
+	TimetableShowFriday    string
+	TimetableShowSaturday  string
+	TimetableShowSunday    string
+
+	ComedianIsNotInChannel string
 }
 
 // GetTranslation sets translation files for config
@@ -124,10 +159,11 @@ func GetTranslation(lang string) (Translate, error) {
 		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel",
 		"reportCollectorDataUser",
 		"helloManager", "standupAccepted",
-		"p1", "p2", "p3",
+		"p1", "p2", "p3", "p4",
 		"y1", "y2", "y3", "y4",
 		"t1", "t2", "t3",
 		"userExist",
+		"pmExists", "pmAdded",
 		"addUserNoStandupTime",
 		"addUser",
 		"addAdmin",
@@ -152,6 +188,36 @@ func GetTranslation(lang string) (Translate, error) {
 		"PMRemoved",
 		"isRookMonday",
 		"wrongUsernameError",
+
+		"selectUsersToAdd",
+		"selectUsersToDelete",
+		"userDoesNotStandup",
+		"selectUsersToAddAsAdmin",
+		"noSuchUserInWorkspace",
+		"userNotAdmin",
+		"wrongProjectName",
+		"DaysDivider",
+		"TimeDivider",
+		"TimetableNoUsers",
+		"TimetableCreated",
+		"TimetableUpdated",
+		"CanNotUpdateTimetable",
+		"NotAStanduper",
+		"NoTimetableSet",
+		"TimetableShow",
+		"CanNotDeleteTimetable",
+		"TimetableDeleted",
+		"IndividualStandupersWarning",
+		"IndividualStandupersLate",
+		"EmptyTimetable",
+		"TimetableShowMonday",
+		"TimetableShowTuesday",
+		"TimetableShowWednesday",
+		"TimetableShowThursday",
+		"TimetableShowFriday",
+		"TimetableShowSaturday",
+		"TimetableShowSunday",
+		"ComedianIsNotInChannel",
 	}
 
 	for _, t := range r {
@@ -169,6 +235,8 @@ func GetTranslation(lang string) (Translate, error) {
 		AddUser:              m["addUser"],
 		AddAdmin:             m["addAdmin"],
 		AccessDenied:         m["accessDenied"],
+		PMExists:             m["pmExists"],
+		PMAdded:              m["pmAdded"],
 
 		DeleteUser:       m["deleteUser"],
 		DeleteAdmin:      m["deleteAdmin"],
@@ -222,6 +290,7 @@ func GetTranslation(lang string) (Translate, error) {
 		P1: m["p1"],
 		P2: m["p2"],
 		P3: m["p3"],
+		P4: m["p4"],
 
 		Y1: m["y1"],
 		Y2: m["y2"],
@@ -233,6 +302,37 @@ func GetTranslation(lang string) (Translate, error) {
 		T3: m["t3"],
 
 		WrongUsernameError: m["wrongUsernameError"],
+
+		SelectUsersToAdd:        m["selectUsersToAdd"],
+		SelectUsersToDelete:     m["selectUsersToDelete"],
+		UserDoesNotStandup:      m["userDoesNotStandup"],
+		SelectUsersToAddAsAdmin: m["selectUsersToAddAsAdmin"],
+		NoSuchUserInWorkspace:   m["noSuchUserInWorkspace"],
+		UserNotAdmin:            m["userNotAdmin"],
+		WrongProjectName:        m["wrongProjectName"],
+
+		DaysDivider:                 m["DaysDivider"],
+		TimeDivider:                 m["TimeDivider"],
+		TimetableNoUsers:            m["TimetableNoUsers"],
+		TimetableCreated:            m["TimetableCreated"],
+		TimetableUpdated:            m["TimetableUpdated"],
+		CanNotUpdateTimetable:       m["CanNotUpdateTimetable"],
+		NotAStanduper:               m["NotAStanduper"],
+		NoTimetableSet:              m["NoTimetableSet"],
+		TimetableShow:               m["TimetableShow"],
+		CanNotDeleteTimetable:       m["CanNotDeleteTimetable"],
+		TimetableDeleted:            m["TimetableDeleted"],
+		IndividualStandupersWarning: m["IndividualStandupersWarning"],
+		IndividualStandupersLate:    m["IndividualStandupersLate"],
+		EmptyTimetable:              m["EmptyTimetable"],
+		TimetableShowMonday:         m["TimetableShowMonday"],
+		TimetableShowTuesday:        m["TimetableShowTuesday"],
+		TimetableShowWednesday:      m["TimetableShowWednesday"],
+		TimetableShowThursday:       m["TimetableShowThursday"],
+		TimetableShowFriday:         m["TimetableShowFriday"],
+		TimetableShowSaturday:       m["TimetableShowSaturday"],
+		TimetableShowSunday:         m["TimetableShowSunday"],
+		ComedianIsNotInChannel:      m["ComedianIsNotInChannel"],
 	}
 
 	return t, nil

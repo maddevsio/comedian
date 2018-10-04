@@ -34,11 +34,14 @@ func NewNotifier(c config.Config, chat chat.Chat) (*Notifier, error) {
 
 // Start starts all notifier treads
 func (n *Notifier) Start() error {
-	notificationChan := time.NewTicker(time.Second * 60).C
+	notificationForChannels := time.NewTicker(time.Second * 60).C
+	notificationForTimeTable := time.NewTicker(time.Second * 60).C
 	for {
 		select {
-		case <-notificationChan:
+		case <-notificationForChannels:
 			n.NotifyChannels()
+		case <-notificationForTimeTable:
+			n.NotifyIndividuals()
 		}
 	}
 }
@@ -69,17 +72,44 @@ func (n *Notifier) NotifyChannels() {
 	}
 }
 
+// NotifyIndividuals reminds users of channels about upcoming or missing standups
+func (n *Notifier) NotifyIndividuals() {
+	day := strings.ToLower(time.Now().Weekday().String())
+	tts, err := n.db.ListTimeTablesForDay(day)
+	if err != nil {
+		logrus.Errorf("ListTimeTablesForToday failed: %v", err)
+		return
+	}
+
+	for _, tt := range tts {
+		standupTime := time.Unix(tt.ShowDeadlineOn(day), 0)
+		warningTime := time.Unix(tt.ShowDeadlineOn(day)-n.Config.ReminderTime*60, 0)
+		if time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute() {
+			n.SendIndividualWarning(tt.ChannelMemberID)
+		}
+		if time.Now().Hour() == standupTime.Hour() && time.Now().Minute() == standupTime.Minute() {
+			go n.SendIndividualNotification(tt.ChannelMemberID)
+		}
+	}
+
+}
+
 // SendWarning reminds users in chat about upcoming standups
 func (n *Notifier) SendWarning(channelID string) {
-	nonReporters, err := n.getCurrentDayNonReporters(channelID)
+	allNonReporters, err := n.getCurrentDayNonReporters(channelID)
 	if err != nil {
 		logrus.Errorf("notifier: n.getCurrentDayNonReporters failed: %v\n", err)
 		return
 	}
+	nonReporters := []model.ChannelMember{}
+	for _, u := range allNonReporters {
+		if !n.db.MemberHasTimeTable(u.ID) {
+			nonReporters = append(nonReporters, u)
+		}
+	}
 	if len(nonReporters) == 0 {
 		return
 	}
-
 	nonReportersIDs := []string{}
 	for _, user := range nonReporters {
 		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
@@ -89,16 +119,51 @@ func (n *Notifier) SendWarning(channelID string) {
 		logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
 		return
 	}
+}
 
+// SendIndividualWarning reminds users in chat about upcoming standups
+func (n *Notifier) SendIndividualWarning(channelMemberID int64) {
+	chm, err := n.db.SelectChannelMember(channelMemberID)
+	if err != nil {
+		logrus.Errorf("SelectChannelMember failed: %v", err)
+		return
+	}
+	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
+	if !submittedStandup {
+		err = n.Chat.SendMessage(chm.ChannelID, fmt.Sprintf(n.Config.Translate.IndividualStandupersWarning, chm.UserID, n.Config.ReminderTime))
+		if err != nil {
+			logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
+			return
+		}
+		return
+	}
+	logrus.Infof("%v is not non reporter", chm.UserID)
 }
 
 //SendChannelNotification starts standup reminders and direct reminders to users
 func (n *Notifier) SendChannelNotification(channelID string) {
-	nonReporters, err := n.getCurrentDayNonReporters(channelID)
+	members, err := n.db.ListChannelMembers(channelID)
+	if err != nil {
+		logrus.Errorf("notifier: n.db.ListChannelMembers failed: %v\n", err)
+		return
+	}
+	if len(members) == 0 {
+		logrus.Info("No standupers in this channel\n")
+		return
+	}
+	allNonReporters, err := n.getCurrentDayNonReporters(channelID)
 	if err != nil {
 		logrus.Errorf("notifier: n.getCurrentDayNonReporters failed: %v\n", err)
 		return
 	}
+	nonReporters := []model.ChannelMember{}
+
+	for _, u := range allNonReporters {
+		if !n.db.MemberHasTimeTable(u.ID) {
+			nonReporters = append(nonReporters, u)
+		}
+	}
+	logrus.Infof("NON REPORTERS: %v", nonReporters)
 	// if everyone wrote their standups display all done message!
 	if len(nonReporters) == 0 {
 		err := n.Chat.SendMessage(channelID, n.Config.Translate.NotifyAllDone)
@@ -125,10 +190,17 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	repeats := 0
 
 	notifyNotAll := func() error {
-		nonReporters, err := n.getCurrentDayNonReporters(channelID)
+		allNonReporters, err := n.getCurrentDayNonReporters(channelID)
 		if err != nil {
 			logrus.Errorf("notifier: n.getCurrentDayNonReporters failed: %v\n", err)
 			return err
+		}
+		nonReporters := []model.ChannelMember{}
+
+		for _, u := range allNonReporters {
+			if !n.db.MemberHasTimeTable(u.ID) {
+				nonReporters = append(nonReporters, u)
+			}
 		}
 
 		nonReportersSlackIDs := []string{}
@@ -149,6 +221,44 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 	b := backoff.NewConstantBackOff(time.Duration(n.Config.NotifierInterval) * time.Minute)
 	err = backoff.Retry(notifyNotAll, b)
+	if err != nil {
+		logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
+	}
+}
+
+//SendIndividualNotification starts standup reminders and direct reminders to users
+func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
+	chm, err := n.db.SelectChannelMember(channelMemberID)
+	if err != nil {
+		logrus.Errorf("SelectChannelMember failed: %v", err)
+		return
+	}
+	channel, err := n.db.SelectChannel(chm.ChannelID)
+	if err != nil {
+		logrus.Errorf("notifier: SelectChannel failed: %v\n", err)
+		return
+	}
+	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
+	if !submittedStandup {
+		err := n.Chat.SendUserMessage(chm.UserID, fmt.Sprintf(n.Config.Translate.NotifyDirectMessage, chm.UserID, channel.ChannelID, channel.ChannelName))
+		if err != nil {
+			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
+		}
+	}
+	repeats := 0
+	notify := func() error {
+		submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
+		if repeats < n.Config.ReminderRepeatsMax && !submittedStandup {
+			n.Chat.SendMessage(channel.ChannelID, fmt.Sprintf(n.Config.Translate.IndividualStandupersLate, chm.UserID))
+			repeats++
+			err := errors.New("Continue backoff")
+			return err
+		}
+		logrus.Infof("User %v submitted standup!", chm.UserID)
+		return nil
+	}
+	b := backoff.NewConstantBackOff(time.Duration(n.Config.NotifierInterval) * time.Minute)
+	err = backoff.Retry(notify, b)
 	if err != nil {
 		logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
 	}

@@ -38,18 +38,21 @@ Create the following commands (Request URL for all "http: // <comedian_address> 
 
 | Name | Hint | Description | Escape option |
 | --- | --- | --- | --- |
-| /adminadd | @user | Adds a new admin | V |
-| /adminremove | @user | Removes an admin | V |
-| /adminlist | - | Lists all admins | - |
-| /comedianadd | @user | Adds a new standuper | V |
-| /comedianremove | @user | Removes a standuper | V |
-| /comedianlist | - | Lists all standupers | - |
-| /standuptimeset | hh:mm | Set standup time | - |
-| /standuptime | - | Show standup time in current channel | - |
-| /standuptimeremove | - | Delete standup time in current channel | - |
-| /report_by_project | channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period | - |
-| /report_by_user | slackUserID 2017-01-01 2017-01-31 | gets all standups for specified user for time period | - |
-| /report_by_project_and_user | project user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
+| /admin_add | @user | Adds a new admin | V |
+| /admin_remove | @user | Removes an admin | V |
+| /admin_list | - | Lists all admins | - |
+| /comedian_add | @user | Adds a new standuper | V |
+| /comedian_remove | @user | Removes a standuper | V |
+| /comedian_list | - | Lists all standupers | - |
+| /standup_time_set | hh:mm | Set standup time | - |
+| /standup_time | - | Show standup time in current channel | - |
+| /standup_time_remove | - | Delete standup time in current channel | - |
+| /timetable_set | @user1 @user2 on mon tue at 14:02 | Set individual standup time | V |
+| /timetable_show | @user1 @user2 | Show individual standup time for users | V |
+| /timetable_remove | @user1 @user2  | Delete individual standup time for users | V |
+| /report_by_project | #channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period | - |
+| /report_by_user | @user 2017-01-01 2017-01-31 | gets all standups for specified user for time period | - |
+| /report_by_project_and_user | #project @user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
 
 Select "Bot users" in the menu.
 Create a new bot user.
