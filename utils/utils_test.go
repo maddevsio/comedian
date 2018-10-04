@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bouk/monkey"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,6 +37,9 @@ func TestSecondsToHuman(t *testing.T) {
 }
 
 func TestSplitTimeTalbeCommand(t *testing.T) {
+	d := time.Date(2018, 1, 2, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
 	testCases := []struct {
 		command  string
 		users    string
@@ -42,13 +47,12 @@ func TestSplitTimeTalbeCommand(t *testing.T) {
 		time     int64
 		err      string
 	}{
-		{"@anatoliy on friday at 01:00", "@anatoliy", "friday", int64(1538593200), ""},
+		{"@anatoliy on friday at 01:00", "@anatoliy", "friday", int64(1514833200), ""},
 		{"@anatoliy n friday ft 01:00", "", "", int64(0), "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"},
-
-		{"@anatoliy on Friday at 01:00", "@anatoliy", "friday", int64(1538593200), ""},
-		{"<@UB9AE7CL9|fedorenko.tolik> on monday at 01:00", "<@UB9AE7CL9|fedorenko.tolik>", "monday", int64(1538593200), ""},
-		{"@anatoliy @erik @alex on friday tuesday monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1538593200), ""},
-		{"@anatoliy @erik @alex on friday, tuesday, monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1538593200), ""},
+		{"@anatoliy on Friday at 01:00", "@anatoliy", "friday", int64(1514833200), ""},
+		{"<@UB9AE7CL9|fedorenko.tolik> on monday at 01:00", "<@UB9AE7CL9|fedorenko.tolik>", "monday", int64(1514833200), ""},
+		{"@anatoliy @erik @alex on friday tuesday monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1514833200), ""},
+		{"@anatoliy @erik @alex on friday, tuesday, monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1514833200), ""},
 	}
 	for i, tt := range testCases {
 		users, weekdays, deadline, err := SplitTimeTalbeCommand(tt.command, " on ", " at ")
@@ -67,8 +71,8 @@ func TestSplitTimeTalbeCommand(t *testing.T) {
 		time     int64
 		err      string
 	}{
-		{"@anatoliy по пятницам в 02:04", "@anatoliy", "пятницам", int64(1538597040), ""},
-		{"@anatoliy @erik @alex по понедельникам пятницам вторникам в 23:04", "@anatoliy @erik @alex", "понедельникам пятницам вторникам", int64(1538672640), ""},
+		{"@anatoliy по пятницам в 02:04", "@anatoliy", "пятницам", int64(1514837040), ""},
+		{"@anatoliy @erik @alex по понедельникам пятницам вторникам в 23:04", "@anatoliy @erik @alex", "понедельникам пятницам вторникам", int64(1514912640), ""},
 	}
 	for i, tt := range testCasesRus {
 		users, weekdays, deadline, err := SplitTimeTalbeCommand(tt.command, " по ", " в ")
@@ -104,6 +108,10 @@ func TestFormatTime(t *testing.T) {
 }
 
 func TestPeriodToWeekdays(t *testing.T) {
+
+	d := time.Date(2018, 10, 4, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
 	testCases := []struct {
 		dateFrom time.Time
 		dateTo   time.Time
