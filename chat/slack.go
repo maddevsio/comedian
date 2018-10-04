@@ -114,22 +114,28 @@ func (s *Slack) handleJoin(channelID string) {
 }
 
 func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
+
 	switch msg.SubType {
 	case typeMessage:
+		botUserID := fmt.Sprintf("<@%s>", s.rtm.GetInfo().User.ID)
+		if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") && !strings.Contains(msg.Msg.Text, "#стэндап") {
+			fmt.Println("Skip message!")
+			return nil
+		}
 		_, err := s.db.FindChannelMemberByUserID(msg.User, msg.Channel)
 		if err != nil {
-			logrus.Info("User is not a channel member. Skip handleMessage!")
+			s.SendEphemeralMessage(msg.Channel, msg.User, "You don't standup here! Fuck Off!")
 			return nil
+
 		}
 		standupText, messageIsStandup, err := s.isStandup(msg.Msg.Text)
 		if err != nil {
-			logrus.Errorf("message is not a standup: %v", err)
+			s.SendEphemeralMessage(msg.Channel, msg.User, "Seems that this is not a standup! What the Fuck?!")
 			return nil
 		}
 		if messageIsStandup {
 			if s.db.SubmittedStandupToday(msg.User, msg.Channel) {
-				item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
-				s.api.AddReaction("point_up", item)
+				s.SendEphemeralMessage(msg.Channel, msg.User, "One day - one standup! Tomorrow is going to be another day! Or edit your previous standup :)")
 				return nil
 			}
 			standup, err := s.db.CreateStandup(model.Standup{
@@ -139,7 +145,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				MessageTS: msg.Msg.Timestamp,
 			})
 			if err != nil {
-				logrus.Errorf("slack: CreateStandup failed: %v\n", err)
+				s.SendEphemeralMessage(msg.Channel, msg.User, "For some reasons I fucked up and did not save your standup ... ")
 				return err
 			}
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
@@ -147,6 +153,10 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			s.api.AddReaction("heavy_check_mark", item)
 		}
 	case typeEditMessage:
+		botUserID := fmt.Sprintf("<@%s>", s.rtm.GetInfo().User.ID)
+		if !strings.Contains(msg.SubMessage.Text, botUserID) && !strings.Contains(msg.SubMessage.Text, "#standup") && !strings.Contains(msg.SubMessage.Text, "#стэндап") {
+			return nil
+		}
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
 			standupText, messageIsStandup, err := s.isStandup(msg.SubMessage.Text)
@@ -243,6 +253,20 @@ func (s *Slack) isStandup(message string) (string, bool, error) {
 // SendMessage posts a message in a specified channel
 func (s *Slack) SendMessage(channel, message string) error {
 	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{})
+	if err != nil {
+		logrus.Errorf("slack: PostMessage failed: %v\n", err)
+		return err
+	}
+	return err
+}
+
+// SendEphemeralMessage posts a message in a specified channel
+func (s *Slack) SendEphemeralMessage(channel, user, message string) error {
+	_, err := s.api.PostEphemeral(
+		channel,
+		user,
+		slack.MsgOptionText(message, true),
+	)
 	if err != nil {
 		logrus.Errorf("slack: PostMessage failed: %v\n", err)
 		return err
