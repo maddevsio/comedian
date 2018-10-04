@@ -67,7 +67,8 @@ func (s *Slack) Run() {
 			logrus.Info("Reconnected!")
 			s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 		case *slack.MessageEvent:
-			s.handleMessage(ev)
+			botUserID := fmt.Sprintf("<@%s>", s.rtm.GetInfo().User.ID)
+			s.handleMessage(ev, botUserID)
 		case *slack.MemberJoinedChannelEvent:
 			s.handleJoin(ev.Channel)
 		case *slack.MemberLeftChannelEvent:
@@ -98,6 +99,7 @@ func (s *Slack) handleJoin(channelID string) {
 		})
 		if err != nil {
 			logrus.Errorf("CreateChannel failed: %v", err)
+			return
 		}
 		logrus.Infof("New Channel Created: %v", createdChannel)
 		ch = createdChannel
@@ -105,16 +107,15 @@ func (s *Slack) handleJoin(channelID string) {
 	logrus.Infof("Channel: %v", ch)
 }
 
-func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
+func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 	switch msg.SubType {
 	case typeMessage:
-		botUserID := fmt.Sprintf("<@%s>", s.rtm.GetInfo().User.ID)
 		if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") && !strings.Contains(msg.Msg.Text, "#стэндап") {
 			return nil
 		}
 		_, err := s.db.FindChannelMemberByUserID(msg.User, msg.Channel)
 		if err != nil {
-			return s.SendEphemeralMessage(msg.Channel, msg.User, "Ты мне очень нравишься, но ты не стэндапишь в этом канале. Попроси тебя добавить и попробуй снова! Буду ждать!")
+			return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleUserNotAssigned)
 		}
 		standupText, messageIsStandup, problem := s.analizeStandup(msg.Msg.Text)
 		if problem != "" {
@@ -122,7 +123,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 		}
 		if messageIsStandup {
 			if s.db.SubmittedStandupToday(msg.User, msg.Channel) {
-				return s.SendEphemeralMessage(msg.Channel, msg.User, "Один день - один стэндап. Если хочешь поменять свой стэндап, лучше отредактируй старый!")
+				return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleOneDayOneStandup)
 			}
 			standup, err := s.db.CreateStandup(model.Standup{
 				ChannelID: msg.Channel,
@@ -131,14 +132,14 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 				MessageTS: msg.Msg.Timestamp,
 			})
 			if err != nil {
-				return s.SendEphemeralMessage(msg.Channel, msg.User, "По какой-то непонятной причине я не смог сохранить твой стэндап в базе. Прости пожалуйста, и расскажи об этом ПМу!")
+				return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
 			}
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
 			s.api.AddReaction("heavy_check_mark", item)
+			return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCreatedStandup)
 		}
 	case typeEditMessage:
-		botUserID := fmt.Sprintf("<@%s>", s.rtm.GetInfo().User.ID)
 		if !strings.Contains(msg.SubMessage.Text, botUserID) && !strings.Contains(msg.SubMessage.Text, "#standup") && !strings.Contains(msg.SubMessage.Text, "#стэндап") {
 			return nil
 		}
@@ -150,7 +151,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			}
 			if messageIsStandup {
 				if s.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
-					return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, "Я вижу, что у тебя уже есть стэндап. Редактируй его, если хочешь, чтобы я его поменял!")
+					return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleOneDayOneStandup)
 				}
 				_, err := s.db.CreateStandup(model.Standup{
 					ChannelID: msg.Channel,
@@ -159,12 +160,12 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 					MessageTS: msg.SubMessage.Timestamp,
 				})
 				if err != nil {
-					return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, "По какой-то непонятной причине я не смог сохранить твой стэндап в базе. Прости пожалуйста, и расскажи об этом ПМу!")
+					return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
 				}
 				logrus.Infof("Standup created #id:%v\n", standup.ID)
 				item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
 				s.api.AddReaction("heavy_check_mark", item)
-				return nil
+				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCreatedStandup)
 			}
 		}
 
@@ -176,9 +177,10 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent) error {
 			standup.Comment = text
 			_, err := s.db.UpdateStandup(standup)
 			if err != nil {
-				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, "По какой-то непонятной причине я не смог сохранить твой стэндап в базе. Прости пожалуйста, и расскажи об этом ПМу!")
+				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
 			}
 			logrus.Infof("Standup updated #id:%v\n", standup.ID)
+			return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleUpdatedStandup)
 		}
 
 	case typeDeleteMessage:
@@ -202,7 +204,7 @@ func (s *Slack) analizeStandup(message string) (string, bool, string) {
 		}
 	}
 	if !mentionsProblem {
-		return "", false, "Не увидел твоих проблем и мне не верится, что у тебя их нет! Обяз опиши проблемы нормально!"
+		return "", false, s.Conf.Translate.StandupHandleNoProblemsMentioned
 	}
 
 	mentionsYesterdayWork := false
@@ -213,7 +215,7 @@ func (s *Slack) analizeStandup(message string) (string, bool, string) {
 		}
 	}
 	if !mentionsYesterdayWork {
-		return "", false, "Так и не понял, что ты делал вчера. Напиши подробней пожалуйста!"
+		return "", false, s.Conf.Translate.StandupHandleNoYesterdayWorkMentioned
 	}
 
 	mentionsTodayPlans := false
@@ -224,7 +226,7 @@ func (s *Slack) analizeStandup(message string) (string, bool, string) {
 		}
 	}
 	if !mentionsTodayPlans {
-		return "", false, "Всё вроде как есть, но что ты будешь делать сегодня мне не ясно. Если это не ясно мне, скорее всего и команде это не ясно. Дописывай!"
+		return "", false, s.Conf.Translate.StandupHandleNoTodayPlansMentioned
 	}
 	return strings.TrimSpace(message), true, ""
 }

@@ -122,6 +122,15 @@ type Translate struct {
 	TimetableShowSunday    string
 
 	ComedianIsNotInChannel string
+
+	StandupHandleUserNotAssigned          string
+	StandupHandleOneDayOneStandup         string
+	StandupHandleCouldNotSaveStandup      string
+	StandupHandleNoProblemsMentioned      string
+	StandupHandleNoYesterdayWorkMentioned string
+	StandupHandleNoTodayPlansMentioned    string
+	StandupHandleUpdatedStandup           string
+	StandupHandleCreatedStandup           string
 }
 
 // GetTranslation sets translation files for config
@@ -218,6 +227,15 @@ func GetTranslation(lang string) (Translate, error) {
 		"TimetableShowSaturday",
 		"TimetableShowSunday",
 		"ComedianIsNotInChannel",
+
+		"StandupHandleUserNotAssigned",
+		"StandupHandleOneDayOneStandup",
+		"StandupHandleCouldNotSaveStandup",
+		"StandupHandleNoProblemsMentioned",
+		"StandupHandleNoYesterdayWorkMentioned",
+		"StandupHandleNoTodayPlansMentioned",
+		"StandupHandleUpdatedStandup",
+		"StandupHandleCreatedStandup",
 	}
 
 	for _, t := range r {
@@ -333,6 +351,15 @@ func GetTranslation(lang string) (Translate, error) {
 		TimetableShowSaturday:       m["TimetableShowSaturday"],
 		TimetableShowSunday:         m["TimetableShowSunday"],
 		ComedianIsNotInChannel:      m["ComedianIsNotInChannel"],
+
+		StandupHandleUserNotAssigned:          m["StandupHandleUserNotAssigned"],
+		StandupHandleOneDayOneStandup:         m["StandupHandleOneDayOneStandup"],
+		StandupHandleCouldNotSaveStandup:      m["StandupHandleCouldNotSaveStandup"],
+		StandupHandleNoProblemsMentioned:      m["StandupHandleNoProblemsMentioned"],
+		StandupHandleNoYesterdayWorkMentioned: m["StandupHandleNoYesterdayWorkMentioned"],
+		StandupHandleNoTodayPlansMentioned:    m["StandupHandleNoTodayPlansMentioned"],
+		StandupHandleUpdatedStandup:           m["StandupHandleUpdatedStandup"],
+		StandupHandleCreatedStandup:           m["StandupHandleCreatedStandup"],
 	}
 
 	return t, nil

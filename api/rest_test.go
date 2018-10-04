@@ -59,7 +59,7 @@ func TestHandleCommands(t *testing.T) {
 
 func TestHandleUserCommands(t *testing.T) {
 	AddUser := "user_id=UB9AE7CL9&command=/comedian_add&text=<@userid|test>&channel_id=chanid&channel_name=channame"
-	AddEmptyText := "user_id=UB9AE7CL9&command=/comedian_add&text="
+	AddEmptyText := "user_id=UB9AE7CL9&channel_id=chanid&command=/comedian_add&text="
 	AddUserEmptyChannelID := "user_id=UB9AE7CL9&command=/comedian_add&text=test&channel_id=&channel_name=channame"
 	AddUserEmptyChannelName := "user_id=UB9AE7CL9&command=/comedian_add&text=test&channel_id=chanid&channel_name="
 	DelUser := "user_id=UB9AE7CL9&command=/comedian_remove&text=<@userid|test>&channel_id=chanid"
@@ -73,6 +73,13 @@ func TestHandleUserCommands(t *testing.T) {
 		UserName: "Admin",
 		UserID:   "UB9AE7CL9",
 		Role:     "admin",
+	})
+	assert.NoError(t, err)
+
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "channame",
+		ChannelID:   "chanid",
+		StandupTime: int64(0),
 	})
 	assert.NoError(t, err)
 
@@ -90,7 +97,7 @@ func TestHandleUserCommands(t *testing.T) {
 		statusCode   int
 		responseBody string
 	}{
-		{"empty channel ID", AddUserEmptyChannelID, http.StatusBadRequest, "`channel_id` cannot be empty"},
+		{"empty channel ID", AddUserEmptyChannelID, http.StatusOK, "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"empty channel name", AddUserEmptyChannelName, http.StatusBadRequest, "`channel_name` cannot be empty"},
 		{"empty text", AddEmptyText, http.StatusBadRequest, "`text` cannot be empty"},
 		{"add user no standup time", AddUser, http.StatusOK, "<@test> now submits standups in this channel, but there is no standup time set yet!\n"},
@@ -108,11 +115,7 @@ func TestHandleUserCommands(t *testing.T) {
 		assert.Equal(t, tt.statusCode, rec.Code)
 		assert.Equal(t, tt.responseBody, rec.Body.String())
 	}
-	channel, err := rest.db.CreateChannel(model.Channel{
-		ChannelName: "channame",
-		ChannelID:   "chanid",
-		StandupTime: int64(0),
-	})
+
 	err = rest.db.CreateStandupTime(int64(12), channel.ChannelID)
 	assert.NoError(t, err)
 
@@ -270,10 +273,10 @@ func TestHandleTimeCommands(t *testing.T) {
 		{"add time (no users)", AddTime, http.StatusOK, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>", timeInt)},
 		{"add time no text", AddEmptyTime, http.StatusBadRequest, "`text` cannot be empty"},
 		{"add time no channelName", AddTimeEmptyChannelName, http.StatusBadRequest, "`channel_name` cannot be empty"},
-		{"add time (no channelID)", AddTimeEmptyChannelID, http.StatusBadRequest, "`channel_id` cannot be empty"},
-		{"list time no chan ID", ListTimeNoChanID, http.StatusBadRequest, "`channel_id` cannot be empty"},
+		{"add time (no channelID)", AddTimeEmptyChannelID, http.StatusOK, "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"list time no chan ID", ListTimeNoChanID, http.StatusOK, "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"list time", ListTime, http.StatusOK, fmt.Sprintf("<!date^%v^Standup time is {time}|Standup time set at 12:00>", timeInt)},
-		{"del time no chan ID", DelTimeNoChanID, http.StatusBadRequest, "`channel_id` cannot be empty"},
+		{"del time no chan ID", DelTimeNoChanID, http.StatusOK, "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"del time no chan Name", DelTimeNoChanName, http.StatusBadRequest, "`channel_name` cannot be empty"},
 	}
 

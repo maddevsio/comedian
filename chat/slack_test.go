@@ -41,7 +41,7 @@ func TestIsStandup(t *testing.T) {
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 	for _, tt := range testCases {
-		_, ok, _ := s.isStandup(tt.input)
+		_, ok, _ := s.analizeStandup(tt.input)
 		if ok != tt.confirm {
 			t.Errorf("Test %s: \n input: %s,\n expected confirm: %v\n actual confirm: %v \n", tt.title, tt.input, tt.confirm, ok)
 		}
@@ -101,6 +101,7 @@ func TestHandleMessage(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
+	botUserID := "BOTID"
 
 	su1, err := s.db.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID1",
@@ -113,7 +114,7 @@ func TestHandleMessage(t *testing.T) {
 	msg.Channel = su1.ChannelID
 	msg.Timestamp = "1"
 
-	err = s.handleMessage(msg)
+	err = s.handleMessage(msg, botUserID)
 	assert.NoError(t, err)
 
 	fakeChannel := "someotherChan"
@@ -122,7 +123,8 @@ func TestHandleMessage(t *testing.T) {
 	msg.Channel = su1.ChannelID
 	msg.User = su1.UserID
 	msg.Timestamp = "2"
-	err = s.handleMessage(msg)
+
+	err = s.handleMessage(msg, botUserID)
 
 	editmsg := &slack.MessageEvent{
 		SubMessage: &slack.Msg{
@@ -133,14 +135,14 @@ func TestHandleMessage(t *testing.T) {
 	}
 	editmsg.SubType = typeEditMessage
 
-	err = s.handleMessage(editmsg)
+	err = s.handleMessage(editmsg, botUserID)
 	assert.NoError(t, err)
 
 	msg.Text = "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
 	msg.Channel = fakeChannel
 	msg.User = su1.UserID
 
-	err = s.handleMessage(msg)
+	err = s.handleMessage(msg, botUserID)
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
