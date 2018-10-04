@@ -4,9 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 //SplitUser divides full user object to name & id
@@ -49,10 +52,29 @@ func FormatTime(t string) (hour, min int, err error) {
 }
 
 //SplitTimeTalbeCommand returns set of substrings
-func SplitTimeTalbeCommand(t, on, at string) (string, string, string) {
+func SplitTimeTalbeCommand(t, on, at string) (string, string, int64, error) {
+
 	a := strings.Split(t, on)
+	if len(a) != 2 {
+		return "", "", int64(0), errors.New("Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again")
+	}
+	users := strings.TrimSpace(a[0])
 	b := strings.Split(a[1], at)
-	return strings.TrimSpace(a[0]), strings.TrimSpace(b[0]), strings.TrimSpace(b[1])
+	if len(a) != 2 {
+		return "", "", int64(0), errors.New("Sorry, could not understand where are the weekdays and where is the time. Please, check the text for mistakes and try again")
+	}
+	weekdays := strings.ToLower(strings.TrimSpace(b[0]))
+	timeText := strings.ToLower(strings.TrimSpace(b[1]))
+	time, err := ParseTimeTextToInt(timeText)
+	if err != nil {
+		return "", "", int64(0), err
+	}
+	reg, err := regexp.Compile("[^а-яА-Яa-zA-Z0-9]+")
+	if err != nil {
+		return "", "", int64(0), err
+	}
+	weekdays = reg.ReplaceAllString(weekdays, " ")
+	return users, weekdays, time, nil
 }
 
 //PeridoToWeekdays convert dates to weekdays
@@ -72,4 +94,37 @@ func PeriodToWeekdays(dateFrom, dateTo time.Time) ([]string, error) {
 		weekdays = append(weekdays, strings.ToLower(date.Weekday().String()))
 	}
 	return weekdays, nil
+}
+
+func ParseTimeTextToInt(timeText string) (int64, error) {
+	if timeText == "0" {
+		return int64(0), nil
+	}
+	matchHourMinuteFormat, _ := regexp.MatchString("[0-9][0-9]:[0-9][0-9]", timeText)
+	matchAMPMFormat, _ := regexp.MatchString("[0-9][0-9][a-z]", timeText)
+
+	if matchHourMinuteFormat {
+		t := strings.Split(timeText, ":")
+		hours, err := strconv.Atoi(t[0])
+		if err != nil {
+			logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
+			return int64(0), err
+		}
+		munites, err := strconv.Atoi(t[1])
+		if err != nil {
+			logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
+			return int64(0), err
+		}
+		if hours > 23 || munites > 59 {
+			return int64(0), errors.New("Wrong time! Please, check the time format and try again!")
+		}
+		return time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), hours, munites, 0, 0, time.Local).Unix(), nil
+	}
+
+	if matchAMPMFormat {
+		return int64(0), errors.New("Seems like you used short time format, please, use 24:00 hour format instead!")
+	}
+
+	return int64(0), errors.New("Could not understand how you mention time. Please, use 24:00 hour format and try again!")
+
 }

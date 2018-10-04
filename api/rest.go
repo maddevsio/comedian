@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -19,6 +18,7 @@ import (
 	"github.com/maddevsio/comedian/storage"
 	"github.com/maddevsio/comedian/teammonitoring"
 	"github.com/maddevsio/comedian/utils"
+	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,6 +30,7 @@ type REST struct {
 	decoder *schema.Decoder
 	report  *reporting.Reporter
 	slack   *chat.Slack
+	api     *slack.Client
 }
 
 const (
@@ -71,6 +72,8 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 		return nil, err
 	}
 
+	api := slack.New(c.SlackToken)
+
 	decoder := schema.NewDecoder()
 	decoder.IgnoreUnknownKeys(true)
 	r := &REST{
@@ -80,6 +83,7 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 		decoder: decoder,
 		report:  rep,
 		slack:   s,
+		api:     api,
 	}
 
 	r.initEndpoints()
@@ -147,6 +151,9 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
@@ -202,6 +209,9 @@ func (r *REST) addPMCommand(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
@@ -243,6 +253,9 @@ func (r *REST) addPMCommand(c echo.Context, f url.Values) error {
 func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
 	}
 	var ca ChannelIDTextForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
@@ -286,6 +299,9 @@ func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
+	}
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: listUsersCommand Decode failed: %v\n", err)
@@ -314,6 +330,7 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
+
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
@@ -432,6 +449,9 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addTime Decode failed: %v\n", err)
@@ -474,6 +494,9 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
+	}
 	var ca ChannelForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: removeTime Decode failed: %v\n", err)
@@ -500,6 +523,9 @@ func (r *REST) listTime(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
+	}
 	var ca ChannelIDForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: listTime Decode failed: %v\n", err)
@@ -522,6 +548,9 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addTime Decode failed: %v\n", err)
@@ -531,7 +560,10 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 		logrus.Errorf("rest: addTime Validate failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	usersText, weekdays, time := utils.SplitTimeTalbeCommand(ca.Text, r.conf.Translate.DaysDivider, r.conf.Translate.TimeDivider)
+	usersText, weekdays, time, err := utils.SplitTimeTalbeCommand(ca.Text, r.conf.Translate.DaysDivider, r.conf.Translate.TimeDivider)
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
 	users := strings.Split(usersText, " ")
 	if len(users) < 1 {
 		return c.String(http.StatusBadRequest, r.conf.Translate.TimetableNoUsers)
@@ -598,6 +630,9 @@ func (r *REST) showTimeTable(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
 	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
+	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: listTime Decode failed: %v\n", err)
@@ -639,6 +674,9 @@ func (r *REST) showTimeTable(c echo.Context, f url.Values) error {
 func (r *REST) removeTimeTable(c echo.Context, f url.Values) error {
 	if !r.userHasAccess(f.Get("user_id"), f.Get("channel_id")) {
 		return c.String(http.StatusOK, r.conf.Translate.AccessDenied)
+	}
+	if !r.ComedianIsInChannel(f.Get("channel_id")) {
+		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
 	}
 	var ca FullSlackForm
 	if err := r.decoder.Decode(&ca, f); err != nil {
@@ -908,26 +946,7 @@ func (r *REST) userHasAccess(userID, channelID string) bool {
 	return false
 }
 
-func (r *REST) prepareTimeTable(tt model.TimeTable, weekdays, timeText string) (model.TimeTable, error) {
-	timeInt := int64(0)
-	if timeText != "0" {
-		t := strings.Split(timeText, ":")
-		if len(t) < 2 {
-			return tt, errors.New("could not parse timeText properly")
-		}
-		hours, err := strconv.Atoi(t[0])
-		if err != nil {
-			logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
-			return tt, err
-		}
-		munites, err := strconv.Atoi(t[1])
-		if err != nil {
-			logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
-			return tt, err
-		}
-		timeInt = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), hours, munites, 0, 0, time.Local).Unix()
-	}
-
+func (r *REST) prepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) (model.TimeTable, error) {
 	if strings.Contains(weekdays, "mon") || strings.Contains(weekdays, "пн") {
 		tt.Monday = timeInt
 	}
@@ -950,4 +969,13 @@ func (r *REST) prepareTimeTable(tt model.TimeTable, weekdays, timeText string) (
 		tt.Sunday = timeInt
 	}
 	return tt, nil
+}
+
+func (r *REST) ComedianIsInChannel(channelID string) bool {
+	_, err := r.db.SelectChannel(channelID)
+	if err != nil {
+		logrus.Errorf("SelectChannel failed: %v", err)
+		return false
+	}
+	return true
 }

@@ -19,6 +19,7 @@ type Config struct {
 	TeamMonitoringEnabled bool   `envconfig:"ENABLE_TEAM_MONITORING" required:"true" default:true`
 	CollectorURL          string `envconfig:"COLLECTOR_URL" required:"true"`
 	CollectorToken        string `envconfig:"COLLECTOR_TOKEN" required:"true"`
+	TeamDomain            string `envconfig:"SLACK_DOMAIN"`
 	Translate             Translate
 }
 

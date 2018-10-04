@@ -134,7 +134,7 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 //GetCollectorData sends api request to collector servise and returns collector object
 func GetCollectorData(conf config.Config, getDataOn, data, dateFrom, dateTo string) (CollectorData, error) {
 	var collectorData CollectorData
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/", conf.CollectorURL, getDataOn, data, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", conf.CollectorURL, conf.TeamDomain, getDataOn, data, dateFrom, dateTo)
 	logrus.Infof("teammonitoring: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {

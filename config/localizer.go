@@ -120,6 +120,8 @@ type Translate struct {
 	TimetableShowFriday    string
 	TimetableShowSaturday  string
 	TimetableShowSunday    string
+
+	ComedianIsNotInChannel string
 }
 
 // GetTranslation sets translation files for config
@@ -215,6 +217,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"TimetableShowFriday",
 		"TimetableShowSaturday",
 		"TimetableShowSunday",
+		"ComedianIsNotInChannel",
 	}
 
 	for _, t := range r {
@@ -329,6 +332,7 @@ func GetTranslation(lang string) (Translate, error) {
 		TimetableShowFriday:         m["TimetableShowFriday"],
 		TimetableShowSaturday:       m["TimetableShowSaturday"],
 		TimetableShowSunday:         m["TimetableShowSunday"],
+		ComedianIsNotInChannel:      m["ComedianIsNotInChannel"],
 	}
 
 	return t, nil

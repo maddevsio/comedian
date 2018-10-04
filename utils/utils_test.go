@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -38,33 +39,45 @@ func TestSplitTimeTalbeCommand(t *testing.T) {
 		command  string
 		users    string
 		weekdays string
-		time     string
+		time     int64
+		err      string
 	}{
-		{"@anatoliy on friday at 1pm", "@anatoliy", "friday", "1pm"},
-		{"<@UB9AE7CL9|fedorenko.tolik> on monday at 5pm", "<@UB9AE7CL9|fedorenko.tolik>", "monday", "5pm"},
-		{"@anatoliy @erik @alex on friday tuesday monday wednesday at 3pm", "@anatoliy @erik @alex", "friday tuesday monday wednesday", "3pm"},
+		{"@anatoliy on friday at 01:00", "@anatoliy", "friday", int64(1538593200), ""},
+		{"@anatoliy n friday ft 01:00", "", "", int64(0), "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"},
+
+		{"@anatoliy on Friday at 01:00", "@anatoliy", "friday", int64(1538593200), ""},
+		{"<@UB9AE7CL9|fedorenko.tolik> on monday at 01:00", "<@UB9AE7CL9|fedorenko.tolik>", "monday", int64(1538593200), ""},
+		{"@anatoliy @erik @alex on friday tuesday monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1538593200), ""},
+		{"@anatoliy @erik @alex on friday, tuesday, monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1538593200), ""},
 	}
-	for _, tt := range testCases {
-		users, weekdays, deadline := SplitTimeTalbeCommand(tt.command, " on ", " at ")
+	for i, tt := range testCases {
+		users, weekdays, deadline, err := SplitTimeTalbeCommand(tt.command, " on ", " at ")
 		assert.Equal(t, tt.users, users)
 		assert.Equal(t, tt.weekdays, weekdays)
 		assert.Equal(t, tt.time, deadline)
+		if err != nil {
+			fmt.Println(i, err)
+		}
 	}
 
 	testCasesRus := []struct {
 		command  string
 		users    string
 		weekdays string
-		time     string
+		time     int64
+		err      string
 	}{
-		{"@anatoliy по пятницам в 1pm", "@anatoliy", "пятницам", "1pm"},
-		{"@anatoliy @erik @alex по понедельникам пятницам вторникам в 3pm", "@anatoliy @erik @alex", "понедельникам пятницам вторникам", "3pm"},
+		{"@anatoliy по пятницам в 02:04", "@anatoliy", "пятницам", int64(1538597040), ""},
+		{"@anatoliy @erik @alex по понедельникам пятницам вторникам в 23:04", "@anatoliy @erik @alex", "понедельникам пятницам вторникам", int64(1538672640), ""},
 	}
-	for _, tt := range testCasesRus {
-		users, weekdays, deadline := SplitTimeTalbeCommand(tt.command, " по ", " в ")
+	for i, tt := range testCasesRus {
+		users, weekdays, deadline, err := SplitTimeTalbeCommand(tt.command, " по ", " в ")
 		assert.Equal(t, tt.users, users)
 		assert.Equal(t, tt.weekdays, weekdays)
 		assert.Equal(t, tt.time, deadline)
+		if err != nil {
+			fmt.Println(i, err)
+		}
 	}
 }
 
@@ -90,7 +103,7 @@ func TestFormatTime(t *testing.T) {
 	}
 }
 
-func TestPeridoToWeekdays(t *testing.T) {
+func TestPeriodToWeekdays(t *testing.T) {
 	testCases := []struct {
 		dateFrom time.Time
 		dateTo   time.Time
