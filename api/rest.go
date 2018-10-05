@@ -91,7 +91,8 @@ func NewRESTAPI(c config.Config) (*REST, error) {
 }
 
 func (r *REST) initEndpoints() {
-	r.echo.POST("/commands", r.handleCommands)
+	endPoint := fmt.Sprintf("/commands%s", r.conf.SecretToken)
+	r.echo.POST(endPoint, r.handleCommands)
 }
 
 // Start starts http server

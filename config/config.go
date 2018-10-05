@@ -20,6 +20,7 @@ type Config struct {
 	CollectorURL          string `envconfig:"COLLECTOR_URL" required:"true"`
 	CollectorToken        string `envconfig:"COLLECTOR_TOKEN" required:"true"`
 	TeamDomain            string `envconfig:"SLACK_DOMAIN"`
+	SecretToken           string `envconfig:"SECRET_TOKEN" required:"true"`
 	Translate             Translate
 }
 
