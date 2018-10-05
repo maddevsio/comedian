@@ -113,10 +113,11 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 		if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") && !strings.Contains(msg.Msg.Text, "#стэндап") {
 			return nil
 		}
-		_, err := s.db.FindChannelMemberByUserID(msg.User, msg.Channel)
-		if err != nil {
-			return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleUserNotAssigned)
-		}
+		// Maybe we should not check if a user is assigned as standuper...
+		// _, err := s.db.FindChannelMemberByUserID(msg.User, msg.Channel)
+		// if err != nil {
+		// 	return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleUserNotAssigned)
+		// }
 		standupText, messageIsStandup, problem := s.analizeStandup(msg.Msg.Text)
 		if problem != "" {
 			return s.SendEphemeralMessage(msg.Channel, msg.User, problem)
@@ -132,10 +133,14 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 				MessageTS: msg.Msg.Timestamp,
 			})
 			if err != nil {
+				logrus.Errorf("CreateStandup failed: %v", err)
+				errorReportToManager := fmt.Sprintf("I could not save standup for user %s in channel %s because of the following reasons: %v", msg.User, msg.Channel, err)
+				s.SendUserMessage(s.Conf.ManagerSlackUserID, errorReportToManager)
 				return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
 			}
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
+			time.Sleep(2 * time.Second)
 			s.api.AddReaction("heavy_check_mark", item)
 			return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleCreatedStandup)
 		}
@@ -153,17 +158,21 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 				if s.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
 					return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleOneDayOneStandup)
 				}
-				_, err := s.db.CreateStandup(model.Standup{
+				standup, err := s.db.CreateStandup(model.Standup{
 					ChannelID: msg.Channel,
 					UserID:    msg.SubMessage.User,
 					Comment:   standupText,
 					MessageTS: msg.SubMessage.Timestamp,
 				})
 				if err != nil {
+					logrus.Errorf("CreateStandup while updating text failed: %v", err)
+					errorReportToManager := fmt.Sprintf("I could not create standup while updating msg for user %s in channel %s because of the following reasons: %v", msg.SubMessage.User, msg.Channel, err)
+					s.SendUserMessage(s.Conf.ManagerSlackUserID, errorReportToManager)
 					return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
 				}
 				logrus.Infof("Standup created #id:%v\n", standup.ID)
 				item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
+				time.Sleep(2 * time.Second)
 				s.api.AddReaction("heavy_check_mark", item)
 				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCreatedStandup)
 			}
@@ -177,9 +186,13 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 			standup.Comment = text
 			_, err := s.db.UpdateStandup(standup)
 			if err != nil {
+				logrus.Errorf("UpdateStandup failed: %v", err)
+				errorReportToManager := fmt.Sprintf("I could not update standup for user %s in channel %s because of the following reasons: %v", msg.SubMessage.User, msg.Channel, err)
+				s.SendUserMessage(s.Conf.ManagerSlackUserID, errorReportToManager)
 				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
 			}
 			logrus.Infof("Standup updated #id:%v\n", standup.ID)
+			time.Sleep(2 * time.Second)
 			return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleUpdatedStandup)
 		}
 
@@ -333,6 +346,8 @@ func (s *Slack) FillStandupsForNonReporters() {
 			})
 			if err != nil {
 				logrus.Errorf("notifier: CreateStandup failed: %v\n", err)
+				errorReportToManager := fmt.Sprintf("I could not create empty standup for user %s in channel %s because of the following reasons: %v", user.UserID, user.ChannelID, err)
+				s.SendUserMessage(s.Conf.ManagerSlackUserID, errorReportToManager)
 				return
 			}
 			logrus.Infof("notifier: Empty Standup created: %v\n", standup.ID)

@@ -72,8 +72,12 @@ type (
 
 // Validate validates Standup struct
 func (c Standup) Validate() error {
-	if c.ChannelID == "" && c.UserID == "" {
+	if c.UserID == "" {
 		err := errors.New("User cannot be empty")
+		return err
+	}
+	if c.ChannelID == "" {
+		err := errors.New("Channel cannot be empty")
 		return err
 	}
 	return nil

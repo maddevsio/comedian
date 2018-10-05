@@ -118,7 +118,7 @@ TimetableShowSaturday = "| Saturday %02d:%02d "
 TimetableShowSunday = "| Sunday %02d:%02d "
 ComedianIsNotInChannel = "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"
 
-StandupHandleUserNotAssigned = "I like you, yet, you are not assigned as standuper in this channel, please, contact your PM and try again!"
+StandupHandleUserNotAssigned = "Seems like you are not assigned as standuper in this channel, please, contact your PM and try again!"
 StandupHandleOneDayOneStandup = "One day = one standup! If you want to update your today standup, just edit the one you already wrote!"
 StandupHandleCouldNotSaveStandup = "For some reason i could not save your standup in database. I appologize and ask you to contact your PM."
 StandupHandleNoProblemsMentioned = "No problems detected! Make sure you include problems, because I do not believe you have none!"
