@@ -137,7 +137,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
 			s.api.AddReaction("heavy_check_mark", item)
-			return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCreatedStandup)
+			return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleCreatedStandup)
 		}
 	case typeEditMessage:
 		if !strings.Contains(msg.SubMessage.Text, botUserID) && !strings.Contains(msg.SubMessage.Text, "#standup") && !strings.Contains(msg.SubMessage.Text, "#стэндап") {
