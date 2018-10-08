@@ -158,7 +158,7 @@ func TestParseTimeTextToInt(t *testing.T) {
 		{"20", 0, errors.New("Could not understand how you mention time. Please, use 24:00 hour format and try again!")},
 	}
 	for _, tt := range testCases {
-		time, err := ParseTimeTextToInt(tt.timeText)
+		_, err := ParseTimeTextToInt(tt.timeText)
 		assert.Equal(t, tt.err, err)
 		//assert.Equal(t, tt.time, time)
 	}
