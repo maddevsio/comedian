@@ -1,6 +1,7 @@
 package teammonitoring
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -41,7 +42,7 @@ func TestTeamMonitoringOnWeekEnd(t *testing.T) {
 
 	_, err = tm.RevealRooks()
 	assert.Error(t, err)
-	assert.Equal(t, "day off", err.Error())
+	assert.Equal(t, "Day off today! Next report on Monday!", err.Error())
 }
 
 func TestTeamMonitoringOnMonday(t *testing.T) {
@@ -153,4 +154,10 @@ func TestGetCollectorData(t *testing.T) {
 	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UBZ6Y0P5K/kaftv", "2018-09-27", "2018-09-27")
 	assert.NoError(t, err)
 	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
+
+	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UBZ6Y0P5K/kaftv", "2018-09-27", "20109-27")
+	assert.Error(t, err)
+	assert.Equal(t, errors.New("could not get data on this request"), err)
+	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
+
 }

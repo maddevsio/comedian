@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -54,13 +53,13 @@ func TestSplitTimeTalbeCommand(t *testing.T) {
 		{"@anatoliy @erik @alex on friday tuesday monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1514833200), ""},
 		{"@anatoliy @erik @alex on friday, tuesday, monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1514833200), ""},
 	}
-	for i, tt := range testCases {
+	for _, tt := range testCases {
 		users, weekdays, _, err := SplitTimeTalbeCommand(tt.command, " on ", " at ")
 		assert.Equal(t, tt.users, users)
 		assert.Equal(t, tt.weekdays, weekdays)
 		//assert.Equal(t, tt.time, deadline)
 		if err != nil {
-			fmt.Println(i, err)
+			assert.Equal(t, errors.New(tt.err), err)
 		}
 	}
 
@@ -74,13 +73,13 @@ func TestSplitTimeTalbeCommand(t *testing.T) {
 		{"@anatoliy по пятницам в 02:04", "@anatoliy", "пятницам", int64(1514837040), ""},
 		{"@anatoliy @erik @alex по понедельникам пятницам вторникам в 23:04", "@anatoliy @erik @alex", "понедельникам пятницам вторникам", int64(1514912640), ""},
 	}
-	for i, tt := range testCasesRus {
+	for _, tt := range testCasesRus {
 		users, weekdays, _, err := SplitTimeTalbeCommand(tt.command, " по ", " в ")
 		assert.Equal(t, tt.users, users)
 		assert.Equal(t, tt.weekdays, weekdays)
 		//assert.Equal(t, tt.time, deadline)
 		if err != nil {
-			fmt.Println(i, err)
+			assert.Equal(t, errors.New(tt.err), err)
 		}
 	}
 }

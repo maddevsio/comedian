@@ -62,6 +62,7 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
 		return "", errors.New(tm.Config.Translate.ErrorRooksReportWeekend)
 	}
+
 	startDate := time.Now().AddDate(0, 0, -1)
 	endDate := time.Now().AddDate(0, 0, -1)
 	// if today is monday, check 3 days of performance for user
@@ -69,12 +70,14 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 		startDate = time.Now().AddDate(0, 0, -3)
 	}
 	allUsers, err := tm.db.ListAllChannelMembers()
+
 	if err != nil {
 		logrus.Errorf("team monitoring: tm.GetCurrentDayNonReporters failed: %v\n", err)
 		return "", err
 	}
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
 	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
+
 	finalText := ""
 
 	for _, user := range allUsers {
@@ -83,7 +86,6 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 			logrus.Infof("Member %v should not be tracked! Skipping", user.UserID)
 			continue
 		}
-
 		project, err := tm.db.SelectChannel(user.ChannelID)
 		if err != nil {
 			logrus.Errorf("SelectChannel failed: %v", err)
@@ -152,6 +154,11 @@ func GetCollectorData(conf config.Config, getDataOn, data, dateFrom, dateTo stri
 		return collectorData, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		logrus.Errorf("teammonitoring: get collector data failed! Status Code: %v\n", res.StatusCode)
+		return collectorData, errors.New("could not get data on this request")
+	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {

@@ -57,6 +57,10 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 		}
 		dayInfo := ""
 		for _, member := range chanMembers {
+			if !r.db.MemberShouldBeTracked(member.ID, dateFrom, dateTo) {
+				logrus.Infof("member should not be tracked: %v", member.UserID)
+				continue
+			}
 			userIsNonReporter, err := r.db.IsNonReporter(member.UserID, channel.ChannelID, dateFrom, dateTo)
 			if err != nil {
 				logrus.Errorf("reporting.go reportByProject IsNonReporter failed: %v", err)
@@ -77,6 +81,11 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 		if dayInfo != "" {
 			text := fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
 			text += dayInfo
+			rbc := ReportBodyContent{dateFrom, text}
+			report.ReportBody = append(report.ReportBody, rbc)
+		} else {
+			text := fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			text += "No Data Available"
 			rbc := ReportBodyContent{dateFrom, text}
 			report.ReportBody = append(report.ReportBody, rbc)
 		}
@@ -104,6 +113,15 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 			channelName, err := r.db.GetChannelName(channel)
 			if err != nil {
 				logrus.Errorf("reporting.go reportByUser GetChannelName failed: %v", err)
+				continue
+			}
+			member, err := r.db.FindChannelMemberByUserID(slackUserID, channel)
+			if err != nil {
+				logrus.Infof("FindChannelMemberByUserID failed: %v", err)
+				continue
+			}
+			if !r.db.MemberShouldBeTracked(member.ID, dateFrom, dateTo) {
+				logrus.Infof("member should not be tracked: %v", slackUserID)
 				continue
 			}
 			userIsNonReporter, err := r.db.IsNonReporter(slackUserID, channel, dateFrom, dateTo)
@@ -145,6 +163,15 @@ func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUse
 		dateFrom := dateFromBegin.Add(time.Duration(day*24) * time.Hour)
 		dateTo := dateFrom.Add(24 * time.Hour)
 		logrus.Infof("reportByProjectAndUser: dateFrom: '%v', dateTo: '%v'", dateFrom, dateTo)
+		member, err := r.db.FindChannelMemberByUserID(slackUserID, channel.ChannelID)
+		if err != nil {
+			logrus.Infof("FindChannelMemberByUserID failed: %v", err)
+			continue
+		}
+		if !r.db.MemberShouldBeTracked(member.ID, dateFrom, dateTo) {
+			logrus.Infof("member should not be tracked: %v", slackUserID)
+			continue
+		}
 		userIsNonReporter, err := r.db.IsNonReporter(slackUserID, channel.ChannelID, dateFrom, dateTo)
 		if err != nil {
 			logrus.Errorf("reporting.go reportByProjectAndUser IsNonReporter failed: %v", err)

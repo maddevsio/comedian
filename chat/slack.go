@@ -35,7 +35,6 @@ type Slack struct {
 // NewSlack creates a new copy of slack handler
 func NewSlack(conf config.Config) (*Slack, error) {
 	m, err := storage.NewMySQL(conf)
-
 	if err != nil {
 		logrus.Errorf("slack: NewMySQL failed: %v\n", err)
 		return nil, err
@@ -113,11 +112,6 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 		if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") && !strings.Contains(msg.Msg.Text, "#стэндап") {
 			return nil
 		}
-		// Maybe we should not check if a user is assigned as standuper...
-		// _, err := s.db.FindChannelMemberByUserID(msg.User, msg.Channel)
-		// if err != nil {
-		// 	return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleUserNotAssigned)
-		// }
 		standupText, messageIsStandup, problem := s.analizeStandup(msg.Msg.Text)
 		if problem != "" {
 			return s.SendEphemeralMessage(msg.Channel, msg.User, problem)
@@ -312,7 +306,6 @@ func (s *Slack) UpdateUsersList() {
 		if user.Deleted {
 			s.db.DeleteUser(u.ID)
 		}
-		continue
 	}
 }
 

@@ -2,6 +2,9 @@ package chat
 
 import (
 	"testing"
+	"time"
+
+	"github.com/bouk/monkey"
 
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
@@ -53,12 +56,16 @@ func TestSendMessage(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postEphemeral", httpmock.NewStringResponder(200, `{"ok": true}`))
 
 	c, err := config.Get()
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 	err = s.SendMessage("YYYZZZVVV", "Hey!")
+	assert.NoError(t, err)
+
+	err = s.SendEphemeralMessage("YYYZZZVVV", "USER!", "Hey!")
 	assert.NoError(t, err)
 }
 
@@ -96,6 +103,7 @@ func TestHandleMessage(t *testing.T) {
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `"ok": true`))
 	httpmock.RegisterResponder("POST", "https://slack.com/api/reactions.add", httpmock.NewStringResponder(200, `{"ok": true}`))
 	httpmock.RegisterResponder("POST", "https://slack.com/api/im.open", httpmock.NewStringResponder(200, `{"ok": true}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postEphemeral", httpmock.NewStringResponder(200, `{"ok": true}`))
 
 	c, err := config.Get()
 	assert.NoError(t, err)
@@ -107,19 +115,36 @@ func TestHandleMessage(t *testing.T) {
 		UserID:    "userID1",
 		ChannelID: "123qwe",
 	})
+
+	su, err := s.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID2",
+		ChannelID: "123qwe",
+	})
 	assert.NoError(t, err)
 
 	msg := &slack.MessageEvent{}
 	msg.Text = "<@> some message"
-	msg.Channel = su1.ChannelID
+	msg.Channel = su.ChannelID
 	msg.Timestamp = "1"
+
+	err = s.handleMessage(msg, botUserID)
+	assert.NoError(t, err)
+
+	editWrongMessage := &slack.MessageEvent{
+		SubMessage: &slack.Msg{
+			User:      su.UserID,
+			Text:      "<@BOTID> Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problem",
+			Timestamp: "123ksdlfsdkl",
+		},
+	}
+	editWrongMessage.SubType = typeEditMessage
 
 	err = s.handleMessage(msg, botUserID)
 	assert.NoError(t, err)
 
 	fakeChannel := "someotherChan"
 
-	msg.Text = "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
+	msg.Text = "<@BOTID> Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
 	msg.Channel = su1.ChannelID
 	msg.User = su1.UserID
 	msg.Timestamp = "2"
@@ -129,7 +154,7 @@ func TestHandleMessage(t *testing.T) {
 	editmsg := &slack.MessageEvent{
 		SubMessage: &slack.Msg{
 			User:      su1.UserID,
-			Text:      "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problem",
+			Text:      "<@BOTID> Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problem",
 			Timestamp: "2",
 		},
 	}
@@ -138,7 +163,7 @@ func TestHandleMessage(t *testing.T) {
 	err = s.handleMessage(editmsg, botUserID)
 	assert.NoError(t, err)
 
-	msg.Text = "Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
+	msg.Text = "<@BOTID> Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
 	msg.Channel = fakeChannel
 	msg.User = su1.UserID
 
@@ -154,5 +179,76 @@ func TestHandleMessage(t *testing.T) {
 		s.db.DeleteStandup(standup.ID)
 	}
 	assert.NoError(t, s.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, s.db.DeleteChannelMember(su.UserID, su.ChannelID))
 
+}
+
+func TestFillStandupsForNonReporters(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := NewSlack(c)
+	assert.NoError(t, err)
+
+	d := time.Date(2018, 9, 30, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	s.FillStandupsForNonReporters()
+
+	d = time.Date(2018, 10, 2, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	s.FillStandupsForNonReporters()
+
+	su1, err := s.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID1",
+		ChannelID: "123qwe",
+	})
+	assert.NoError(t, err)
+
+	s.FillStandupsForNonReporters()
+
+	d = time.Date(2018, 10, 8, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	su2, err := s.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID2",
+		ChannelID: "123qwe",
+	})
+	assert.NoError(t, err)
+
+	_, err = s.db.CreateStandup(model.Standup{
+		ChannelID: su2.ChannelID,
+		Comment:   "test test test!",
+		UserID:    su2.UserID,
+		MessageTS: "qweasdzxc",
+	})
+	assert.NoError(t, err)
+
+	d = time.Date(2018, 10, 8, 12, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	s.FillStandupsForNonReporters()
+
+	// clean up
+	standups, err := s.db.ListStandups()
+	assert.NoError(t, err)
+	for _, standup := range standups {
+		s.db.DeleteStandup(standup.ID)
+	}
+
+	assert.NoError(t, s.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, s.db.DeleteChannelMember(su2.UserID, su2.ChannelID))
+}
+
+func TestAutomaticActions(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := NewSlack(c)
+	assert.NoError(t, err)
+
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", "https://slack.com/api/conversations.info", httpmock.NewStringResponder(200, `{"ok": true, "channel": {"id": "CBAPFA2J2", "name": "general"}}`))
+	s.UpdateUsersList()
+	s.handleJoin("TESTCHANNELID")
 }
