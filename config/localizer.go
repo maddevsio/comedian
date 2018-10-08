@@ -131,6 +131,8 @@ type Translate struct {
 	StandupHandleNoTodayPlansMentioned    string
 	StandupHandleUpdatedStandup           string
 	StandupHandleCreatedStandup           string
+
+	ErrorRooksReportWeekend string
 }
 
 // GetTranslation sets translation files for config
@@ -236,6 +238,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"StandupHandleNoTodayPlansMentioned",
 		"StandupHandleUpdatedStandup",
 		"StandupHandleCreatedStandup",
+		"ErrorRooksReportWeekend",
 	}
 
 	for _, t := range r {
@@ -360,6 +363,8 @@ func GetTranslation(lang string) (Translate, error) {
 		StandupHandleNoTodayPlansMentioned:    m["StandupHandleNoTodayPlansMentioned"],
 		StandupHandleUpdatedStandup:           m["StandupHandleUpdatedStandup"],
 		StandupHandleCreatedStandup:           m["StandupHandleCreatedStandup"],
+
+		ErrorRooksReportWeekend: m["ErrorRooksReportWeekend"],
 	}
 
 	return t, nil

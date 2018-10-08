@@ -128,5 +128,4 @@ StandupHandleNoTodayPlansMentioned = "Всё вроде как есть, но ч
 StandupHandleUpdatedStandup = "Отредактировал стэндап! Всё отлично!"
 StandupHandleCreatedStandup = "Сохранил твой стэндап! Всё супер!"
 
-
-
+ErrorRooksReportWeekend = "Сегодня выходной! Следующий отчет в понедельник!"

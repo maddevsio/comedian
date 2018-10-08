@@ -126,3 +126,5 @@ StandupHandleNoYesterdayWorkMentioned = "Could not get what you did yesterday! P
 StandupHandleNoTodayPlansMentioned = "Seems like today plans are missing! Please, add them and the team is good to go!"
 StandupHandleUpdatedStandup = "Standup edited, Good job!"
 StandupHandleCreatedStandup = "Standup saved, well done!"
+
+ErrorRooksReportWeekend = "Day off today! Next report on Monday!"

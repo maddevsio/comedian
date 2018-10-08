@@ -139,3 +139,28 @@ func TestPeriodToWeekdays(t *testing.T) {
 		}
 	}
 }
+
+func TestParseTimeTextToInt(t *testing.T) {
+
+	d := time.Date(2018, 10, 4, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	testCases := []struct {
+		timeText string
+		time     int64
+		err      error
+	}{
+		{"0", 0, nil},
+		{"10:00", 1538625600, nil},
+		{"xx:00", 0, errors.New("Could not understand how you mention time. Please, use 24:00 hour format and try again!")},
+		{"00:xx", 0, errors.New("Could not understand how you mention time. Please, use 24:00 hour format and try again!")},
+		{"00:62", 0, errors.New("Wrong time! Please, check the time format and try again!")},
+		{"10am", 0, errors.New("Seems like you used short time format, please, use 24:00 hour format instead!")},
+		{"20", 0, errors.New("Could not understand how you mention time. Please, use 24:00 hour format and try again!")},
+	}
+	for _, tt := range testCases {
+		time, err := ParseTimeTextToInt(tt.timeText)
+		assert.Equal(t, tt.err, err)
+		assert.Equal(t, tt.time, time)
+	}
+}
