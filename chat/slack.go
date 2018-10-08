@@ -280,7 +280,9 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 //UpdateUsersList updates users in workspace
 func (s *Slack) UpdateUsersList() {
 	logrus.Infof("UpdateUsersList start")
-	users, _ := s.api.GetUsers()
+	users, err := s.api.GetUsers()
+	logrus.Infof("GetUsers: %v", users)
+	logrus.Errorf("GetUsers failed: %v", err)
 	for _, user := range users {
 		if user.IsBot || user.Name == "slackbot" {
 			continue

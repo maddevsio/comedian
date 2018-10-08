@@ -249,6 +249,71 @@ func TestAutomaticActions(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", "https://slack.com/api/conversations.info", httpmock.NewStringResponder(200, `{"ok": true, "channel": {"id": "CBAPFA2J2", "name": "general"}}`))
+
+	teamInfoResponse := `
+	{
+		"ok": true,
+		"members": [
+			{
+				"id": "USER1D1",
+				"team_id": "TEAMID1",
+				"name": "UserAdmin",
+				"deleted": false,
+				"color": "9f69e7",
+				"real_name": "admin",
+				"is_admin": true,
+				"is_owner": true,
+				"is_primary_owner": true,
+				"is_restricted": false,
+				"is_ultra_restricted": false,
+				"is_bot": false,
+			},
+			{
+				"id": "BOTID",
+				"team_id": "TEAMID1",
+				"name": "comedian",
+				"deleted": false,
+				"color": "4bbe2e",
+				"real_name": "comedian",
+				"tz": "America\/Los_Angeles",
+				"tz_label": "Pacific Daylight Time",
+				"tz_offset": -25200,
+				"is_admin": false,
+				"is_owner": false,
+				"is_primary_owner": false,
+				"is_restricted": false,
+				"is_ultra_restricted": false,
+				"is_bot": true,
+				"is_app_user": false,
+				"updated": 1529488035
+			},
+			{
+				"id": "UBEGJBB9A",
+				"team_id": "TEAMID1",
+				"name": "anot",
+				"deleted": false,
+				"color": "674b1b",
+				"real_name": "Anot",
+				"is_restricted": false,
+				"is_ultra_restricted": false,
+				"is_bot": false,
+				"is_app_user": false,
+			},
+			{
+				"id": "DELETEDUSERID",
+				"team_id": "TEAMID1",
+				"name": "deleted.user",
+				"deleted": true,
+				"color": "e96699",
+				"real_name": "John Doe"
+			},
+		],
+		"cache_ts": 1538988885
+	}`
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", httpmock.NewStringResponder(200, teamInfoResponse))
+
 	s.UpdateUsersList()
+
 	s.handleJoin("TESTCHANNELID")
 }

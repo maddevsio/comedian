@@ -83,11 +83,6 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 			text += dayInfo
 			rbc := ReportBodyContent{dateFrom, text}
 			report.ReportBody = append(report.ReportBody, rbc)
-		} else {
-			text := fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
-			text += "No Data Available"
-			rbc := ReportBodyContent{dateFrom, text}
-			report.ReportBody = append(report.ReportBody, rbc)
 		}
 	}
 	return report, nil
