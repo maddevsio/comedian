@@ -932,7 +932,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 func (r *REST) userHasAccess(userID, channelID string) bool {
 	user, err := r.db.SelectUser(userID)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("SelectUser failed: %v", err)
 		return false
 	}
 	if (userID == r.conf.ManagerSlackUserID) || user.IsAdmin() {
@@ -972,6 +972,7 @@ func (r *REST) prepareTimeTable(tt model.TimeTable, weekdays string, timeInt int
 	return tt, nil
 }
 
+//ComedianIsInChannel returns true if comedian knows about a channel
 func (r *REST) ComedianIsInChannel(channelID string) bool {
 	_, err := r.db.SelectChannel(channelID)
 	if err != nil {

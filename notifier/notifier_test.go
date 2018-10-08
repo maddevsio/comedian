@@ -236,6 +236,7 @@ func TestIndividualNotification(t *testing.T) {
 	tt.Friday = timeNow.Unix()
 
 	tt, err = n.db.UpdateTimeTable(tt)
+	assert.NoError(t, err)
 
 	d = time.Date(2018, 10, 9, 15, 58, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })

@@ -550,3 +550,99 @@ func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
 
 	return context, rec
 }
+
+func TestPrepareTimetable(t *testing.T) {
+	c, err := config.Get()
+	r, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+
+	user, err := r.db.CreateUser(model.User{
+		UserID:   "QWERTY123",
+		UserName: "chanName1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	channel, err := r.db.CreateChannel(model.Channel{
+		ChannelID:   "XYZ",
+		ChannelName: "chan",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	m, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:    user.UserID,
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	tt, err := r.db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: m.ID,
+	})
+	assert.NoError(t, err)
+
+	timeNow := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
+	tt.Monday = timeNow.Unix()
+	tt.Tuesday = timeNow.Unix()
+	tt.Wednesday = timeNow.Unix()
+	tt.Thursday = timeNow.Unix()
+	tt.Friday = timeNow.Unix()
+
+	tt, err = r.db.UpdateTimeTable(tt)
+
+	assert.NoError(t, err)
+	assert.Equal(t, timeNow.Unix(), tt.Monday)
+
+	timeUpdate := time.Date(2018, 10, 7, 12, 0, 0, 0, time.UTC).Unix()
+
+	tt, err = r.prepareTimeTable(tt, "mon tue wed thu fri sat sun", timeUpdate)
+	assert.NoError(t, err)
+	assert.Equal(t, timeUpdate, tt.Monday)
+}
+
+func TestUserHasAccess(t *testing.T) {
+	c, err := config.Get()
+	r, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+
+	userHasAccess := r.userHasAccess("RANDOMID", "RANDOMCHAN")
+	assert.Equal(t, false, userHasAccess)
+
+	admin, err := r.db.CreateUser(model.User{
+		UserID:   "ADMINID",
+		UserName: "Admin",
+		Role:     "admin",
+	})
+
+	userHasAccess = r.userHasAccess(admin.UserID, "RANDOMCHAN")
+	assert.Equal(t, true, userHasAccess)
+
+	pmUser, err := r.db.CreateUser(model.User{
+		UserID:   "PMID",
+		UserName: "futurePM",
+		Role:     "",
+	})
+
+	pm, err := r.db.CreatePM(model.ChannelMember{
+		UserID:    pmUser.UserID,
+		ChannelID: "RANDOMCHAN",
+	})
+
+	userHasAccess = r.userHasAccess(pm.UserID, "RANDOMCHAN")
+	assert.Equal(t, true, userHasAccess)
+
+	user, err := r.db.CreateUser(model.User{
+		UserID:   "USERID",
+		UserName: "User",
+		Role:     "",
+	})
+
+	userHasAccess = r.userHasAccess(user.UserID, "RANDOMCHAN")
+	assert.Equal(t, false, userHasAccess)
+
+	assert.NoError(t, r.db.DeleteUser(admin.ID))
+	assert.NoError(t, r.db.DeleteUser(pmUser.ID))
+	assert.NoError(t, r.db.DeleteUser(user.ID))
+	assert.NoError(t, r.db.DeleteChannelMember(pmUser.UserID, "RANDOMCHAN"))
+
+}
