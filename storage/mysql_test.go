@@ -204,10 +204,6 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(users))
 
-	channels, err := db.GetAllChannels()
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(channels))
-
 	assert.NoError(t, db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 	assert.NoError(t, db.DeleteChannelMember(su2.UserID, su2.ChannelID))
 	assert.NoError(t, db.DeleteChannelMember(su3.UserID, su3.ChannelID))
