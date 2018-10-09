@@ -214,6 +214,7 @@ func (r *REST) addPMCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, r.conf.Translate.ComedianIsNotInChannel)
 	}
 	var ca FullSlackForm
+
 	if err := r.decoder.Decode(&ca, f); err != nil {
 		logrus.Errorf("rest: addUserCommand Decode failed: %v\n", err)
 		return c.String(http.StatusBadRequest, err.Error())

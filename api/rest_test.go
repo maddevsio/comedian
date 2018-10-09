@@ -598,6 +598,8 @@ func TestPrepareTimetable(t *testing.T) {
 	tt, err = r.prepareTimeTable(tt, "mon tue wed thu fri sat sun", timeUpdate)
 	assert.NoError(t, err)
 	assert.Equal(t, timeUpdate, tt.Monday)
+	assert.NoError(t, r.db.DeleteChannelMember(m.UserID, m.ChannelID))
+
 }
 
 func TestUserHasAccess(t *testing.T) {
@@ -645,4 +647,133 @@ func TestUserHasAccess(t *testing.T) {
 	assert.NoError(t, r.db.DeleteUser(user.ID))
 	assert.NoError(t, r.db.DeleteChannelMember(pmUser.UserID, "RANDOMCHAN"))
 
+}
+
+func TestTimeTableCommand(t *testing.T) {
+	AddTimeTable1 := "user_id=UB9AE7CL9&command=/timetable_set&channel_id=123qwe&channel_name=channel1&text=@user1 on mon tue wed at 10:00"
+	RemoveTimeTable := "user_id=UB9AE7CL9&command=/timetable_remove&channel_id=123qwe&channel_name=channel1&text=<@User1|userID1>"
+	AddTimeTable2 := "user_id=UB9AE7CL9&command=/timetable_set&channel_id=123qwe&channel_name=channel1&text=<@User1|userID1> on mon tue wed at 10:00"
+	ShowTimeTable := "user_id=UB9AE7CL9&command=/timetable_show&channel_id=123qwe&channel_name=channel1&text=<@User1|userID1>"
+
+	c, err := config.Get()
+	rest, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "Admin",
+		UserID:   "UB9AE7CL9",
+		Role:     "admin",
+	})
+	assert.NoError(t, err)
+
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "chanName",
+		ChannelID:   "123qwe",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	user, err := rest.db.CreateUser(model.User{
+		UserName: "User1",
+		UserID:   "userID1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	su1, err := rest.db.CreateChannelMember(model.ChannelMember{
+		UserID:    user.UserID,
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		title        string
+		command      string
+		statusCode   int
+		responseBody string
+	}{
+		{"Add Timetable Misspelled username", AddTimeTable1, http.StatusOK, "Seems like you misspelled username. Please, check and try command again!"},
+		{"Remove Timetable", RemoveTimeTable, http.StatusOK, "Timetable removed for <@userID1>\n"},
+		{"Add Timetable OK", AddTimeTable2, http.StatusOK, "Timetable for <@User1> created: | Monday 10:00 | Tuesday 10:00 | Wednesday 10:00 | \n"},
+		{"Show Timetable", ShowTimeTable, http.StatusOK, "Timetable for <@userID1> is: | Monday 10:00 | Tuesday 10:00 | Wednesday 10:00 |\n"},
+	}
+
+	for _, tt := range testCases {
+		context, rec := getContext(tt.command)
+		err := rest.handleCommands(context)
+		if err != nil {
+			logrus.Errorf("ReportByUser: %s failed. Error: %v\n", tt.title, err)
+		}
+		assert.Equal(t, tt.statusCode, rec.Code)
+		assert.Equal(t, tt.responseBody, rec.Body.String())
+	}
+
+	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(user.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
+}
+
+func TestPMCommand(t *testing.T) {
+	AddPM := "user_id=UB9AE7CL9&command=/pm_add&channel_id=123qwe&channel_name=chanName&text=<@User1|userID1>"
+	AddPMNoAccess := "user_id=userID1&command=/pm_add&channel_id=123qwe&channel_name=chanName&text=<@User1|userID1>"
+	ComedianNotInChannel := "user_id=UB9AE7CL9&command=/pm_add&channel_id=123&channel_name=channel&text=<@User1|userID1>"
+	NoUsersToAdd := "user_id=UB9AE7CL9&command=/pm_add&channel_id=123qwe&channel_name=channel1&text="
+	MisspelledUserName := "user_id=UB9AE7CL9&command=/pm_add&channel_id=123qwe&channel_name=channel1&text=@user1"
+	NoChannelIDSet := "user_id=UB9AE7CL9&command=/pm_add&channel_id=&channel_name=channel1&text=<@User1|userID1>"
+
+	c, err := config.Get()
+	rest, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "Admin",
+		UserID:   "UB9AE7CL9",
+		Role:     "admin",
+	})
+	assert.NoError(t, err)
+
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "chanName",
+		ChannelID:   "123qwe",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	user, err := rest.db.CreateUser(model.User{
+		UserName: "User1",
+		UserID:   "userID1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		title        string
+		command      string
+		statusCode   int
+		responseBody string
+	}{
+		{"Add PM", AddPM, http.StatusOK, "<@User1> is assigned as PM in this channel"},
+		{"Add PM with already exist PM", AddPM, http.StatusOK, "<@User1> was already assigned as PM in this channel"},
+		{"Add PM No Access", AddPMNoAccess, http.StatusOK, "This command is not allowed for you! You are not admin\n"},
+		{"No Users To Add", NoUsersToAdd, http.StatusBadRequest, "`text` cannot be empty"},
+		{"Misspelled Username", MisspelledUserName, http.StatusOK, "Seems like you misspelled username. Please, check and try command again!"},
+		{"Comedian Not In Channel", ComedianNotInChannel, http.StatusOK, "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"No Channel ID", NoChannelIDSet, http.StatusOK, "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+	}
+
+	for _, tt := range testCases {
+		context, rec := getContext(tt.command)
+		err := rest.handleCommands(context)
+		if err != nil {
+			logrus.Errorf("ReportByUser: %s failed. Error: %v\n", tt.title, err)
+		}
+		assert.Equal(t, tt.statusCode, rec.Code)
+		assert.Equal(t, tt.responseBody, rec.Body.String())
+	}
+
+	assert.NoError(t, rest.db.DeleteChannelMember("User1", "123qwe"))
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(user.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 }

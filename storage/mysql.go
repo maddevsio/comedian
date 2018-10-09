@@ -432,6 +432,7 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	var role string
 	err := m.conn.Get(&role, "SELECT role_in_channel FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
 	if err != nil || role == "" {
+		fmt.Printf("SHIT! Err: %v, Role:%v", err, role)
 		return false
 	}
 	if role == "PM" {

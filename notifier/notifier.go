@@ -56,7 +56,6 @@ func (n *Notifier) NotifyChannels() {
 		logrus.Errorf("notifier: ListAllStandupTime failed: %v\n", err)
 		return
 	}
-	logrus.Infof("GetChannels: %v", channels)
 	// For each standup time, if standup time is now, start reminder
 	for _, channel := range channels {
 		if channel.StandupTime == 0 {
@@ -77,7 +76,6 @@ func (n *Notifier) NotifyChannels() {
 func (n *Notifier) NotifyIndividuals() {
 	day := strings.ToLower(time.Now().Weekday().String())
 	tts, err := n.db.ListTimeTablesForDay(day)
-	logrus.Infof("ListTimeTablesForDay: %v", tts)
 	if err != nil {
 		logrus.Errorf("ListTimeTablesForToday failed: %v", err)
 		return
@@ -87,11 +85,9 @@ func (n *Notifier) NotifyIndividuals() {
 		standupTime := time.Unix(tt.ShowDeadlineOn(day), 0)
 		warningTime := time.Unix(tt.ShowDeadlineOn(day)-n.Config.ReminderTime*60, 0)
 
-		logrus.Infof("Now Hour: %v, Warning Hour: %v ||| Now Minute: %v, Warning Minute: %v\n", time.Now().Hour(), warningTime.Hour(), time.Now().Minute(), warningTime.Minute())
 		if time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute() {
 			n.SendIndividualWarning(tt.ChannelMemberID)
 		}
-		logrus.Infof("Now Hour: %v, Standup Hour: %v ||| Now Minute: %v, Warning Minute: %v\n", time.Now().Hour(), standupTime.Hour(), time.Now().Minute(), standupTime.Minute())
 		if time.Now().Hour() == standupTime.Hour() && time.Now().Minute() == standupTime.Minute() {
 			go n.SendIndividualNotification(tt.ChannelMemberID)
 		}
