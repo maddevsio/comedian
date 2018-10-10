@@ -249,6 +249,17 @@ func (s *Slack) SendMessage(channel, message string) error {
 	return err
 }
 
+func (s *Slack) SendReportMessage(channel, message string, attachments []slack.Attachment) error {
+	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{
+		Attachments: attachments,
+	})
+	if err != nil {
+		logrus.Errorf("slack: PostMessage failed: %v\n", err)
+		return err
+	}
+	return err
+}
+
 // SendEphemeralMessage posts a message in a specified channel which is visible only for selected user
 func (s *Slack) SendEphemeralMessage(channel, user, message string) error {
 	_, err := s.api.PostEphemeral(

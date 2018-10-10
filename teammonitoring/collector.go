@@ -13,6 +13,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/maddevsio/comedian/utils"
+	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,26 +46,28 @@ func NewTeamMonitoring(c config.Config, chat chat.Chat) (*TeamMonitoring, error)
 
 // Start starts all team monitoring treads
 func (tm *TeamMonitoring) Start() {
-	gocron.Every(1).Day().At(tm.Config.ReportTime).Do(tm.reportRooks)
+	gocron.Every(1).Day().At("17:50").Do(tm.reportRooks)
 }
 
 func (tm *TeamMonitoring) reportRooks() {
-	finalText, err := tm.RevealRooks()
+	attachments, err := tm.RevealRooks()
 	if err != nil {
 		tm.Chat.SendMessage(tm.Config.ReportingChannel, err.Error())
 	}
-	if finalText == "" {
+	if len(attachments) == 0 {
 		logrus.Info("Empty Report")
 		return
 	}
-	tm.Chat.SendMessage(tm.Config.ReportingChannel, finalText)
+	tm.Chat.SendReportMessage(tm.Config.ReportingChannel, "Yesterday in Mad Devs:", attachments)
+
 }
 
 // RevealRooks displays data about rooks in channel general
-func (tm *TeamMonitoring) RevealRooks() (string, error) {
+func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
+	attachments := []slack.Attachment{}
 	//check if today is not saturday or sunday. During these days no notificatoins!
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
-		return "", errors.New(tm.Config.Translate.ErrorRooksReportWeekend)
+		return attachments, errors.New(tm.Config.Translate.ErrorRooksReportWeekend)
 	}
 
 	startDate := time.Now().AddDate(0, 0, -1)
@@ -77,14 +80,14 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 
 	if err != nil {
 		logrus.Errorf("team monitoring: tm.GetCurrentDayNonReporters failed: %v\n", err)
-		return "", err
+		return attachments, err
 	}
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
 	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
 
-	finalText := ""
-
 	for _, user := range allUsers {
+		var attachment slack.Attachment
+		var attachmentFields []slack.AttachmentField
 		// need to first identify if user should be tracked for this period
 		if !tm.db.MemberShouldBeTracked(user.ID, startDate, time.Now()) {
 			logrus.Infof("Member %v should not be tracked! Skipping", user.UserID)
@@ -111,27 +114,47 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 		}
 
 		var worklogs, commits, standup string
+		var points int
 
 		if data.Worklogs/3600 < 8 {
 			worklogs = fmt.Sprintf(tm.Config.Translate.NoWorklogs, utils.SecondsToHuman(data.Worklogs))
 		} else {
 			worklogs = fmt.Sprintf(tm.Config.Translate.HasWorklogs, utils.SecondsToHuman(data.Worklogs))
+			points++
 		}
 		if data.TotalCommits == 0 {
-			commits = tm.Config.Translate.NoCommits
+			commits = fmt.Sprintf(tm.Config.Translate.NoCommits, data.TotalCommits)
 		} else {
 			commits = fmt.Sprintf(tm.Config.Translate.HasCommits, data.TotalCommits)
+			points++
 		}
 		if isNonReporter == true {
 			standup = tm.Config.Translate.NoStandup
 		} else {
 			standup = tm.Config.Translate.HasStandup
+			points++
 		}
 		whoAndWhere := fmt.Sprintf(tm.Config.Translate.IsRook, user.UserID, project.ChannelName)
+		fieldValue := fmt.Sprintf("%-16v|%-12v|%-10v|\n", worklogs, commits, standup)
+		attachmentFields = append(attachmentFields, slack.AttachmentField{
+			Value: fieldValue,
+			Short: false,
+		})
 
-		finalText += fmt.Sprintf("%-45v|%-16v|%-15v|%-10v|\n", whoAndWhere, worklogs, commits, standup)
+		logrus.Infof("POINTS: %v", points)
+		attachment.Text = whoAndWhere
+		switch p := points; p {
+		case 0:
+			attachment.Color = "danger"
+		case 1, 2:
+			attachment.Color = "warning"
+		case 3:
+			attachment.Color = "good"
+		}
+		attachment.Fields = attachmentFields
+		attachments = append(attachments, attachment)
 	}
-	return finalText, nil
+	return attachments, nil
 }
 
 //GetCollectorData sends api request to collector servise and returns collector object

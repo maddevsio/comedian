@@ -70,13 +70,13 @@ notifyUsersWarning = "%v, команда всё еще ждет стэндапы
 notifyDirectMessage = "Привет, <@%s>! У тебя пропущен срок по стэндапам в канале <#%s|%s>. Пожалуйста, напиши стэндап! Чем скорее тем лучше!"
 
 
-noWorklogs = " :clock1: %v "
-noCommits = " нет коммитов "
-noStandup = " :microphone: :x: "
+noWorklogs = " ворклогов: %v "
+noCommits = " коммитов: %v"
+noStandup = " стэндап :x: "
 
-hasWorklogs = " :clock1: %v "
+hasWorklogs = " ворклогов %v "
 hasCommits = " коммитов: %v "
-hasStandup = " :microphone: :heavy_check_mark: "
+hasStandup = " стэндап :heavy_check_mark: "
 
 isRook = "<@%v> в #%v"
 
