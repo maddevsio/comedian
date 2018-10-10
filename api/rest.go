@@ -1,14 +1,18 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
 	"github.com/maddevsio/comedian/chat"
@@ -146,6 +150,21 @@ func (r *REST) handleCommands(c echo.Context) error {
 		}
 	}
 	return c.JSON(http.StatusMethodNotAllowed, "Command not allowed")
+}
+
+func (r *REST) handleWorklogs(c echo.Context) error {
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(string(body))
+	var worklog jira.WorklogRecord
+	err = json.Unmarshal(body, &worklog)
+	if err != nil {
+		panic(err)
+	}
+	logrus.Infof("New worklog! User: %v, TimeSpent: %v", worklog.Author, worklog.TimeSpentSeconds)
+	return nil
 }
 
 func (r *REST) addUserCommand(c echo.Context, f url.Values) error {

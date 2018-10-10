@@ -112,7 +112,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 		if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") && !strings.Contains(msg.Msg.Text, "#стэндап") {
 			return nil
 		}
-		standupText, messageIsStandup, problem := s.analizeStandup(msg.Msg.Text)
+		messageIsStandup, problem := s.analizeStandup(msg.Msg.Text)
 		if problem != "" {
 			return s.SendEphemeralMessage(msg.Channel, msg.User, problem)
 		}
@@ -123,7 +123,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 			standup, err := s.db.CreateStandup(model.Standup{
 				ChannelID: msg.Channel,
 				UserID:    msg.User,
-				Comment:   standupText,
+				Comment:   msg.Msg.Text,
 				MessageTS: msg.Msg.Timestamp,
 			})
 			if err != nil {
@@ -144,7 +144,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 		}
 		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
-			standupText, messageIsStandup, problem := s.analizeStandup(msg.SubMessage.Text)
+			messageIsStandup, problem := s.analizeStandup(msg.SubMessage.Text)
 			if problem != "" {
 				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
 			}
@@ -155,7 +155,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 				standup, err := s.db.CreateStandup(model.Standup{
 					ChannelID: msg.Channel,
 					UserID:    msg.SubMessage.User,
-					Comment:   standupText,
+					Comment:   msg.SubMessage.Text,
 					MessageTS: msg.SubMessage.Timestamp,
 				})
 				if err != nil {
@@ -172,12 +172,12 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 			}
 		}
 
-		text, messageIsStandup, problem := s.analizeStandup(msg.SubMessage.Text)
+		messageIsStandup, problem := s.analizeStandup(msg.SubMessage.Text)
 		if problem != "" {
 			return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
 		}
 		if messageIsStandup {
-			standup.Comment = text
+			standup.Comment = msg.SubMessage.Text
 			_, err := s.db.UpdateStandup(standup)
 			if err != nil {
 				logrus.Errorf("UpdateStandup failed: %v", err)
@@ -202,7 +202,8 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 	return nil
 }
 
-func (s *Slack) analizeStandup(message string) (string, bool, string) {
+func (s *Slack) analizeStandup(message string) (bool, string) {
+	message = strings.ToLower(message)
 	mentionsProblem := false
 	problemKeys := []string{s.Conf.Translate.P1, s.Conf.Translate.P2, s.Conf.Translate.P3, s.Conf.Translate.P4}
 	for _, problem := range problemKeys {
@@ -211,7 +212,7 @@ func (s *Slack) analizeStandup(message string) (string, bool, string) {
 		}
 	}
 	if !mentionsProblem {
-		return "", false, s.Conf.Translate.StandupHandleNoProblemsMentioned
+		return false, s.Conf.Translate.StandupHandleNoProblemsMentioned
 	}
 
 	mentionsYesterdayWork := false
@@ -222,7 +223,7 @@ func (s *Slack) analizeStandup(message string) (string, bool, string) {
 		}
 	}
 	if !mentionsYesterdayWork {
-		return "", false, s.Conf.Translate.StandupHandleNoYesterdayWorkMentioned
+		return false, s.Conf.Translate.StandupHandleNoYesterdayWorkMentioned
 	}
 
 	mentionsTodayPlans := false
@@ -233,9 +234,9 @@ func (s *Slack) analizeStandup(message string) (string, bool, string) {
 		}
 	}
 	if !mentionsTodayPlans {
-		return "", false, s.Conf.Translate.StandupHandleNoTodayPlansMentioned
+		return false, s.Conf.Translate.StandupHandleNoTodayPlansMentioned
 	}
-	return strings.TrimSpace(message), true, ""
+	return true, ""
 }
 
 // SendMessage posts a message in a specified channel visible for everyone

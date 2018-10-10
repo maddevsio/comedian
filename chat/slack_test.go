@@ -38,13 +38,14 @@ func TestIsStandup(t *testing.T) {
 		{"key words yesterday and today", "Вчера ломал сервер, сегодня будет охренеть много дел", false},
 		{"all key words capitalized", "Yesterday: launched MySQL, Today: will scream and should, Problems: SHIT IS ALL OVER!", true},
 		{"keywords with mistakes", "Yesday completed shit, dotay will fap like crazy, promlems: no problems!", false},
+		{"keywords caps", "YESTERDAY completed shit, TODAY will fap like crazy, PROBLEMS: no !", true},
 	}
 	c, err := config.Get()
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 	for _, tt := range testCases {
-		_, ok, _ := s.analizeStandup(tt.input)
+		ok, _ := s.analizeStandup(tt.input)
 		if ok != tt.confirm {
 			t.Errorf("Test %s: \n input: %s,\n expected confirm: %v\n actual confirm: %v \n", tt.title, tt.input, tt.confirm, ok)
 		}

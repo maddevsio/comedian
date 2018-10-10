@@ -70,16 +70,15 @@ notifyUsersWarning = "%v, команда всё еще ждет стэндапы
 notifyDirectMessage = "Привет, <@%s>! У тебя пропущен срок по стэндапам в канале <#%s|%s>. Пожалуйста, напиши стэндап! Чем скорее тем лучше!"
 
 
-noWorklogs = "недостаточно ворклогов: %v часов, "
-noCommits = "нет коммитов, "
-noStandup = "не написал стэндап!"
+noWorklogs = " :clock1: %v "
+noCommits = " нет коммитов "
+noStandup = " :microphone: :x: "
 
-hasWorklogs = "достаточно ворклогов: %v часов, "
-hasCommits = "число коммитов: %v, "
-hasStandup = "написал стэндап!"
+hasWorklogs = " :clock1: %v "
+hasCommits = " коммитов: %v "
+hasStandup = " :microphone: :heavy_check_mark: "
 
-isRook = "<@%v> вчера грачевал в #%v! (%v)\n"
-isRookMonday = "<@%v> грачевал в пятницу и все выходные в #%v! (%v)\n"
+isRook = "<@%v> в #%v"
 
 wrongUsernameError = "Кажется, вы допустили ошибку в имени пользователя. Пожалуйста, перепроверьте и попытайтесь еще раз!"
 

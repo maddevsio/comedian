@@ -69,16 +69,15 @@ notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup 
 notifyUsersWarning = "Hey, %v! %v minutes to deadline and the team is still waiting for standups from you!"
 notifyDirectMessage = "Hello, <@%s>! You missed the standup deadline in <#%s|%s> channel. Please, write you standup ASAP!"
 
-noWorklogs = "Not enough worklogs: %v hours,"
-noCommits = "no commits,"
-noStandup = "did not write standup!"
+noWorklogs = " :clock1: %v "
+noCommits = " no commits "
+noStandup = " :microphone: :x: "
 
-hasWorklogs = "Has enough worklogs: %v hours,"
-hasCommits = "commited: %v times,"
-hasStandup = "submitted a standup!"
+hasWorklogs = " :clock1: %v "
+hasCommits = " commits: %v "
+hasStandup = " :microphone: :heavy_check_mark: "
 
-isRook = "<@%v> twiddled in #%v yesterday! (%v)\n"
-isRookMonday = "<@%v> twiddled in #%v from Friday till yesterday! (%v)\n"
+isRook = "<@%v> in #%v"
 
 
 wrongUsernameError = "Seems like you misspelled username. Please, check and try command again!"

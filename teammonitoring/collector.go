@@ -50,8 +50,12 @@ func (tm *TeamMonitoring) Start() {
 
 func (tm *TeamMonitoring) reportRooks() {
 	finalText, err := tm.RevealRooks()
-	if err != nil || finalText == "" {
+	if err != nil {
 		tm.Chat.SendMessage(tm.Config.ReportingChannel, err.Error())
+	}
+	if finalText == "" {
+		logrus.Info("Empty Report")
+		return
 	}
 	tm.Chat.SendMessage(tm.Config.ReportingChannel, finalText)
 }
@@ -96,40 +100,36 @@ func (tm *TeamMonitoring) RevealRooks() (string, error) {
 		data, err := GetCollectorData(tm.Config, "user-in-project", userInProject, dateFrom, dateTo)
 		if err != nil {
 			logrus.Errorf("team monitoring: getCollectorData failed: %v\n", err)
+			fail := fmt.Sprintf(":warning::warning::warning: GetCollectorData failed on user %v in %v! Please, add this user to Collector service :bangbang:", user.UserID, project.ChannelName)
+			tm.Chat.SendUserMessage(tm.Config.ManagerSlackUserID, fail)
 			continue
 		}
 		// need to identify if user submitted standup for this period
 		isNonReporter, err := tm.db.IsNonReporter(user.UserID, user.ChannelID, startDate, time.Now())
 		if err != nil {
 			logrus.Errorf("team monitoring: IsNonReporter failed: %v\n", err)
-			continue
 		}
 
-		// if logged less then 8 hours or did not commit or did not submit standup = include user in report
-		if (data.Worklogs/3600 < 8) || (data.TotalCommits == 0) || (isNonReporter == true) {
-			fails := ""
-			if data.Worklogs/3600 < 8 {
-				fails += fmt.Sprintf(tm.Config.Translate.NoWorklogs, utils.SecondsToHuman(data.Worklogs))
-			} else {
-				fails += fmt.Sprintf(tm.Config.Translate.HasWorklogs, utils.SecondsToHuman(data.Worklogs))
-			}
-			if data.TotalCommits == 0 {
-				fails += tm.Config.Translate.NoCommits
-			} else {
-				fails += fmt.Sprintf(tm.Config.Translate.HasCommits, data.TotalCommits)
-			}
-			if isNonReporter == true {
-				fails += tm.Config.Translate.NoStandup
-			} else {
-				fails += tm.Config.Translate.HasStandup
-			}
-			text := fmt.Sprintf(tm.Config.Translate.IsRook, user.UserID, project.ChannelName, fails)
-			if int(time.Now().Weekday()) == 1 {
-				text = fmt.Sprintf(tm.Config.Translate.IsRookMonday, user.UserID, project.ChannelName, fails)
-			}
-			text += "\n\n"
-			finalText += text
+		var worklogs, commits, standup string
+
+		if data.Worklogs/3600 < 8 {
+			worklogs = fmt.Sprintf(tm.Config.Translate.NoWorklogs, utils.SecondsToHuman(data.Worklogs))
+		} else {
+			worklogs = fmt.Sprintf(tm.Config.Translate.HasWorklogs, utils.SecondsToHuman(data.Worklogs))
 		}
+		if data.TotalCommits == 0 {
+			commits = tm.Config.Translate.NoCommits
+		} else {
+			commits = fmt.Sprintf(tm.Config.Translate.HasCommits, data.TotalCommits)
+		}
+		if isNonReporter == true {
+			standup = tm.Config.Translate.NoStandup
+		} else {
+			standup = tm.Config.Translate.HasStandup
+		}
+		whoAndWhere := fmt.Sprintf(tm.Config.Translate.IsRook, user.UserID, project.ChannelName)
+
+		finalText += fmt.Sprintf("%-45v|%-16v|%-15v|%-10v|\n", whoAndWhere, worklogs, commits, standup)
 	}
 	return finalText, nil
 }
