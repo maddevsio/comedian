@@ -127,3 +127,6 @@ StandupHandleUpdatedStandup = "Standup edited, Good job!"
 StandupHandleCreatedStandup = "Standup saved, well done!"
 
 ErrorRooksReportWeekend = "Day off today! Next report on Monday!"
+
+ReportHeaderMonday = "Report for last Friday and weekends"    
+ReportHeader = "Report for yesterday"   

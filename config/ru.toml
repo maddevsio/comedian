@@ -128,3 +128,6 @@ StandupHandleUpdatedStandup = "Отредактировал стэндап! Вс
 StandupHandleCreatedStandup = "Сохранил твой стэндап! Всё супер!"
 
 ErrorRooksReportWeekend = "Сегодня выходной! Следующий отчет в понедельник!"
+
+ReportHeaderMonday = "Отчёт за прошлую пятницу и выходные"    
+ReportHeader = "Отчет за вчерашний день" 

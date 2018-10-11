@@ -58,8 +58,11 @@ func (tm *TeamMonitoring) reportRooks() {
 		logrus.Info("Empty Report")
 		return
 	}
-	tm.Chat.SendReportMessage(tm.Config.ReportingChannel, "Yesterday in Mad Devs:", attachments)
-
+	if int(time.Now().Weekday()) == 1 {
+		tm.Chat.SendReportMessage(tm.Config.ReportingChannel, tm.Config.Translate.ReportHeaderMonday, attachments)
+		return
+	}
+	tm.Chat.SendReportMessage(tm.Config.ReportingChannel, tm.Config.Translate.ReportHeader, attachments)
 }
 
 // RevealRooks displays data about rooks in channel general
@@ -103,7 +106,8 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 		data, err := GetCollectorData(tm.Config, "user-in-project", userInProject, dateFrom, dateTo)
 		if err != nil {
 			logrus.Errorf("team monitoring: getCollectorData failed: %v\n", err)
-			fail := fmt.Sprintf(":warning::warning::warning: GetCollectorData failed on user %v in %v! Please, add this user to Collector service :bangbang:", user.UserID, project.ChannelName)
+			userFull, _ := tm.db.SelectUser(user.UserID)
+			fail := fmt.Sprintf(":warning::warning::warning: GetCollectorData failed on user %v|%v in %v! Please, add this user to Collector service :bangbang:", userFull.UserName, userFull.UserID, project.ChannelName)
 			tm.Chat.SendUserMessage(tm.Config.ManagerSlackUserID, fail)
 			continue
 		}
@@ -111,12 +115,13 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 		isNonReporter, err := tm.db.IsNonReporter(user.UserID, user.ChannelID, startDate, time.Now())
 		if err != nil {
 			logrus.Errorf("team monitoring: IsNonReporter failed: %v\n", err)
+			continue
 		}
 
 		var worklogs, commits, standup string
 		var points int
 
-		if data.Worklogs/3600 < 8 {
+		if data.Worklogs/3600 < 7 {
 			worklogs = fmt.Sprintf(tm.Config.Translate.NoWorklogs, utils.SecondsToHuman(data.Worklogs))
 		} else {
 			worklogs = fmt.Sprintf(tm.Config.Translate.HasWorklogs, utils.SecondsToHuman(data.Worklogs))
