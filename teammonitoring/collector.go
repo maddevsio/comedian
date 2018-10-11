@@ -46,7 +46,7 @@ func NewTeamMonitoring(c config.Config, chat chat.Chat) (*TeamMonitoring, error)
 
 // Start starts all team monitoring treads
 func (tm *TeamMonitoring) Start() {
-	gocron.Every(1).Day().At("17:50").Do(tm.reportRooks)
+	gocron.Every(1).Day().At(tm.Config.ReportTime).Do(tm.reportRooks)
 }
 
 func (tm *TeamMonitoring) reportRooks() {
