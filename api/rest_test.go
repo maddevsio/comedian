@@ -717,7 +717,7 @@ func TestPrepareTimetable(t *testing.T) {
 	assert.Equal(t, timeUpdate, tt.Monday)
 	assert.NoError(t, r.db.DeleteChannelMember(m.UserID, m.ChannelID))
 	assert.NoError(t, r.db.DeleteUser(user.ID))
-	assert.NoError(t, db.DeleteTimeTable(tt.ID))
+	assert.NoError(t, r.db.DeleteTimeTable(tt.ID))
 
 }
 
