@@ -70,16 +70,15 @@ notifyUsersWarning = "%v, команда всё еще ждет стэндапы
 notifyDirectMessage = "Привет, <@%s>! У тебя пропущен срок по стэндапам в канале <#%s|%s>. Пожалуйста, напиши стэндап! Чем скорее тем лучше!"
 
 
-noWorklogs = "недостаточно ворклогов: %v часов, "
-noCommits = "нет коммитов, "
-noStandup = "не написал стэндап!"
+noWorklogs = " ворклоги: %v :angry: "
+noCommits = " коммиты: %v :shit: "
+noStandup = " стэндап :x: "
 
-hasWorklogs = "достаточно ворклогов: %v часов, "
-hasCommits = "число коммитов: %v, "
-hasStandup = "написал стэндап!"
+hasWorklogs = " ворклоги %v :muscle: "
+hasCommits = " коммиты: %v :tada: "
+hasStandup = " стэндап :heavy_check_mark: "
 
-isRook = "<@%v> вчера грачевал в #%v! (%v)\n"
-isRookMonday = "<@%v> грачевал в пятницу и все выходные в #%v! (%v)\n"
+isRook = "<@%v> в #%v"
 
 wrongUsernameError = "Кажется, вы допустили ошибку в имени пользователя. Пожалуйста, перепроверьте и попытайтесь еще раз!"
 
@@ -117,3 +116,18 @@ TimetableShowFriday = "| Пятница %02d:%02d "
 TimetableShowSaturday = "| Суббота %02d:%02d "
 TimetableShowSunday = "| Воскресенье %02d:%02d "
 ComedianIsNotInChannel = "У меня нет информации об этом канале. Кажется, меня не добавили в канал... Если я в канале, пожалуйста добавьте меня заново и попробуйте еще раз!"
+
+
+StandupHandleUserNotAssigned = "Не могу принять твой стэндап так как ты не должен стэндапить в этом канале. Попроси ПМа тебя добавить и попробуй снова! Буду ждать!"
+StandupHandleOneDayOneStandup = "Один день - один стэндап. Если хочешь поменять свой стэндап, лучше отредактируй старый!"
+StandupHandleCouldNotSaveStandup = "По какой-то непонятной причине я не смог сохранить твой стэндап в базе. Прости пожалуйста и расскажи об этом ПМу!"
+StandupHandleNoProblemsMentioned = "Не увидел твоих проблем и мне не верится, что у тебя их нет! Обяз опиши проблемы нормально!"
+StandupHandleNoYesterdayWorkMentioned = "Так и не понял, что ты делал вчера. Напиши подробней пожалуйста!"
+StandupHandleNoTodayPlansMentioned = "Всё вроде как есть, но что ты будешь делать сегодня мне не ясно. Если это не ясно мне, скорее всего и команде это не ясно. Дописывай!"
+StandupHandleUpdatedStandup = "Отредактировал стэндап! Всё отлично!"
+StandupHandleCreatedStandup = "Сохранил твой стэндап! Всё супер!"
+
+ErrorRooksReportWeekend = "Сегодня выходной! Следующий отчет в понедельник!"
+
+ReportHeaderMonday = "Отчёт за прошлую пятницу и выходные"    
+ReportHeader = "Отчет за вчерашний день" 

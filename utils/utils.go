@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 //SplitUser divides full user object to name & id
@@ -105,16 +103,9 @@ func ParseTimeTextToInt(timeText string) (int64, error) {
 
 	if matchHourMinuteFormat {
 		t := strings.Split(timeText, ":")
-		hours, err := strconv.Atoi(t[0])
-		if err != nil {
-			logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
-			return int64(0), err
-		}
-		munites, err := strconv.Atoi(t[1])
-		if err != nil {
-			logrus.Errorf("rest: strconv.Atoi failed: %v\n", err)
-			return int64(0), err
-		}
+		hours, _ := strconv.Atoi(t[0])
+		munites, _ := strconv.Atoi(t[1])
+
 		if hours > 23 || munites > 59 {
 			return int64(0), errors.New("Wrong time! Please, check the time format and try again!")
 		}

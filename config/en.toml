@@ -69,16 +69,15 @@ notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup 
 notifyUsersWarning = "Hey, %v! %v minutes to deadline and the team is still waiting for standups from you!"
 notifyDirectMessage = "Hello, <@%s>! You missed the standup deadline in <#%s|%s> channel. Please, write you standup ASAP!"
 
-noWorklogs = "Not enough worklogs: %v hours,"
-noCommits = "no commits,"
-noStandup = "did not write standup!"
+noWorklogs = " worklogs: %v :angry: "
+noCommits = " commits: %v :shit: "
+noStandup = " standup :x: "
 
-hasWorklogs = "Has enough worklogs: %v hours,"
-hasCommits = "commited: %v times,"
-hasStandup = "submitted a standup!"
+hasWorklogs = " worklogs %v :muscle: "
+hasCommits = " commits: %v :tada: "
+hasStandup = " standup :heavy_check_mark: "
 
-isRook = "<@%v> twiddled in #%v yesterday! (%v)\n"
-isRookMonday = "<@%v> twiddled in #%v from Friday till yesterday! (%v)\n"
+isRook = "<@%v> in #%v"
 
 
 wrongUsernameError = "Seems like you misspelled username. Please, check and try command again!"
@@ -117,3 +116,17 @@ TimetableShowFriday = "| Friday %02d:%02d "
 TimetableShowSaturday = "| Saturday %02d:%02d "
 TimetableShowSunday = "| Sunday %02d:%02d "
 ComedianIsNotInChannel = "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"
+
+StandupHandleUserNotAssigned = "Seems like you are not assigned as standuper in this channel, please, contact your PM and try again!"
+StandupHandleOneDayOneStandup = "One day = one standup! If you want to update your today standup, just edit the one you already wrote!"
+StandupHandleCouldNotSaveStandup = "For some reason i could not save your standup in database. I appologize and ask you to contact your PM."
+StandupHandleNoProblemsMentioned = "No problems detected! Make sure you include problems, because I do not believe you have none!"
+StandupHandleNoYesterdayWorkMentioned = "Could not get what you did yesterday! Please, describe it more!"
+StandupHandleNoTodayPlansMentioned = "Seems like today plans are missing! Please, add them and the team is good to go!"
+StandupHandleUpdatedStandup = "Standup edited, Good job!"
+StandupHandleCreatedStandup = "Standup saved, well done!"
+
+ErrorRooksReportWeekend = "Day off today! Next report on Monday!"
+
+ReportHeaderMonday = "Report for last Friday and weekends"    
+ReportHeader = "Report for yesterday"   

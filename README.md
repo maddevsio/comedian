@@ -1,18 +1,17 @@
 # Comedian
 
 This is a stand up bot for slack. 
-The main goal of the project is a daily remote stand up meetings automation. There is a problem with stand up meetings offline way. People talk to each other and often they talk not about their plans, but about task specific things.
+The main goal of the project is a daily remote stand up meetings automation. 
 
 ![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/maddevsio/comedian/badge.svg)](https://coveralls.io/github/maddevsio/comedian)
-
 [![Go Report Card](https://goreportcard.com/badge/github.com/maddevsio/comedian)](https://goreportcard.com/report/github.com/maddevsio/comedian)
 [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
 [![](https://godoc.org/github.com/maddevsio/comedian?status.svg)](https://godoc.org/github.com/maddevsio/comedian)
 
 ## How can comedian help you to spend less time on the stand up meetings
 
-First things first you need to start do daily meetings in slack. Create a channel for it. Then add this bot and ask your team to write messages with this template
+First, you need to start remote standups meetings in Slack. Create a channel for it. Then add Comedian and ask your team to write messages with the following template tagging bot in the message
 
 1. What I did yesterday(with tasks description)
 2. What I'm going to do today
@@ -58,56 +57,22 @@ Select "Bot users" in the menu.
 Create a new bot user.
 
 Go to "OAuth & Permissions"
-Copy Bot User OAuth Access Token
-"xoxb-___________________"
-
-
-Create .env file in your workspace and add the env variables from .env.example file. Change according to your needs.
+Copy Bot User OAuth Access Token ("xoxb-___________________")
 
 Run:
 ```
-make docker
 docker-compose up
 ```
+
 ## Team Monitoring 
 Please note that Team Monitoring (TM) Servise is developed only for internal use of Mad Devs LLC, therefore when configuring Comedian, you may turn this feature off. (look at env variables) 
 
-Env variables assosiated with TM are:
+Variables assosiated with TM are:
 ```
 COMEDIAN_ENABLE_TEAM_MONITORING=false
 COMEDIAN_COLLECTOR_TOKEN=_______________________
 COMEDIAN_COLLECTOR_URL=_________________________
 ```
-
-## The roadmap
-
-### Bot
-- [x] Store accepted messages to bot in the database
-- [x] Add user for daily standup reminders with slash command
-- [x] Remove user from daily standup reminder with slash command
-- [x] Add standup time with slash command
-- [x] Remove standup time with slash command
-- [x] Remind user to write standup via private message 
-- [x] add a check when adding a user, if the stand-up time is not specified, write that you need to specify it 
-- [x] add a check when adding a stand-up time, that no one has yet been added 
-- [x] when deleting stand-up time, notify that in this chat there are users who write standups 
-- [x] Remind all users in channel to write standup with user's tag
-- [x] duplicate the message about the standup in 30 minutes with tagging users who did not write standup
-- [x] send a message to the manager at 5 pm that someone did not write the standup 
-- [x] Standup reports
-	- [x] all standups key username
-	- [x] all standups key project
-	- [x] all standups key username+project
-- [x] Configure superusers with config file or env variables
-- [x] Get all users in slack's organization and sync it with users in database
-- [x] Make research: is it possible to show the certain commands to the certain user
-- [x] Create a docker-compose.yml
-- [x] Setup reminders when bot starts
-- [x] Setup reminders when we add new reminder on a channel
-- [x] Get standup messages without mentioning bot user
-- [x] Set up multilang option for Comedian (En + Ru)
-- [x] Get task worklogs from JIRA
-- [x] Get data from Gitlab
 
 ## Issues
 

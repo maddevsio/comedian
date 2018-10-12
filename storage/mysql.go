@@ -170,7 +170,9 @@ func (m *MySQL) SubmittedStandupToday(userID, channelID string) bool {
 // IsNonReporter returns true if user did not submit standup in time period, false othervise
 func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Time) (bool, error) {
 	var standup string
-	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, dateFrom, dateTo)
+	query := fmt.Sprintf("SELECT comment FROM standups where channel_id='%v' and user_id='%v' and created between '%v' and '%v'", channelID, userID, dateFrom, dateTo)
+	logrus.Infof("IsNonreporter Query: %s", query)
+	err := m.conn.Get(&standup, query)
 	if err != nil {
 		return false, err
 	}
@@ -432,6 +434,7 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	var role string
 	err := m.conn.Get(&role, "SELECT role_in_channel FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
 	if err != nil || role == "" {
+		fmt.Printf("SHIT! Err: %v, Role:%v", err, role)
 		return false
 	}
 	if role == "PM" {

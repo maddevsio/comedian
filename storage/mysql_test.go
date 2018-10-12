@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -203,10 +204,6 @@ func TestCRUDChannelMember(t *testing.T) {
 	users, err = db.ListChannelMembers(su1.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(users))
-
-	channels, err := db.GetAllChannels()
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(channels))
 
 	assert.NoError(t, db.DeleteChannelMember(su1.UserID, su1.ChannelID))
 	assert.NoError(t, db.DeleteChannelMember(su2.UserID, su2.ChannelID))
@@ -444,6 +441,7 @@ func TestCRUDTimeTable(t *testing.T) {
 
 	timeTables, err := db.ListTimeTablesForDay("monday")
 	assert.NoError(t, err)
+	fmt.Println("All timetables: ", timeTables)
 	assert.Equal(t, 1, len(timeTables))
 
 	assert.NoError(t, db.DeleteUser(user.ID))

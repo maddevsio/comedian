@@ -84,6 +84,7 @@ func (n *Notifier) NotifyIndividuals() {
 	for _, tt := range tts {
 		standupTime := time.Unix(tt.ShowDeadlineOn(day), 0)
 		warningTime := time.Unix(tt.ShowDeadlineOn(day)-n.Config.ReminderTime*60, 0)
+
 		if time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute() {
 			n.SendIndividualWarning(tt.ChannelMemberID)
 		}
@@ -91,7 +92,6 @@ func (n *Notifier) NotifyIndividuals() {
 			go n.SendIndividualNotification(tt.ChannelMemberID)
 		}
 	}
-
 }
 
 // SendWarning reminds users in chat about upcoming standups

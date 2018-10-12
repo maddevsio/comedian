@@ -149,9 +149,6 @@ func TestCheckUser(t *testing.T) {
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage",
 		httpmock.NewStringResponder(200, `{"OK": true}`))
 
-	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage",
-		httpmock.NewStringResponder(200, `{"OK": true}`))
-
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-25/", c.CollectorURL),
 		httpmock.NewStringResponder(200, `{"total_commits": 2, "total_merges": 1, "worklogs": 100000}`))
 
@@ -188,4 +185,130 @@ func TestCheckUser(t *testing.T) {
 	assert.NoError(t, n.db.DeleteChannelMember(u4.UserID, u4.ChannelID))
 
 	assert.NoError(t, n.db.DeleteStandupTime(channelID))
+}
+
+func TestIndividualNotification(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage",
+		httpmock.NewStringResponder(200, `{"OK": true}`))
+
+	c, err := config.Get()
+	assert.NoError(t, err)
+	slack, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	n, err := NewNotifier(c, slack)
+	assert.NoError(t, err)
+
+	d := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	user, err := n.db.CreateUser(model.User{
+		UserID:   "QWERTY123",
+		UserName: "chanName1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	channel, err := n.db.CreateChannel(model.Channel{
+		ChannelID:   "XYZ",
+		ChannelName: "chan",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	m, err := n.db.CreateChannelMember(model.ChannelMember{
+		UserID:    user.UserID,
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	tt, err := n.db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: m.ID,
+	})
+	assert.NoError(t, err)
+	timeNow := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
+	tt.Monday = timeNow.Unix()
+	tt.Tuesday = timeNow.Unix()
+	tt.Wednesday = timeNow.Unix()
+	tt.Thursday = timeNow.Unix()
+	tt.Friday = timeNow.Unix()
+
+	tt, err = n.db.UpdateTimeTable(tt)
+	assert.NoError(t, err)
+
+	d = time.Date(2018, 10, 9, 15, 58, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+	//send warning
+	n.NotifyIndividuals()
+
+	d = time.Date(2018, 10, 9, 16, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+	//send push
+	n.NotifyIndividuals()
+
+	assert.NoError(t, n.db.DeleteUser(user.ID))
+	assert.NoError(t, n.db.DeleteChannel(channel.ID))
+	assert.NoError(t, n.db.DeleteChannelMember(user.UserID, channel.ChannelID))
+	assert.NoError(t, n.db.DeleteTimeTable(tt.ID))
+
+}
+
+func TestChannelsNotification(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage",
+		httpmock.NewStringResponder(200, `{"OK": true}`))
+
+	c, err := config.Get()
+	assert.NoError(t, err)
+	slack, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	n, err := NewNotifier(c, slack)
+	assert.NoError(t, err)
+
+	d := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	user, err := n.db.CreateUser(model.User{
+		UserID:   "QWERTY123",
+		UserName: "chanName1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	standupTime := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC).Unix()
+	channel, err := n.db.CreateChannel(model.Channel{
+		ChannelID:   "XYZ",
+		ChannelName: "chan",
+		StandupTime: standupTime,
+	})
+	assert.NoError(t, err)
+
+	err = n.db.CreateStandupTime(standupTime, channel.ChannelID)
+	assert.NoError(t, err)
+
+	m, err := n.db.CreateChannelMember(model.ChannelMember{
+		UserID:    user.UserID,
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	d = time.Date(2018, 10, 9, 15, 58, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+	//send warning
+	n.NotifyChannels()
+
+	d = time.Date(2018, 10, 9, 16, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+	//send push
+	n.NotifyChannels()
+
+	assert.NoError(t, n.db.DeleteUser(user.ID))
+	assert.NoError(t, n.db.DeleteChannel(channel.ID))
+	assert.NoError(t, n.db.DeleteChannelMember(m.UserID, m.ChannelID))
+	assert.NoError(t, n.db.DeleteStandupTime(channel.ChannelID))
+
 }

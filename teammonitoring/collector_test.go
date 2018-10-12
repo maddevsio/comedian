@@ -1,6 +1,7 @@
 package teammonitoring
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/utils"
+	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,27 +43,27 @@ func TestTeamMonitoringOnWeekEnd(t *testing.T) {
 
 	_, err = tm.RevealRooks()
 	assert.Error(t, err)
-	assert.Equal(t, "day off", err.Error())
+	assert.Equal(t, "Day off today! Next report on Monday!", err.Error())
 }
 
 func TestTeamMonitoringOnMonday(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	slack, err := chat.NewSlack(c)
+	s, err := chat.NewSlack(c)
 	assert.NoError(t, err)
 	if !c.TeamMonitoringEnabled {
 		fmt.Println("Warning: Team Monitoring servise is disabled")
 		return
 	}
-	tm, err := NewTeamMonitoring(c, slack)
+	tm, err := NewTeamMonitoring(c, s)
 	assert.NoError(t, err)
 
 	d := time.Date(2018, 9, 17, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	text, err := tm.RevealRooks()
+	attachments, err := tm.RevealRooks()
 	assert.NoError(t, err)
-	assert.Equal(t, "", text)
+	assert.Equal(t, []slack.Attachment{}, attachments)
 }
 
 func TestTeamMonitoringOnWeekDay(t *testing.T) {
@@ -146,6 +148,11 @@ func TestGetCollectorData(t *testing.T) {
 	assert.NoError(t, err)
 	fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnProject.TotalCommits, utils.SecondsToHuman(dataOnProject.Worklogs))
 
+	dataOnProject, err = GetCollectorData(c, "projects", "testXXX", "2018-09-25", "2018-09-25")
+	assert.Error(t, err)
+	assert.Equal(t, errors.New("could not get data on this request"), err)
+	fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnProject.TotalCommits, utils.SecondsToHuman(dataOnProject.Worklogs))
+
 	dataOnUserByProject, err := GetCollectorData(c, "user-in-project", "UC1JNECA3/comedian-testing", "2018-09-27", "2018-09-27")
 	assert.NoError(t, err)
 	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
@@ -153,4 +160,20 @@ func TestGetCollectorData(t *testing.T) {
 	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UBZ6Y0P5K/kaftv", "2018-09-27", "2018-09-27")
 	assert.NoError(t, err)
 	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
+
+	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UBZ6Y0P5K/kaftv", "2018-09-27", "20109-27")
+	assert.Error(t, err)
+	assert.Equal(t, errors.New("could not get data on this request"), err)
+	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
+
+	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "testXXX/kaftv", "2018-09-27", "2018-09-27")
+	assert.Error(t, err)
+	assert.Equal(t, errors.New("could not get data on this request"), err)
+	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
+
+	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UBZ6Y0P5K/TESTXXX", "2018-09-27", "2018-09-27")
+	assert.Error(t, err)
+	assert.Equal(t, errors.New("could not get data on this request"), err)
+	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
+
 }

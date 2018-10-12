@@ -43,7 +43,6 @@ type Translate struct {
 	HasCommits          string
 	HasStandup          string
 	IsRook              string
-	IsRookMonday        string
 	NotifyAllDone       string
 	NotifyNotAll        string
 	NotifyManagerNotAll string
@@ -122,6 +121,19 @@ type Translate struct {
 	TimetableShowSunday    string
 
 	ComedianIsNotInChannel string
+
+	StandupHandleUserNotAssigned          string
+	StandupHandleOneDayOneStandup         string
+	StandupHandleCouldNotSaveStandup      string
+	StandupHandleNoProblemsMentioned      string
+	StandupHandleNoYesterdayWorkMentioned string
+	StandupHandleNoTodayPlansMentioned    string
+	StandupHandleUpdatedStandup           string
+	StandupHandleCreatedStandup           string
+
+	ErrorRooksReportWeekend string
+	ReportHeaderMonday      string
+	ReportHeader            string
 }
 
 // GetTranslation sets translation files for config
@@ -186,7 +198,6 @@ func GetTranslation(lang string) (Translate, error) {
 		"userDidNotStandupInChannel", "userDidStandupInChannel",
 		"PMAssigned",
 		"PMRemoved",
-		"isRookMonday",
 		"wrongUsernameError",
 
 		"selectUsersToAdd",
@@ -218,6 +229,18 @@ func GetTranslation(lang string) (Translate, error) {
 		"TimetableShowSaturday",
 		"TimetableShowSunday",
 		"ComedianIsNotInChannel",
+
+		"StandupHandleUserNotAssigned",
+		"StandupHandleOneDayOneStandup",
+		"StandupHandleCouldNotSaveStandup",
+		"StandupHandleNoProblemsMentioned",
+		"StandupHandleNoYesterdayWorkMentioned",
+		"StandupHandleNoTodayPlansMentioned",
+		"StandupHandleUpdatedStandup",
+		"StandupHandleCreatedStandup",
+		"ErrorRooksReportWeekend",
+		"ReportHeaderMonday",
+		"ReportHeader",
 	}
 
 	for _, t := range r {
@@ -259,7 +282,6 @@ func GetTranslation(lang string) (Translate, error) {
 		HasCommits:                   m["hasCommits"],
 		HasStandup:                   m["hasStandup"],
 		IsRook:                       m["isRook"],
-		IsRookMonday:                 m["isRookMonday"],
 		NotifyAllDone:                m["notifyAllDone"],
 		NotifyNotAll:                 m["notifyNotAll"],
 		NotifyManagerNotAll:          m["notifyManagerNotAll"],
@@ -333,6 +355,19 @@ func GetTranslation(lang string) (Translate, error) {
 		TimetableShowSaturday:       m["TimetableShowSaturday"],
 		TimetableShowSunday:         m["TimetableShowSunday"],
 		ComedianIsNotInChannel:      m["ComedianIsNotInChannel"],
+
+		StandupHandleUserNotAssigned:          m["StandupHandleUserNotAssigned"],
+		StandupHandleOneDayOneStandup:         m["StandupHandleOneDayOneStandup"],
+		StandupHandleCouldNotSaveStandup:      m["StandupHandleCouldNotSaveStandup"],
+		StandupHandleNoProblemsMentioned:      m["StandupHandleNoProblemsMentioned"],
+		StandupHandleNoYesterdayWorkMentioned: m["StandupHandleNoYesterdayWorkMentioned"],
+		StandupHandleNoTodayPlansMentioned:    m["StandupHandleNoTodayPlansMentioned"],
+		StandupHandleUpdatedStandup:           m["StandupHandleUpdatedStandup"],
+		StandupHandleCreatedStandup:           m["StandupHandleCreatedStandup"],
+
+		ErrorRooksReportWeekend: m["ErrorRooksReportWeekend"],
+		ReportHeaderMonday:      m["ReportHeaderMonday"],
+		ReportHeader:            m["ReportHeader"],
 	}
 
 	return t, nil
