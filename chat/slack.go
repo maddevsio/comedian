@@ -205,7 +205,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 func (s *Slack) analizeStandup(message string) (bool, string) {
 	message = strings.ToLower(message)
 	mentionsProblem := false
-	problemKeys := []string{"roblem", "ifficul", "tuck", "uestion", "ssue", "роблем", "рудност", "атрдуднен", "опрос"}
+	problemKeys := []string{"problem", "difficul", "stuck", "question", "issue", "проблем", "трудност", "затрдуднени", "вопрос"}
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
@@ -216,7 +216,7 @@ func (s *Slack) analizeStandup(message string) (bool, string) {
 	}
 
 	mentionsYesterdayWork := false
-	yesterdayWorkKeys := []string{"esterday", "riday", "did", "чера", "ятниц", "делал", "делано"}
+	yesterdayWorkKeys := []string{"yesterday", "friday", "completed", "вчера", "пятниц", "делал", "сделано"}
 	for _, work := range yesterdayWorkKeys {
 		if strings.Contains(message, work) {
 			mentionsYesterdayWork = true
@@ -227,7 +227,7 @@ func (s *Slack) analizeStandup(message string) (bool, string) {
 	}
 
 	mentionsTodayPlans := false
-	todayPlansKeys := []string{"oday", "going", "plan", "егодн", "обираюс", "ланир"}
+	todayPlansKeys := []string{"today", "going", "plan", "cегодн", "cобираюсь", "план"}
 	for _, plan := range todayPlansKeys {
 		if strings.Contains(message, plan) {
 			mentionsTodayPlans = true
