@@ -309,5 +309,6 @@ func TestChannelsNotification(t *testing.T) {
 	assert.NoError(t, n.db.DeleteUser(user.ID))
 	assert.NoError(t, n.db.DeleteChannel(channel.ID))
 	assert.NoError(t, n.db.DeleteChannelMember(m.UserID, m.ChannelID))
+	assert.NoError(t, n.db.DeleteStandupTime(channel.ChannelID))
 
 }

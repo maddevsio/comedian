@@ -256,7 +256,6 @@ func TestCRUDStandupTime(t *testing.T) {
 
 	allStandupTimes, err := db.ListAllStandupTime()
 	assert.NoError(t, err)
-	fmt.Println("All standup times: ", allStandupTimes)
 	assert.Equal(t, 1, len(allStandupTimes))
 
 	assert.NoError(t, db.DeleteStandupTime(ch.ChannelID))
@@ -264,7 +263,6 @@ func TestCRUDStandupTime(t *testing.T) {
 
 	allStandupTimes, err = db.ListAllStandupTime()
 	assert.NoError(t, err)
-	fmt.Println("All standup times: ", allStandupTimes)
 	assert.Equal(t, 0, len(allStandupTimes))
 
 	channels, err := db.GetAllChannels()
