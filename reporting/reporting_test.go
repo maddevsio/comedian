@@ -62,7 +62,7 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.NoError(t, err)
 	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\n"
 	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n", report.ReportBody[0].Text)
+	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n================================================\n", report.ReportBody[0].Text)
 
 	//create standup for user
 	standup1, err := r.db.CreateStandup(model.Standup{
@@ -78,8 +78,8 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.NoError(t, err)
 	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\n"
 	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n", report.ReportBody[0].Text)
-	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n", report.ReportBody[1].Text)
+	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n================================================\n", report.ReportBody[0].Text)
+	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n================================================\n", report.ReportBody[1].Text)
 
 	//create another user
 	user2, err := r.db.CreateChannelMember(model.ChannelMember{
@@ -93,8 +93,8 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.NoError(t, err)
 	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\n"
 	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n", report.ReportBody[0].Text)
-	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n", report.ReportBody[1].Text)
+	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n================================================\n", report.ReportBody[0].Text)
+	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n================================================\n", report.ReportBody[1].Text)
 
 	//create standup for user2
 	standup2, err := r.db.CreateStandup(model.Standup{
@@ -110,8 +110,8 @@ func TestStandupReportByProject(t *testing.T) {
 	assert.NoError(t, err)
 	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\n"
 	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n<@userID2> submitted standup: user2 standup \n", report.ReportBody[0].Text)
-	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n<@userID2> submitted standup: user2 standup \n", report.ReportBody[1].Text)
+	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n================================================\n<@userID2> submitted standup: user2 standup \n================================================\n", report.ReportBody[0].Text)
+	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n================================================\n<@userID2> submitted standup: user2 standup \n================================================\n", report.ReportBody[1].Text)
 
 	assert.NoError(t, r.db.DeleteStandup(standup0.ID))
 	assert.NoError(t, r.db.DeleteStandup(standup1.ID))
@@ -168,7 +168,7 @@ func TestStandupReportByUser(t *testing.T) {
 	report, err = r.StandupReportByUser(user.UserID, dateFrom, dateTo)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-05\nIn #chanName <@userID1> submitted standup: my standup \n", report.ReportBody[0].Text)
+	assert.Equal(t, "Report for: 2018-06-05\nIn #chanName <@userID1> submitted standup: my standup \n================================================\n", report.ReportBody[0].Text)
 
 	assert.NoError(t, r.db.DeleteStandup(standup1.ID))
 	assert.NoError(t, r.db.DeleteChannelMember(user.UserID, user.ChannelID))

@@ -1,7 +1,6 @@
 package teammonitoring
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -140,40 +139,16 @@ func TestGetCollectorData(t *testing.T) {
 		return
 	}
 
-	dataOnUser, err := GetCollectorData(c, "users", "UBZ6Y0P5K", "2018-09-25", "2018-09-25")
+	dataOnUser, err := GetCollectorData(c, "users", "UC1JNECA3", "2018-10-11", "2018-10-11")
 	assert.NoError(t, err)
 	fmt.Printf("Report on user: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUser.TotalCommits, utils.SecondsToHuman(dataOnUser.Worklogs))
 
-	dataOnProject, err := GetCollectorData(c, "projects", "comedian-testing", "2018-09-25", "2018-09-25")
+	dataOnProject, err := GetCollectorData(c, "projects", "comedian-testing", "2018-10-11", "2018-10-11")
 	assert.NoError(t, err)
 	fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnProject.TotalCommits, utils.SecondsToHuman(dataOnProject.Worklogs))
 
-	dataOnProject, err = GetCollectorData(c, "projects", "testXXX", "2018-09-25", "2018-09-25")
-	assert.Error(t, err)
-	assert.Equal(t, errors.New("could not get data on this request"), err)
-	fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnProject.TotalCommits, utils.SecondsToHuman(dataOnProject.Worklogs))
-
-	dataOnUserByProject, err := GetCollectorData(c, "user-in-project", "UC1JNECA3/comedian-testing", "2018-09-27", "2018-09-27")
+	dataOnUserByProject, err := GetCollectorData(c, "user-in-project", "UC1JNECA3/comedian-testing", "2018-10-11", "2018-10-11")
 	assert.NoError(t, err)
-	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
-
-	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UBZ6Y0P5K/kaftv", "2018-09-27", "2018-09-27")
-	assert.NoError(t, err)
-	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
-
-	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UBZ6Y0P5K/kaftv", "2018-09-27", "20109-27")
-	assert.Error(t, err)
-	assert.Equal(t, errors.New("could not get data on this request"), err)
-	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
-
-	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "testXXX/kaftv", "2018-09-27", "2018-09-27")
-	assert.Error(t, err)
-	assert.Equal(t, errors.New("could not get data on this request"), err)
-	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
-
-	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UBZ6Y0P5K/TESTXXX", "2018-09-27", "2018-09-27")
-	assert.Error(t, err)
-	assert.Equal(t, errors.New("could not get data on this request"), err)
 	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
 
 }

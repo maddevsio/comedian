@@ -77,6 +77,7 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 				dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandup, member.UserID)
 				dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 			}
+			dayInfo += "================================================\n"
 		}
 		if dayInfo != "" {
 			text := fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))
@@ -84,6 +85,7 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 			rbc := ReportBodyContent{dateFrom, text}
 			report.ReportBody = append(report.ReportBody, rbc)
 		}
+
 	}
 	return report, nil
 }
@@ -134,6 +136,7 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 				dayInfo += fmt.Sprintf(r.Config.Translate.UserDidStandupInChannel, channelName, slackUserID)
 				dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 			}
+			dayInfo += "================================================\n"
 		}
 		if dayInfo != "" {
 			text := fmt.Sprintf(r.Config.Translate.ReportDate, dateFrom.Format("2006-01-02"))

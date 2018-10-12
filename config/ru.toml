@@ -25,7 +25,7 @@ showStandupTime = "<!date^%v^Срок для стэндапов установл
 wrongNArgs = "Неверное количество аргументов. Перепроверьте свои данные!"
 reportByProjectAndUser = "Данный пользователь не установлен как стэндапер в этом канале. Для начала добавьте его слэшкомандой `/comedian_add`"
 reportOnProjectHead = "Полный отчет по проекту #%s с %v по %v:\n\n"
-reportOnProjectCollectorData = "\nКоммитов за период: %v\n"
+reportOnProjectCollectorData = "\nКоммитов за период: %v\nВорклогов за период: %v\n"
 reportOnUserHead = "Полный отчет по пользователю <@%s> с %v по %v:\n\n"
 reportOnProjectAndUserHead = "Отчет по пользователю <@%s> в проекте #%s с %v по %v:\n\n"
 
