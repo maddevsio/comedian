@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -255,6 +256,7 @@ func TestCRUDStandupTime(t *testing.T) {
 
 	allStandupTimes, err := db.ListAllStandupTime()
 	assert.NoError(t, err)
+	fmt.Println("All standup times: ", allStandupTimes)
 	assert.Equal(t, 1, len(allStandupTimes))
 
 	assert.NoError(t, db.DeleteStandupTime(ch.ChannelID))
@@ -262,6 +264,7 @@ func TestCRUDStandupTime(t *testing.T) {
 
 	allStandupTimes, err = db.ListAllStandupTime()
 	assert.NoError(t, err)
+	fmt.Println("All standup times: ", allStandupTimes)
 	assert.Equal(t, 0, len(allStandupTimes))
 
 	channels, err := db.GetAllChannels()
@@ -440,6 +443,7 @@ func TestCRUDTimeTable(t *testing.T) {
 
 	timeTables, err := db.ListTimeTablesForDay("monday")
 	assert.NoError(t, err)
+	fmt.Println("All timetables: ", timeTables)
 	assert.Equal(t, 1, len(timeTables))
 
 	assert.NoError(t, db.DeleteUser(user.ID))
