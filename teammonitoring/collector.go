@@ -79,6 +79,10 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 	if int(time.Now().Weekday()) == 1 {
 		startDate = time.Now().AddDate(0, 0, -3)
 	}
+
+	startDateTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.Local)
+	endDateTime := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.Local)
+
 	allUsers, err := tm.db.ListAllChannelMembers()
 
 	if err != nil {
@@ -112,7 +116,7 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 			continue
 		}
 		// need to identify if user submitted standup for this period
-		isNonReporter, err := tm.db.IsNonReporter(user.UserID, user.ChannelID, startDate, time.Now())
+		isNonReporter, err := tm.db.IsNonReporter(user.UserID, user.ChannelID, startDateTime, endDateTime)
 		if err != nil {
 			logrus.Errorf("team monitoring: IsNonReporter failed: %v\n", err)
 			continue
