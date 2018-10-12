@@ -436,7 +436,7 @@ func TestHandleReportByUserCommands(t *testing.T) {
 		{"user mess up", ReportByUserMessUser, http.StatusOK, "User does not exist!"},
 		{"date from mess up", ReportByUserMessDateF, http.StatusOK, "parsing time \"2018-6-25\": month out of range"},
 		{"date to mess up", ReportByUserMessDateT, http.StatusOK, "parsing time \"2018-6-26\": month out of range"},
-		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1> from 2018-06-25 to 2018-06-26:\n\nReport for: 2018-06-25\nIn #chanName <@userID1> did not submit standup!"},
+		{"correct", ReportByUser, http.StatusOK, "Full Report on user <@userID1> from 2018-06-25 to 2018-06-26:\n\nReport for: 2018-06-25\nIn #chanName <@userID1> did not submit standup!================================================\n"},
 	}
 
 	for _, tt := range testCases {
