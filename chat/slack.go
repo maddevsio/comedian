@@ -227,7 +227,7 @@ func (s *Slack) analizeStandup(message string) (bool, string) {
 	}
 
 	mentionsTodayPlans := false
-	todayPlansKeys := []string{"today", "going", "plan", "cегодн", "cобираюсь", "план"}
+	todayPlansKeys := []string{"today", "going", "plan", "сегодня", "собираюсь", "план"}
 	for _, plan := range todayPlansKeys {
 		if strings.Contains(message, plan) {
 			mentionsTodayPlans = true
