@@ -574,9 +574,8 @@ func TestTimeTableCommand(t *testing.T) {
 	}{
 		{"Add Timetable Misspelled username", AddTimeTable1, http.StatusOK, "Seems like you misspelled username. Please, check and try command again!"},
 		{"Add Timetable OK", AddTimeTable2, http.StatusOK, "Timetable for <@User1> created: | Monday 10:00 | Tuesday 10:00 | Wednesday 10:00 | \n"},
-		{"Remove Timetable", RemoveTimeTable, http.StatusOK, "Timetable removed for <@userID1>\n"},
-		{"Add Timetable OK", AddTimeTable2, http.StatusOK, "Timetable for <@User1> created: | Monday 10:00 | Tuesday 10:00 | Wednesday 10:00 | \n"},
 		{"Show Timetable", ShowTimeTable, http.StatusOK, "Timetable for <@userID1> is: | Monday 10:00 | Tuesday 10:00 | Wednesday 10:00 |\n"},
+		{"Remove Timetable", RemoveTimeTable, http.StatusOK, "Timetable removed for <@userID1>\n"},
 	}
 
 	for _, tt := range testCases {
