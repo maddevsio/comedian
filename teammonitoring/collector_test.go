@@ -11,6 +11,7 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/utils"
+	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,21 +49,21 @@ func TestTeamMonitoringOnWeekEnd(t *testing.T) {
 func TestTeamMonitoringOnMonday(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	slack, err := chat.NewSlack(c)
+	s, err := chat.NewSlack(c)
 	assert.NoError(t, err)
 	if !c.TeamMonitoringEnabled {
 		fmt.Println("Warning: Team Monitoring servise is disabled")
 		return
 	}
-	tm, err := NewTeamMonitoring(c, slack)
+	tm, err := NewTeamMonitoring(c, s)
 	assert.NoError(t, err)
 
 	d := time.Date(2018, 9, 17, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	text, err := tm.RevealRooks()
+	attachments, err := tm.RevealRooks()
 	assert.NoError(t, err)
-	assert.Equal(t, "", text)
+	assert.Equal(t, []slack.Attachment{}, attachments)
 }
 
 func TestTeamMonitoringOnWeekDay(t *testing.T) {
