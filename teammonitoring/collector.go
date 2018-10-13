@@ -105,9 +105,17 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 			logrus.Errorf("SelectChannel failed: %v", err)
 			continue
 		}
+		dataOnUser, err := GetCollectorData(tm.Config, "users", user.UserID, dateFrom, dateTo)
+		if err != nil {
+			logrus.Errorf("team monitoring: getCollectorData on users failed: %v\n", err)
+			userFull, _ := tm.db.SelectUser(user.UserID)
+			fail := fmt.Sprintf(":warning::warning::warning: GetCollectorData on Users failed on user %v|%v in %v! Please, add this user to Collector service :bangbang:", userFull.UserName, userFull.UserID, project.ChannelName)
+			tm.Chat.SendUserMessage(tm.Config.ManagerSlackUserID, fail)
+			continue
+		}
 		// make request for info about user in project from collector to get commits and worklogs
 		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
-		data, err := GetCollectorData(tm.Config, "user-in-project", userInProject, dateFrom, dateTo)
+		dataOnUserInProject, err := GetCollectorData(tm.Config, "user-in-project", userInProject, dateFrom, dateTo)
 		if err != nil {
 			logrus.Errorf("team monitoring: getCollectorData failed: %v\n", err)
 			userFull, _ := tm.db.SelectUser(user.UserID)
@@ -125,16 +133,16 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 		var worklogs, commits, standup string
 		var points int
 
-		if data.Worklogs/3600 < 7 {
-			worklogs = fmt.Sprintf(tm.Config.Translate.NoWorklogs, utils.SecondsToHuman(data.Worklogs))
+		if dataOnUser.Worklogs/3600 < 8 {
+			worklogs = fmt.Sprintf(tm.Config.Translate.NoWorklogs, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
 		} else {
-			worklogs = fmt.Sprintf(tm.Config.Translate.HasWorklogs, utils.SecondsToHuman(data.Worklogs))
+			worklogs = fmt.Sprintf(tm.Config.Translate.HasWorklogs, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
 			points++
 		}
-		if data.TotalCommits == 0 {
-			commits = fmt.Sprintf(tm.Config.Translate.NoCommits, data.TotalCommits)
+		if dataOnUserInProject.TotalCommits == 0 {
+			commits = fmt.Sprintf(tm.Config.Translate.NoCommits, dataOnUserInProject.TotalCommits)
 		} else {
-			commits = fmt.Sprintf(tm.Config.Translate.HasCommits, data.TotalCommits)
+			commits = fmt.Sprintf(tm.Config.Translate.HasCommits, dataOnUserInProject.TotalCommits)
 			points++
 		}
 		if isNonReporter == true {
