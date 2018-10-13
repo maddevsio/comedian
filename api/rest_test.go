@@ -23,6 +23,8 @@ func TestHandleCommands(t *testing.T) {
 	emptyCommand := "user_id=UB9AE7CL9&command=/"
 
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -64,6 +66,8 @@ func TestHandleUserCommands(t *testing.T) {
 	ListUsers := "user_id=UB9AE7CL9&command=/comedian_list&channel_id=chanid&channel_name=channame"
 
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -148,6 +152,8 @@ func TestHandleAdminCommands(t *testing.T) {
 	ListAdmins := "user_id=UB9AE7CL9&command=/admin_list&&channel_id=chanid&channel_name=channame"
 
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -242,6 +248,8 @@ func TestHandleTimeCommands(t *testing.T) {
 	timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 12, 5, 0, 0, time.Local).Unix()
 
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -323,6 +331,8 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	ReportByProject := "user_id=UB9AE7CL9&command=/report_by_project&channel_name=privatechannel&channel_id=chanid&channel_name=channame&text=#chanName 2018-06-25 2018-06-26"
 
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -377,6 +387,8 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	ReportByUserMessDateT := "user_id=UB9AE7CL9&command=/report_by_user&channel_id=123qwe&channel_name=channel1&text= @user1 2018-06-25 2018-6-26"
 
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -464,6 +476,8 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	ReportByProjectAndUserDateFromMessUp := "user_id=UB9AE7CL9&command=/report_by_project_and_user&channel_id=123qwe&channel_name=channel1&text= #chanid @user1 2018-06-25 2018-6-26"
 
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -536,6 +550,8 @@ func TestTimeTableCommand(t *testing.T) {
 	ShowTimeTable := "user_id=UB9AE7CL9&command=/timetable_show&channel_id=123qwe&channel_name=chanName&text=<@User1|userID1>"
 
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -603,6 +619,8 @@ func TestPMCommand(t *testing.T) {
 	NoChannelIDSet := "user_id=UB9AE7CL9&command=/pm_add&channel_id=&channel_name=channel1&text=<@User1|userID1>"
 
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	rest, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -634,7 +652,7 @@ func TestPMCommand(t *testing.T) {
 		responseBody string
 	}{
 		{"Add PM", AddPM, http.StatusOK, "<@User1> is assigned as PM in this channel"},
-		{"Add PM No Access", AddPMNoAccess, http.StatusOK, "This command is not allowed for you! You are not admin\n"},
+		{"Add PM No Access", AddPMNoAccess, http.StatusOK, "Access Denied!"},
 		{"No Users To Add", NoUsersToAdd, http.StatusOK, "Seems like you misspelled username. Please, check and try command again!"},
 		{"Misspelled Username", MisspelledUserName, http.StatusOK, "Seems like you misspelled username. Please, check and try command again!"},
 		{"Comedian Not In Channel", ComedianNotInChannel, http.StatusOK, "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
@@ -669,6 +687,8 @@ func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
 
 func TestPrepareTimetable(t *testing.T) {
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
 	r, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
@@ -722,11 +742,25 @@ func TestPrepareTimetable(t *testing.T) {
 
 func TestUserHasAccess(t *testing.T) {
 	c, err := config.Get()
+	c.ManagerSlackUserID = "UB9AE7CL9"
+
+	c.ManagerSlackUserID = "SUPERADMINID"
 	r, err := NewRESTAPI(c)
 	assert.NoError(t, err)
 
-	userHasAccess := r.userHasAccess("RANDOMID", "RANDOMCHAN")
-	assert.Equal(t, false, userHasAccess)
+	accessLevel, err := r.getAccessLevel("RANDOMID", "RANDOMCHAN")
+	assert.Error(t, err)
+	assert.Equal(t, 0, accessLevel)
+
+	superAdmin, err := r.db.CreateUser(model.User{
+		UserID:   "SUPERADMINID",
+		UserName: "SAdmin",
+		Role:     "",
+	})
+
+	accessLevel, err = r.getAccessLevel(superAdmin.UserID, "RANDOMCHAN")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 1, accessLevel)
 
 	admin, err := r.db.CreateUser(model.User{
 		UserID:   "ADMINID",
@@ -734,8 +768,9 @@ func TestUserHasAccess(t *testing.T) {
 		Role:     "admin",
 	})
 
-	userHasAccess = r.userHasAccess(admin.UserID, "RANDOMCHAN")
-	assert.Equal(t, true, userHasAccess)
+	accessLevel, err = r.getAccessLevel(admin.UserID, "RANDOMCHAN")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 2, accessLevel)
 
 	pmUser, err := r.db.CreateUser(model.User{
 		UserID:   "PMID",
@@ -748,8 +783,9 @@ func TestUserHasAccess(t *testing.T) {
 		ChannelID: "RANDOMCHAN",
 	})
 
-	userHasAccess = r.userHasAccess(pm.UserID, "RANDOMCHAN")
-	assert.Equal(t, true, userHasAccess)
+	accessLevel, err = r.getAccessLevel(pm.UserID, "RANDOMCHAN")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 3, accessLevel)
 
 	user, err := r.db.CreateUser(model.User{
 		UserID:   "USERID",
@@ -757,8 +793,9 @@ func TestUserHasAccess(t *testing.T) {
 		Role:     "",
 	})
 
-	userHasAccess = r.userHasAccess(user.UserID, "RANDOMCHAN")
-	assert.Equal(t, false, userHasAccess)
+	accessLevel, err = r.getAccessLevel(user.UserID, "RANDOMCHAN")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 4, accessLevel)
 
 	assert.NoError(t, r.db.DeleteUser(admin.ID))
 	assert.NoError(t, r.db.DeleteUser(pmUser.ID))
