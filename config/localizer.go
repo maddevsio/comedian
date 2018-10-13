@@ -138,6 +138,12 @@ type Translate struct {
 	ErrorRooksReportWeekend string
 	ReportHeaderMonday      string
 	ReportHeader            string
+
+	AccessAtLeastPM           string
+	AccessAtLeastAdmin        string
+	AccessAtLeastSuperAdmin   string
+	AccessAtLeastAdminOrOwner string
+	AccessAtLeastPMOrOwner    string
 }
 
 // GetTranslation sets translation files for config
@@ -249,6 +255,11 @@ func GetTranslation(lang string) (Translate, error) {
 		"ReportHeaderMonday",
 		"ReportHeader",
 		"UserIsNotPM",
+		"AccessAtLeastPM",
+		"AccessAtLeastAdmin",
+		"AccessAtLeastSuperAdmin",
+		"AccessAtLeastAdminOrOwner",
+		"AccessAtLeastPMOrOwner",
 	}
 
 	for _, t := range r {
@@ -380,6 +391,12 @@ func GetTranslation(lang string) (Translate, error) {
 		ReportHeaderMonday:      m["ReportHeaderMonday"],
 		ReportHeader:            m["ReportHeader"],
 		UserIsNotPM:             m["UserIsNotPM"],
+
+		AccessAtLeastPM:           m["AccessAtLeastPM"],
+		AccessAtLeastAdmin:        m["AccessAtLeastAdmin"],
+		AccessAtLeastSuperAdmin:   m["AccessAtLeastSuperAdmin"],
+		AccessAtLeastAdminOrOwner: m["AccessAtLeastAdminOrOwner"],
+		AccessAtLeastPMOrOwner:    m["AccessAtLeastPMOrOwner"],
 	}
 
 	return t, nil

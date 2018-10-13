@@ -164,7 +164,7 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 	}
 	users := strings.Split(ca.Text, " ")
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -217,7 +217,7 @@ func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 	}
 	users := strings.Split(ca.Text, " ")
 	if len(users) < 1 {
@@ -276,7 +276,7 @@ func (r *REST) addPMCommand(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 2 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 	}
 	users := strings.Split(ca.Text, " ")
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -312,7 +312,7 @@ func (r *REST) removePMCommand(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 2 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 	}
 	users := strings.Split(ca.Text, " ")
 	if len(users) < 1 {
@@ -376,7 +376,7 @@ func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 1 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastSuperAdmin)
 	}
 	users := strings.Split(ca.Text, " ")
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -419,7 +419,7 @@ func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 1 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastSuperAdmin)
 	}
 	users := strings.Split(ca.Text, " ")
 	if len(users) < 1 {
@@ -463,12 +463,6 @@ func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 
-	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
-	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
-	if accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
-	}
-
 	admins, err := r.db.ListAdmins()
 	if err != nil {
 		logrus.Errorf("rest: ListChannelMembers: %v\n", err)
@@ -494,7 +488,7 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 	}
 
 	timeInt, err := utils.ParseTimeTextToInt(ca.Text)
@@ -526,7 +520,7 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 	}
 
 	err = r.db.DeleteStandupTime(ca.ChannelID)
@@ -566,7 +560,7 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 	}
 
 	usersText, weekdays, time, err := utils.SplitTimeTalbeCommand(ca.Text, r.conf.Translate.DaysDivider, r.conf.Translate.TimeDivider)
@@ -680,7 +674,7 @@ func (r *REST) removeTimeTable(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 	}
 
 	users := strings.Split(ca.Text, " ")
@@ -726,7 +720,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 	}
 
 	commandParams := strings.Fields(ca.Text)
@@ -801,8 +795,8 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
-	if f.Get("user_id") != user.UserID && accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
+	if f.Get("user_id") != user.UserID && accessLevel > 2 {
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdminOrOwner)
 	}
 
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
@@ -880,7 +874,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
 	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if (f.Get("user_id") != member.UserID && f.Get("channel_id") != member.ChannelID) && accessLevel > 3 {
-		return c.String(http.StatusOK, "Access Denied!")
+		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPMOrOwner)
 	}
 
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])

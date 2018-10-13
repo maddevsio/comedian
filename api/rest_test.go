@@ -652,7 +652,7 @@ func TestPMCommand(t *testing.T) {
 		responseBody string
 	}{
 		{"Add PM", AddPM, http.StatusOK, "<@User1> is assigned as PM in this channel"},
-		{"Add PM No Access", AddPMNoAccess, http.StatusOK, "Access Denied!"},
+		{"Add PM No Access", AddPMNoAccess, http.StatusOK, "Access Denied! You need to be at least admin in this slack to use this command!"},
 		{"No Users To Add", NoUsersToAdd, http.StatusOK, "Seems like you misspelled username. Please, check and try command again!"},
 		{"Misspelled Username", MisspelledUserName, http.StatusOK, "Seems like you misspelled username. Please, check and try command again!"},
 		{"Comedian Not In Channel", ComedianNotInChannel, http.StatusOK, "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
