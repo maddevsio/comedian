@@ -9,10 +9,13 @@ pmAdded = "<@%s> is assigned as PM in this channel"
 
 deleteUser = "<@%s> no longer submits standups in this channel\n"
 deleteAdmin = "<@%s> was removed as admin\n"
+DeletePM = "<@%s> was removed as PM\n"
 listNoStandupers = "No standupers in this channel! To add one, please, use `/comedian_add` slash command"
 listNoAdmins = "No admins in this channel! To add one, please, use `/adminadd` slash command"
 listStandupers = "Standupers in this channel: %v"
 listAdmins = "Admins in this workspace: %v"
+listNoPMs = "No PMs in this channel! To add one, please, use `/add` slash command"
+listPMs = "PMs in this channel: %v"
 
 addStandupTimeNoUsers = "<!date^%v^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"
 addStandupTime = "<!date^%v^Standup time set at {time}|Standup time set at 12:00>"
@@ -84,7 +87,9 @@ wrongUsernameError = "Seems like you misspelled username. Please, check and try 
 
 selectUsersToAdd = "Select users to add"
 selectUsersToDelete = "Select users to delete"
-userDoesNotStandup = "User <@%v> does not standup in this channel\n"
+CanNotFindMember = "<@%v> does not have any role in this channel\n"
+UserIsNotPM = "User <@%v> is not PM in this channel\n"
+
 selectUsersToAddAsAdmin = "Select users to add as admin"
 noSuchUserInWorkspace = "No such user in your slack!"
 userNotAdmin = "This user is not admin!"

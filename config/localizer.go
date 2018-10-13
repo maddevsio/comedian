@@ -23,10 +23,14 @@ type Translate struct {
 	AccessDenied         string
 	DeleteUser           string
 	DeleteAdmin          string
+	DeletePM             string
 	ListNoStandupers     string
 	ListNoAdmins         string
 	ListStandupers       string
 	ListAdmins           string
+	ListNoPMs            string
+	ListPMs              string
+	UserIsNotPM          string
 
 	AddStandupTimeNoUsers      string
 	AddStandupTime             string
@@ -91,7 +95,7 @@ type Translate struct {
 
 	SelectUsersToAdd        string
 	SelectUsersToDelete     string
-	UserDoesNotStandup      string
+	CanNotFindMember        string
 	SelectUsersToAddAsAdmin string
 	NoSuchUserInWorkspace   string
 	UserNotAdmin            string
@@ -182,10 +186,13 @@ func GetTranslation(lang string) (Translate, error) {
 		"accessDenied",
 		"deleteUser",
 		"deleteAdmin",
+		"DeletePM",
 		"listNoStandupers",
 		"listNoAdmins",
 		"listStandupers",
 		"listAdmins",
+		"listNoPMs",
+		"listPMs",
 		"addStandupTimeNoUsers",
 		"addStandupTime",
 		"removeStandupTimeWithUsers",
@@ -202,7 +209,7 @@ func GetTranslation(lang string) (Translate, error) {
 
 		"selectUsersToAdd",
 		"selectUsersToDelete",
-		"userDoesNotStandup",
+		"CanNotFindMember",
 		"selectUsersToAddAsAdmin",
 		"noSuchUserInWorkspace",
 		"userNotAdmin",
@@ -241,6 +248,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"ErrorRooksReportWeekend",
 		"ReportHeaderMonday",
 		"ReportHeader",
+		"UserIsNotPM",
 	}
 
 	for _, t := range r {
@@ -263,10 +271,13 @@ func GetTranslation(lang string) (Translate, error) {
 
 		DeleteUser:       m["deleteUser"],
 		DeleteAdmin:      m["deleteAdmin"],
+		DeletePM:         m["DeletePM"],
 		ListNoStandupers: m["listNoStandupers"],
 		ListNoAdmins:     m["listNoAdmins"],
 		ListStandupers:   m["listStandupers"],
 		ListAdmins:       m["listAdmins"],
+		ListNoPMs:        m["listNoPMs"],
+		ListPMs:          m["listPMs"],
 
 		AddStandupTimeNoUsers:        m["addStandupTimeNoUsers"],
 		AddStandupTime:               m["addStandupTime"],
@@ -327,7 +338,7 @@ func GetTranslation(lang string) (Translate, error) {
 
 		SelectUsersToAdd:        m["selectUsersToAdd"],
 		SelectUsersToDelete:     m["selectUsersToDelete"],
-		UserDoesNotStandup:      m["userDoesNotStandup"],
+		CanNotFindMember:        m["CanNotFindMember"],
 		SelectUsersToAddAsAdmin: m["selectUsersToAddAsAdmin"],
 		NoSuchUserInWorkspace:   m["noSuchUserInWorkspace"],
 		UserNotAdmin:            m["userNotAdmin"],
@@ -368,6 +379,7 @@ func GetTranslation(lang string) (Translate, error) {
 		ErrorRooksReportWeekend: m["ErrorRooksReportWeekend"],
 		ReportHeaderMonday:      m["ReportHeaderMonday"],
 		ReportHeader:            m["ReportHeader"],
+		UserIsNotPM:             m["UserIsNotPM"],
 	}
 
 	return t, nil

@@ -49,6 +49,9 @@ type Storage interface {
 
 	ListChannelMembers(string) ([]model.ChannelMember, error)
 
+	// ListPMs returns array of PM entries from database
+	ListPMs(string) ([]model.ChannelMember, error)
+
 	// DeleteChannelMember deletes channel_members entry from database
 	DeleteChannelMember(string, string) error
 
