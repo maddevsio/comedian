@@ -55,37 +55,24 @@ const (
 )
 
 // NewRESTAPI creates API for Slack commands
-func NewRESTAPI(c config.Config) (*REST, error) {
+func NewRESTAPI(slack *chat.Slack) (*REST, error) {
 	e := echo.New()
-	conn, err := storage.NewMySQL(c)
-	if err != nil {
-		logrus.Errorf("rest: NewMySQL failed: %v\n", err)
-		return nil, err
-	}
-	rep, err := reporting.NewReporter(c)
+	decoder := schema.NewDecoder()
+	decoder.IgnoreUnknownKeys(true)
+	rep, err := reporting.NewReporter(slack.Conf)
 	if err != nil {
 		logrus.Errorf("rest: NewReporter failed: %v\n", err)
 		return nil, err
 	}
 
-	s, err := chat.NewSlack(c)
-	if err != nil {
-		logrus.Errorf("rest: NewSlack failed: %v\n", err)
-		return nil, err
-	}
-
-	api := slack.New(c.SlackToken)
-
-	decoder := schema.NewDecoder()
-	decoder.IgnoreUnknownKeys(true)
 	r := &REST{
-		db:      conn,
 		echo:    e,
-		conf:    c,
 		decoder: decoder,
 		report:  rep,
-		slack:   s,
-		api:     api,
+		db:      slack.DB,
+		slack:   slack,
+		api:     slack.API,
+		conf:    slack.Conf,
 	}
 
 	r.initEndpoints()
