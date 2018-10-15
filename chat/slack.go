@@ -54,6 +54,7 @@ func (s *Slack) Run() {
 	fmt.Printf("Team monitoring enabled: %v\n", s.Conf.TeamMonitoringEnabled)
 	s.UpdateUsersList()
 	gocron.Every(1).Day().At("23:50").Do(s.FillStandupsForNonReporters)
+	gocron.Every(1).Day().At("23:55").Do(s.UpdateUsersList)
 	gocron.Start()
 
 	s.wg.Add(1)
@@ -205,7 +206,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 func (s *Slack) analizeStandup(message string) (bool, string) {
 	message = strings.ToLower(message)
 	mentionsProblem := false
-	problemKeys := []string{"problem", "difficul", "stuck", "question", "issue", "проблем", "трудност", "затрдуднени", "вопрос"}
+	problemKeys := []string{"problem", "difficult", "stuck", "question", "issue", "проблем", "трудност", "затрдуднени", "вопрос"}
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
@@ -320,6 +321,18 @@ func (s *Slack) UpdateUsersList() {
 		}
 		if user.Deleted {
 			s.db.DeleteUser(u.ID)
+			cm, err := s.db.FindMembersByUserID(u.UserID)
+			if err != nil {
+				continue
+			}
+			for _, member := range cm {
+				s.db.DeleteChannelMember(member.UserID, member.ChannelID)
+				tt, err := s.db.SelectTimeTable(member.ID)
+				if err != nil {
+					continue
+				}
+				s.db.DeleteTimeTable(tt.ID)
+			}
 		}
 	}
 }

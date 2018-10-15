@@ -127,6 +127,13 @@ func (m *MySQL) FindChannelMemberByUserID(userID, channelID string) (model.Chann
 	return u, err
 }
 
+//FindMembersByUserID finds user in channel
+func (m *MySQL) FindMembersByUserID(userID string) ([]model.ChannelMember, error) {
+	var u []model.ChannelMember
+	err := m.conn.Select(&u, "SELECT * FROM `channel_members` WHERE user_id=?", userID)
+	return u, err
+}
+
 //SelectChannelMember finds user in channel
 func (m *MySQL) SelectChannelMember(id int64) (model.ChannelMember, error) {
 	var u model.ChannelMember

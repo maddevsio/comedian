@@ -22,11 +22,13 @@ func TestSecondsToHuman(t *testing.T) {
 		output  string
 		seconds int
 	}{
-		{"00:03", 180},
-		{"00:04", 240},
-		{"01:00", 3600},
-		{"01:03", 3780},
-		{"01:03", 3782},
+		{"0:03", 180},
+		{"0:04", 240},
+		{"1:00", 3600},
+		{"1:03", 3780},
+		{"1:03", 3782},
+		{"4:10", 15000},
+		{"12:30", 45000},
 	}
 	for _, tt := range testCases {
 		text := SecondsToHuman(tt.seconds)

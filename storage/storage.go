@@ -32,6 +32,9 @@ type Storage interface {
 	//FindChannelMemberByUserID finds user in channel
 	FindChannelMemberByUserID(string, string) (model.ChannelMember, error)
 
+	//FindMembersByUserID finds user in channel
+	FindMembersByUserID(string) ([]model.ChannelMember, error)
+
 	//SelectChannelMember finds user in channel
 	SelectChannelMember(int64) (model.ChannelMember, error)
 
