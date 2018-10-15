@@ -77,20 +77,6 @@ type Translate struct {
 	HelloManager    string
 	StandupAccepted string
 
-	P1 string
-	P2 string
-	P3 string
-	P4 string
-
-	Y1 string
-	Y2 string
-	Y3 string
-	Y4 string
-
-	T1 string
-	T2 string
-	T3 string
-
 	WrongUsernameError string
 
 	SelectUsersToAdd        string
@@ -181,9 +167,6 @@ func GetTranslation(lang string) (Translate, error) {
 		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel",
 		"reportCollectorDataUser",
 		"helloManager", "standupAccepted",
-		"p1", "p2", "p3", "p4",
-		"y1", "y2", "y3", "y4",
-		"t1", "t2", "t3",
 		"userExist",
 		"pmExists", "pmAdded",
 		"addUserNoStandupTime",
@@ -330,20 +313,6 @@ func GetTranslation(lang string) (Translate, error) {
 		UserDidStandupInChannel:      m["userDidStandupInChannel"],
 		PMAssigned:                   m["PMAssigned"],
 		PMRemoved:                    m["PMRemoved"],
-
-		P1: m["p1"],
-		P2: m["p2"],
-		P3: m["p3"],
-		P4: m["p4"],
-
-		Y1: m["y1"],
-		Y2: m["y2"],
-		Y3: m["y3"],
-		Y4: m["y4"],
-
-		T1: m["t1"],
-		T2: m["t2"],
-		T3: m["t3"],
 
 		WrongUsernameError: m["wrongUsernameError"],
 

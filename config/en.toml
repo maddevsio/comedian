@@ -51,19 +51,6 @@ PMRemoved = "You have been removed as Admin from Comedian"
 helloManager = "Hello, Manager!"
 standupAccepted = "Good job! Standup accepted! Keep it up!"
 
-p1 = "roblem"
-p2 = "ifficul"
-p3 = "tuck"
-p4 = "uestion"
-
-y1 = "esterday"
-y2 = "riday"
-y3 = "did"
-y4 = "have done"
-		
-t1 = "oday"
-t2 = "going to"
-t3 = "plan"
 
 notifyNotAll = "In this channel not all standupers wrote standup today, shame on you: %v."
 notifyAllDone = "Congradulations! Everybody wrote their standups today!"
@@ -125,9 +112,9 @@ ComedianIsNotInChannel = "I do not have this channel in my database... Please, r
 StandupHandleUserNotAssigned = "Seems like you are not assigned as standuper in this channel, please, contact your PM and try again!"
 StandupHandleOneDayOneStandup = "One day = one standup! If you want to update your today standup, just edit the one you already wrote!"
 StandupHandleCouldNotSaveStandup = "For some reason i could not save your standup in database. I appologize and ask you to contact your PM."
-StandupHandleNoProblemsMentioned = "No problems detected! Make sure you include problems, because I do not believe you have none!"
-StandupHandleNoYesterdayWorkMentioned = "Could not get what you did yesterday! Please, describe it more!"
-StandupHandleNoTodayPlansMentioned = "Seems like today plans are missing! Please, add them and the team is good to go!"
+StandupHandleNoProblemsMentioned = "No 'problems' related keywords detected! Please, use one of the following: 'problem', 'difficult', 'stuck', 'question', 'issue'"
+StandupHandleNoYesterdayWorkMentioned = "No 'yesterday' related keywords detected! Please, use one of the following: 'yesterday', 'friday', 'completed'"
+StandupHandleNoTodayPlansMentioned = "No 'yesterday' related keywords detected! Please, use one of the following: 'today', 'going', 'plan'"
 StandupHandleUpdatedStandup = "Standup edited, Good job!"
 StandupHandleCreatedStandup = "Standup saved, well done!"
 
