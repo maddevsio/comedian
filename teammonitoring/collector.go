@@ -119,7 +119,7 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 		if err != nil {
 			logrus.Errorf("team monitoring: getCollectorData failed: %v\n", err)
 			userFull, _ := tm.db.SelectUser(user.UserID)
-			fail := fmt.Sprintf(":warning::warning::warning: GetCollectorData failed on user %v|%v in %v! Please, add this user to Collector service :bangbang:", userFull.UserName, userFull.UserID, project.ChannelName)
+			fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
 			tm.Chat.SendUserMessage(tm.Config.ManagerSlackUserID, fail)
 			continue
 		}

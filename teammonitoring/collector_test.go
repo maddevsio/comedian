@@ -139,15 +139,23 @@ func TestGetCollectorData(t *testing.T) {
 		return
 	}
 
-	dataOnUser, err := GetCollectorData(c, "users", "UC1JNECA3", "2018-10-11", "2018-10-11")
+	dataOnUser, err := GetCollectorData(c, "users", "U851AU1U0", "2018-10-12", "2018-10-14")
 	assert.NoError(t, err)
 	fmt.Printf("Report on user: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUser.TotalCommits, utils.SecondsToHuman(dataOnUser.Worklogs))
 
-	dataOnProject, err := GetCollectorData(c, "projects", "comedian-testing", "2018-10-11", "2018-10-11")
-	assert.NoError(t, err)
-	fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnProject.TotalCommits, utils.SecondsToHuman(dataOnProject.Worklogs))
+	// dataOnProject, err := GetCollectorData(c, "projects", "comedian-testing", "2018-10-11", "2018-10-11")
+	// assert.NoError(t, err)
+	// fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnProject.TotalCommits, utils.SecondsToHuman(dataOnProject.Worklogs))
 
-	dataOnUserByProject, err := GetCollectorData(c, "user-in-project", "UC1JNECA3/comedian-testing", "2018-10-11", "2018-10-11")
+	// dataOnUserByProject, err := GetCollectorData(c, "user-in-project", "UC1JNECA3/comedian-testing", "2018-10-11", "2018-10-11")
+	// assert.NoError(t, err)
+	// fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
+
+	dataOnUserByProject, err := GetCollectorData(c, "user-in-project", "UD6143K51/standups", "2018-10-12", "2018-10-14")
+	assert.NoError(t, err)
+	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
+
+	dataOnUserByProject, err = GetCollectorData(c, "user-in-project", "UD6147Z4K/standups", "2018-10-12", "2018-10-14")
 	assert.NoError(t, err)
 	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
 
