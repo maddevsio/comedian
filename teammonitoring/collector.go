@@ -127,14 +127,31 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 		}
 
 		var worklogs, commits, standup string
+		var worklogsEmoji, worklogsTime string
 		var points int
 
-		if dataOnUser.Worklogs/3600 < 8 {
-			worklogs = fmt.Sprintf(tm.conf.Translate.NoWorklogs, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
-		} else {
-			worklogs = fmt.Sprintf(tm.conf.Translate.HasWorklogs, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
+		w := dataOnUser.Worklogs / 3600
+
+		switch {
+		case w < 3:
+			worklogsEmoji = ":angry:"
+		case w >= 3 && w < 7:
+			worklogsEmoji = ":disappointed:"
+		case w >= 7 && w < 9:
+			worklogsEmoji = ":wink:"
+			points++
+		case w >= 9:
+			worklogsEmoji = ":sunglasses:"
 			points++
 		}
+
+		worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
+
+		if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
+			worklogsTime = fmt.Sprintf(tm.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
+		}
+		worklogs = fmt.Sprintf(tm.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
+
 		if dataOnUserInProject.TotalCommits == 0 {
 			commits = fmt.Sprintf(tm.conf.Translate.NoCommits, dataOnUserInProject.TotalCommits)
 		} else {

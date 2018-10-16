@@ -40,10 +40,10 @@ type Translate struct {
 	ShowStandupTime            string
 	WrongNArgs                 string
 
-	NoWorklogs          string
+	Worklogs            string
 	NoCommits           string
 	NoStandup           string
-	HasWorklogs         string
+	WorklogsTime        string
 	HasCommits          string
 	HasStandup          string
 	IsRook              string
@@ -158,7 +158,7 @@ func GetTranslation(lang string) (Translate, error) {
 	}
 	m := make(map[string]string)
 	r := []string{
-		"noWorklogs", "noCommits", "noStandup", "hasWorklogs",
+		"Worklogs", "noCommits", "noStandup", "WorklogsTime",
 		"hasCommits", "hasStandup", "isRook", "notifyAllDone",
 		"notifyNotAll", "notifyManagerNotAll", "notifyUsersWarning",
 		"notifyDirectMessage",
@@ -280,10 +280,10 @@ func GetTranslation(lang string) (Translate, error) {
 		ShowNoStandupTime:            m["showNoStandupTime"],
 		ShowStandupTime:              m["showStandupTime"],
 		WrongNArgs:                   m["wrongNArgs"],
-		NoWorklogs:                   m["noWorklogs"],
+		Worklogs:                     m["Worklogs"],
 		NoCommits:                    m["noCommits"],
 		NoStandup:                    m["noStandup"],
-		HasWorklogs:                  m["hasWorklogs"],
+		WorklogsTime:                 m["WorklogsTime"],
 		HasCommits:                   m["hasCommits"],
 		HasStandup:                   m["hasStandup"],
 		IsRook:                       m["isRook"],
