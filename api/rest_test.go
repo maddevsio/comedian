@@ -10,6 +10,7 @@ import (
 
 	"github.com/bouk/monkey"
 	"github.com/labstack/echo"
+	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/sirupsen/logrus"
@@ -24,8 +25,8 @@ func TestHandleCommands(t *testing.T) {
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
-
-	rest, err := NewRESTAPI(c)
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	testCases := []struct {
@@ -67,8 +68,8 @@ func TestHandleUserCommands(t *testing.T) {
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
-
-	rest, err := NewRESTAPI(c)
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	admin, err := rest.db.CreateUser(model.User{
@@ -153,8 +154,8 @@ func TestHandleAdminCommands(t *testing.T) {
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
-
-	rest, err := NewRESTAPI(c)
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	admin, err := rest.db.CreateUser(model.User{
@@ -249,8 +250,8 @@ func TestHandleTimeCommands(t *testing.T) {
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
-
-	rest, err := NewRESTAPI(c)
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	admin, err := rest.db.CreateUser(model.User{
@@ -332,8 +333,8 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
-
-	rest, err := NewRESTAPI(c)
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	channel, err := rest.db.CreateChannel(model.Channel{
@@ -388,8 +389,8 @@ func TestHandleReportByUserCommands(t *testing.T) {
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
-
-	rest, err := NewRESTAPI(c)
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	httpmock.Activate()
@@ -477,8 +478,8 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
-
-	rest, err := NewRESTAPI(c)
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	admin, err := rest.db.CreateUser(model.User{
@@ -551,8 +552,8 @@ func TestTimeTableCommand(t *testing.T) {
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
-
-	rest, err := NewRESTAPI(c)
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	admin, err := rest.db.CreateUser(model.User{
@@ -620,8 +621,8 @@ func TestPMCommand(t *testing.T) {
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
-
-	rest, err := NewRESTAPI(c)
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	admin, err := rest.db.CreateUser(model.User{
@@ -687,9 +688,10 @@ func getContext(command string) (echo.Context, *httptest.ResponseRecorder) {
 
 func TestPrepareTimetable(t *testing.T) {
 	c, err := config.Get()
+	slack, err := chat.NewSlack(c)
 	c.ManagerSlackUserID = "UB9AE7CL9"
 
-	r, err := NewRESTAPI(c)
+	r, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	user, err := r.db.CreateUser(model.User{
@@ -742,10 +744,11 @@ func TestPrepareTimetable(t *testing.T) {
 
 func TestUserHasAccess(t *testing.T) {
 	c, err := config.Get()
-	c.ManagerSlackUserID = "UB9AE7CL9"
-
 	c.ManagerSlackUserID = "SUPERADMINID"
-	r, err := NewRESTAPI(c)
+	assert.NoError(t, err)
+	slack, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
 	accessLevel, err := r.getAccessLevel("RANDOMID", "RANDOMCHAN")
@@ -757,9 +760,10 @@ func TestUserHasAccess(t *testing.T) {
 		UserName: "SAdmin",
 		Role:     "",
 	})
+	assert.NoError(t, err)
 
 	accessLevel, err = r.getAccessLevel(superAdmin.UserID, "RANDOMCHAN")
-	assert.Equal(t, nil, err)
+	assert.NoError(t, err)
 	assert.Equal(t, 1, accessLevel)
 
 	admin, err := r.db.CreateUser(model.User{
@@ -767,9 +771,10 @@ func TestUserHasAccess(t *testing.T) {
 		UserName: "Admin",
 		Role:     "admin",
 	})
+	assert.NoError(t, err)
 
 	accessLevel, err = r.getAccessLevel(admin.UserID, "RANDOMCHAN")
-	assert.Equal(t, nil, err)
+	assert.NoError(t, err)
 	assert.Equal(t, 2, accessLevel)
 
 	pmUser, err := r.db.CreateUser(model.User{
@@ -777,14 +782,16 @@ func TestUserHasAccess(t *testing.T) {
 		UserName: "futurePM",
 		Role:     "",
 	})
+	assert.NoError(t, err)
 
 	pm, err := r.db.CreatePM(model.ChannelMember{
 		UserID:    pmUser.UserID,
 		ChannelID: "RANDOMCHAN",
 	})
+	assert.NoError(t, err)
 
 	accessLevel, err = r.getAccessLevel(pm.UserID, "RANDOMCHAN")
-	assert.Equal(t, nil, err)
+	assert.NoError(t, err)
 	assert.Equal(t, 3, accessLevel)
 
 	user, err := r.db.CreateUser(model.User{
@@ -794,7 +801,7 @@ func TestUserHasAccess(t *testing.T) {
 	})
 
 	accessLevel, err = r.getAccessLevel(user.UserID, "RANDOMCHAN")
-	assert.Equal(t, nil, err)
+	assert.NoError(t, err)
 	assert.Equal(t, 4, accessLevel)
 
 	assert.NoError(t, r.db.DeleteUser(admin.ID))
