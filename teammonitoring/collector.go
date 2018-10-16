@@ -194,31 +194,25 @@ func GetCollectorData(conf config.Config, getDataOn, data, dateFrom, dateTo stri
 	logrus.Infof("teammonitoring: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
-		logrus.Errorf("teammonitoring: http.NewRequest failed: %v\n", err)
 		return collectorData, err
 	}
 	token := conf.CollectorToken
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 
 	res, err := http.DefaultClient.Do(req)
-	logrus.Infof("RESPONSE: %v", res)
 	if err != nil {
-		logrus.Errorf("teammonitoring: http.DefaultClient.Do(req) failed: %v\n", err)
 		return collectorData, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		logrus.Errorf("teammonitoring: get collector data failed! Status Code: %v\n", res.StatusCode)
 		return collectorData, errors.New("could not get data on this request")
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		logrus.Errorf("teammonitoring: ioutil.ReadAll(res.Body) failed: %v\n", err)
 		return collectorData, err
 	}
-
 	json.Unmarshal(body, &collectorData)
 
 	return collectorData, nil
