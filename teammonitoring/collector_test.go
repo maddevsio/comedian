@@ -176,6 +176,10 @@ func TestGetCollectorData(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		url := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, tt.getDataOn, tt.data, tt.dateFrom, tt.dateTo)
+		httpmock.RegisterResponder("GET", url, httpmock.NewStringResponder(200, ""))
 		result, err := GetCollectorData(c, tt.getDataOn, tt.data, tt.dateFrom, tt.dateTo)
 		assert.NoError(t, err)
 		fmt.Printf("Report on user: Total Commits: %v, Total Worklogs: %v\n\n", result.TotalCommits, utils.SecondsToHuman(result.Worklogs))
