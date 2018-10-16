@@ -59,6 +59,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:d2d851f86486221830962a3fc884c5f7529b46690be8661d85c10dd1eca4317e"
+  name = "github.com/jarcoal/httpmock"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9c70cfe4a1dad2f143c2244b45f2161fc72ceddf"
+
+[[projects]]
+  branch = "master"
   digest = "1:73f8f3d39f0f3100420067b1ea4d98533ac96526faef38e3646ebf43aa4ff246"
   name = "github.com/jasonlvhit/gocron"
   packages = ["."]
@@ -248,6 +256,7 @@
     "github.com/cenkalti/backoff",
     "github.com/go-sql-driver/mysql",
     "github.com/gorilla/schema",
+    "github.com/jarcoal/httpmock",
     "github.com/jasonlvhit/gocron",
     "github.com/jmoiron/sqlx",
     "github.com/kelseyhightower/envconfig",
