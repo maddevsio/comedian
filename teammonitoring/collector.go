@@ -25,7 +25,7 @@ type CollectorData struct {
 
 // TeamMonitoring struct is used to get data from team monitoring servise
 type TeamMonitoring struct {
-	Chat chat.Chat
+	s    *chat.Slack
 	db   storage.Storage
 	conf config.Config
 }
@@ -36,7 +36,7 @@ func NewTeamMonitoring(slack *chat.Slack) (*TeamMonitoring, error) {
 		logrus.Info("Team Monitoring is disabled!")
 		return &TeamMonitoring{}, errors.New("team monitoring is disabled")
 	}
-	tm := &TeamMonitoring{Chat: slack.Chat, db: slack.DB, conf: slack.Conf}
+	tm := &TeamMonitoring{s: slack, db: slack.DB, conf: slack.Conf}
 	return tm, nil
 }
 
@@ -48,17 +48,17 @@ func (tm *TeamMonitoring) Start() {
 func (tm *TeamMonitoring) reportRooks() {
 	attachments, err := tm.RevealRooks()
 	if err != nil {
-		tm.Chat.SendMessage(tm.conf.ReportingChannel, err.Error())
+		tm.s.SendMessage(tm.conf.ReportingChannel, err.Error())
 	}
 	if len(attachments) == 0 {
 		logrus.Info("Empty Report")
 		return
 	}
 	if int(time.Now().Weekday()) == 1 {
-		tm.Chat.SendReportMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeaderMonday, attachments)
+		tm.s.SendReportMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeaderMonday, attachments)
 		return
 	}
-	tm.Chat.SendReportMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeader, attachments)
+	tm.s.SendReportMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeader, attachments)
 }
 
 // RevealRooks displays data about rooks in channel general
@@ -106,7 +106,7 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 			logrus.Errorf("team monitoring: getCollectorData on users failed: %v\n", err)
 			userFull, _ := tm.db.SelectUser(user.UserID)
 			fail := fmt.Sprintf(":warning::warning::warning: GetCollectorData on Users failed on user %v|%v in %v! Please, add this user to Collector service :bangbang:", userFull.UserName, userFull.UserID, project.ChannelName)
-			tm.Chat.SendUserMessage(tm.conf.ManagerSlackUserID, fail)
+			tm.s.SendUserMessage(tm.conf.ManagerSlackUserID, fail)
 			continue
 		}
 		// make request for info about user in project from collector to get commits and worklogs
@@ -116,7 +116,7 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 			logrus.Errorf("team monitoring: getCollectorData failed: %v\n", err)
 			userFull, _ := tm.db.SelectUser(user.UserID)
 			fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
-			tm.Chat.SendUserMessage(tm.conf.ManagerSlackUserID, fail)
+			tm.s.SendUserMessage(tm.conf.ManagerSlackUserID, fail)
 			continue
 		}
 		// need to identify if user submitted standup for this period

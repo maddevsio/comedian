@@ -24,7 +24,6 @@ var (
 
 // Slack struct used for storing and communicating with slack api
 type Slack struct {
-	Chat
 	API  *slack.Client
 	RTM  *slack.RTM
 	WG   sync.WaitGroup

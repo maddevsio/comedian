@@ -17,14 +17,14 @@ import (
 
 // Notifier struct is used to notify users about upcoming or skipped standups
 type Notifier struct {
-	Chat chat.Chat
+	s    *chat.Slack
 	db   storage.Storage
 	conf config.Config
 }
 
 // NewNotifier creates a new notifier
 func NewNotifier(slack *chat.Slack) (*Notifier, error) {
-	notifier := &Notifier{Chat: slack.Chat, db: slack.DB, conf: slack.Conf}
+	notifier := &Notifier{s: slack, db: slack.DB, conf: slack.Conf}
 	return notifier, nil
 }
 
@@ -110,9 +110,9 @@ func (n *Notifier) SendWarning(channelID string) {
 	for _, user := range nonReporters {
 		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
 	}
-	err = n.Chat.SendMessage(channelID, fmt.Sprintf(n.conf.Translate.NotifyUsersWarning, strings.Join(nonReportersIDs, ", "), n.conf.ReminderTime))
+	err = n.s.SendMessage(channelID, fmt.Sprintf(n.conf.Translate.NotifyUsersWarning, strings.Join(nonReportersIDs, ", "), n.conf.ReminderTime))
 	if err != nil {
-		logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
+		logrus.Errorf("notifier: n.s.SendMessage failed: %v\n", err)
 		return
 	}
 }
@@ -126,9 +126,9 @@ func (n *Notifier) SendIndividualWarning(channelMemberID int64) {
 	}
 	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
 	if !submittedStandup {
-		err = n.Chat.SendMessage(chm.ChannelID, fmt.Sprintf(n.conf.Translate.IndividualStandupersWarning, chm.UserID, n.conf.ReminderTime))
+		err = n.s.SendMessage(chm.ChannelID, fmt.Sprintf(n.conf.Translate.IndividualStandupersWarning, chm.UserID, n.conf.ReminderTime))
 		if err != nil {
-			logrus.Errorf("notifier: n.Chat.SendMessage failed: %v\n", err)
+			logrus.Errorf("notifier: n.s.SendMessage failed: %v\n", err)
 			return
 		}
 		return
@@ -162,9 +162,9 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	logrus.Infof("NON REPORTERS: %v", nonReporters)
 	// if everyone wrote their standups display all done message!
 	if len(nonReporters) == 0 {
-		err := n.Chat.SendMessage(channelID, n.conf.Translate.NotifyAllDone)
+		err := n.s.SendMessage(channelID, n.conf.Translate.NotifyAllDone)
 		if err != nil {
-			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
+			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
 		}
 		return
 	}
@@ -177,9 +177,9 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 	// othervise Direct Message non reporters
 	for _, nonReporter := range nonReporters {
-		err := n.Chat.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
+		err := n.s.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
 		if err != nil {
-			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
+			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
 		}
 	}
 
@@ -206,7 +206,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
 		if repeats < n.conf.ReminderRepeatsMax && len(nonReporters) > 0 {
-			n.Chat.SendMessage(channelID, fmt.Sprintf(n.conf.Translate.NotifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
+			n.s.SendMessage(channelID, fmt.Sprintf(n.conf.Translate.NotifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
 			repeats++
 			err := errors.New("Continue backoff")
 			return err
@@ -236,16 +236,16 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 	}
 	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
 	if !submittedStandup {
-		err := n.Chat.SendUserMessage(chm.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, chm.UserID, channel.ChannelID, channel.ChannelName))
+		err := n.s.SendUserMessage(chm.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, chm.UserID, channel.ChannelID, channel.ChannelName))
 		if err != nil {
-			logrus.Errorf("notifier: SendMessage failed: %v\n", err)
+			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
 		}
 	}
 	repeats := 0
 	notify := func() error {
 		submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
 		if repeats < n.conf.ReminderRepeatsMax && !submittedStandup {
-			n.Chat.SendMessage(channel.ChannelID, fmt.Sprintf(n.conf.Translate.IndividualStandupersLate, chm.UserID))
+			n.s.SendMessage(channel.ChannelID, fmt.Sprintf(n.conf.Translate.IndividualStandupersLate, chm.UserID))
 			repeats++
 			err := errors.New("Continue backoff")
 			return err
