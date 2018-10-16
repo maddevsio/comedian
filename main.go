@@ -14,19 +14,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	api, err := api.NewRESTAPI(c)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go func() { log.Fatal(api.Start()) }()
 
 	slack, err := chat.NewSlack(c)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	notifier, err := notifier.NewNotifier(c, slack)
+	api, err := api.NewRESTAPI(slack)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() { log.Fatal(api.Start()) }()
+
+	notifier, err := notifier.NewNotifier(slack)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,7 +35,7 @@ func main() {
 
 	//team monitoring servise is optional
 	if c.TeamMonitoringEnabled {
-		tm, err := teammonitoring.NewTeamMonitoring(c, slack)
+		tm, err := teammonitoring.NewTeamMonitoring(slack)
 		if err != nil {
 			log.Fatal(err)
 		}

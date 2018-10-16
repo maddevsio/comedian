@@ -81,7 +81,7 @@ func TestSendUserMessage(t *testing.T) {
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 
-	su1, err := s.db.CreateChannelMember(model.ChannelMember{
+	su1, err := s.DB.CreateChannelMember(model.ChannelMember{
 		UserID:      "UBA5V5W9K",
 		ChannelID:   "123qwe",
 		StandupTime: 0,
@@ -93,7 +93,7 @@ func TestSendUserMessage(t *testing.T) {
 	err = s.SendUserMessage("USLACKBOT", "MSG to User!")
 	assert.NoError(t, err)
 
-	assert.NoError(t, s.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, s.DB.DeleteChannelMember(su1.UserID, su1.ChannelID))
 
 }
 
@@ -112,12 +112,12 @@ func TestHandleMessage(t *testing.T) {
 	assert.NoError(t, err)
 	botUserID := "BOTID"
 
-	su1, err := s.db.CreateChannelMember(model.ChannelMember{
+	su1, err := s.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID1",
 		ChannelID: "123qwe",
 	})
 
-	su, err := s.db.CreateChannelMember(model.ChannelMember{
+	su, err := s.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID2",
 		ChannelID: "123qwe",
 	})
@@ -174,13 +174,13 @@ func TestHandleMessage(t *testing.T) {
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
 
 	// clean up
-	standups, err := s.db.ListStandups()
+	standups, err := s.DB.ListStandups()
 	assert.NoError(t, err)
 	for _, standup := range standups {
-		s.db.DeleteStandup(standup.ID)
+		s.DB.DeleteStandup(standup.ID)
 	}
-	assert.NoError(t, s.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
-	assert.NoError(t, s.db.DeleteChannelMember(su.UserID, su.ChannelID))
+	assert.NoError(t, s.DB.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, s.DB.DeleteChannelMember(su.UserID, su.ChannelID))
 
 }
 
@@ -200,7 +200,7 @@ func TestFillStandupsForNonReporters(t *testing.T) {
 
 	s.FillStandupsForNonReporters()
 
-	su1, err := s.db.CreateChannelMember(model.ChannelMember{
+	su1, err := s.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID1",
 		ChannelID: "123qwe",
 	})
@@ -211,13 +211,13 @@ func TestFillStandupsForNonReporters(t *testing.T) {
 	d = time.Date(2018, 10, 8, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	su2, err := s.db.CreateChannelMember(model.ChannelMember{
+	su2, err := s.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID2",
 		ChannelID: "123qwe",
 	})
 	assert.NoError(t, err)
 
-	_, err = s.db.CreateStandup(model.Standup{
+	_, err = s.DB.CreateStandup(model.Standup{
 		ChannelID: su2.ChannelID,
 		Comment:   "test test test!",
 		UserID:    su2.UserID,
@@ -231,14 +231,14 @@ func TestFillStandupsForNonReporters(t *testing.T) {
 	s.FillStandupsForNonReporters()
 
 	// clean up
-	standups, err := s.db.ListStandups()
+	standups, err := s.DB.ListStandups()
 	assert.NoError(t, err)
 	for _, standup := range standups {
-		s.db.DeleteStandup(standup.ID)
+		s.DB.DeleteStandup(standup.ID)
 	}
 
-	assert.NoError(t, s.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
-	assert.NoError(t, s.db.DeleteChannelMember(su2.UserID, su2.ChannelID))
+	assert.NoError(t, s.DB.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, s.DB.DeleteChannelMember(su2.UserID, su2.ChannelID))
 }
 
 func TestAutomaticActions(t *testing.T) {
