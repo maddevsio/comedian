@@ -25,44 +25,40 @@ type CollectorData struct {
 
 // TeamMonitoring struct is used to get data from team monitoring servise
 type TeamMonitoring struct {
-	Chat   chat.Chat
-	db     storage.Storage
-	Config config.Config
+	s    *chat.Slack
+	db   storage.Storage
+	conf config.Config
 }
 
 // NewTeamMonitoring creates a new team monitoring
-func NewTeamMonitoring(c config.Config, chat chat.Chat) (*TeamMonitoring, error) {
-	if !c.TeamMonitoringEnabled {
+func NewTeamMonitoring(slack *chat.Slack) (*TeamMonitoring, error) {
+	if !slack.Conf.TeamMonitoringEnabled {
 		logrus.Info("Team Monitoring is disabled!")
 		return &TeamMonitoring{}, errors.New("team monitoring is disabled")
 	}
-	conn, err := storage.NewMySQL(c)
-	if err != nil {
-		return nil, err
-	}
-	tm := &TeamMonitoring{Chat: chat, db: conn, Config: c}
+	tm := &TeamMonitoring{s: slack, db: slack.DB, conf: slack.Conf}
 	return tm, nil
 }
 
 // Start starts all team monitoring treads
 func (tm *TeamMonitoring) Start() {
-	gocron.Every(1).Day().At(tm.Config.ReportTime).Do(tm.reportRooks)
+	gocron.Every(1).Day().At(tm.conf.ReportTime).Do(tm.reportRooks)
 }
 
 func (tm *TeamMonitoring) reportRooks() {
 	attachments, err := tm.RevealRooks()
 	if err != nil {
-		tm.Chat.SendMessage(tm.Config.ReportingChannel, err.Error())
+		tm.s.SendMessage(tm.conf.ReportingChannel, err.Error())
 	}
 	if len(attachments) == 0 {
 		logrus.Info("Empty Report")
 		return
 	}
 	if int(time.Now().Weekday()) == 1 {
-		tm.Chat.SendReportMessage(tm.Config.ReportingChannel, tm.Config.Translate.ReportHeaderMonday, attachments)
+		tm.s.SendReportMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeaderMonday, attachments)
 		return
 	}
-	tm.Chat.SendReportMessage(tm.Config.ReportingChannel, tm.Config.Translate.ReportHeader, attachments)
+	tm.s.SendReportMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeader, attachments)
 }
 
 // RevealRooks displays data about rooks in channel general
@@ -70,7 +66,7 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 	attachments := []slack.Attachment{}
 	//check if today is not saturday or sunday. During these days no notificatoins!
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
-		return attachments, errors.New(tm.Config.Translate.ErrorRooksReportWeekend)
+		return attachments, errors.New(tm.conf.Translate.ErrorRooksReportWeekend)
 	}
 
 	startDate := time.Now().AddDate(0, 0, -1)
@@ -105,14 +101,22 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 			logrus.Errorf("SelectChannel failed: %v", err)
 			continue
 		}
+		dataOnUser, err := GetCollectorData(tm.conf, "users", user.UserID, dateFrom, dateTo)
+		if err != nil {
+			logrus.Errorf("team monitoring: getCollectorData on users failed: %v\n", err)
+			userFull, _ := tm.db.SelectUser(user.UserID)
+			fail := fmt.Sprintf(":warning::warning::warning: GetCollectorData on Users failed on user %v|%v in %v! Please, add this user to Collector service :bangbang:", userFull.UserName, userFull.UserID, project.ChannelName)
+			tm.s.SendUserMessage(tm.conf.ManagerSlackUserID, fail)
+			continue
+		}
 		// make request for info about user in project from collector to get commits and worklogs
 		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
-		data, err := GetCollectorData(tm.Config, "user-in-project", userInProject, dateFrom, dateTo)
+		dataOnUserInProject, err := GetCollectorData(tm.conf, "user-in-project", userInProject, dateFrom, dateTo)
 		if err != nil {
 			logrus.Errorf("team monitoring: getCollectorData failed: %v\n", err)
 			userFull, _ := tm.db.SelectUser(user.UserID)
-			fail := fmt.Sprintf(":warning::warning::warning: GetCollectorData failed on user %v|%v in %v! Please, add this user to Collector service :bangbang:", userFull.UserName, userFull.UserID, project.ChannelName)
-			tm.Chat.SendUserMessage(tm.Config.ManagerSlackUserID, fail)
+			fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
+			tm.s.SendUserMessage(tm.conf.ManagerSlackUserID, fail)
 			continue
 		}
 		// need to identify if user submitted standup for this period
@@ -123,27 +127,44 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 		}
 
 		var worklogs, commits, standup string
+		var worklogsEmoji, worklogsTime string
 		var points int
 
-		if data.Worklogs/3600 < 7 {
-			worklogs = fmt.Sprintf(tm.Config.Translate.NoWorklogs, utils.SecondsToHuman(data.Worklogs))
-		} else {
-			worklogs = fmt.Sprintf(tm.Config.Translate.HasWorklogs, utils.SecondsToHuman(data.Worklogs))
+		w := dataOnUser.Worklogs / 3600
+
+		switch {
+		case w < 3:
+			worklogsEmoji = ":angry:"
+		case w >= 3 && w < 7:
+			worklogsEmoji = ":disappointed:"
+		case w >= 7 && w < 9:
+			worklogsEmoji = ":wink:"
+			points++
+		case w >= 9:
+			worklogsEmoji = ":sunglasses:"
 			points++
 		}
-		if data.TotalCommits == 0 {
-			commits = fmt.Sprintf(tm.Config.Translate.NoCommits, data.TotalCommits)
+
+		worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
+
+		if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
+			worklogsTime = fmt.Sprintf(tm.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
+		}
+		worklogs = fmt.Sprintf(tm.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
+
+		if dataOnUserInProject.TotalCommits == 0 {
+			commits = fmt.Sprintf(tm.conf.Translate.NoCommits, dataOnUserInProject.TotalCommits)
 		} else {
-			commits = fmt.Sprintf(tm.Config.Translate.HasCommits, data.TotalCommits)
+			commits = fmt.Sprintf(tm.conf.Translate.HasCommits, dataOnUserInProject.TotalCommits)
 			points++
 		}
 		if isNonReporter == true {
-			standup = tm.Config.Translate.NoStandup
+			standup = tm.conf.Translate.NoStandup
 		} else {
-			standup = tm.Config.Translate.HasStandup
+			standup = tm.conf.Translate.HasStandup
 			points++
 		}
-		whoAndWhere := fmt.Sprintf(tm.Config.Translate.IsRook, user.UserID, project.ChannelName)
+		whoAndWhere := fmt.Sprintf(tm.conf.Translate.IsRook, user.UserID, project.ChannelName)
 		fieldValue := fmt.Sprintf("%-16v|%-12v|%-10v|\n", worklogs, commits, standup)
 		attachmentFields = append(attachmentFields, slack.AttachmentField{
 			Value: fieldValue,
@@ -173,31 +194,25 @@ func GetCollectorData(conf config.Config, getDataOn, data, dateFrom, dateTo stri
 	logrus.Infof("teammonitoring: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
-		logrus.Errorf("teammonitoring: http.NewRequest failed: %v\n", err)
 		return collectorData, err
 	}
 	token := conf.CollectorToken
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 
 	res, err := http.DefaultClient.Do(req)
-	logrus.Infof("RESPONSE: %v", res)
 	if err != nil {
-		logrus.Errorf("teammonitoring: http.DefaultClient.Do(req) failed: %v\n", err)
 		return collectorData, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		logrus.Errorf("teammonitoring: get collector data failed! Status Code: %v\n", res.StatusCode)
 		return collectorData, errors.New("could not get data on this request")
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		logrus.Errorf("teammonitoring: ioutil.ReadAll(res.Body) failed: %v\n", err)
 		return collectorData, err
 	}
-
 	json.Unmarshal(body, &collectorData)
 
 	return collectorData, nil

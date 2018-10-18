@@ -127,6 +127,13 @@ func (m *MySQL) FindChannelMemberByUserID(userID, channelID string) (model.Chann
 	return u, err
 }
 
+//FindMembersByUserID finds user in channel
+func (m *MySQL) FindMembersByUserID(userID string) ([]model.ChannelMember, error) {
+	var u []model.ChannelMember
+	err := m.conn.Select(&u, "SELECT * FROM `channel_members` WHERE user_id=?", userID)
+	return u, err
+}
+
 //SelectChannelMember finds user in channel
 func (m *MySQL) SelectChannelMember(id int64) (model.ChannelMember, error) {
 	var u model.ChannelMember
@@ -185,7 +192,14 @@ func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Ti
 // ListChannelMembers returns array of standup entries from database
 func (m *MySQL) ListChannelMembers(channelID string) ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel != 'pm'", channelID)
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel != 'PM'", channelID)
+	return items, err
+}
+
+// ListPMs returns array of standup entries from database
+func (m *MySQL) ListPMs(channelID string) ([]model.ChannelMember, error) {
+	items := []model.ChannelMember{}
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel='PM'", channelID)
 	return items, err
 }
 
@@ -433,8 +447,7 @@ func (m *MySQL) CreatePM(s model.ChannelMember) (model.ChannelMember, error) {
 func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	var role string
 	err := m.conn.Get(&role, "SELECT role_in_channel FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
-	if err != nil || role == "" {
-		fmt.Printf("SHIT! Err: %v, Role:%v", err, role)
+	if err != nil {
 		return false
 	}
 	if role == "PM" {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bouk/monkey"
+	"github.com/jarcoal/httpmock"
 	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
@@ -20,7 +21,7 @@ func TestTeamMonitoringIsOFF(t *testing.T) {
 	c.TeamMonitoringEnabled = false
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
-	_, err = NewTeamMonitoring(c, slack)
+	_, err = NewTeamMonitoring(slack)
 	assert.Error(t, err)
 	assert.Equal(t, "team monitoring is disabled", err.Error())
 }
@@ -30,11 +31,8 @@ func TestTeamMonitoringOnWeekEnd(t *testing.T) {
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
-	if !c.TeamMonitoringEnabled {
-		fmt.Println("Warning: Team Monitoring servise is disabled")
-		return
-	}
-	tm, err := NewTeamMonitoring(c, slack)
+
+	tm, err := NewTeamMonitoring(slack)
 	assert.NoError(t, err)
 
 	d := time.Date(2018, 9, 16, 10, 0, 0, 0, time.UTC)
@@ -43,6 +41,7 @@ func TestTeamMonitoringOnWeekEnd(t *testing.T) {
 	_, err = tm.RevealRooks()
 	assert.Error(t, err)
 	assert.Equal(t, "Day off today! Next report on Monday!", err.Error())
+	tm.reportRooks()
 }
 
 func TestTeamMonitoringOnMonday(t *testing.T) {
@@ -50,11 +49,8 @@ func TestTeamMonitoringOnMonday(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := chat.NewSlack(c)
 	assert.NoError(t, err)
-	if !c.TeamMonitoringEnabled {
-		fmt.Println("Warning: Team Monitoring servise is disabled")
-		return
-	}
-	tm, err := NewTeamMonitoring(c, s)
+
+	tm, err := NewTeamMonitoring(s)
 	assert.NoError(t, err)
 
 	d := time.Date(2018, 9, 17, 10, 0, 0, 0, time.UTC)
@@ -63,92 +59,129 @@ func TestTeamMonitoringOnMonday(t *testing.T) {
 	attachments, err := tm.RevealRooks()
 	assert.NoError(t, err)
 	assert.Equal(t, []slack.Attachment{}, attachments)
+	tm.reportRooks()
 }
 
 func TestTeamMonitoringOnWeekDay(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	slack, err := chat.NewSlack(c)
+	s, err := chat.NewSlack(c)
 	assert.NoError(t, err)
-	if !c.TeamMonitoringEnabled {
-		fmt.Println("Warning: Team Monitoring servise is disabled")
-		return
+
+	tm, err := NewTeamMonitoring(s)
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		standupComment                           string
+		userID                                   string
+		collectorResponseUserStatusCode          int
+		collectorResponseUserBody                string
+		collectorResponseUserInProjectStatusCode int
+		collectorResponseUserInProjectBody       string
+		color                                    string
+		value                                    string
+	}{
+		{"users", "userID1", 200, `{"worklogs": 35000, "total_commits": 23}`, 200,
+			`{"worklogs": 35000, "total_commits": 23}`, "good",
+			" worklogs: 9:43 :sunglasses: | commits: 23 :tada: | standup :heavy_check_mark: |\n"},
+		{"", "userID2", 200, `{"worklogs": 0, "total_commits": 0}`, 200,
+			`{"worklogs": 0, "total_commits": 0}`, "danger",
+			" worklogs: 0:00 :angry: | commits: 0 :shit: | standup :x: |\n"},
+		{"test", "userID3", 200, `{"worklogs": 28800, "total_commits": 1}`, 200,
+			`{"worklogs": 28800, "total_commits": 1}`, "good",
+			" worklogs: 8:00 :wink: | commits: 1 :tada: | standup :heavy_check_mark: |\n"},
+		{"test", "userID4", 200, `{"worklogs": 14400, "total_commits": 1}`, 200,
+			`{"worklogs": 12400, "total_commits": 1}`, "warning",
+			" worklogs: 3:26 out of 4:00 :disappointed: | commits: 1 :tada: | standup :heavy_check_mark: |\n"},
 	}
-	tm, err := NewTeamMonitoring(c, slack)
-	assert.NoError(t, err)
 
-	d := time.Date(2018, 9, 17, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
+	for _, tt := range testCases {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
 
-	ch, err := tm.db.CreateChannel(model.Channel{
-		ChannelID:   "QWERTY123",
-		ChannelName: "chanName1",
-		StandupTime: int64(0),
-	})
+		d := time.Date(2018, 9, 17, 10, 0, 0, 0, time.UTC)
+		monkey.Patch(time.Now, func() time.Time { return d })
 
-	su, err := tm.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID1",
-		ChannelID: ch.ChannelID,
-	})
-	assert.NoError(t, err)
-	su2, err := tm.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID2",
-		ChannelID: ch.ChannelID,
-	})
+		channel, err := tm.db.CreateChannel(model.Channel{
+			ChannelID:   "QWERTY123",
+			ChannelName: "chanName1",
+			StandupTime: int64(0),
+		})
+		assert.NoError(t, err)
 
-	s, err := tm.db.CreateStandup(model.Standup{
-		Created:   time.Now(),
-		Modified:  time.Now(),
-		ChannelID: ch.ChannelID,
-		Comment:   "work hard",
-		UserID:    "userID1",
-		MessageTS: "qweasdzxc",
-	})
-	assert.NoError(t, err)
+		user, err := tm.db.CreateUser(model.User{
+			UserID:   tt.userID,
+			UserName: "Alfa",
+		})
+		assert.NoError(t, err)
 
-	s1, err := tm.db.CreateStandup(model.Standup{
-		Created:   time.Now(),
-		Modified:  time.Now(),
-		ChannelID: ch.ChannelID,
-		Comment:   "",
-		UserID:    "userID2",
-		MessageTS: "djklsfklfjsdl",
-	})
-	assert.NoError(t, err)
+		channelMember, err := tm.db.CreateChannelMember(model.ChannelMember{
+			UserID:    tt.userID,
+			ChannelID: channel.ChannelID,
+		})
+		assert.NoError(t, err)
 
-	d = time.Date(2018, 9, 18, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
+		// if create stanupd yes, create standup!
 
-	text, err := tm.RevealRooks()
-	assert.NoError(t, err)
-	assert.Equal(t, "<@userID1> twiddled in #chanName1 yesterday! (Not enough worklogs: 00:00 hours,no commits,submitted a standup!)\n\n\n<@userID2> twiddled in #chanName1 yesterday! (Not enough worklogs: 00:00 hours,no commits,did not write standup!)\n\n\n", text)
+		standup, err := tm.db.CreateStandup(model.Standup{
+			Created:   time.Now(),
+			Modified:  time.Now(),
+			ChannelID: channel.ChannelID,
+			Comment:   tt.standupComment,
+			UserID:    channelMember.UserID,
+			MessageTS: "randomMessageTS",
+		})
+		assert.NoError(t, err)
 
-	assert.NoError(t, tm.db.DeleteChannelMember(su.UserID, su.ChannelID))
-	assert.NoError(t, tm.db.DeleteChannelMember(su2.UserID, su2.ChannelID))
+		d = time.Date(2018, 9, 18, 10, 0, 0, 0, time.UTC)
+		monkey.Patch(time.Now, func() time.Time { return d })
 
-	assert.NoError(t, tm.db.DeleteStandup(s.ID))
-	assert.NoError(t, tm.db.DeleteStandup(s1.ID))
-	assert.NoError(t, tm.db.DeleteChannel(ch.ID))
+		dateOfRequest := fmt.Sprintf("%d-%02d-%02d", time.Now().AddDate(0, 0, -1).Year(), time.Now().AddDate(0, 0, -1).Month(), time.Now().AddDate(0, 0, -1).Day())
+
+		linkURLUsers := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "users", user.UserID, dateOfRequest, dateOfRequest)
+		linkURLUserInProject := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "user-in-project", fmt.Sprintf("%v/%v", user.UserID, channel.ChannelName), dateOfRequest, dateOfRequest)
+		httpmock.RegisterResponder("GET", linkURLUsers, httpmock.NewStringResponder(tt.collectorResponseUserStatusCode, tt.collectorResponseUserBody))
+		httpmock.RegisterResponder("GET", linkURLUserInProject, httpmock.NewStringResponder(tt.collectorResponseUserInProjectStatusCode, tt.collectorResponseUserInProjectBody))
+
+		attachments, err := tm.RevealRooks()
+		assert.NoError(t, err)
+		assert.Equal(t, tt.color, attachments[0].Color)
+		assert.Equal(t, fmt.Sprintf("<@%v> in #%v", user.UserID, channel.ChannelName), attachments[0].Text)
+		assert.Equal(t, tt.value, attachments[0].Fields[0].Value)
+
+		tm.reportRooks()
+
+		assert.NoError(t, tm.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID))
+		assert.NoError(t, tm.db.DeleteStandup(standup.ID))
+		assert.NoError(t, tm.db.DeleteUser(user.ID))
+		assert.NoError(t, tm.db.DeleteChannel(channel.ID))
+	}
 }
 
 func TestGetCollectorData(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	if !c.TeamMonitoringEnabled {
-		fmt.Println("Warning: Team Monitoring servise is disabled")
-		return
+
+	testCases := []struct {
+		getDataOn string
+		data      string
+		dateFrom  string
+		dateTo    string
+	}{
+		{"users", "U851AU1U0", "2018-10-12", "2018-10-14"},
+		{"projects", "comedian-testing", "2018-10-11", "2018-10-11"},
+		{"user-in-project", "UC1JNECA3/comedian-testing", "2018-10-11", "2018-10-11"},
+		{"user-in-project", "UD6143K51/standups", "2018-10-12", "2018-10-14"},
+		{"user-in-project", "UD6147Z4K/standups", "2018-10-12", "2018-10-14"},
 	}
 
-	dataOnUser, err := GetCollectorData(c, "users", "UC1JNECA3", "2018-10-11", "2018-10-11")
-	assert.NoError(t, err)
-	fmt.Printf("Report on user: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUser.TotalCommits, utils.SecondsToHuman(dataOnUser.Worklogs))
-
-	dataOnProject, err := GetCollectorData(c, "projects", "comedian-testing", "2018-10-11", "2018-10-11")
-	assert.NoError(t, err)
-	fmt.Printf("Report on project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnProject.TotalCommits, utils.SecondsToHuman(dataOnProject.Worklogs))
-
-	dataOnUserByProject, err := GetCollectorData(c, "user-in-project", "UC1JNECA3/comedian-testing", "2018-10-11", "2018-10-11")
-	assert.NoError(t, err)
-	fmt.Printf("Report on user in project: Total Commits: %v, Total Worklogs: %v\n\n", dataOnUserByProject.TotalCommits, utils.SecondsToHuman(dataOnUserByProject.Worklogs))
-
+	for _, tt := range testCases {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		url := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, tt.getDataOn, tt.data, tt.dateFrom, tt.dateTo)
+		httpmock.RegisterResponder("GET", url, httpmock.NewStringResponder(200, ""))
+		result, err := GetCollectorData(c, tt.getDataOn, tt.data, tt.dateFrom, tt.dateTo)
+		assert.NoError(t, err)
+		fmt.Printf("Report on user: Total Commits: %v, Total Worklogs: %v\n\n", result.TotalCommits, utils.SecondsToHuman(result.Worklogs))
+	}
 }

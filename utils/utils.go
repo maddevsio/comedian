@@ -23,7 +23,7 @@ func SecondsToHuman(input int) string {
 	hours := math.Floor(float64(input) / 60 / 60)
 	seconds := input % (60 * 60)
 	minutes := math.Floor(float64(seconds) / 60)
-	return fmt.Sprintf("%02d:%02d", int(hours), int(minutes))
+	return fmt.Sprintf("%v:%02d", int(hours), int(minutes))
 }
 
 // FormatTime returns hour and minutes from string

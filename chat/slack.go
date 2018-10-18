@@ -24,11 +24,10 @@ var (
 
 // Slack struct used for storing and communicating with slack api
 type Slack struct {
-	Chat
-	api  *slack.Client
-	rtm  *slack.RTM
-	wg   sync.WaitGroup
-	db   *storage.MySQL
+	API  *slack.Client
+	RTM  *slack.RTM
+	WG   sync.WaitGroup
+	DB   *storage.MySQL
 	Conf config.Config
 }
 
@@ -42,9 +41,9 @@ func NewSlack(conf config.Config) (*Slack, error) {
 
 	s := &Slack{}
 	s.Conf = conf
-	s.api = slack.New(conf.SlackToken)
-	s.rtm = s.api.NewRTM()
-	s.db = m
+	s.API = slack.New(conf.SlackToken)
+	s.RTM = s.API.NewRTM()
+	s.DB = m
 	return s, nil
 }
 
@@ -54,19 +53,20 @@ func (s *Slack) Run() {
 	fmt.Printf("Team monitoring enabled: %v\n", s.Conf.TeamMonitoringEnabled)
 	s.UpdateUsersList()
 	gocron.Every(1).Day().At("23:50").Do(s.FillStandupsForNonReporters)
+	gocron.Every(1).Day().At("23:55").Do(s.UpdateUsersList)
 	gocron.Start()
 
-	s.wg.Add(1)
-	go s.rtm.ManageConnection()
-	s.wg.Done()
+	s.WG.Add(1)
+	go s.RTM.ManageConnection()
+	s.WG.Done()
 
-	for msg := range s.rtm.IncomingEvents {
+	for msg := range s.RTM.IncomingEvents {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
 			logrus.Info("Reconnected!")
 			s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 		case *slack.MessageEvent:
-			botUserID := fmt.Sprintf("<@%s>", s.rtm.GetInfo().User.ID)
+			botUserID := fmt.Sprintf("<@%s>", s.RTM.GetInfo().User.ID)
 			s.handleMessage(ev, botUserID)
 		case *slack.MemberJoinedChannelEvent:
 			s.handleJoin(ev.Channel)
@@ -84,14 +84,14 @@ func (s *Slack) Run() {
 }
 
 func (s *Slack) handleJoin(channelID string) {
-	ch, err := s.db.SelectChannel(channelID)
+	ch, err := s.DB.SelectChannel(channelID)
 	if err != nil {
 		logrus.Error("No such channel found! Will create one!")
-		channel, err := s.api.GetConversationInfo(channelID, true)
+		channel, err := s.API.GetConversationInfo(channelID, true)
 		if err != nil {
 			logrus.Errorf("GetConversationInfo failed: %v", err)
 		}
-		createdChannel, err := s.db.CreateChannel(model.Channel{
+		createdChannel, err := s.DB.CreateChannel(model.Channel{
 			ChannelName: channel.Name,
 			ChannelID:   channel.ID,
 			StandupTime: int64(0),
@@ -117,10 +117,10 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 			return s.SendEphemeralMessage(msg.Channel, msg.User, problem)
 		}
 		if messageIsStandup {
-			if s.db.SubmittedStandupToday(msg.User, msg.Channel) {
+			if s.DB.SubmittedStandupToday(msg.User, msg.Channel) {
 				return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleOneDayOneStandup)
 			}
-			standup, err := s.db.CreateStandup(model.Standup{
+			standup, err := s.DB.CreateStandup(model.Standup{
 				ChannelID: msg.Channel,
 				UserID:    msg.User,
 				Comment:   msg.Msg.Text,
@@ -135,24 +135,24 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
 			time.Sleep(2 * time.Second)
-			s.api.AddReaction("heavy_check_mark", item)
+			s.API.AddReaction("heavy_check_mark", item)
 			return s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleCreatedStandup)
 		}
 	case typeEditMessage:
 		if !strings.Contains(msg.SubMessage.Text, botUserID) && !strings.Contains(msg.SubMessage.Text, "#standup") && !strings.Contains(msg.SubMessage.Text, "#стэндап") {
 			return nil
 		}
-		standup, err := s.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
+		standup, err := s.DB.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 		if err != nil {
 			messageIsStandup, problem := s.analizeStandup(msg.SubMessage.Text)
 			if problem != "" {
 				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
 			}
 			if messageIsStandup {
-				if s.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
+				if s.DB.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
 					return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleOneDayOneStandup)
 				}
-				standup, err := s.db.CreateStandup(model.Standup{
+				standup, err := s.DB.CreateStandup(model.Standup{
 					ChannelID: msg.Channel,
 					UserID:    msg.SubMessage.User,
 					Comment:   msg.SubMessage.Text,
@@ -167,7 +167,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 				logrus.Infof("Standup created #id:%v\n", standup.ID)
 				item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
 				time.Sleep(2 * time.Second)
-				s.api.AddReaction("heavy_check_mark", item)
+				s.API.AddReaction("heavy_check_mark", item)
 				return s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCreatedStandup)
 			}
 		}
@@ -178,7 +178,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 		}
 		if messageIsStandup {
 			standup.Comment = msg.SubMessage.Text
-			_, err := s.db.UpdateStandup(standup)
+			_, err := s.DB.UpdateStandup(standup)
 			if err != nil {
 				logrus.Errorf("UpdateStandup failed: %v", err)
 				errorReportToManager := fmt.Sprintf("I could not update standup for user %s in channel %s because of the following reasons: %v", msg.SubMessage.User, msg.Channel, err)
@@ -191,12 +191,12 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 		}
 
 	case typeDeleteMessage:
-		standup, err := s.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
+		standup, err := s.DB.SelectStandupByMessageTS(msg.DeletedTimestamp)
 		if err != nil {
 			logrus.Errorf("SelectStandupByMessageTS failed: %v", err)
 			return nil
 		}
-		s.db.DeleteStandup(standup.ID)
+		s.DB.DeleteStandup(standup.ID)
 		logrus.Infof("Standup deleted #id:%v\n", standup.ID)
 	}
 	return nil
@@ -205,7 +205,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) error {
 func (s *Slack) analizeStandup(message string) (bool, string) {
 	message = strings.ToLower(message)
 	mentionsProblem := false
-	problemKeys := []string{"problem", "difficul", "stuck", "question", "issue", "проблем", "трудност", "затрдуднени", "вопрос"}
+	problemKeys := []string{"problem", "difficult", "stuck", "question", "issue", "проблем", "трудност", "затрдуднени", "вопрос"}
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
@@ -241,7 +241,7 @@ func (s *Slack) analizeStandup(message string) (bool, string) {
 
 // SendMessage posts a message in a specified channel visible for everyone
 func (s *Slack) SendMessage(channel, message string) error {
-	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{})
+	_, _, err := s.API.PostMessage(channel, message, slack.PostMessageParameters{})
 	if err != nil {
 		logrus.Errorf("slack: PostMessage failed: %v\n", err)
 		return err
@@ -250,7 +250,7 @@ func (s *Slack) SendMessage(channel, message string) error {
 }
 
 func (s *Slack) SendReportMessage(channel, message string, attachments []slack.Attachment) error {
-	_, _, err := s.api.PostMessage(channel, message, slack.PostMessageParameters{
+	_, _, err := s.API.PostMessage(channel, message, slack.PostMessageParameters{
 		Attachments: attachments,
 	})
 	if err != nil {
@@ -262,7 +262,7 @@ func (s *Slack) SendReportMessage(channel, message string, attachments []slack.A
 
 // SendEphemeralMessage posts a message in a specified channel which is visible only for selected user
 func (s *Slack) SendEphemeralMessage(channel, user, message string) error {
-	_, err := s.api.PostEphemeral(
+	_, err := s.API.PostEphemeral(
 		channel,
 		user,
 		slack.MsgOptionText(message, true),
@@ -276,7 +276,7 @@ func (s *Slack) SendEphemeralMessage(channel, user, message string) error {
 
 // SendUserMessage Direct Message specific user
 func (s *Slack) SendUserMessage(userID, message string) error {
-	_, _, channelID, err := s.api.OpenIMChannel(userID)
+	_, _, channelID, err := s.API.OpenIMChannel(userID)
 	if err != nil {
 		logrus.Errorf("slack: OpenIMChannel failed: %v\n", err)
 		return err
@@ -292,7 +292,7 @@ func (s *Slack) SendUserMessage(userID, message string) error {
 //UpdateUsersList updates users in workspace
 func (s *Slack) UpdateUsersList() {
 	logrus.Infof("UpdateUsersList start")
-	users, err := s.api.GetUsers()
+	users, err := s.API.GetUsers()
 	if err != nil {
 		logrus.Errorf("GetUsers failed: %v", err)
 	}
@@ -301,17 +301,17 @@ func (s *Slack) UpdateUsersList() {
 			continue
 		}
 
-		u, err := s.db.SelectUser(user.ID)
+		u, err := s.DB.SelectUser(user.ID)
 		if err != nil {
 			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
-				s.db.CreateUser(model.User{
+				s.DB.CreateUser(model.User{
 					UserName: user.Name,
 					UserID:   user.ID,
 					Role:     "admin",
 				})
 				continue
 			}
-			s.db.CreateUser(model.User{
+			s.DB.CreateUser(model.User{
 				UserName: user.Name,
 				UserID:   user.ID,
 				Role:     "",
@@ -319,7 +319,19 @@ func (s *Slack) UpdateUsersList() {
 			continue
 		}
 		if user.Deleted {
-			s.db.DeleteUser(u.ID)
+			s.DB.DeleteUser(u.ID)
+			cm, err := s.DB.FindMembersByUserID(u.UserID)
+			if err != nil {
+				continue
+			}
+			for _, member := range cm {
+				s.DB.DeleteChannelMember(member.UserID, member.ChannelID)
+				tt, err := s.DB.SelectTimeTable(member.ID)
+				if err != nil {
+					continue
+				}
+				s.DB.DeleteTimeTable(tt.ID)
+			}
 		}
 	}
 }
@@ -331,7 +343,7 @@ func (s *Slack) FillStandupsForNonReporters() {
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
 		return
 	}
-	allUsers, err := s.db.ListAllChannelMembers()
+	allUsers, err := s.DB.ListAllChannelMembers()
 	logrus.Infof("List all channel members: %v", allUsers)
 	if err != nil {
 		logrus.Errorf("notifier: s.GetCurrentDayNonReporters failed: %v\n", err)
@@ -343,10 +355,10 @@ func (s *Slack) FillStandupsForNonReporters() {
 			logrus.Infof("User %v, was created today. Skip!", user)
 			continue
 		}
-		hasStandup := s.db.SubmittedStandupToday(user.UserID, user.ChannelID)
+		hasStandup := s.DB.SubmittedStandupToday(user.UserID, user.ChannelID)
 		logrus.Infof("User: %v hasStandup: %v", user.UserID, hasStandup)
 		if !hasStandup {
-			standup, err := s.db.CreateStandup(model.Standup{
+			standup, err := s.DB.CreateStandup(model.Standup{
 				ChannelID: user.ChannelID,
 				UserID:    user.UserID,
 				Comment:   "",

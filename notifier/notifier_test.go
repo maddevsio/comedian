@@ -21,7 +21,7 @@ func TestNotifier(t *testing.T) {
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
-	n, err := NewNotifier(c, slack)
+	n, err := NewNotifier(slack)
 	assert.NoError(t, err)
 
 	channelID := "QWERTY123"
@@ -103,7 +103,7 @@ func TestCheckUser(t *testing.T) {
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
-	n, err := NewNotifier(c, slack)
+	n, err := NewNotifier(slack)
 	assert.NoError(t, err)
 
 	users, err := n.db.ListAllChannelMembers()
@@ -198,7 +198,7 @@ func TestIndividualNotification(t *testing.T) {
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
-	n, err := NewNotifier(c, slack)
+	n, err := NewNotifier(slack)
 	assert.NoError(t, err)
 
 	d := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
@@ -266,7 +266,7 @@ func TestChannelsNotification(t *testing.T) {
 	assert.NoError(t, err)
 	slack, err := chat.NewSlack(c)
 	assert.NoError(t, err)
-	n, err := NewNotifier(c, slack)
+	n, err := NewNotifier(slack)
 	assert.NoError(t, err)
 
 	d := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
