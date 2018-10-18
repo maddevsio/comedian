@@ -33,7 +33,9 @@ Create "app" in slack workspace: https://api.slack.com/apps
 In the drop-down list at the top select the created "app"
 In the menu, select "Slash Commands".
 
-Create the following commands (Request URL for all "http: // <comedian_address> / commands"):
+Create a public HTTPS URL for Comedian on your development machine with [ngrok](https://ngrok.com/product)
+
+Create the following commands (Request URL for all commands: ```http: // <ngrok https URL> /commands ``` ):
 
 | Name | Hint | Description | Escape option |
 | --- | --- | --- | --- |
@@ -62,12 +64,17 @@ Create a new bot user.
 Go to "OAuth & Permissions"
 Copy Bot User OAuth Access Token ("xoxb-___________________")
 
+Add access tokens and additional setup to your docker-compose.yml 
+
 Run:
 ```
+sudo make
 docker-compose up
 ```
 
 Please read more instructions in [Comedian Wiki](https://github.com/maddevsio/comedian/wiki)
+
+Use Comedian Images from [DockerHub](https://hub.docker.com/r/anatoliyfedorenko/comedian/tags/) 
 
 ## Team Monitoring 
 Please note that Team Monitoring Servise is developed only for internal use of Mad Devs LLC, therefore when configuring Comedian, you may turn this feature off. (look at env variables) 
