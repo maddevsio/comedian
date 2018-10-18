@@ -67,7 +67,7 @@ Run:
 docker-compose up
 ```
 
-Please read more instructions in Comedian Wiki https://github.com/maddevsio/comedian/wiki
+Please read more instructions in [Comedian Wiki](https://github.com/maddevsio/comedian/wiki)
 
 ## Team Monitoring 
 Please note that Team Monitoring Servise is developed only for internal use of Mad Devs LLC, therefore when configuring Comedian, you may turn this feature off. (look at env variables) 
