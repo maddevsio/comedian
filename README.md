@@ -40,6 +40,9 @@ Create the following commands (Request URL for all "http: // <comedian_address> 
 | /admin_add | @user | Adds a new admin | V |
 | /admin_remove | @user | Removes an admin | V |
 | /admin_list | - | Lists all admins | - |
+| /pm_add | @user | Adds a new PM | V |
+| /pm_remove | @user | Removes an PM | V |
+| /pm_list | - | Lists all PMs | - |
 | /comedian_add | @user | Adds a new standuper | V |
 | /comedian_remove | @user | Removes a standuper | V |
 | /comedian_list | - | Lists all standupers | - |
@@ -64,8 +67,10 @@ Run:
 docker-compose up
 ```
 
+Please read more instructions in Comedian Wiki https://github.com/maddevsio/comedian/wiki
+
 ## Team Monitoring 
-Please note that Team Monitoring (TM) Servise is developed only for internal use of Mad Devs LLC, therefore when configuring Comedian, you may turn this feature off. (look at env variables) 
+Please note that Team Monitoring Servise is developed only for internal use of Mad Devs LLC, therefore when configuring Comedian, you may turn this feature off. (look at env variables) 
 
 Variables assosiated with TM are:
 ```
