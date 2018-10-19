@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	// This line is must for working MySQL database
@@ -9,7 +10,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
-	"github.com/maddevsio/comedian/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -396,6 +396,16 @@ func (m *MySQL) SelectUser(userID string) (model.User, error) {
 	return c, err
 }
 
+// SelectUser selects User entry from database
+func (m *MySQL) ListUsers() ([]model.User, error) {
+	var u []model.User
+	err := m.conn.Select(&u, "SELECT * FROM `users`")
+	if err != nil {
+		return u, err
+	}
+	return u, err
+}
+
 // SelectUserByUserName selects User entry from database
 func (m *MySQL) SelectUserByUserName(userName string) (model.User, error) {
 	var c model.User
@@ -525,7 +535,7 @@ func (m *MySQL) MemberHasTimeTable(id int64) bool {
 }
 
 //MemberShouldBeTracked returns true if member should be tracked
-func (m *MySQL) MemberShouldBeTracked(id int64, dateFrom, dateTo time.Time) bool {
+func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
 	var tt model.TimeTable
 	err := m.conn.Get(&tt, "SELECT * FROM `timetables` WHERE channel_member_id=?", id)
 	if err != nil {
@@ -537,15 +547,12 @@ func (m *MySQL) MemberShouldBeTracked(id int64, dateFrom, dateTo time.Time) bool
 		return false
 	}
 	logrus.Infof("MemberHasTimeTable ID:%v not empty", tt.ID)
-	days, err := utils.PeriodToWeekdays(dateFrom, dateTo)
-	if err != nil {
-		logrus.Errorf("PeriodToWeekdays failed: %v", err)
-		return false
+
+	day := fmt.Sprintf("%v", date.Weekday())
+	logrus.Infof("Weekday: %s", day)
+	if tt.ShowDeadlineOn(strings.ToLower(day)) != 0 {
+		return true
 	}
-	for _, day := range days {
-		if tt.ShowDeadlineOn(day) != 0 {
-			return true
-		}
-	}
+
 	return false
 }

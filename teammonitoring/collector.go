@@ -48,24 +48,24 @@ func (tm *TeamMonitoring) Start() {
 func (tm *TeamMonitoring) reportRooks() {
 	attachments, err := tm.RevealRooks()
 	if err != nil {
-		tm.s.SendMessage(tm.conf.ReportingChannel, err.Error())
+		tm.s.SendMessage(tm.conf.ReportingChannel, err.Error(), nil)
 	}
 	if len(attachments) == 0 {
 		logrus.Info("Empty Report")
 		return
 	}
 	if int(time.Now().Weekday()) == 1 {
-		tm.s.SendReportMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeaderMonday, attachments)
+		tm.s.SendMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeaderMonday, attachments)
 		return
 	}
-	tm.s.SendReportMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeader, attachments)
+	tm.s.SendMessage(tm.conf.ReportingChannel, tm.conf.Translate.ReportHeader, attachments)
 }
 
 // RevealRooks displays data about rooks in channel general
 func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 	attachments := []slack.Attachment{}
 	//check if today is not saturday or sunday. During these days no notificatoins!
-	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
+	if int(time.Now().Weekday()) == 0 {
 		return attachments, errors.New(tm.conf.Translate.ErrorRooksReportWeekend)
 	}
 
@@ -92,7 +92,7 @@ func (tm *TeamMonitoring) RevealRooks() ([]slack.Attachment, error) {
 		var attachment slack.Attachment
 		var attachmentFields []slack.AttachmentField
 		// need to first identify if user should be tracked for this period
-		if !tm.db.MemberShouldBeTracked(user.ID, startDate, time.Now()) {
+		if !tm.db.MemberShouldBeTracked(user.ID, startDate) {
 			logrus.Infof("Member %v should not be tracked! Skipping", user.UserID)
 			continue
 		}

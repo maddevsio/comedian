@@ -39,6 +39,7 @@ func TestIsStandup(t *testing.T) {
 		{"all key words capitalized", "Yesterday: launched MySQL, Today: will scream and should, Problems: SHIT IS ALL OVER!", true},
 		{"keywords with mistakes", "Yesday completed shit, dotay will fap like crazy, promlems: no problems!", false},
 		{"keywords caps", "YESTERDAY completed shit, TODAY will fap like crazy, PROBLEMS: no !", true},
+		{"keywords caps", "shit, TODAY will fap like crazy, PROBLEMS: no!", false},
 	}
 	c, err := config.Get()
 	assert.NoError(t, err)
@@ -63,7 +64,7 @@ func TestSendMessage(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
-	err = s.SendMessage("YYYZZZVVV", "Hey!")
+	err = s.SendMessage("YYYZZZVVV", "Hey!", nil)
 	assert.NoError(t, err)
 
 	err = s.SendEphemeralMessage("YYYZZZVVV", "USER!", "Hey!")
@@ -110,6 +111,7 @@ func TestHandleMessage(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
+
 	botUserID := "BOTID"
 
 	su1, err := s.DB.CreateChannelMember(model.ChannelMember{
@@ -123,55 +125,49 @@ func TestHandleMessage(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	msg := &slack.MessageEvent{}
-	msg.Text = "<@> some message"
-	msg.Channel = su.ChannelID
-	msg.Timestamp = "1"
-
-	err = s.handleMessage(msg, botUserID)
-	assert.NoError(t, err)
-
-	editWrongMessage := &slack.MessageEvent{
-		SubMessage: &slack.Msg{
-			User:      su.UserID,
-			Text:      "<@BOTID> Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problem",
-			Timestamp: "123ksdlfsdkl",
-		},
+	testCases := []struct {
+		text      string
+		user      string
+		channel   string
+		timestamp string
+		subType   string
+	}{
+		{"Hey! Please, accept my standup", "testUser", "testChannel", "1500000", typeMessage},
+		{"Hey! Please, accept my standup", "testUser", "testChannel", "1500000", typeEditMessage},
+		{"Hey! Please, accept my standup", "testUser", "testChannel", "1500000", typeDeleteMessage},
+		{"#standup Hey! Please, accept my standup", "testUser", "testChannel", "1500000", typeMessage},
+		{"<@BOTID> Hey! Yesterday, today, problems", "", "testChannel", "1500000", typeMessage},
+		{"<@BOTID> Hey My First Standup! Yesterday, today, problems", "testUser", "testChannel", "1500000", typeMessage},
+		{"<@BOTID> My second standup! Yesterday, today, problems", "testUser", "testChannel", "1500000", typeMessage},
+		{"<@BOTID> Hey I want to edit! Text of not a standup", "testUser", "testChannel", "1500000", typeEditMessage},
+		{"<@BOTID> Hey I want to edit! Yesterday, today, problems", "testUser", "testChannel", "1500000", typeEditMessage},
+		{"<@BOTID> Different MSGTS! No Standup", "testUser", "testChannel", "15", typeEditMessage},
+		{"<@BOTID> Different MSGTS! Yesterday Today Problems", "testUser", "", "15", typeEditMessage},
+		{"<@BOTID> Different MSGTS! Yesterday Today Problems", "testUser", "testChannel", "15", typeEditMessage},
 	}
-	editWrongMessage.SubType = typeEditMessage
 
-	err = s.handleMessage(msg, botUserID)
-	assert.NoError(t, err)
+	for _, tt := range testCases {
+		msg := &slack.MessageEvent{}
+		msg.Text = tt.text
+		msg.User = tt.user
+		msg.Channel = tt.channel
+		msg.Timestamp = tt.timestamp
+		msg.SubType = tt.subType
 
-	fakeChannel := "someotherChan"
+		if tt.subType == typeEditMessage {
+			msg = &slack.MessageEvent{
+				SubMessage: &slack.Msg{
+					User:      tt.user,
+					Text:      tt.text,
+					Timestamp: tt.timestamp,
+				},
+			}
+			msg.Channel = tt.channel
+			msg.SubType = tt.subType
+		}
 
-	msg.Text = "<@BOTID> Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
-	msg.Channel = su1.ChannelID
-	msg.User = su1.UserID
-	msg.Timestamp = "2"
-
-	err = s.handleMessage(msg, botUserID)
-
-	editmsg := &slack.MessageEvent{
-		SubMessage: &slack.Msg{
-			User:      su1.UserID,
-			Text:      "<@BOTID> Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problem",
-			Timestamp: "2",
-		},
+		s.handleMessage(msg, botUserID)
 	}
-	editmsg.SubType = typeEditMessage
-
-	err = s.handleMessage(editmsg, botUserID)
-	assert.NoError(t, err)
-
-	msg.Text = "<@BOTID> Yesterday: did crazy tests, today: doing a lot of crazy tests, problems: no problems!"
-	msg.Channel = fakeChannel
-	msg.User = su1.UserID
-
-	err = s.handleMessage(msg, botUserID)
-	assert.NoError(t, err)
-
-	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
 
 	// clean up
 	standups, err := s.DB.ListStandups()
@@ -247,12 +243,7 @@ func TestAutomaticActions(t *testing.T) {
 	s, err := NewSlack(c)
 	assert.NoError(t, err)
 
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", "https://slack.com/api/conversations.info", httpmock.NewStringResponder(200, `{"ok": true, "channel": {"id": "CBAPFA2J2", "name": "general"}}`))
-
-	teamInfoResponse := `
-	{
+	r := httpmock.NewStringResponder(200, `{
 		"ok": true,
 		"members": [
 			{
@@ -267,7 +258,7 @@ func TestAutomaticActions(t *testing.T) {
 				"is_primary_owner": true,
 				"is_restricted": false,
 				"is_ultra_restricted": false,
-				"is_bot": false,
+				"is_bot": false
 			},
 			{
 				"id": "BOTID",
@@ -298,23 +289,52 @@ func TestAutomaticActions(t *testing.T) {
 				"is_restricted": false,
 				"is_ultra_restricted": false,
 				"is_bot": false,
-				"is_app_user": false,
+				"is_app_user": false
 			},
 			{
-				"id": "DELETEDUSERID",
+				"id": "xxx",
 				"team_id": "TEAMID1",
-				"name": "deleted.user",
+				"name": "deleted user",
 				"deleted": true,
-				"color": "e96699",
-				"real_name": "John Doe"
-			},
-		],
-		"cache_ts": 1538988885
-	}`
+				"color": "674b1b",
+				"real_name": "test user",
+				"is_restricted": false,
+				"is_ultra_restricted": false,
+				"is_bot": false,
+				"is_app_user": false
+			}
+		]
+	}`)
 
-	httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", httpmock.NewStringResponder(200, teamInfoResponse))
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", "https://slack.com/api/conversations.info", httpmock.NewStringResponder(200, `{"ok": true, "channel": {"id": "CBAPFA2J2", "name": "general"}}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", r)
+
+	_, err = s.DB.CreateUser(model.User{
+		UserName: "deleted user",
+		UserID:   "xxx",
+	})
+	assert.NoError(t, err)
+
+	chanMember, err := s.DB.CreateChannelMember(model.ChannelMember{
+		UserID:    "xxx",
+		ChannelID: "YYY",
+	})
+	assert.NoError(t, err)
+
+	_, err = s.DB.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: chanMember.ID,
+	})
+	assert.NoError(t, err)
 
 	s.UpdateUsersList()
 
 	s.handleJoin("TESTCHANNELID")
+
+	users, err := s.DB.ListUsers()
+	assert.NoError(t, err)
+	for _, u := range users {
+		assert.NoError(t, s.DB.DeleteUser(u.ID))
+	}
 }

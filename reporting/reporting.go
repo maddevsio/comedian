@@ -57,7 +57,7 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 		}
 		dayInfo := ""
 		for _, member := range chanMembers {
-			if !r.db.MemberShouldBeTracked(member.ID, dateFrom, dateTo) {
+			if !r.db.MemberShouldBeTracked(member.ID, dateFrom) {
 				logrus.Infof("member should not be tracked: %v", member.UserID)
 				continue
 			}
@@ -117,7 +117,7 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 				logrus.Infof("FindChannelMemberByUserID failed: %v", err)
 				continue
 			}
-			if !r.db.MemberShouldBeTracked(member.ID, dateFrom, dateTo) {
+			if !r.db.MemberShouldBeTracked(member.ID, dateFrom) {
 				logrus.Infof("member should not be tracked: %v", slackUserID)
 				continue
 			}
@@ -166,7 +166,7 @@ func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUse
 			logrus.Infof("FindChannelMemberByUserID failed: %v", err)
 			continue
 		}
-		if !r.db.MemberShouldBeTracked(member.ID, dateFrom, dateTo) {
+		if !r.db.MemberShouldBeTracked(member.ID, dateFrom) {
 			logrus.Infof("member should not be tracked: %v", slackUserID)
 			continue
 		}

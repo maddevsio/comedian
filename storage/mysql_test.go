@@ -201,6 +201,10 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(users))
 
+	members, err := db.FindMembersByUserID(user.UserID)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(members))
+
 	users, err = db.ListChannelMembers(su1.ChannelID)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(users))
@@ -313,7 +317,7 @@ func TestCRUDUser(t *testing.T) {
 		Role:     "",
 	})
 
-	admin, err := db.CreateUser(model.User{
+	_, err = db.CreateUser(model.User{
 		UserID:   "QWERTY123",
 		UserName: "chanName1",
 		Role:     "admin",
@@ -338,8 +342,11 @@ func TestCRUDUser(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "admin", user.Role)
 
-	assert.NoError(t, db.DeleteUser(user.ID))
-	assert.NoError(t, db.DeleteUser(admin.ID))
+	users, err := db.ListUsers()
+	assert.NoError(t, err)
+	for _, user := range users {
+		assert.NoError(t, db.DeleteUser(user.ID))
+	}
 }
 
 func TestPMForProject(t *testing.T) {
@@ -385,6 +392,10 @@ func TestPMForProject(t *testing.T) {
 	assert.Equal(t, false, ok3)
 	ok4 := db.UserIsPMForProject(pm.UserID, pm.ChannelID)
 	assert.Equal(t, true, ok4)
+
+	pms, err := db.ListPMs(ch.ChannelID)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(pms))
 
 	assert.NoError(t, db.DeleteChannelMember(m1.UserID, m1.ChannelID))
 	assert.NoError(t, db.DeleteChannelMember(m2.UserID, m2.ChannelID))

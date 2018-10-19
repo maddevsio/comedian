@@ -110,7 +110,7 @@ func (n *Notifier) SendWarning(channelID string) {
 	for _, user := range nonReporters {
 		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
 	}
-	err = n.s.SendMessage(channelID, fmt.Sprintf(n.conf.Translate.NotifyUsersWarning, strings.Join(nonReportersIDs, ", "), n.conf.ReminderTime))
+	err = n.s.SendMessage(channelID, fmt.Sprintf(n.conf.Translate.NotifyUsersWarning, strings.Join(nonReportersIDs, ", "), n.conf.ReminderTime), nil)
 	if err != nil {
 		logrus.Errorf("notifier: n.s.SendMessage failed: %v\n", err)
 		return
@@ -126,7 +126,7 @@ func (n *Notifier) SendIndividualWarning(channelMemberID int64) {
 	}
 	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
 	if !submittedStandup {
-		err = n.s.SendMessage(chm.ChannelID, fmt.Sprintf(n.conf.Translate.IndividualStandupersWarning, chm.UserID, n.conf.ReminderTime))
+		err = n.s.SendMessage(chm.ChannelID, fmt.Sprintf(n.conf.Translate.IndividualStandupersWarning, chm.UserID, n.conf.ReminderTime), nil)
 		if err != nil {
 			logrus.Errorf("notifier: n.s.SendMessage failed: %v\n", err)
 			return
@@ -162,7 +162,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	logrus.Infof("NON REPORTERS: %v", nonReporters)
 	// if everyone wrote their standups display all done message!
 	if len(nonReporters) == 0 {
-		err := n.s.SendMessage(channelID, n.conf.Translate.NotifyAllDone)
+		err := n.s.SendMessage(channelID, n.conf.Translate.NotifyAllDone, nil)
 		if err != nil {
 			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
 		}
@@ -206,7 +206,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
 		if repeats < n.conf.ReminderRepeatsMax && len(nonReporters) > 0 {
-			n.s.SendMessage(channelID, fmt.Sprintf(n.conf.Translate.NotifyNotAll, strings.Join(nonReportersSlackIDs, ", ")))
+			n.s.SendMessage(channelID, fmt.Sprintf(n.conf.Translate.NotifyNotAll, strings.Join(nonReportersSlackIDs, ", ")), nil)
 			repeats++
 			err := errors.New("Continue backoff")
 			return err
@@ -245,7 +245,7 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 	notify := func() error {
 		submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
 		if repeats < n.conf.ReminderRepeatsMax && !submittedStandup {
-			n.s.SendMessage(channel.ChannelID, fmt.Sprintf(n.conf.Translate.IndividualStandupersLate, chm.UserID))
+			n.s.SendMessage(channel.ChannelID, fmt.Sprintf(n.conf.Translate.IndividualStandupersLate, chm.UserID), nil)
 			repeats++
 			err := errors.New("Continue backoff")
 			return err

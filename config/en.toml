@@ -98,7 +98,7 @@ CanNotDeleteTimetable = "Could not delete timetable for user <@%v>\n"
 TimetableDeleted = "Timetable removed for <@%v>\n"
 
 IndividualStandupersWarning = "Attention <@%s>! %v min before standup deadline! Hurry up!"
-IndividualStandupersLate = "<@%v>, you are bad! Submit standup ASAP or I will kill that dog!"
+IndividualStandupersLate = "<@%v>, you missed standup deadline! Submit standup ASAP!"
 EmptyTimetable = "Timetable is empty"
 
 TimetableShowMonday = "| Monday %02d:%02d "
@@ -115,7 +115,7 @@ StandupHandleOneDayOneStandup = "One day = one standup! If you want to update yo
 StandupHandleCouldNotSaveStandup = "For some reason i could not save your standup in database. I appologize and ask you to contact your PM."
 StandupHandleNoProblemsMentioned = "No 'problems' related keywords detected! Please, use one of the following: 'problem', 'difficult', 'stuck', 'question', 'issue'"
 StandupHandleNoYesterdayWorkMentioned = "No 'yesterday' related keywords detected! Please, use one of the following: 'yesterday', 'friday', 'completed'"
-StandupHandleNoTodayPlansMentioned = "No 'yesterday' related keywords detected! Please, use one of the following: 'today', 'going', 'plan'"
+StandupHandleNoTodayPlansMentioned = "No 'today' related keywords detected! Please, use one of the following: 'today', 'going', 'plan'"
 StandupHandleUpdatedStandup = "Standup edited, Good job!"
 StandupHandleCreatedStandup = "Standup saved, well done!"
 

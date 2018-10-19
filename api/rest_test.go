@@ -618,6 +618,8 @@ func TestPMCommand(t *testing.T) {
 	NoUsersToAdd := "user_id=UB9AE7CL9&command=/pm_add&channel_id=123qwe&channel_name=channel1&text="
 	MisspelledUserName := "user_id=UB9AE7CL9&command=/pm_add&channel_id=123qwe&channel_name=channel1&text=@user1"
 	NoChannelIDSet := "user_id=UB9AE7CL9&command=/pm_add&channel_id=&channel_name=channel1&text=<@User1|userID1>"
+	ListPM := "user_id=UB9AE7CL9&command=/pm_list&channel_id=123qwe&channel_name=chanName"
+	DeletePM := "user_id=UB9AE7CL9&command=/pm_remove&channel_id=123qwe&channel_name=chanName&text=<@User1|userID1>"
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "UB9AE7CL9"
@@ -652,6 +654,9 @@ func TestPMCommand(t *testing.T) {
 		statusCode   int
 		responseBody string
 	}{
+		{"Add PM", AddPM, http.StatusOK, "<@User1> is assigned as PM in this channel"},
+		{"List PM", ListPM, http.StatusOK, "PMs in this channel: <@User1>"},
+		{"Delete PM", DeletePM, http.StatusOK, "User <@User1> is not PM in this channel\n"},
 		{"Add PM", AddPM, http.StatusOK, "<@User1> is assigned as PM in this channel"},
 		{"Add PM No Access", AddPMNoAccess, http.StatusOK, "Access Denied! You need to be at least admin in this slack to use this command!"},
 		{"No Users To Add", NoUsersToAdd, http.StatusOK, "Seems like you misspelled username. Please, check and try command again!"},
