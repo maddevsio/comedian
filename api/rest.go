@@ -100,22 +100,22 @@ func (r *REST) handleCommands(c echo.Context) error {
 		switch command {
 		case commandAddUser:
 			return r.addUserCommand(c, form)
+		case commandListUsers:
+			return r.listUsersCommand(c, form)
+		case commandRemoveUser:
+			return r.removeUserCommand(c, form)
 		case commandAddAdmin:
 			return r.addAdminCommand(c, form)
+		case commandRemoveAdmin:
+			return r.removeAdminCommand(c, form)
+		case commandListAdmins:
+			return r.listAdminsCommand(c, form)
 		case commandAddPM:
 			return r.addPMCommand(c, form)
 		case commandRemovePM:
 			return r.removePMCommand(c, form)
 		case commandListPMs:
 			return r.listPMsCommand(c, form)
-		case commandRemoveUser:
-			return r.removeUserCommand(c, form)
-		case commandRemoveAdmin:
-			return r.removeAdminCommand(c, form)
-		case commandListUsers:
-			return r.listUsersCommand(c, form)
-		case commandListAdmins:
-			return r.listAdminsCommand(c, form)
 		case commandAddTime:
 			return r.addTime(c, form)
 		case commandRemoveTime:
@@ -149,7 +149,6 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 	}
 
 	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
-	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
 	if accessLevel > 3 {
 		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 	}
@@ -163,15 +162,11 @@ func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
 		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
 		if err != nil {
 			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
-			_, err = r.db.CreateChannelMember(model.ChannelMember{
+			chanMember, _ := r.db.CreateChannelMember(model.ChannelMember{
 				UserID:    userID,
 				ChannelID: ca.ChannelID,
 			})
-			if err != nil {
-				logrus.Errorf("rest: CreateChannelMember failed: %v\n", err)
-				c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user :%v\n", err))
-				continue
-			}
+			logrus.Infof("ChannelMember created! ID:%v", chanMember.ID)
 		}
 
 		if user.UserID == userID && user.ChannelID == ca.ChannelID {
@@ -906,7 +901,6 @@ func (r *REST) getAccessLevel(userID, channelID string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println("SUPERADMIN!!!! ", r.conf.ManagerSlackUserID)
 	if userID == r.conf.ManagerSlackUserID {
 		return 1, nil
 	}

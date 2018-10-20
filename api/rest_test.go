@@ -815,3 +815,34 @@ func TestUserHasAccess(t *testing.T) {
 	assert.NoError(t, r.db.DeleteChannelMember(pmUser.UserID, "RANDOMCHAN"))
 
 }
+
+// new test cases
+// testCases := []struct {
+// 	senderID     string
+// 	channelID    string
+// 	channelTitle string
+// 	command      string
+// 	commandText  string
+// 	response     string
+// }{
+// 	{"SuperAdminID", "TestChannelID", "TestChannel", "comedian_list", "", "No standupers in this channel! To add one, please, use `/comedian_add` slash command"},
+// }
+
+// for i, tt := range testCases {
+// 	request := fmt.Sprintf("user_id=%s&channel_id=%s&channel_name=%s&command=/%s&text=%s",
+// 		tt.senderID,
+// 		tt.channelID,
+// 		tt.channelTitle,
+// 		tt.command,
+// 		tt.commandText,
+// 	)
+// 	context, response := getContext(request)
+// 	err := rest.handleCommands(context)
+// 	if err != nil {
+// 		logrus.Errorf("TestHandleUserCommands: %v case failed. Error: %v\n", i, err)
+// 	}
+// 	if tt.response != response.Body.String() {
+// 		logrus.Errorf("Test case %v failed!\nExpected:'%v'\nActual:'%v'", i, tt.response, response.Body.String())
+// 		return
+// 	}
+// }
