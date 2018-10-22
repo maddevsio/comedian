@@ -460,6 +460,7 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	if err != nil {
 		return false
 	}
+	logrus.Infof("Role in channel %v", role)
 	if role == "PM" {
 		return true
 	}

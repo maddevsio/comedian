@@ -1,15 +1,17 @@
-userExist = "<@%v> already assigned as standuper in this channel\n"
-addUserNoStandupTime = "<@%s> now submits standups in this channel, but there is no standup time set yet!\n"
-addUser = "<@%s> assigned to submit standups in this channel\n"
-addAdmin = "<@%s> was granted admin access\n"
-accessDenied = "This command is not allowed for you! You are not admin\n"
-
-pmExists = "<@%s> was already assigned as PM in this channel"
-pmAdded = "<@%s> is assigned as PM in this channel"
-
+UserExist = "%v already assigned to standup in this channel\n"
+addUser = "%v assigned to submit standups in this channel\n"
 deleteUser = "<@%s> no longer submits standups in this channel\n"
+
+addAdmin = "<@%s> was granted admin access\n"
 deleteAdmin = "<@%s> was removed as admin\n"
+
+pmExists = "%v was already assigned as PM in this channel"
+pmAdded = "<@%s> is assigned as PM in this channel"
 DeletePM = "<@%s> was removed as PM\n"
+
+
+
+
 listNoStandupers = "No standupers in this channel! To add one, please, use `/comedian_add` slash command"
 listNoAdmins = "No admins in this channel! To add one, please, use `/adminadd` slash command"
 listStandupers = "Standupers in this channel: %v"

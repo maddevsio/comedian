@@ -14,23 +14,21 @@ import (
 
 //Translate struct makes translation data
 type Translate struct {
-	UserExist            string
-	AddUserNoStandupTime string
-	AddUser              string
-	AddAdmin             string
-	PMExists             string
-	PMAdded              string
-	AccessDenied         string
-	DeleteUser           string
-	DeleteAdmin          string
-	DeletePM             string
-	ListNoStandupers     string
-	ListNoAdmins         string
-	ListStandupers       string
-	ListAdmins           string
-	ListNoPMs            string
-	ListPMs              string
-	UserIsNotPM          string
+	UserExist        string
+	AddUser          string
+	AddAdmin         string
+	PMExists         string
+	PMAdded          string
+	DeleteUser       string
+	DeleteAdmin      string
+	DeletePM         string
+	ListNoStandupers string
+	ListNoAdmins     string
+	ListStandupers   string
+	ListAdmins       string
+	ListNoPMs        string
+	ListPMs          string
+	UserIsNotPM      string
 
 	AddStandupTimeNoUsers      string
 	AddStandupTime             string
@@ -169,12 +167,10 @@ func GetTranslation(lang string) (Translate, error) {
 		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel",
 		"reportCollectorDataUser",
 		"helloManager", "standupAccepted",
-		"userExist",
+		"UserExist",
 		"pmExists", "pmAdded",
-		"addUserNoStandupTime",
 		"addUser",
 		"addAdmin",
-		"accessDenied",
 		"deleteUser",
 		"deleteAdmin",
 		"DeletePM",
@@ -258,13 +254,11 @@ func GetTranslation(lang string) (Translate, error) {
 	}
 
 	t := Translate{
-		UserExist:            m["userExist"],
-		AddUserNoStandupTime: m["addUserNoStandupTime"],
-		AddUser:              m["addUser"],
-		AddAdmin:             m["addAdmin"],
-		AccessDenied:         m["accessDenied"],
-		PMExists:             m["pmExists"],
-		PMAdded:              m["pmAdded"],
+		UserExist: m["UserExist"],
+		AddUser:   m["addUser"],
+		AddAdmin:  m["addAdmin"],
+		PMExists:  m["pmExists"],
+		PMAdded:   m["pmAdded"],
 
 		DeleteUser:       m["deleteUser"],
 		DeleteAdmin:      m["deleteAdmin"],
