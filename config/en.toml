@@ -129,3 +129,5 @@ AccessAtLeastAdmin = "Access Denied! You need to be at least admin in this slack
 AccessAtLeastSuperAdmin = "Access Denied! You need to be super admin here to use this command!"
 AccessAtLeastAdminOrOwner = "Access Denied! You need to be at least admin in this project or view your own information to use this command!"
 AccessAtLeastPMOrOwner = "Access Denied! You need to be at least PM in this project or view your own information to use this command!"
+
+NeedCorrectUserRole = "Please, check correct role name (admin, developer, pm)"

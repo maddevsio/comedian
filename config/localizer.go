@@ -130,6 +130,8 @@ type Translate struct {
 	AccessAtLeastSuperAdmin   string
 	AccessAtLeastAdminOrOwner string
 	AccessAtLeastPMOrOwner    string
+
+	NeedCorrectUserRole string
 }
 
 // GetTranslation sets translation files for config
@@ -243,6 +245,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"AccessAtLeastSuperAdmin",
 		"AccessAtLeastAdminOrOwner",
 		"AccessAtLeastPMOrOwner",
+		"NeedCorrectUserRole",
 	}
 
 	for _, t := range r {
@@ -366,6 +369,8 @@ func GetTranslation(lang string) (Translate, error) {
 		AccessAtLeastSuperAdmin:   m["AccessAtLeastSuperAdmin"],
 		AccessAtLeastAdminOrOwner: m["AccessAtLeastAdminOrOwner"],
 		AccessAtLeastPMOrOwner:    m["AccessAtLeastPMOrOwner"],
+
+		NeedCorrectUserRole: m["NeedCorrectUserRole"],
 	}
 
 	return t, nil

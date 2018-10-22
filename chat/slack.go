@@ -61,6 +61,7 @@ func (s *Slack) Run() {
 	for msg := range s.RTM.IncomingEvents {
 		switch ev := msg.Data.(type) {
 		case *slack.ConnectedEvent:
+			s.UpdateUsersList()
 			s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 		case *slack.MessageEvent:
 			botUserID := fmt.Sprintf("<@%s>", s.RTM.GetInfo().User.ID)
