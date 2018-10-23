@@ -59,10 +59,7 @@ func NewRESTAPI(slack *chat.Slack) (*REST, error) {
 	e := echo.New()
 	decoder := schema.NewDecoder()
 	decoder.IgnoreUnknownKeys(true)
-	rep, err := reporting.NewReporter(slack.Conf)
-	if err != nil {
-		return nil, err
-	}
+	rep := reporting.NewReporter(slack)
 
 	r := &REST{
 		echo:    e,
