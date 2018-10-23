@@ -125,9 +125,11 @@ AddAdminsFailed = "Could not assign users as admins: %v\n"
 AddAdminsExist = "Users were already assigned as admins: %v\n"
 AddAdminsAdded = "Users are assigned as admins: %v\n"
 
-listNoStandupers = "No standupers in this channel! To add one, please, use `/comedian_add` slash command"
-listNoAdmins = "No admins in this channel! To add one, please, use `/adminadd` slash command"
+listNoStandupers = "No standupers in this channel! To add one, please, use `/add` slash command"
+listNoAdmins = "No admins in this workspace! To add one, please, use `/add` slash command"
 listStandupers = "Standupers in this channel: %v"
 listAdmins = "Admins in this workspace: %v"
 listNoPMs = "No PMs in this channel! To add one, please, use `/add` slash command"
 listPMs = "PMs in this channel: %v"
+
+SomethingWentWrong = "Something went wrong. Please, try again later or report the problem to chatbot support!"

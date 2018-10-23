@@ -61,7 +61,6 @@ func NewRESTAPI(slack *chat.Slack) (*REST, error) {
 	decoder.IgnoreUnknownKeys(true)
 	rep, err := reporting.NewReporter(slack.Conf)
 	if err != nil {
-		logrus.Errorf("rest: NewReporter failed: %v\n", err)
 		return nil, err
 	}
 
@@ -129,7 +128,7 @@ func (r *REST) handleCommands(c echo.Context) error {
 func (r *REST) addCommand(c echo.Context, f url.Values) error {
 	users, role, channel, accessLevel, err := r.processCommand(c, f)
 	if err != nil {
-		return c.String(http.StatusOK, err.Error())
+		return c.String(http.StatusOK, r.conf.Translate.SomethingWentWrong)
 	}
 	switch role {
 	case "admin", "админ":
@@ -137,7 +136,7 @@ func (r *REST) addCommand(c echo.Context, f url.Values) error {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 		}
 		return c.String(http.StatusOK, r.addAdmins(users))
-	case "developer", "разработчик":
+	case "developer", "разработчик", "":
 		if accessLevel > 3 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
@@ -163,7 +162,7 @@ func (r *REST) listCommand(c echo.Context, f url.Values) error {
 	case "admin", "админ":
 		return c.String(http.StatusOK, r.listAdmins())
 	case "developer", "разработчик", "":
-		return c.String(http.StatusOK, r.listDevelopers(ca.ChannelID))
+		return c.String(http.StatusOK, r.listUsers(ca.ChannelID))
 	case "pm", "пм":
 		return c.String(http.StatusOK, r.listPMs(ca.ChannelID))
 	default:
@@ -251,15 +250,10 @@ func (r *REST) addPMs(users []string, channel string) string {
 		userID, _ := utils.SplitUser(u)
 		_, err := r.db.FindChannelMemberByUserID(userID, channel)
 		if err != nil {
-			_, err := r.db.CreatePM(model.ChannelMember{
+			r.db.CreatePM(model.ChannelMember{
 				UserID:    userID,
 				ChannelID: channel,
 			})
-			if err != nil {
-				logrus.Errorf("rest: CreatePM failed: %v\n", err)
-				failed += u
-				continue
-			}
 			added += u
 			continue
 		}
@@ -299,10 +293,7 @@ func (r *REST) addAdmins(users []string) string {
 			continue
 		}
 		user.Role = "admin"
-		_, err = r.db.UpdateUser(user)
-		if err != nil {
-			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
-		}
+		r.db.UpdateUser(user)
 		message := r.conf.Translate.PMAssigned
 		err = r.slack.SendUserMessage(userID, message)
 		if err != nil {
@@ -324,7 +315,7 @@ func (r *REST) addAdmins(users []string) string {
 	return text
 }
 
-func (r *REST) listDevelopers(channel string) string {
+func (r *REST) listUsers(channel string) string {
 	users, err := r.db.ListChannelMembers(channel)
 	if err != nil {
 		return fmt.Sprintf("failed to list users :%v\n", err)
@@ -387,12 +378,7 @@ func (r *REST) deleteUsers(users []string, channel string) string {
 			failed += u
 			continue
 		}
-		err = r.db.DeleteChannelMember(user.UserID, channel)
-		if err != nil {
-			logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
-			failed += u
-			continue
-		}
+		r.db.DeleteChannelMember(user.UserID, channel)
 		deleted += u
 	}
 
@@ -428,12 +414,7 @@ func (r *REST) deletePMs(users []string, channel string) string {
 			failed += u
 			continue
 		}
-		err = r.db.DeleteChannelMember(user.UserID, channel)
-		if err != nil {
-			logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
-			failed += u
-			continue
-		}
+		r.db.DeleteChannelMember(user.UserID, channel)
 		deleted += u
 	}
 	if len(failed) != 0 {
@@ -466,12 +447,7 @@ func (r *REST) deleteAdmins(users []string) string {
 			continue
 		}
 		user.Role = ""
-		_, err = r.db.UpdateUser(user)
-		if err != nil {
-			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
-			failed += u
-			continue
-		}
+		r.db.UpdateUser(user)
 		message := fmt.Sprintf(r.conf.Translate.PMRemoved)
 		err = r.slack.SendUserMessage(userID, message)
 		if err != nil {
@@ -510,7 +486,7 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	err = r.db.CreateStandupTime(timeInt, ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: CreateStandupTime failed: %v\n", err)
-		return c.String(http.StatusOK, "Unexpected error occured when I tried to complete operation. Please, try again!")
+		return c.String(http.StatusOK, r.conf.Translate.SomethingWentWrong)
 	}
 	channelMembers, err := r.db.ListChannelMembers(ca.ChannelID)
 	if err != nil {
@@ -538,7 +514,7 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	err = r.db.DeleteStandupTime(ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: DeleteStandupTime failed: %v\n", err)
-		return c.String(http.StatusOK, "Unexpected error occured when I tried to complete operation. Please, try again!")
+		return c.String(http.StatusOK, r.conf.Translate.SomethingWentWrong)
 	}
 	st, err := r.db.ListChannelMembers(ca.ChannelID)
 	if len(st) != 0 {

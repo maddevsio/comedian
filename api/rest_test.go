@@ -28,19 +28,66 @@ func TestHandleCommands(t *testing.T) {
 	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "TestChannel",
+		ChannelID:   "TestChannelID",
+		StandupTime: int64(0),
+	})
+
+	user1, err := rest.db.CreateUser(model.User{
+		UserName: "testUser",
+		UserID:   "userID",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
+	user2, err := rest.db.CreateUser(model.User{
+		UserName: "userName",
+		UserID:   "userID2",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
 	testCases := []struct {
 		senderID     string
 		channelID    string
 		channelTitle string
 		command      string
 		text         string
-		err          string
 		response     string
 	}{
-		{"SuperAdminID", "TestChannelID", "TestChannel", "", "", "", "Not implemented"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "", "", "sql: no rows in result set"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "list", "", "", "No standupers in this channel! To add one, please, use `/comedian_add` slash command"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "", "", "sql: no rows in result set"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "", "", "Not implemented"},
+
+		{"", "TestChannelID", "TestChannel", "add", "<@userID1|userName>", "Something went wrong. Please, try again later or report the problem to chatbot support!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID1|userName>", "Users are assigned as developers: <@userID1|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID2|userName> / admin", "Users are assigned as admins: <@userID2|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID2|userName> / wrongUserRole", "Please, check correct role name (admin, developer, pm)"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID3|userName> / developer", "Users are assigned as developers: <@userID3|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID4|userName> / pm", "Users are assigned as PMs: <@userID4|userName>\n"},
+
+		{"userID", "TestChannelID", "TestChannel", "add", "<@userID1|userName>", "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"userID", "TestChannelID", "TestChannel", "add", "<@userID2|userName> / admin", "Access Denied! You need to be at least admin in this slack to use this command!"},
+		{"userID", "TestChannelID", "TestChannel", "add", "<@userID3|userName> / developer", "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"userID", "TestChannelID", "TestChannel", "add", "<@userID4|userName> / pm", "Access Denied! You need to be at least admin in this slack to use this command!"},
+
+		{"SuperAdminID", "", "", "delete", "<@userID1|userName>", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID1|userName>", "The following users were removed as developers: <@userID1|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID2|userName> / admin", "Users are removed as admins: <@userID2|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID2|userName> / wrongUserRole", "Please, check correct role name (admin, developer, pm)"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID3|userName> / developer", "The following users were removed as developers: <@userID3|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID4|userName> / pm", "Users are removed as PMs: <@userID4|userName>\n"},
+
+		{"userID", "TestChannelID", "TestChannel", "delete", "<@userID1|userName>", "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"userID", "TestChannelID", "TestChannel", "delete", "<@userID2|userName> / admin", "Access Denied! You need to be at least admin in this slack to use this command!"},
+		{"userID", "TestChannelID", "TestChannel", "delete", "<@userID3|userName> / developer", "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"userID", "TestChannelID", "TestChannel", "delete", "<@userID4|userName> / pm", "Access Denied! You need to be at least admin in this slack to use this command!"},
+
+		{"SuperAdminID", "WrongChannelID", "TestChannel", "list", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "list", "", "No standupers in this channel! To add one, please, use `/add` slash command"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "list", "developer", "No standupers in this channel! To add one, please, use `/add` slash command"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "list", "pm", "No PMs in this channel! To add one, please, use `/add` slash command"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "list", "admin", "No admins in this workspace! To add one, please, use `/add` slash command"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "list", "wrongRole", "Please, check correct role name (admin, developer, pm)"},
 	}
 
 	for _, tt := range testCases {
@@ -52,23 +99,180 @@ func TestHandleCommands(t *testing.T) {
 			tt.text,
 		)
 
-		channel, err := rest.db.CreateChannel(model.Channel{
-			ChannelName: tt.channelTitle,
-			ChannelID:   tt.channelID,
-			StandupTime: int64(0),
-		})
-
 		context, response := getContext(request)
 		err = rest.handleCommands(context)
 		if err != nil {
-			assert.Equal(t, tt.err, err)
-			continue
+			logrus.Errorf("handleCommands failed: %v", err)
 		}
 		assert.Equal(t, tt.response, response.Body.String())
-
-		assert.NoError(t, rest.db.DeleteChannel(channel.ID))
-
 	}
+
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(user1.ID))
+	assert.NoError(t, rest.db.DeleteUser(user2.ID))
+
+}
+
+func TestUsers(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	c.ManagerSlackUserID = "SuperAdminID"
+	slack, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	rest, err := NewRESTAPI(slack)
+	assert.NoError(t, err)
+
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "TestChannel",
+		ChannelID:   "TestChannelID",
+		StandupTime: int64(0),
+	})
+
+	testCases := []struct {
+		function string
+		users    []string
+		channel  string
+		output   string
+	}{
+		{"list", []string{}, "TestChannelID", "No standupers in this channel! To add one, please, use `/add` slash command"},
+		{"add", []string{"<@userID1|userName1>", "<@userID2|userName1>", "<@userID3|userName1>"}, "TestChannelID", "Users are assigned as developers: <@userID1|userName1><@userID2|userName1><@userID3|userName1>\n"},
+		{"add", []string{"<@userID1|userName1>", "@randomUser"}, "TestChannelID", "Could not assign users as developers: @randomUser\nUsers already have roles: <@userID1|userName1>\n"},
+		{"list", []string{}, "TestChannelID", "Standupers in this channel: <@userID1>, <@userID2>, <@userID3>"},
+		{"delete", []string{"<@userIDwrong|userName1>", "@doesNotMatchUser"}, "TestChannelID", "Could not remove the following users as developers: <@userIDwrong|userName1>@doesNotMatchUser\n"},
+		{"delete", []string{"<@userID1|userName1>", "<@userID2|userName1>", "<@userID3|userName1>"}, "TestChannelID", "The following users were removed as developers: <@userID1|userName1><@userID2|userName1><@userID3|userName1>\n"},
+	}
+
+	for _, tt := range testCases {
+		var output string
+		switch tt.function {
+		case "add":
+			output = rest.addUsers(tt.users, tt.channel)
+		case "list":
+			output = rest.listUsers(tt.channel)
+		case "delete":
+			output = rest.deleteUsers(tt.users, tt.channel)
+		}
+		assert.Equal(t, tt.output, output)
+	}
+
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+}
+
+func TestPMs(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	c.ManagerSlackUserID = "SuperAdminID"
+	slack, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	rest, err := NewRESTAPI(slack)
+	assert.NoError(t, err)
+
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "TestChannel",
+		ChannelID:   "TestChannelID",
+		StandupTime: int64(0),
+	})
+
+	chm, err := rest.db.CreateChannelMember(model.ChannelMember{
+		UserID:    "userID3",
+		ChannelID: "TestChannelID",
+	})
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		function string
+		users    []string
+		channel  string
+		output   string
+	}{
+		{"list", []string{}, "TestChannelID", "No PMs in this channel! To add one, please, use `/add` slash command"},
+		{"add", []string{"<@userID1|userName1>", "<@userID2|userName1>"}, "TestChannelID", "Users are assigned as PMs: <@userID1|userName1><@userID2|userName1>\n"},
+		{"add", []string{"<@userID1|userName1>", "@randomUser"}, "TestChannelID", "Could not assign users as PMs: @randomUser\nUsers already have roles: <@userID1|userName1>\n"},
+		{"list", []string{}, "TestChannelID", "PMs in this channel: <@userID1>, <@userID2>"},
+		{"delete", []string{"<@userIDwrong|userName1>", "@doesNotMatchUser"}, "TestChannelID", "Could not remove users as PMs: <@userIDwrong|userName1>@doesNotMatchUser\n"},
+		{"delete", []string{"<@userID1|userName1>", "<@userID2|userName1>", "<@userID3|userName1>"}, "TestChannelID", "Could not remove users as PMs: <@userID3|userName1>\nUsers are removed as PMs: <@userID1|userName1><@userID2|userName1>\n"},
+	}
+
+	for _, tt := range testCases {
+		var output string
+		switch tt.function {
+		case "add":
+			output = rest.addPMs(tt.users, tt.channel)
+		case "list":
+			output = rest.listPMs(tt.channel)
+		case "delete":
+			output = rest.deletePMs(tt.users, tt.channel)
+		}
+		assert.Equal(t, tt.output, output)
+	}
+
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteChannelMember(chm.UserID, chm.ChannelID))
+
+}
+
+func TestAdmins(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	c.ManagerSlackUserID = "SuperAdminID"
+	slack, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	rest, err := NewRESTAPI(slack)
+	assert.NoError(t, err)
+
+	user1, err := rest.db.CreateUser(model.User{
+		UserName: "userName1",
+		UserID:   "userID1",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
+	user2, err := rest.db.CreateUser(model.User{
+		UserName: "userName2",
+		UserID:   "userID2",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
+	user3, err := rest.db.CreateUser(model.User{
+		UserName: "userName3",
+		UserID:   "userID3",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		function string
+		users    []string
+		output   string
+	}{
+		{"list", []string{}, "No admins in this workspace! To add one, please, use `/add` slash command"},
+		{"add", []string{"<@userID1|userName1>", "<@userID2|userName1>"}, "Users are assigned as admins: <@userID1|userName1><@userID2|userName1>\n"},
+		{"add", []string{"<@userID1|userName1>", "@randomUser"}, "Could not assign users as admins: @randomUser\nUsers were already assigned as admins: <@userID1|userName1>\n"},
+		{"list", []string{}, "Admins in this workspace: <@userName1>, <@userName2>"},
+		{"delete", []string{"<@userIDwrong|userName1>", "@doesNotMatchUser"}, "Could not remove users as admins: <@userIDwrong|userName1>@doesNotMatchUser\n"},
+		{"delete", []string{"<@userID1|userName1>", "<@userID2|userName1>", "<@userID3|userName1>"}, "Could not remove users as admins: <@userID3|userName1>\nUsers are removed as admins: <@userID1|userName1><@userID2|userName1>\n"},
+	}
+
+	for _, tt := range testCases {
+		var output string
+		switch tt.function {
+		case "add":
+			output = rest.addAdmins(tt.users)
+		case "list":
+			output = rest.listAdmins()
+		case "delete":
+			output = rest.deleteAdmins(tt.users)
+		}
+		assert.Equal(t, tt.output, output)
+	}
+
+	assert.NoError(t, rest.db.DeleteUser(user1.ID))
+
+	assert.NoError(t, rest.db.DeleteUser(user2.ID))
+
+	assert.NoError(t, rest.db.DeleteUser(user3.ID))
+
 }
 
 func TestHandleTimeCommands(t *testing.T) {

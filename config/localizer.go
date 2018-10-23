@@ -130,6 +130,8 @@ type Translate struct {
 	AddAdminsFailed     string
 	AddAdminsExist      string
 	AddAdminsAdded      string
+
+	SomethingWentWrong string
 }
 
 // GetTranslation sets translation files for config
@@ -244,6 +246,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"AddAdminsFailed",
 		"AddAdminsExist",
 		"AddAdminsAdded",
+		"SomethingWentWrong",
 	}
 
 	for _, t := range r {
@@ -370,6 +373,7 @@ func GetTranslation(lang string) (Translate, error) {
 		AccessAtLeastPMOrOwner:    m["AccessAtLeastPMOrOwner"],
 
 		NeedCorrectUserRole: m["NeedCorrectUserRole"],
+		SomethingWentWrong:  m["SomethingWentWrong"],
 	}
 
 	return t, nil
