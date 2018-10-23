@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/maddevsio/comedian/model"
 )
 
 //SplitUser divides full user object to name & id
@@ -75,25 +77,6 @@ func SplitTimeTalbeCommand(t, on, at string) (string, string, int64, error) {
 	return users, weekdays, time, nil
 }
 
-//PeridoToWeekdays convert dates to weekdays
-func PeriodToWeekdays(dateFrom, dateTo time.Time) ([]string, error) {
-	weekdays := []string{}
-	if dateTo.Before(dateFrom) {
-		return weekdays, errors.New("DateTo is before DateFrom")
-	}
-	if dateTo.After(time.Now()) {
-		return weekdays, errors.New("DateTo is in the future")
-	}
-	dateFromRounded := time.Date(dateFrom.Year(), dateFrom.Month(), dateFrom.Day(), 0, 0, 0, 0, time.UTC)
-	dateToRounded := time.Date(dateTo.Year(), dateTo.Month(), dateTo.Day(), 0, 0, 0, 0, time.UTC)
-	numberOfDays := int(dateToRounded.Sub(dateFromRounded).Hours() / 24)
-	for day := 0; day <= numberOfDays; day++ {
-		date := dateFromRounded.Add(time.Duration(day*24) * time.Hour)
-		weekdays = append(weekdays, strings.ToLower(date.Weekday().String()))
-	}
-	return weekdays, nil
-}
-
 func ParseTimeTextToInt(timeText string) (int64, error) {
 	if timeText == "0" {
 		return int64(0), nil
@@ -118,4 +101,29 @@ func ParseTimeTextToInt(timeText string) (int64, error) {
 
 	return int64(0), errors.New("Could not understand how you mention time. Please, use 24:00 hour format and try again!")
 
+}
+
+func PrepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) (model.TimeTable, error) {
+	if strings.Contains(weekdays, "mon") || strings.Contains(weekdays, "пн") {
+		tt.Monday = timeInt
+	}
+	if strings.Contains(weekdays, "tue") || strings.Contains(weekdays, "вт") {
+		tt.Tuesday = timeInt
+	}
+	if strings.Contains(weekdays, "wed") || strings.Contains(weekdays, "ср") {
+		tt.Wednesday = timeInt
+	}
+	if strings.Contains(weekdays, "thu") || strings.Contains(weekdays, "чт") {
+		tt.Thursday = timeInt
+	}
+	if strings.Contains(weekdays, "fri") || strings.Contains(weekdays, "пт") {
+		tt.Friday = timeInt
+	}
+	if strings.Contains(weekdays, "sat") || strings.Contains(weekdays, "сб") {
+		tt.Saturday = timeInt
+	}
+	if strings.Contains(weekdays, "sun") || strings.Contains(weekdays, "вс") {
+		tt.Sunday = timeInt
+	}
+	return tt, nil
 }

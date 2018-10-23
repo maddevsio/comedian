@@ -150,5 +150,8 @@ type Storage interface {
 	MemberHasTimeTable(int64) bool
 
 	//MemberShouldBeTracked returns true if member has timetable
-	MemberShouldBeTracked(int64, time.Time, time.Time) bool
+	MemberShouldBeTracked(int64, time.Time) bool
+
+	// SelectUser selects User entry from database
+	ListUsers() ([]model.User, error)
 }

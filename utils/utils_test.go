@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/bouk/monkey"
+	"github.com/maddevsio/comedian/chat"
+	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/model"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -108,39 +111,6 @@ func TestFormatTime(t *testing.T) {
 	}
 }
 
-func TestPeriodToWeekdays(t *testing.T) {
-
-	d := time.Date(2018, 10, 4, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
-
-	testCases := []struct {
-		dateFrom time.Time
-		dateTo   time.Time
-		days     []string
-		err      error
-	}{
-		{time.Date(2018, time.Now().Month(), 1, 1, 0, 0, 0, time.Local),
-			time.Date(2018, time.Now().Month(), 3, 1, 0, 0, 0, time.Local),
-			[]string{"monday", "tuesday", "wednesday"}, nil,
-		},
-		{time.Date(2018, time.Now().Month(), 4, 1, 0, 0, 0, time.Local),
-			time.Date(2018, time.Now().Month(), 3, 1, 0, 0, 0, time.Local),
-			[]string{}, errors.New("DateTo is before DateFrom"),
-		},
-		{time.Date(2018, time.Now().Month(), 1, 1, 0, 0, 0, time.Local),
-			time.Date(2018, time.Now().Month(), 5, 1, 0, 0, 0, time.Local),
-			[]string{}, errors.New("DateTo is in the future"),
-		},
-	}
-	for _, tt := range testCases {
-		days, err := PeriodToWeekdays(tt.dateFrom, tt.dateTo)
-		assert.Equal(t, tt.err, err)
-		for i, day := range tt.days {
-			assert.Equal(t, day, days[i])
-		}
-	}
-}
-
 func TestParseTimeTextToInt(t *testing.T) {
 
 	d := time.Date(2018, 10, 4, 10, 0, 0, 0, time.UTC)
@@ -164,4 +134,41 @@ func TestParseTimeTextToInt(t *testing.T) {
 		assert.Equal(t, tt.err, err)
 		//assert.Equal(t, tt.time, time)
 	}
+}
+
+func TestPrepareTimetable(t *testing.T) {
+	c, err := config.Get()
+	slack, err := chat.NewSlack(c)
+
+	m, err := slack.DB.CreateChannelMember(model.ChannelMember{
+		UserID:    "testUser",
+		ChannelID: "testChannel",
+	})
+	assert.NoError(t, err)
+
+	tt, err := slack.DB.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: m.ID,
+	})
+	assert.NoError(t, err)
+
+	timeNow := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
+	tt.Monday = timeNow.Unix()
+	tt.Tuesday = timeNow.Unix()
+	tt.Wednesday = timeNow.Unix()
+	tt.Thursday = timeNow.Unix()
+	tt.Friday = timeNow.Unix()
+
+	tt, err = slack.DB.UpdateTimeTable(tt)
+
+	assert.NoError(t, err)
+	assert.Equal(t, timeNow.Unix(), tt.Monday)
+
+	timeUpdate := time.Date(2018, 10, 7, 12, 0, 0, 0, time.UTC).Unix()
+
+	tt, err = PrepareTimeTable(tt, "mon tue wed thu fri sat sun", timeUpdate)
+	assert.NoError(t, err)
+	assert.Equal(t, timeUpdate, tt.Monday)
+	assert.NoError(t, slack.DB.DeleteChannelMember(m.UserID, m.ChannelID))
+	assert.NoError(t, slack.DB.DeleteTimeTable(tt.ID))
+
 }
