@@ -42,7 +42,7 @@ func NewReporter(slack *chat.Slack) *Reporter {
 
 // Start starts all team monitoring treads
 func (r *Reporter) Start() {
-	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.ReportRooks)
+	gocron.Every(1).Day().At("17:00").Do(r.ReportRooks)
 }
 
 // ReportRooks generates report on users who did not fullfill their working duties
@@ -250,34 +250,36 @@ func (r *Reporter) generateWorkReport() ([]slack.Attachment, error) {
 		var worklogs, commits, standup, worklogsEmoji, worklogsTime string
 		var points int
 
+		// seems it does not work correctly. There might be different cases
 		if !r.db.MemberShouldBeTracked(user.ID, startDate) {
+			logrus.Infof("Member Should not be tracked: %v", user.ID)
 			continue
 		}
+
 		project, err := r.db.SelectChannel(user.ChannelID)
 		if err != nil {
+			logrus.Infof("Select channel failed: %v", err)
 			continue
 		}
 
-		dataOnUser, err := teammonitoring.GetCollectorData(r.conf, "users", user.UserID, dateFrom, dateTo)
-		if err != nil {
-			userFull, _ := r.db.SelectUser(user.UserID)
-			fail := fmt.Sprintf(":warning: teammonitoring.GetCollectorData on Users failed on user %v|%v in %v! Please, add this user to Collector service :bangbang:", userFull.UserName, userFull.UserID, project.ChannelName)
-			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
-			continue
-		}
-
-		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
-		dataOnUserInProject, err := teammonitoring.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
-		if err != nil {
+		dataOnUser, collectorErrorOnUser := teammonitoring.GetCollectorData(r.conf, "users", user.UserID, dateFrom, dateTo)
+		if collectorErrorOnUser != nil {
 			userFull, _ := r.db.SelectUser(user.UserID)
 			fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
 			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
-			continue
+		}
+
+		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
+		dataOnUserInProject, collectorErrorOnUserInProject := teammonitoring.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
+		if collectorErrorOnUserInProject != nil {
+			userFull, _ := r.db.SelectUser(user.UserID)
+			fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
+			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
 		}
 
 		isNonReporter, err := r.db.IsNonReporter(user.UserID, user.ChannelID, startDateTime, endDateTime)
 		if err != nil {
-			continue
+			logrus.Infof("User is non reporter failed: %v", err)
 		}
 
 		w := dataOnUser.Worklogs / 3600
@@ -314,8 +316,12 @@ func (r *Reporter) generateWorkReport() ([]slack.Attachment, error) {
 			standup = r.conf.Translate.HasStandup
 			points++
 		}
+
 		whoAndWhere := fmt.Sprintf(r.conf.Translate.IsRook, user.UserID, project.ChannelName)
 		fieldValue := fmt.Sprintf("%-16v|%-12v|%-10v|\n", worklogs, commits, standup)
+		if r.conf.TeamMonitoringEnabled == false || collectorErrorOnUser != nil || collectorErrorOnUserInProject != nil {
+			fieldValue = fmt.Sprintf("%-10v\n", standup)
+		}
 		attachmentFields = append(attachmentFields, slack.AttachmentField{
 			Value: fieldValue,
 			Short: false,

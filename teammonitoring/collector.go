@@ -20,6 +20,9 @@ type CollectorData struct {
 //GetCollectorData sends api request to collector servise and returns collector object
 func GetCollectorData(conf config.Config, getDataOn, data, dateFrom, dateTo string) (CollectorData, error) {
 	var collectorData CollectorData
+	if conf.TeamMonitoringEnabled == false {
+		return collectorData, nil
+	}
 	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", conf.CollectorURL, conf.TeamDomain, getDataOn, data, dateFrom, dateTo)
 	logrus.Infof("teammonitoring: getCollectorData request URL: %s", linkURL)
 	req, _ := http.NewRequest("GET", linkURL, nil)
