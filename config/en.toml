@@ -1,22 +1,3 @@
-userExist = "<@%v> already assigned as standuper in this channel\n"
-addUserNoStandupTime = "<@%s> now submits standups in this channel, but there is no standup time set yet!\n"
-addUser = "<@%s> assigned to submit standups in this channel\n"
-addAdmin = "<@%s> was granted admin access\n"
-accessDenied = "This command is not allowed for you! You are not admin\n"
-
-pmExists = "<@%s> was already assigned as PM in this channel"
-pmAdded = "<@%s> is assigned as PM in this channel"
-
-deleteUser = "<@%s> no longer submits standups in this channel\n"
-deleteAdmin = "<@%s> was removed as admin\n"
-DeletePM = "<@%s> was removed as PM\n"
-listNoStandupers = "No standupers in this channel! To add one, please, use `/comedian_add` slash command"
-listNoAdmins = "No admins in this channel! To add one, please, use `/adminadd` slash command"
-listStandupers = "Standupers in this channel: %v"
-listAdmins = "Admins in this workspace: %v"
-listNoPMs = "No PMs in this channel! To add one, please, use `/add` slash command"
-listPMs = "PMs in this channel: %v"
-
 addStandupTimeNoUsers = "<!date^%v^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"
 addStandupTime = "<!date^%v^Standup time set at {time}|Standup time set at 12:00>"
 removeStandupTimeWithUsers = "standup time for this channel removed, but there are people marked as a standuper."
@@ -129,3 +110,26 @@ AccessAtLeastAdmin = "Access Denied! You need to be at least admin in this slack
 AccessAtLeastSuperAdmin = "Access Denied! You need to be super admin here to use this command!"
 AccessAtLeastAdminOrOwner = "Access Denied! You need to be at least admin in this project or view your own information to use this command!"
 AccessAtLeastPMOrOwner = "Access Denied! You need to be at least PM in this project or view your own information to use this command!"
+
+NeedCorrectUserRole = "Please, check correct role name (admin, developer, pm)"
+
+AddUsersFailed = "Could not assign users as developers: %v\n"
+AddUsersExist = "Users already have roles: %v\n"
+AddUsersAdded = "Users are assigned as developers: %v\n"
+
+AddPMsFailed = "Could not assign users as PMs: %v\n"
+AddPMsExist = "Users already have roles: %v\n"
+AddPMsAdded = "Users are assigned as PMs: %v\n"
+
+AddAdminsFailed = "Could not assign users as admins: %v\n"
+AddAdminsExist = "Users were already assigned as admins: %v\n"
+AddAdminsAdded = "Users are assigned as admins: %v\n"
+
+listNoStandupers = "No standupers in this channel! To add one, please, use `/add` slash command"
+listNoAdmins = "No admins in this workspace! To add one, please, use `/add` slash command"
+listStandupers = "Standupers in this channel: %v"
+listAdmins = "Admins in this workspace: %v"
+listNoPMs = "No PMs in this channel! To add one, please, use `/add` slash command"
+listPMs = "PMs in this channel: %v"
+
+SomethingWentWrong = "Something went wrong. Please, try again later or report the problem to chatbot support!"

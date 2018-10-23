@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/bouk/monkey"
+	"github.com/maddevsio/comedian/chat"
+	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/model"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -131,4 +134,41 @@ func TestParseTimeTextToInt(t *testing.T) {
 		assert.Equal(t, tt.err, err)
 		//assert.Equal(t, tt.time, time)
 	}
+}
+
+func TestPrepareTimetable(t *testing.T) {
+	c, err := config.Get()
+	slack, err := chat.NewSlack(c)
+
+	m, err := slack.DB.CreateChannelMember(model.ChannelMember{
+		UserID:    "testUser",
+		ChannelID: "testChannel",
+	})
+	assert.NoError(t, err)
+
+	tt, err := slack.DB.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: m.ID,
+	})
+	assert.NoError(t, err)
+
+	timeNow := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
+	tt.Monday = timeNow.Unix()
+	tt.Tuesday = timeNow.Unix()
+	tt.Wednesday = timeNow.Unix()
+	tt.Thursday = timeNow.Unix()
+	tt.Friday = timeNow.Unix()
+
+	tt, err = slack.DB.UpdateTimeTable(tt)
+
+	assert.NoError(t, err)
+	assert.Equal(t, timeNow.Unix(), tt.Monday)
+
+	timeUpdate := time.Date(2018, 10, 7, 12, 0, 0, 0, time.UTC).Unix()
+
+	tt, err = PrepareTimeTable(tt, "mon tue wed thu fri sat sun", timeUpdate)
+	assert.NoError(t, err)
+	assert.Equal(t, timeUpdate, tt.Monday)
+	assert.NoError(t, slack.DB.DeleteChannelMember(m.UserID, m.ChannelID))
+	assert.NoError(t, slack.DB.DeleteTimeTable(tt.ID))
+
 }

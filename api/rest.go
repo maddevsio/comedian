@@ -34,25 +34,25 @@ type REST struct {
 }
 
 const (
-	commandAddAdmin               = "/admin_add"
-	commandRemoveAdmin            = "/admin_remove"
-	commandListAdmins             = "/admin_list"
-	commandAddPM                  = "/pm_add"
-	commandRemovePM               = "/pm_remove"
-	commandListPMs                = "/pm_list"
-	commandAddUser                = "/comedian_add"
-	commandRemoveUser             = "/comedian_remove"
-	commandListUsers              = "/comedian_list"
-	commandAddTime                = "/standup_time_set"
-	commandRemoveTime             = "/standup_time_remove"
-	commandListTime               = "/standup_time"
-	commandAddTimeTable           = "/timetable_set"
-	commandRemoveTimeTable        = "/timetable_remove"
-	commandShowTimeTable          = "/timetable_show"
-	commandReportByProject        = "/report_by_project"
-	commandReportByUser           = "/report_by_user"
-	commandReportByProjectAndUser = "/report_by_project_and_user"
+	commandAdd    = "/add"
+	commandDelete = "/delete"
+	commandList   = "/list"
+
+	commandAddTime    = "/standup_time_set"
+	commandRemoveTime = "/standup_time_remove"
+	commandListTime   = "/standup_time"
+
+	commandAddTimeTable    = "/timetable_set"
+	commandRemoveTimeTable = "/timetable_remove"
+	commandShowTimeTable   = "/timetable_show"
+
+	commandReportByProject       = "/report_by_project"
+	commandReportByUser          = "/report_by_user"
+	commandReportByUserInProject = "/report_by_user_in_project"
 )
+
+//ResponseText is Comedian API response text message to be displayed
+var ResponseText string
 
 // NewRESTAPI creates API for Slack commands
 func NewRESTAPI(slack *chat.Slack) (*REST, error) {
@@ -61,7 +61,6 @@ func NewRESTAPI(slack *chat.Slack) (*REST, error) {
 	decoder.IgnoreUnknownKeys(true)
 	rep, err := reporting.NewReporter(slack.Conf)
 	if err != nil {
-		logrus.Errorf("rest: NewReporter failed: %v\n", err)
 		return nil, err
 	}
 
@@ -90,374 +89,381 @@ func (r *REST) Start() error {
 }
 
 func (r *REST) handleCommands(c echo.Context) error {
-	logrus.Infof("Rest context: %v", c)
 	form, err := c.FormParams()
-	logrus.Infof("Rest form: %v", form)
 	if err != nil {
 		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
 	}
-	if command := form.Get("command"); command != "" {
-		switch command {
-		case commandAddUser:
-			return r.addUserCommand(c, form)
-		case commandListUsers:
-			return r.listUsersCommand(c, form)
-		case commandRemoveUser:
-			return r.removeUserCommand(c, form)
-		case commandAddAdmin:
-			return r.addAdminCommand(c, form)
-		case commandRemoveAdmin:
-			return r.removeAdminCommand(c, form)
-		case commandListAdmins:
-			return r.listAdminsCommand(c, form)
-		case commandAddPM:
-			return r.addPMCommand(c, form)
-		case commandRemovePM:
-			return r.removePMCommand(c, form)
-		case commandListPMs:
-			return r.listPMsCommand(c, form)
-		case commandAddTime:
-			return r.addTime(c, form)
-		case commandRemoveTime:
-			return r.removeTime(c, form)
-		case commandListTime:
-			return r.listTime(c, form)
-		case commandAddTimeTable:
-			return r.addTimeTable(c, form)
-		case commandRemoveTimeTable:
-			return r.removeTimeTable(c, form)
-		case commandShowTimeTable:
-			return r.showTimeTable(c, form)
-		case commandReportByProject:
-			return r.reportByProject(c, form)
-		case commandReportByUser:
-			return r.reportByUser(c, form)
-		case commandReportByProjectAndUser:
-			return r.reportByProjectAndUser(c, form)
-		default:
-			return c.String(http.StatusNotImplemented, "Not implemented")
-		}
+	command := form.Get("command")
+
+	switch command {
+	case commandAdd:
+		return r.addCommand(c, form)
+	case commandList:
+		return r.listCommand(c, form)
+	case commandDelete:
+		return r.deleteCommand(c, form)
+	case commandAddTime:
+		return r.addTime(c, form)
+	case commandRemoveTime:
+		return r.removeTime(c, form)
+	case commandListTime:
+		return r.listTime(c, form)
+	case commandAddTimeTable:
+		return r.addTimeTable(c, form)
+	case commandRemoveTimeTable:
+		return r.removeTimeTable(c, form)
+	case commandShowTimeTable:
+		return r.showTimeTable(c, form)
+	case commandReportByProject:
+		return r.reportByProject(c, form)
+	case commandReportByUser:
+		return r.reportByUser(c, form)
+	case commandReportByUserInProject:
+		return r.reportByProjectAndUser(c, form)
+	default:
+		return c.String(http.StatusNotImplemented, "Not implemented")
 	}
-	return c.JSON(http.StatusMethodNotAllowed, "Command not allowed")
 }
 
-func (r *REST) addUserCommand(c echo.Context, f url.Values) error {
+func (r *REST) addCommand(c echo.Context, f url.Values) error {
+	users, role, channel, accessLevel, err := r.processCommand(c, f)
+	if err != nil {
+		return c.String(http.StatusOK, r.conf.Translate.SomethingWentWrong)
+	}
+	switch role {
+	case "admin", "админ":
+		if accessLevel > 2 {
+			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
+		}
+		return c.String(http.StatusOK, r.addAdmins(users))
+	case "developer", "разработчик", "":
+		if accessLevel > 3 {
+			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
+		}
+		return c.String(http.StatusOK, r.addUsers(users, channel))
+	case "pm", "пм":
+		if accessLevel > 2 {
+			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
+		}
+		return c.String(http.StatusOK, r.addPMs(users, channel))
+	default:
+		return c.String(http.StatusOK, r.conf.Translate.NeedCorrectUserRole)
+	}
+}
+
+func (r *REST) listCommand(c echo.Context, f url.Values) error {
 	ca, err := r.validateRequest(c, f)
 	if err != nil {
 		logrus.Errorf("Validate Request Failed: %v", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 
-	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
-	if accessLevel > 3 {
-		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
+	switch ca.Text {
+	case "admin", "админ":
+		return c.String(http.StatusOK, r.listAdmins())
+	case "developer", "разработчик", "":
+		return c.String(http.StatusOK, r.listUsers(ca.ChannelID))
+	case "pm", "пм":
+		return c.String(http.StatusOK, r.listPMs(ca.ChannelID))
+	default:
+		return c.String(http.StatusOK, r.conf.Translate.NeedCorrectUserRole)
 	}
-	users := strings.Split(ca.Text, " ")
+
+}
+
+func (r *REST) deleteCommand(c echo.Context, f url.Values) error {
+
+	users, role, channel, accessLevel, err := r.processCommand(c, f)
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	switch role {
+	case "admin", "админ":
+		if accessLevel > 2 {
+			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
+		}
+		return c.String(http.StatusOK, r.deleteAdmins(users))
+	case "developer", "разработчик":
+		if accessLevel > 3 {
+			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
+		}
+		return c.String(http.StatusOK, r.deleteUsers(users, channel))
+	case "pm", "пм":
+		if accessLevel > 2 {
+			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
+		}
+		return c.String(http.StatusOK, r.deletePMs(users, channel))
+	default:
+		return c.String(http.StatusOK, r.conf.Translate.NeedCorrectUserRole)
+	}
+}
+
+func (r *REST) addUsers(users []string, channel string) string {
+	var failed, exist, added, text string
+
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
+			failed += u
+			continue
 		}
-		userID, userName := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
+		userID, _ := utils.SplitUser(u)
+		user, err := r.db.FindChannelMemberByUserID(userID, channel)
 		if err != nil {
 			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
 			chanMember, _ := r.db.CreateChannelMember(model.ChannelMember{
 				UserID:    userID,
-				ChannelID: ca.ChannelID,
+				ChannelID: channel,
 			})
 			logrus.Infof("ChannelMember created! ID:%v", chanMember.ID)
 		}
-
-		if user.UserID == userID && user.ChannelID == ca.ChannelID {
-			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.UserExist, userID))
+		if user.UserID == userID && user.ChannelID == channel {
+			exist += u
 			continue
 		}
-
-		st, err := r.db.GetChannelStandupTime(ca.ChannelID)
-		if err != nil {
-			logrus.Errorf("rest: GetChannelStandupTime failed: %v\n", err)
-		}
-		logrus.Infof("channel standup time: %v", st)
-
-		if st == int64(0) {
-			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUserNoStandupTime, userName))
-			continue
-		}
-
-		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddUser, userName))
+		added += u
 	}
-	return nil
+
+	if len(failed) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddUsersFailed, failed)
+	}
+	if len(exist) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddUsersExist, exist)
+	}
+	if len(added) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddUsersAdded, added)
+	}
+	return text
 }
 
-func (r *REST) removeUserCommand(c echo.Context, f url.Values) error {
-	ca, err := r.validateRequest(c, f)
-	if err != nil {
-		logrus.Errorf("Validate Request Failed: %v", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
-	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
-	if accessLevel > 3 {
-		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
-	}
-	users := strings.Split(ca.Text, " ")
-	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, r.conf.Translate.SelectUsersToDelete)
-	}
+func (r *REST) addPMs(users []string, channel string) string {
+	var failed, exist, added, text string
+
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
-		}
-		userID, userName := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
-		if err != nil {
-			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
-			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.CanNotFindMember, userID))
+			failed += u
 			continue
-		}
-		err = r.db.DeleteChannelMember(user.UserID, ca.ChannelID)
-		if err != nil {
-			logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
-			c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
-			continue
-		}
-		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteUser, userName))
-	}
-	return nil
-}
-
-func (r *REST) listUsersCommand(c echo.Context, f url.Values) error {
-	ca, err := r.validateRequest(c, f)
-	if err != nil {
-		logrus.Errorf("Validate Request Failed: %v", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	users, err := r.db.ListChannelMembers(ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: ListChannelMembers: %v\n", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v\n", err))
-	}
-	var userIDs []string
-	for _, user := range users {
-		userIDs = append(userIDs, "<@"+user.UserID+">")
-	}
-	if len(userIDs) < 1 {
-		return c.String(http.StatusOK, r.conf.Translate.ListNoStandupers)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userIDs, ", ")))
-}
-
-func (r *REST) addPMCommand(c echo.Context, f url.Values) error {
-	ca, err := r.validateRequest(c, f)
-	if err != nil {
-		logrus.Errorf("Validate Request Failed: %v", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
-	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
-	if accessLevel > 2 {
-		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
-	}
-	users := strings.Split(ca.Text, " ")
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
 		}
 		userID, _ := utils.SplitUser(u)
-		isAdmin := r.db.UserIsPMForProject(userID, ca.ChannelID)
-		if !isAdmin {
-			_, err := r.db.CreatePM(model.ChannelMember{
+		_, err := r.db.FindChannelMemberByUserID(userID, channel)
+		if err != nil {
+			r.db.CreatePM(model.ChannelMember{
 				UserID:    userID,
-				ChannelID: ca.ChannelID,
+				ChannelID: channel,
 			})
-			if err != nil {
-				logrus.Errorf("rest: CreatePM failed: %v\n", err)
-				c.String(http.StatusOK, fmt.Sprintf("failed to create user :%v\n", err))
-			}
-			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.PMAdded, userID))
+			added += u
 			continue
 		}
-		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.PMExists, userID))
+		exist += u
 	}
-	return nil
+	if len(failed) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddPMsFailed, failed)
+	}
+	if len(exist) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddPMsExist, exist)
+	}
+	if len(added) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddPMsAdded, added)
+	}
+
+	return text
 }
 
-func (r *REST) removePMCommand(c echo.Context, f url.Values) error {
-	ca, err := r.validateRequest(c, f)
-	if err != nil {
-		logrus.Errorf("Validate Request Failed: %v", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
-	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
-	if accessLevel > 2 {
-		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
-	}
-	users := strings.Split(ca.Text, " ")
-	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, r.conf.Translate.SelectUsersToDelete)
-	}
+func (r *REST) addAdmins(users []string) string {
+	var failed, exist, added, text string
+
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
-		}
-		userID, userName := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, ca.ChannelID)
-		if err != nil {
-			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
-			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.CanNotFindMember, userID))
+			failed += u
 			continue
 		}
-		if user.RoleInChannel != "PM" {
-			logrus.Errorf("rest: User %v is not PM in %v! Skip\n", userName, user.ChannelID)
-			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.UserIsNotPM, userID))
-			continue
-		}
-		err = r.db.DeleteChannelMember(user.UserID, ca.ChannelID)
-		if err != nil {
-			logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
-			c.String(http.StatusBadRequest, fmt.Sprintf("failed to delete user :%v\n", err))
-			continue
-		}
-		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeletePM, userName))
-	}
-	return nil
-}
-
-func (r *REST) listPMsCommand(c echo.Context, f url.Values) error {
-	ca, err := r.validateRequest(c, f)
-	if err != nil {
-		logrus.Errorf("Validate Request Failed: %v", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	users, err := r.db.ListPMs(ca.ChannelID)
-	if err != nil {
-		logrus.Errorf("rest: ListPMs: %v\n", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v\n", err))
-	}
-	var userIDs []string
-	for _, user := range users {
-		userIDs = append(userIDs, "<@"+user.UserID+">")
-	}
-	if len(userIDs) < 1 {
-		return c.String(http.StatusOK, r.conf.Translate.ListNoPMs)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ListPMs, strings.Join(userIDs, ", ")))
-}
-
-func (r *REST) addAdminCommand(c echo.Context, f url.Values) error {
-	ca, err := r.validateRequest(c, f)
-	if err != nil {
-		logrus.Errorf("Validate Request Failed: %v", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
-	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
-	if accessLevel > 1 {
-		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastSuperAdmin)
-	}
-	users := strings.Split(ca.Text, " ")
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
-		}
-		userID, userName := utils.SplitUser(u)
+		userID, _ := utils.SplitUser(u)
 		user, err := r.db.SelectUser(userID)
 		if err != nil {
-			c.String(http.StatusOK, r.conf.Translate.NoSuchUserInWorkspace)
+			failed += u
 			continue
 		}
 		if user.Role == "admin" {
-			c.String(http.StatusOK, "User is already admin!")
+			exist += u
 			continue
 		}
 		user.Role = "admin"
-		_, err = r.db.UpdateUser(user)
-		if err != nil {
-			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
-		}
+		r.db.UpdateUser(user)
 		message := r.conf.Translate.PMAssigned
 		err = r.slack.SendUserMessage(userID, message)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
-		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.AddAdmin, userName))
+		added += u
 	}
 
-	return nil
+	if len(failed) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddAdminsFailed, failed)
+	}
+	if len(exist) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddAdminsExist, exist)
+	}
+	if len(added) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddAdminsAdded, added)
+	}
+
+	return text
 }
 
-func (r *REST) removeAdminCommand(c echo.Context, f url.Values) error {
-	ca, err := r.validateRequest(c, f)
+func (r *REST) listUsers(channel string) string {
+	users, err := r.db.ListChannelMembers(channel)
 	if err != nil {
-		logrus.Errorf("Validate Request Failed: %v", err)
-		return c.String(http.StatusOK, err.Error())
+		return fmt.Sprintf("failed to list users :%v\n", err)
 	}
-	accessLevel, _ := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
-	logrus.Infof("Access level for %v in %v is %v", f.Get("user_id"), f.Get("channel_id"), accessLevel)
-	if accessLevel > 1 {
-		return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastSuperAdmin)
+	var userIDs []string
+	for _, user := range users {
+		userIDs = append(userIDs, "<@"+user.UserID+">")
 	}
-	users := strings.Split(ca.Text, " ")
-	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, r.conf.Translate.SelectUsersToDelete)
+	if len(userIDs) < 1 {
+		return r.conf.Translate.ListNoStandupers
 	}
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			return c.String(http.StatusOK, r.conf.Translate.WrongUsernameError)
-		}
-		userID, userName := utils.SplitUser(u)
-		user, err := r.db.SelectUser(userID)
-		if err != nil {
-			c.String(http.StatusOK, r.conf.Translate.NoSuchUserInWorkspace)
-			continue
-		}
-		if user.Role != "admin" {
-			c.String(http.StatusOK, r.conf.Translate.UserNotAdmin)
-			continue
-		}
-		user.Role = ""
-		_, err = r.db.UpdateUser(user)
-		if err != nil {
-			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
-		}
-		message := fmt.Sprintf(r.conf.Translate.PMRemoved)
-		err = r.slack.SendUserMessage(userID, message)
-		if err != nil {
-			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
-		}
-		c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.DeleteAdmin, userName))
-	}
-	return nil
+	return fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userIDs, ", "))
 }
 
-func (r *REST) listAdminsCommand(c echo.Context, f url.Values) error {
-	_, err := r.validateRequest(c, f)
-	if err != nil {
-		logrus.Errorf("Validate Request Failed: %v", err)
-		return c.String(http.StatusOK, err.Error())
-	}
-
+func (r *REST) listAdmins() string {
 	admins, err := r.db.ListAdmins()
 	if err != nil {
-		logrus.Errorf("rest: ListChannelMembers: %v\n", err)
-		return c.String(http.StatusBadRequest, fmt.Sprintf("failed to list users :%v\n", err))
+		return fmt.Sprintf("failed to list users :%v\n", err)
 	}
 	var userNames []string
 	for _, admin := range admins {
 		userNames = append(userNames, "<@"+admin.UserName+">")
 	}
 	if len(userNames) < 1 {
-		return c.String(http.StatusOK, r.conf.Translate.ListNoAdmins)
+		return r.conf.Translate.ListNoAdmins
 	}
-	return c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", ")))
+	return fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", "))
+
+}
+
+func (r *REST) listPMs(channel string) string {
+	users, err := r.db.ListPMs(channel)
+	if err != nil {
+		return fmt.Sprintf("failed to list users :%v\n", err)
+	}
+	var userIDs []string
+	for _, user := range users {
+		userIDs = append(userIDs, "<@"+user.UserID+">")
+	}
+	if len(userIDs) < 1 {
+		return r.conf.Translate.ListNoPMs
+	}
+	return fmt.Sprintf(r.conf.Translate.ListPMs, strings.Join(userIDs, ", "))
+}
+
+func (r *REST) deleteUsers(users []string, channel string) string {
+	var failed, deleted, text string
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			failed += u
+			continue
+		}
+		userID, _ := utils.SplitUser(u)
+		user, err := r.db.FindChannelMemberByUserID(userID, channel)
+		if err != nil {
+			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
+			failed += u
+			continue
+		}
+		r.db.DeleteChannelMember(user.UserID, channel)
+		deleted += u
+	}
+
+	if len(failed) != 0 {
+		text += fmt.Sprintf("Could not remove the following users as developers: %v\n", failed)
+	}
+	if len(deleted) != 0 {
+		text += fmt.Sprintf("The following users were removed as developers: %v\n", deleted)
+	}
+
+	return text
+}
+
+func (r *REST) deletePMs(users []string, channel string) string {
+	var failed, deleted, text string
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			failed += u
+			continue
+		}
+		userID, userName := utils.SplitUser(u)
+		user, err := r.db.FindChannelMemberByUserID(userID, channel)
+		if err != nil {
+			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
+			failed += u
+			continue
+		}
+		if user.RoleInChannel != "PM" {
+			logrus.Errorf("rest: User %v is not PM in %v! Skip\n", userName, user.ChannelID)
+			failed += u
+			continue
+		}
+		r.db.DeleteChannelMember(user.UserID, channel)
+		deleted += u
+	}
+	if len(failed) != 0 {
+		text += fmt.Sprintf("Could not remove users as PMs: %v\n", failed)
+	}
+	if len(deleted) != 0 {
+		text += fmt.Sprintf("Users are removed as PMs: %v\n", deleted)
+	}
+	return text
+}
+
+func (r *REST) deleteAdmins(users []string) string {
+	var failed, deleted, text string
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			failed += u
+			continue
+		}
+		userID, _ := utils.SplitUser(u)
+		user, err := r.db.SelectUser(userID)
+		if err != nil {
+			failed += u
+			continue
+		}
+		if user.Role != "admin" {
+			failed += u
+			continue
+		}
+		user.Role = ""
+		r.db.UpdateUser(user)
+		message := fmt.Sprintf(r.conf.Translate.PMRemoved)
+		err = r.slack.SendUserMessage(userID, message)
+		if err != nil {
+			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+		}
+		deleted += u
+	}
+
+	if len(failed) != 0 {
+		text += fmt.Sprintf("Could not remove users as admins: %v\n", failed)
+	}
+	if len(deleted) != 0 {
+		text += fmt.Sprintf("Users are removed as admins: %v\n", deleted)
+	}
+
+	return text
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {
@@ -480,7 +486,7 @@ func (r *REST) addTime(c echo.Context, f url.Values) error {
 	err = r.db.CreateStandupTime(timeInt, ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: CreateStandupTime failed: %v\n", err)
-		return c.String(http.StatusOK, "Unexpected error occured when I tried to complete operation. Please, try again!")
+		return c.String(http.StatusOK, r.conf.Translate.SomethingWentWrong)
 	}
 	channelMembers, err := r.db.ListChannelMembers(ca.ChannelID)
 	if err != nil {
@@ -508,7 +514,7 @@ func (r *REST) removeTime(c echo.Context, f url.Values) error {
 	err = r.db.DeleteStandupTime(ca.ChannelID)
 	if err != nil {
 		logrus.Errorf("rest: DeleteStandupTime failed: %v\n", err)
-		return c.String(http.StatusOK, "Unexpected error occured when I tried to complete operation. Please, try again!")
+		return c.String(http.StatusOK, r.conf.Translate.SomethingWentWrong)
 	}
 	st, err := r.db.ListChannelMembers(ca.ChannelID)
 	if len(st) != 0 {
@@ -581,7 +587,7 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 			ttNew, err := r.db.CreateTimeTable(model.TimeTable{
 				ChannelMemberID: m.ID,
 			})
-			ttNew, err = r.prepareTimeTable(ttNew, weekdays, time)
+			ttNew, err = utils.PrepareTimeTable(ttNew, weekdays, time)
 			if err != nil {
 				c.String(http.StatusOK, fmt.Sprintf("Could not fetch data into timetable for user <@%v>\n", userName))
 				continue
@@ -595,7 +601,7 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.TimetableCreated, userID, ttNew.Show()))
 			continue
 		}
-		tt, err = r.prepareTimeTable(tt, weekdays, time)
+		tt, err = utils.PrepareTimeTable(tt, weekdays, time)
 		if err != nil {
 			c.String(http.StatusOK, fmt.Sprintf("Could not fetch data into timetable for user <@%v>\n", userName))
 			continue
@@ -767,7 +773,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 3 {
-		return c.String(http.StatusOK, r.conf.Translate.UserExist)
+		return c.String(http.StatusOK, r.conf.Translate.WrongNArgs)
 	}
 	username := strings.Replace(commandParams[0], "@", "", -1)
 	user, err := r.db.SelectUserByUserName(username)
@@ -913,31 +919,6 @@ func (r *REST) getAccessLevel(userID, channelID string) (int, error) {
 	return 4, nil
 }
 
-func (r *REST) prepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) (model.TimeTable, error) {
-	if strings.Contains(weekdays, "mon") || strings.Contains(weekdays, "пн") {
-		tt.Monday = timeInt
-	}
-	if strings.Contains(weekdays, "tue") || strings.Contains(weekdays, "вт") {
-		tt.Tuesday = timeInt
-	}
-	if strings.Contains(weekdays, "wed") || strings.Contains(weekdays, "ср") {
-		tt.Wednesday = timeInt
-	}
-	if strings.Contains(weekdays, "thu") || strings.Contains(weekdays, "чт") {
-		tt.Thursday = timeInt
-	}
-	if strings.Contains(weekdays, "fri") || strings.Contains(weekdays, "пт") {
-		tt.Friday = timeInt
-	}
-	if strings.Contains(weekdays, "sat") || strings.Contains(weekdays, "сб") {
-		tt.Saturday = timeInt
-	}
-	if strings.Contains(weekdays, "sun") || strings.Contains(weekdays, "вс") {
-		tt.Sunday = timeInt
-	}
-	return tt, nil
-}
-
 func (r *REST) comedianIsInChannel(channelID string) bool {
 	_, err := r.db.SelectChannel(channelID)
 	if err != nil {
@@ -959,4 +940,26 @@ func (r *REST) validateRequest(c echo.Context, f url.Values) (FullSlackForm, err
 		return ca, err
 	}
 	return ca, nil
+}
+
+func (r *REST) processCommand(c echo.Context, f url.Values) ([]string, string, string, int, error) {
+	ca, err := r.validateRequest(c, f)
+	if err != nil {
+		logrus.Errorf("Validate Request Failed: %v", err)
+		return []string{}, "", "", 0, err
+	}
+
+	accessLevel, err := r.getAccessLevel(f.Get("user_id"), f.Get("channel_id"))
+	if err != nil {
+		logrus.Errorf("getAccessLevel Failed: %v", err)
+		return []string{}, "", "", 0, err
+	}
+	parts := strings.Split(ca.Text, "/")
+
+	if len(parts) > 1 {
+		users := strings.Split(strings.TrimSpace(parts[0]), " ")
+		return users, strings.TrimSpace(parts[1]), ca.ChannelID, accessLevel, nil
+	}
+	users := strings.Split(ca.Text, " ")
+	return users, "developer", ca.ChannelID, accessLevel, nil
 }
