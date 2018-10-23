@@ -14,21 +14,12 @@ import (
 
 //Translate struct makes translation data
 type Translate struct {
-	UserExist        string
-	AddUser          string
-	AddAdmin         string
-	PMExists         string
-	PMAdded          string
-	DeleteUser       string
-	DeleteAdmin      string
-	DeletePM         string
 	ListNoStandupers string
 	ListNoAdmins     string
 	ListStandupers   string
 	ListAdmins       string
 	ListNoPMs        string
 	ListPMs          string
-	UserIsNotPM      string
 
 	AddStandupTimeNoUsers      string
 	AddStandupTime             string
@@ -130,6 +121,15 @@ type Translate struct {
 	AccessAtLeastPMOrOwner    string
 
 	NeedCorrectUserRole string
+	AddUsersFailed      string
+	AddUsersExist       string
+	AddUsersAdded       string
+	AddPMsFailed        string
+	AddPMsExist         string
+	AddPMsAdded         string
+	AddAdminsFailed     string
+	AddAdminsExist      string
+	AddAdminsAdded      string
 }
 
 // GetTranslation sets translation files for config
@@ -167,13 +167,6 @@ func GetTranslation(lang string) (Translate, error) {
 		"reportStandupFromUser", "reportIgnoredStandup", "reportShowChannel",
 		"reportCollectorDataUser",
 		"helloManager", "standupAccepted",
-		"UserExist",
-		"pmExists", "pmAdded",
-		"addUser",
-		"addAdmin",
-		"deleteUser",
-		"deleteAdmin",
-		"DeletePM",
 		"listNoStandupers",
 		"listNoAdmins",
 		"listStandupers",
@@ -242,6 +235,15 @@ func GetTranslation(lang string) (Translate, error) {
 		"AccessAtLeastAdminOrOwner",
 		"AccessAtLeastPMOrOwner",
 		"NeedCorrectUserRole",
+		"AddUsersFailed",
+		"AddUsersExist",
+		"AddUsersAdded",
+		"AddPMsFailed",
+		"AddPMsExist",
+		"AddPMsAdded",
+		"AddAdminsFailed",
+		"AddAdminsExist",
+		"AddAdminsAdded",
 	}
 
 	for _, t := range r {
@@ -254,15 +256,19 @@ func GetTranslation(lang string) (Translate, error) {
 	}
 
 	t := Translate{
-		UserExist: m["UserExist"],
-		AddUser:   m["addUser"],
-		AddAdmin:  m["addAdmin"],
-		PMExists:  m["pmExists"],
-		PMAdded:   m["pmAdded"],
 
-		DeleteUser:       m["deleteUser"],
-		DeleteAdmin:      m["deleteAdmin"],
-		DeletePM:         m["DeletePM"],
+		AddUsersFailed: m["AddUsersFailed"],
+		AddUsersExist:  m["AddUsersExist"],
+		AddUsersAdded:  m["AddUsersAdded"],
+
+		AddPMsFailed: m["AddPMsFailed"],
+		AddPMsExist:  m["AddPMsExist"],
+		AddPMsAdded:  m["AddPMsAdded"],
+
+		AddAdminsFailed: m["AddAdminsFailed"],
+		AddAdminsExist:  m["AddAdminsExist"],
+		AddAdminsAdded:  m["AddAdminsAdded"],
+
 		ListNoStandupers: m["listNoStandupers"],
 		ListNoAdmins:     m["listNoAdmins"],
 		ListStandupers:   m["listStandupers"],
@@ -356,7 +362,6 @@ func GetTranslation(lang string) (Translate, error) {
 		ErrorRooksReportWeekend: m["ErrorRooksReportWeekend"],
 		ReportHeaderMonday:      m["ReportHeaderMonday"],
 		ReportHeader:            m["ReportHeader"],
-		UserIsNotPM:             m["UserIsNotPM"],
 
 		AccessAtLeastPM:           m["AccessAtLeastPM"],
 		AccessAtLeastAdmin:        m["AccessAtLeastAdmin"],

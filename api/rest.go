@@ -90,43 +90,40 @@ func (r *REST) Start() error {
 }
 
 func (r *REST) handleCommands(c echo.Context) error {
-	logrus.Infof("Rest context: %v", c)
 	form, err := c.FormParams()
-	logrus.Infof("Rest form: %v", form)
 	if err != nil {
 		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
 	}
-	if command := form.Get("command"); command != "" {
-		switch command {
-		case commandAdd:
-			return r.addCommand(c, form)
-		case commandList:
-			return r.listCommand(c, form)
-		case commandDelete:
-			return r.deleteCommand(c, form)
-		case commandAddTime:
-			return r.addTime(c, form)
-		case commandRemoveTime:
-			return r.removeTime(c, form)
-		case commandListTime:
-			return r.listTime(c, form)
-		case commandAddTimeTable:
-			return r.addTimeTable(c, form)
-		case commandRemoveTimeTable:
-			return r.removeTimeTable(c, form)
-		case commandShowTimeTable:
-			return r.showTimeTable(c, form)
-		case commandReportByProject:
-			return r.reportByProject(c, form)
-		case commandReportByUser:
-			return r.reportByUser(c, form)
-		case commandReportByUserInProject:
-			return r.reportByProjectAndUser(c, form)
-		default:
-			return c.String(http.StatusNotImplemented, "Not implemented")
-		}
+	command := form.Get("command")
+
+	switch command {
+	case commandAdd:
+		return r.addCommand(c, form)
+	case commandList:
+		return r.listCommand(c, form)
+	case commandDelete:
+		return r.deleteCommand(c, form)
+	case commandAddTime:
+		return r.addTime(c, form)
+	case commandRemoveTime:
+		return r.removeTime(c, form)
+	case commandListTime:
+		return r.listTime(c, form)
+	case commandAddTimeTable:
+		return r.addTimeTable(c, form)
+	case commandRemoveTimeTable:
+		return r.removeTimeTable(c, form)
+	case commandShowTimeTable:
+		return r.showTimeTable(c, form)
+	case commandReportByProject:
+		return r.reportByProject(c, form)
+	case commandReportByUser:
+		return r.reportByUser(c, form)
+	case commandReportByUserInProject:
+		return r.reportByProjectAndUser(c, form)
+	default:
+		return c.String(http.StatusNotImplemented, "Not implemented")
 	}
-	return c.JSON(http.StatusMethodNotAllowed, "Command not allowed")
 }
 
 func (r *REST) addCommand(c echo.Context, f url.Values) error {
@@ -200,6 +197,297 @@ func (r *REST) deleteCommand(c echo.Context, f url.Values) error {
 	default:
 		return c.String(http.StatusOK, r.conf.Translate.NeedCorrectUserRole)
 	}
+}
+
+func (r *REST) addUsers(users []string, channel string) string {
+	var failed, exist, added, text string
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			failed += u
+			continue
+		}
+		userID, _ := utils.SplitUser(u)
+		user, err := r.db.FindChannelMemberByUserID(userID, channel)
+		if err != nil {
+			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
+			chanMember, _ := r.db.CreateChannelMember(model.ChannelMember{
+				UserID:    userID,
+				ChannelID: channel,
+			})
+			logrus.Infof("ChannelMember created! ID:%v", chanMember.ID)
+		}
+		if user.UserID == userID && user.ChannelID == channel {
+			exist += u
+			continue
+		}
+		added += u
+	}
+
+	if len(failed) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddUsersFailed, failed)
+	}
+	if len(exist) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddUsersExist, exist)
+	}
+	if len(added) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddUsersAdded, added)
+	}
+	return text
+}
+
+func (r *REST) addPMs(users []string, channel string) string {
+	var failed, exist, added, text string
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			failed += u
+			continue
+		}
+		userID, _ := utils.SplitUser(u)
+		_, err := r.db.FindChannelMemberByUserID(userID, channel)
+		if err != nil {
+			_, err := r.db.CreatePM(model.ChannelMember{
+				UserID:    userID,
+				ChannelID: channel,
+			})
+			if err != nil {
+				logrus.Errorf("rest: CreatePM failed: %v\n", err)
+				failed += u
+				continue
+			}
+			added += u
+			continue
+		}
+		exist += u
+	}
+	if len(failed) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddPMsFailed, failed)
+	}
+	if len(exist) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddPMsExist, exist)
+	}
+	if len(added) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddPMsAdded, added)
+	}
+
+	return text
+}
+
+func (r *REST) addAdmins(users []string) string {
+	var failed, exist, added, text string
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			failed += u
+			continue
+		}
+		userID, _ := utils.SplitUser(u)
+		user, err := r.db.SelectUser(userID)
+		if err != nil {
+			failed += u
+			continue
+		}
+		if user.Role == "admin" {
+			exist += u
+			continue
+		}
+		user.Role = "admin"
+		_, err = r.db.UpdateUser(user)
+		if err != nil {
+			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
+		}
+		message := r.conf.Translate.PMAssigned
+		err = r.slack.SendUserMessage(userID, message)
+		if err != nil {
+			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+		}
+		added += u
+	}
+
+	if len(failed) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddAdminsFailed, failed)
+	}
+	if len(exist) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddAdminsExist, exist)
+	}
+	if len(added) != 0 {
+		text += fmt.Sprintf(r.conf.Translate.AddAdminsAdded, added)
+	}
+
+	return text
+}
+
+func (r *REST) listDevelopers(channel string) string {
+	users, err := r.db.ListChannelMembers(channel)
+	if err != nil {
+		return fmt.Sprintf("failed to list users :%v\n", err)
+	}
+	var userIDs []string
+	for _, user := range users {
+		userIDs = append(userIDs, "<@"+user.UserID+">")
+	}
+	if len(userIDs) < 1 {
+		return r.conf.Translate.ListNoStandupers
+	}
+	return fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userIDs, ", "))
+}
+
+func (r *REST) listAdmins() string {
+	admins, err := r.db.ListAdmins()
+	if err != nil {
+		return fmt.Sprintf("failed to list users :%v\n", err)
+	}
+	var userNames []string
+	for _, admin := range admins {
+		userNames = append(userNames, "<@"+admin.UserName+">")
+	}
+	if len(userNames) < 1 {
+		return r.conf.Translate.ListNoAdmins
+	}
+	return fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", "))
+
+}
+
+func (r *REST) listPMs(channel string) string {
+	users, err := r.db.ListPMs(channel)
+	if err != nil {
+		return fmt.Sprintf("failed to list users :%v\n", err)
+	}
+	var userIDs []string
+	for _, user := range users {
+		userIDs = append(userIDs, "<@"+user.UserID+">")
+	}
+	if len(userIDs) < 1 {
+		return r.conf.Translate.ListNoPMs
+	}
+	return fmt.Sprintf(r.conf.Translate.ListPMs, strings.Join(userIDs, ", "))
+}
+
+func (r *REST) deleteUsers(users []string, channel string) string {
+	var failed, deleted, text string
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			failed += u
+			continue
+		}
+		userID, _ := utils.SplitUser(u)
+		user, err := r.db.FindChannelMemberByUserID(userID, channel)
+		if err != nil {
+			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
+			failed += u
+			continue
+		}
+		err = r.db.DeleteChannelMember(user.UserID, channel)
+		if err != nil {
+			logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
+			failed += u
+			continue
+		}
+		deleted += u
+	}
+
+	if len(failed) != 0 {
+		text += fmt.Sprintf("Could not remove the following users as developers: %v\n", failed)
+	}
+	if len(deleted) != 0 {
+		text += fmt.Sprintf("The following users were removed as developers: %v\n", deleted)
+	}
+
+	return text
+}
+
+func (r *REST) deletePMs(users []string, channel string) string {
+	var failed, deleted, text string
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			failed += u
+			continue
+		}
+		userID, userName := utils.SplitUser(u)
+		user, err := r.db.FindChannelMemberByUserID(userID, channel)
+		if err != nil {
+			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
+			failed += u
+			continue
+		}
+		if user.RoleInChannel != "PM" {
+			logrus.Errorf("rest: User %v is not PM in %v! Skip\n", userName, user.ChannelID)
+			failed += u
+			continue
+		}
+		err = r.db.DeleteChannelMember(user.UserID, channel)
+		if err != nil {
+			logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
+			failed += u
+			continue
+		}
+		deleted += u
+	}
+	if len(failed) != 0 {
+		text += fmt.Sprintf("Could not remove users as PMs: %v\n", failed)
+	}
+	if len(deleted) != 0 {
+		text += fmt.Sprintf("Users are removed as PMs: %v\n", deleted)
+	}
+	return text
+}
+
+func (r *REST) deleteAdmins(users []string) string {
+	var failed, deleted, text string
+
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+
+	for _, u := range users {
+		if !rg.MatchString(u) {
+			failed += u
+			continue
+		}
+		userID, _ := utils.SplitUser(u)
+		user, err := r.db.SelectUser(userID)
+		if err != nil {
+			failed += u
+			continue
+		}
+		if user.Role != "admin" {
+			failed += u
+			continue
+		}
+		user.Role = ""
+		_, err = r.db.UpdateUser(user)
+		if err != nil {
+			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
+			failed += u
+			continue
+		}
+		message := fmt.Sprintf(r.conf.Translate.PMRemoved)
+		err = r.slack.SendUserMessage(userID, message)
+		if err != nil {
+			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+		}
+		deleted += u
+	}
+
+	if len(failed) != 0 {
+		text += fmt.Sprintf("Could not remove users as admins: %v\n", failed)
+	}
+	if len(deleted) != 0 {
+		text += fmt.Sprintf("Users are removed as admins: %v\n", deleted)
+	}
+
+	return text
 }
 
 func (r *REST) addTime(c echo.Context, f url.Values) error {
@@ -323,7 +611,7 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 			ttNew, err := r.db.CreateTimeTable(model.TimeTable{
 				ChannelMemberID: m.ID,
 			})
-			ttNew, err = r.prepareTimeTable(ttNew, weekdays, time)
+			ttNew, err = utils.PrepareTimeTable(ttNew, weekdays, time)
 			if err != nil {
 				c.String(http.StatusOK, fmt.Sprintf("Could not fetch data into timetable for user <@%v>\n", userName))
 				continue
@@ -337,7 +625,7 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.TimetableCreated, userID, ttNew.Show()))
 			continue
 		}
-		tt, err = r.prepareTimeTable(tt, weekdays, time)
+		tt, err = utils.PrepareTimeTable(tt, weekdays, time)
 		if err != nil {
 			c.String(http.StatusOK, fmt.Sprintf("Could not fetch data into timetable for user <@%v>\n", userName))
 			continue
@@ -509,7 +797,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 
 	commandParams := strings.Fields(ca.Text)
 	if len(commandParams) != 3 {
-		return c.String(http.StatusOK, r.conf.Translate.UserExist)
+		return c.String(http.StatusOK, r.conf.Translate.WrongNArgs)
 	}
 	username := strings.Replace(commandParams[0], "@", "", -1)
 	user, err := r.db.SelectUserByUserName(username)
@@ -655,31 +943,6 @@ func (r *REST) getAccessLevel(userID, channelID string) (int, error) {
 	return 4, nil
 }
 
-func (r *REST) prepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) (model.TimeTable, error) {
-	if strings.Contains(weekdays, "mon") || strings.Contains(weekdays, "пн") {
-		tt.Monday = timeInt
-	}
-	if strings.Contains(weekdays, "tue") || strings.Contains(weekdays, "вт") {
-		tt.Tuesday = timeInt
-	}
-	if strings.Contains(weekdays, "wed") || strings.Contains(weekdays, "ср") {
-		tt.Wednesday = timeInt
-	}
-	if strings.Contains(weekdays, "thu") || strings.Contains(weekdays, "чт") {
-		tt.Thursday = timeInt
-	}
-	if strings.Contains(weekdays, "fri") || strings.Contains(weekdays, "пт") {
-		tt.Friday = timeInt
-	}
-	if strings.Contains(weekdays, "sat") || strings.Contains(weekdays, "сб") {
-		tt.Saturday = timeInt
-	}
-	if strings.Contains(weekdays, "sun") || strings.Contains(weekdays, "вс") {
-		tt.Sunday = timeInt
-	}
-	return tt, nil
-}
-
 func (r *REST) comedianIsInChannel(channelID string) bool {
 	_, err := r.db.SelectChannel(channelID)
 	if err != nil {
@@ -723,296 +986,4 @@ func (r *REST) processCommand(c echo.Context, f url.Values) ([]string, string, s
 	}
 	users := strings.Split(ca.Text, " ")
 	return users, "developer", ca.ChannelID, accessLevel, nil
-}
-
-func (r *REST) addUsers(users []string, channel string) string {
-	var failed, exist, added, text string
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			failed += u
-			continue
-		}
-		userID, _ := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, channel)
-		if err != nil {
-			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
-			chanMember, _ := r.db.CreateChannelMember(model.ChannelMember{
-				UserID:    userID,
-				ChannelID: channel,
-			})
-			logrus.Infof("ChannelMember created! ID:%v", chanMember.ID)
-		}
-		if user.UserID == userID && user.ChannelID == channel {
-			exist += u
-			continue
-		}
-		added += u
-	}
-
-	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not assign users as developers in this channel: %v\n", failed)
-	}
-	if len(exist) != 0 {
-		text += fmt.Sprintf("Users already have roles in this channel: %v\n", exist)
-	}
-	if len(added) != 0 {
-		text += fmt.Sprintf("Users are assigned as developers in this channel: %v\n", added)
-	}
-
-	return text
-}
-
-func (r *REST) addPMs(users []string, channel string) string {
-	var failed, exist, added, text string
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			failed += u
-			continue
-		}
-		userID, _ := utils.SplitUser(u)
-		_, err := r.db.FindChannelMemberByUserID(userID, channel)
-		if err != nil {
-			_, err := r.db.CreatePM(model.ChannelMember{
-				UserID:    userID,
-				ChannelID: channel,
-			})
-			if err != nil {
-				logrus.Errorf("rest: CreatePM failed: %v\n", err)
-				failed += u
-				continue
-			}
-			added += u
-			continue
-		}
-		exist += u
-	}
-	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not assign users as PMs in this channel: %v\n", failed)
-	}
-	if len(exist) != 0 {
-		text += fmt.Sprintf("Users already have roles in this channel: %v\n", exist)
-	}
-	if len(added) != 0 {
-		text += fmt.Sprintf("Users are assigned as PMs in this channel: %v\n", added)
-	}
-
-	return text
-}
-
-func (r *REST) addAdmins(users []string) string {
-	var failed, exist, added, text string
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			failed += u
-			continue
-		}
-		userID, _ := utils.SplitUser(u)
-		user, err := r.db.SelectUser(userID)
-		if err != nil {
-			failed += u
-			continue
-		}
-		if user.Role == "admin" {
-			exist += u
-			continue
-		}
-		user.Role = "admin"
-		_, err = r.db.UpdateUser(user)
-		if err != nil {
-			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
-		}
-		message := r.conf.Translate.PMAssigned
-		err = r.slack.SendUserMessage(userID, message)
-		if err != nil {
-			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
-		}
-		added += u
-	}
-
-	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not assign users as admins in this workspace: %v\n", failed)
-	}
-	if len(exist) != 0 {
-		text += fmt.Sprintf("Users were already assigned as admins in this workspace: %v\n", exist)
-	}
-	if len(added) != 0 {
-		text += fmt.Sprintf("Users are assigned as admins in this workspace: %v\n", added)
-	}
-
-	return text
-}
-
-func (r *REST) listDevelopers(channel string) string {
-	users, err := r.db.ListChannelMembers(channel)
-	if err != nil {
-		return fmt.Sprintf("failed to list users :%v\n", err)
-	}
-	var userIDs []string
-	for _, user := range users {
-		userIDs = append(userIDs, "<@"+user.UserID+">")
-	}
-	if len(userIDs) < 1 {
-		return r.conf.Translate.ListNoStandupers
-	}
-	return fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userIDs, ", "))
-}
-
-func (r *REST) listAdmins() string {
-	admins, err := r.db.ListAdmins()
-	if err != nil {
-		return fmt.Sprintf("failed to list users :%v\n", err)
-	}
-	var userNames []string
-	for _, admin := range admins {
-		userNames = append(userNames, "<@"+admin.UserName+">")
-	}
-	if len(userNames) < 1 {
-		return r.conf.Translate.ListNoAdmins
-	}
-	return fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", "))
-
-}
-
-func (r *REST) listPMs(channel string) string {
-	users, err := r.db.ListPMs(channel)
-	if err != nil {
-		return fmt.Sprintf("failed to list users :%v\n", err)
-	}
-	var userIDs []string
-	for _, user := range users {
-		userIDs = append(userIDs, "<@"+user.UserID+">")
-	}
-	if len(userIDs) < 1 {
-		return r.conf.Translate.ListNoPMs
-	}
-	return fmt.Sprintf(r.conf.Translate.ListPMs, strings.Join(userIDs, ", "))
-}
-
-func (r *REST) deleteUsers(users []string, channel string) string {
-	var failed, deleted, text string
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			failed += u
-			continue
-		}
-		userID, _ := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, channel)
-		if err != nil {
-			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
-			failed += u
-			continue
-		}
-		err = r.db.DeleteChannelMember(user.UserID, channel)
-		if err != nil {
-			logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
-			failed += u
-			continue
-		}
-		deleted += u
-	}
-
-	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not remove the following users as developers: %v\n", failed)
-	}
-	if len(deleted) != 0 {
-		text += fmt.Sprintf("The following users were removed as developers: %v\n", deleted)
-	}
-
-	return text
-}
-
-func (r *REST) deletePMs(users []string, channel string) string {
-	var failed, deleted, text string
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			failed += u
-			continue
-		}
-		userID, userName := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, channel)
-		if err != nil {
-			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
-			failed += u
-			continue
-		}
-		if user.RoleInChannel != "PM" {
-			logrus.Errorf("rest: User %v is not PM in %v! Skip\n", userName, user.ChannelID)
-			failed += u
-			continue
-		}
-		err = r.db.DeleteChannelMember(user.UserID, channel)
-		if err != nil {
-			logrus.Errorf("rest: DeleteChannelMember failed: %v\n", err)
-			failed += u
-			continue
-		}
-		deleted += u
-	}
-	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not remove users as PMs: %v\n", failed)
-	}
-	if len(deleted) != 0 {
-		text += fmt.Sprintf("Users are removed as PMs: %v\n", deleted)
-	}
-	return text
-}
-
-func (r *REST) deleteAdmins(users []string) string {
-	var failed, deleted, text string
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			failed += u
-			continue
-		}
-		userID, _ := utils.SplitUser(u)
-		user, err := r.db.SelectUser(userID)
-		if err != nil {
-			failed += u
-			continue
-		}
-		if user.Role != "admin" {
-			failed += u
-			continue
-		}
-		user.Role = ""
-		_, err = r.db.UpdateUser(user)
-		if err != nil {
-			logrus.Errorf("rest: UpdateUser failed: %v\n", err)
-			failed += u
-			continue
-		}
-		message := fmt.Sprintf(r.conf.Translate.PMRemoved)
-		err = r.slack.SendUserMessage(userID, message)
-		if err != nil {
-			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
-		}
-		deleted += u
-	}
-
-	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not remove users as admins: %v\n", failed)
-	}
-	if len(deleted) != 0 {
-		text += fmt.Sprintf("Users are removed as admins: %v\n", deleted)
-	}
-
-	return text
 }
