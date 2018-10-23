@@ -34,6 +34,13 @@ func TestHandleCommands(t *testing.T) {
 		StandupTime: int64(0),
 	})
 
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "adminUser",
+		UserID:   "SuperAdminID",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
 	user1, err := rest.db.CreateUser(model.User{
 		UserName: "testUser",
 		UserID:   "userID",
@@ -108,6 +115,7 @@ func TestHandleCommands(t *testing.T) {
 	}
 
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 	assert.NoError(t, rest.db.DeleteUser(user1.ID))
 	assert.NoError(t, rest.db.DeleteUser(user2.ID))
 
