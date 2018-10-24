@@ -290,6 +290,9 @@ func TestHandleTimeCommands(t *testing.T) {
 	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
+	d := time.Date(2018, 10, 10, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
 	admin, err := rest.db.CreateUser(model.User{
 		UserName: "adminUser",
 		UserID:   "SuperAdminID",
@@ -347,9 +350,6 @@ func TestHandleTimeCommands(t *testing.T) {
 			tt.command,
 			tt.text,
 		)
-
-		d := time.Date(2018, 10, 10, 10, 0, 0, 0, time.UTC)
-		monkey.Patch(time.Now, func() time.Time { return d })
 
 		context, response := getContext(request)
 		err = rest.handleCommands(context)
