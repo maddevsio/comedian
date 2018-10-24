@@ -28,7 +28,7 @@ func main() {
 	go func() { log.Fatal(api.Start()) }()
 
 	r := reporting.NewReporter(slack)
-	go r.Start()
+	go func() { r.Start() }()
 
 	notifier, err := notifier.NewNotifier(slack)
 	if err != nil {

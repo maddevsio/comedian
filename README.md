@@ -9,6 +9,7 @@ The main goal of the project is a daily remote stand up meetings automation.
 [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
 [![](https://godoc.org/github.com/maddevsio/comedian?status.svg)](https://godoc.org/github.com/maddevsio/comedian)
 
+![](show.gif)
 ## How can comedian help you to spend less time on the stand up meetings
 
 First, you need to start remote standups meetings in Slack. Create a channel for it. Then add Comedian and ask your team to write messages with the following template tagging bot in the message
