@@ -42,7 +42,7 @@ Create the following commands (Request URL for all commands: ```http: // <ngrok 
 | Name | Hint | Description | Escape option |
 | --- | --- | --- | --- |
 | /add | @user @user1 / (admin, pm, developer) | Adds a new user with selected role | V |
-| /remove | @user @user1 / (admin, pm, developer) | Removes an admin | V |
+| /delete | @user @user1 / (admin, pm, developer) | Removes user with selected role  | V |
 | /list | (admin, pm, developer) | Lists users with selected role | - |
 | /standup_time_set | hh:mm | Set standup time | - |
 | /standup_time | - | Show standup time in current channel | - |
