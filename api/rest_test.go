@@ -339,6 +339,9 @@ func TestHandleTimeCommands(t *testing.T) {
 		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following users were removed as developers: <@testID|testUser>\n"},
 	}
 
+	d := time.Date(2018, 10, 24, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
 	for _, tt := range testCases {
 		request := fmt.Sprintf("user_id=%s&channel_id=%s&channel_name=%s&command=/%s&text=%s",
 			tt.senderID,
