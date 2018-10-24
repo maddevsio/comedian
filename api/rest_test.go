@@ -323,24 +323,21 @@ func TestHandleTimeCommands(t *testing.T) {
 		{"SuperAdminID", "wrongchannel", "xyz", "standup_time", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"testID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "Access Denied! You need to be at least PM in this project to use this command!"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Users are assigned as PMs: <@testID|testUser>\n"},
-		{"testID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1540361100^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"},
+		{"testID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1539151500^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "Users are removed as PMs: <@testID|testUser>\n"},
 		{"SuperAdminID", "wrongchannel", "xyz", "standup_time_set", "12:05", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "1205", "Could not understand how you mention time. Please, use 24:00 hour format and try again!"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1540361100^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "<!date^1540361100^Standup time is {time}|Standup time set at 12:00>"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1539151500^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "<!date^1539151500^Standup time is {time}|Standup time set at 12:00>"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_remove", "", "standup time for TestChannel channel deleted"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / developer", "Users are assigned as developers: <@testID|testUser>\n"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1540361100^Standup time set at {time}|Standup time set at 12:00>"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "<!date^1540361100^Standup time is {time}|Standup time set at 12:00>"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1539151500^Standup time set at {time}|Standup time set at 12:00>"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "<!date^1539151500^Standup time is {time}|Standup time set at 12:00>"},
 		{"SuperAdminID", "wrongchannel", "xyz", "standup_time_remove", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"testID", "TestChannelID", "TestChannel", "standup_time_remove", "", "Access Denied! You need to be at least PM in this project to use this command!"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_remove", "", "standup time for this channel removed, but there are people marked as a standuper."},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following users were removed as developers: <@testID|testUser>\n"},
 	}
-
-	d := time.Date(2018, 10, 24, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
 
 	for _, tt := range testCases {
 		request := fmt.Sprintf("user_id=%s&channel_id=%s&channel_name=%s&command=/%s&text=%s",
@@ -350,6 +347,9 @@ func TestHandleTimeCommands(t *testing.T) {
 			tt.command,
 			tt.text,
 		)
+
+		d := time.Date(2018, 10, 10, 10, 0, 0, 0, time.UTC)
+		monkey.Patch(time.Now, func() time.Time { return d })
 
 		context, response := getContext(request)
 		err = rest.handleCommands(context)
