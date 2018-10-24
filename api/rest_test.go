@@ -285,12 +285,8 @@ func TestAdmins(t *testing.T) {
 
 func TestHandleTimeCommands(t *testing.T) {
 
-	AddTime := "user_id=SuperAdminID&command=/standup_time_set&text=12:05&channel_id=chanid&channel_name=channame"
-	AddEmptyTime := "user_id=SuperAdminID&command=/standup_time_set&text=&channel_id=chanid&channel_name=channame"
-	ListTime := "user_id=SuperAdminID&command=/standup_time&channel_id=chanid&channel_name=channame"
-	DelTime := "user_id=SuperAdminID&command=/standup_time_remove&channel_id=chanid&channel_name=channame"
-	currentTime := time.Now()
-	timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 12, 5, 0, 0, time.Local).Unix()
+	// currentTime := time.Now()
+	// timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 12, 5, 0, 0, time.Local).Unix()
 
 	c, err := config.Get()
 	c.ManagerSlackUserID = "SuperAdminID"
@@ -299,73 +295,64 @@ func TestHandleTimeCommands(t *testing.T) {
 	assert.NoError(t, err)
 
 	admin, err := rest.db.CreateUser(model.User{
-		UserName: "Admin",
-		UserID:   "SuperAdminID",
-		Role:     "admin",
+		UserName: "testUser",
+		UserID:   "testID",
+		Role:     "",
 	})
 	assert.NoError(t, err)
 
 	channel, err := rest.db.CreateChannel(model.Channel{
-		ChannelName: "channame",
-		ChannelID:   "chanid",
+		ChannelName: "TestChannel",
+		ChannelID:   "TestChannelID",
 		StandupTime: int64(0),
 	})
 
 	testCases := []struct {
-		title        string
+		senderID     string
+		channelID    string
+		channelTitle string
 		command      string
-		statusCode   int
-		responseBody string
+		text         string
+		response     string
 	}{
-		{"list time no time added", ListTime, http.StatusOK, "No standup time set for this channel yet! Please, add a standup time using `/standup_time_set` command!"},
-		{"add time (no users)", AddTime, http.StatusOK, fmt.Sprintf("<!date^%v^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>", timeInt)},
-		{"add time no text", AddEmptyTime, http.StatusOK, "Could not understand how you mention time. Please, use 24:00 hour format and try again!"},
-		{"list time", ListTime, http.StatusOK, fmt.Sprintf("<!date^%v^Standup time is {time}|Standup time set at 12:00>", timeInt)},
+		{"testID", "TestChannelID", "TestChannel", "standup_time", "", "No standup time set for this channel yet! Please, add a standup time using `/standup_time_set` command!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "No standup time set for this channel yet! Please, add a standup time using `/standup_time_set` command!"},
+		{"SuperAdminID", "wrongchannel", "xyz", "standup_time", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"testID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Users are assigned as PMs: <@testID|testUser>\n"},
+		{"testID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1540361100^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "Users are removed as PMs: <@testID|testUser>\n"},
+		{"SuperAdminID", "wrongchannel", "xyz", "standup_time_set", "12:05", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "1205", "Could not understand how you mention time. Please, use 24:00 hour format and try again!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1540361100^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "<!date^1540361100^Standup time is {time}|Standup time set at 12:00>"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_remove", "", "standup time for TestChannel channel deleted"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / developer", "Users are assigned as developers: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1540361100^Standup time set at {time}|Standup time set at 12:00>"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "<!date^1540361100^Standup time is {time}|Standup time set at 12:00>"},
+		{"SuperAdminID", "wrongchannel", "xyz", "standup_time_remove", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"testID", "TestChannelID", "TestChannel", "standup_time_remove", "", "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_remove", "", "standup time for this channel removed, but there are people marked as a standuper."},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following users were removed as developers: <@testID|testUser>\n"},
 	}
 
 	for _, tt := range testCases {
-		context, rec := getContext(tt.command)
-		err := rest.handleCommands(context)
+		request := fmt.Sprintf("user_id=%s&channel_id=%s&channel_name=%s&command=/%s&text=%s",
+			tt.senderID,
+			tt.channelID,
+			tt.channelTitle,
+			tt.command,
+			tt.text,
+		)
+
+		context, response := getContext(request)
+		err = rest.handleCommands(context)
 		if err != nil {
-			logrus.Errorf("TestHandleTimeCommands: %s failed. Error: %v\n", tt.title, err)
+			logrus.Errorf("handleCommands failed: %v", err)
 		}
-		assert.Equal(t, tt.statusCode, rec.Code)
-		assert.Equal(t, tt.responseBody, rec.Body.String())
+		assert.Equal(t, tt.response, response.Body.String())
 	}
 
-	su1, err := rest.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID1",
-		ChannelID: "chanid",
-	})
-	assert.NoError(t, err)
-
-	testCases = []struct {
-		title        string
-		command      string
-		statusCode   int
-		responseBody string
-	}{
-		{"list time no time added", AddTime, http.StatusOK, fmt.Sprintf("<!date^%v^Standup time set at {time}|Standup time set at 12:00>", timeInt)},
-		{"remove time no text", DelTime, http.StatusOK, "standup time for this channel removed, but there are people marked as a standuper."},
-	}
-
-	for _, tt := range testCases {
-		context, rec := getContext(tt.command)
-		err := rest.handleCommands(context)
-		if err != nil {
-			logrus.Errorf("TestHandleTimeCommands: %s failed. Error: %v\n", tt.title, err)
-		}
-		assert.Equal(t, tt.statusCode, rec.Code)
-		assert.Equal(t, tt.responseBody, rec.Body.String())
-	}
-
-	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
-
-	//delete time
-	context, rec := getContext(DelTime)
-	assert.NoError(t, rest.handleCommands(context))
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "standup time for channame channel deleted", rec.Body.String())
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
 	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 
