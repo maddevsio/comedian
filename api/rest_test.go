@@ -284,10 +284,6 @@ func TestAdmins(t *testing.T) {
 }
 
 func TestHandleTimeCommands(t *testing.T) {
-
-	// currentTime := time.Now()
-	// timeInt := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 12, 5, 0, 0, time.Local).Unix()
-
 	c, err := config.Get()
 	c.ManagerSlackUserID = "SuperAdminID"
 	slack, err := chat.NewSlack(c)
@@ -356,6 +352,95 @@ func TestHandleTimeCommands(t *testing.T) {
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
 	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 
+}
+
+func TestTimeTableCommand(t *testing.T) {
+	c, err := config.Get()
+	c.ManagerSlackUserID = "SuperAdminID"
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
+	assert.NoError(t, err)
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "testUser",
+		UserID:   "testID",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "TestChannel",
+		ChannelID:   "TestChannelID",
+		StandupTime: int64(0),
+	})
+
+	user, err := rest.db.CreateUser(model.User{
+		UserName: "testUser1",
+		UserID:   "testID1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		senderID     string
+		channelID    string
+		channelTitle string
+		command      string
+		text         string
+		response     string
+	}{
+		{"testID", "", "", "timetable_set", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"testID", "TestChannelID", "TestChannel", "timetable_set", "", "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Users are assigned as PMs: <@testID|testUser>\n"},
+		{"testID", "TestChannelID", "TestChannel", "timetable_set", "12:05", "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "Users are removed as PMs: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_set", "@user on mon at 10:00", "Seems like you misspelled username. Please, check and try command again!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_set", "<@testID|testUser> on mon at 10:00", "Timetable for <@testID> created: | Monday 10:00 | \n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_set", "<@testID|testUser> on mon, tue at 10:00", "Timetable for <@testID> updated: | Monday 10:00 | Tuesday 10:00 | \n"},
+
+		{"SuperAdminID", "", "", "timetable_show", " ", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_show", " ", "Seems like you misspelled username. Please, check and try command again!Seems like you misspelled username. Please, check and try command again!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_show", "<@testID|testUser>", "Timetable for <@testUser> is: | Monday 10:00 | Tuesday 10:00 |\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_remove", "<@testID|testUser>", "Timetable removed for <@testUser>\n"},
+
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_show", "<@testID1|testUser1>", "Seems like <@testUser1> is not even assigned as standuper in this channel!\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID1|testUser1> / developer", "Users are assigned as developers: <@testID1|testUser1>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_show", "<@testID1|testUser1>", "<@testUser1> does not have a timetable!\n"},
+
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID1|testUser1> / developer", "The following users were removed as developers: <@testID1|testUser1>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following users were removed as developers: <@testID|testUser>\n"},
+
+		{"testID", "", "", "timetable_remove", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
+		{"testID", "TestChannelID", "TestChannel", "timetable_remove", "", "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Users are assigned as PMs: <@testID|testUser>\n"},
+		{"testID", "TestChannelID", "TestChannel", "timetable_remove", "", "Seems like you misspelled username. Please, check and try command again!"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "Users are removed as PMs: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_remove", "<@testID1|testUser1>", "Seems like <@testUser1> is not even assigned as standuper in this channel!\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser>", "Users are assigned as developers: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_remove", "<@testID|testUser>", "<@testUser> does not have a timetable!\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following users were removed as developers: <@testID|testUser>\n"},
+	}
+
+	for _, tt := range testCases {
+		request := fmt.Sprintf("user_id=%s&channel_id=%s&channel_name=%s&command=/%s&text=%s",
+			tt.senderID,
+			tt.channelID,
+			tt.channelTitle,
+			tt.command,
+			tt.text,
+		)
+
+		context, response := getContext(request)
+		err = rest.handleCommands(context)
+		if err != nil {
+			logrus.Errorf("handleCommands failed: %v", err)
+		}
+		assert.Equal(t, tt.response, response.Body.String())
+	}
+
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(user.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 }
 
 func TestHandleReportByProjectCommands(t *testing.T) {
@@ -564,73 +649,6 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 		err := rest.handleCommands(context)
 		if err != nil {
 			logrus.Errorf("ReportByProjectAndUser: %s failed. Error: %v\n", tt.title, err)
-		}
-		assert.Equal(t, tt.statusCode, rec.Code)
-		assert.Equal(t, tt.responseBody, rec.Body.String())
-	}
-
-	assert.NoError(t, rest.db.DeleteChannelMember(su1.UserID, su1.ChannelID))
-	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
-	assert.NoError(t, rest.db.DeleteUser(user.ID))
-	assert.NoError(t, rest.db.DeleteUser(admin.ID))
-}
-
-func TestTimeTableCommand(t *testing.T) {
-	AddTimeTable1 := "user_id=SuperAdminID&command=/timetable_set&channel_id=123qwe&channel_name=chanName&text=@user1 on mon tue wed at 10:00"
-	RemoveTimeTable := "user_id=SuperAdminID&command=/timetable_remove&channel_id=123qwe&channel_name=chanName&text=<@User1|userID1>"
-	AddTimeTable2 := "user_id=SuperAdminID&command=/timetable_set&channel_id=123qwe&channel_name=chanName&text=<@User1|userID1> on mon tue wed at 10:00"
-	ShowTimeTable := "user_id=SuperAdminID&command=/timetable_show&channel_id=123qwe&channel_name=chanName&text=<@User1|userID1>"
-
-	c, err := config.Get()
-	c.ManagerSlackUserID = "SuperAdminID"
-	slack, err := chat.NewSlack(c)
-	rest, err := NewRESTAPI(slack)
-	assert.NoError(t, err)
-
-	admin, err := rest.db.CreateUser(model.User{
-		UserName: "Admin",
-		UserID:   "SuperAdminID",
-		Role:     "admin",
-	})
-	assert.NoError(t, err)
-
-	channel, err := rest.db.CreateChannel(model.Channel{
-		ChannelName: "chanName",
-		ChannelID:   "123qwe",
-		StandupTime: int64(0),
-	})
-	assert.NoError(t, err)
-
-	user, err := rest.db.CreateUser(model.User{
-		UserName: "User1",
-		UserID:   "userID1",
-		Role:     "",
-	})
-	assert.NoError(t, err)
-
-	su1, err := rest.db.CreateChannelMember(model.ChannelMember{
-		UserID:    user.UserID,
-		ChannelID: channel.ChannelID,
-	})
-	assert.NoError(t, err)
-
-	testCases := []struct {
-		title        string
-		command      string
-		statusCode   int
-		responseBody string
-	}{
-		{"Add Timetable Misspelled username", AddTimeTable1, http.StatusOK, "Seems like you misspelled username. Please, check and try command again!"},
-		{"Add Timetable OK", AddTimeTable2, http.StatusOK, "Timetable for <@User1> created: | Monday 10:00 | Tuesday 10:00 | Wednesday 10:00 | \n"},
-		{"Show Timetable", ShowTimeTable, http.StatusOK, "Timetable for <@userID1> is: | Monday 10:00 | Tuesday 10:00 | Wednesday 10:00 |\n"},
-		{"Remove Timetable", RemoveTimeTable, http.StatusOK, "Timetable removed for <@userID1>\n"},
-	}
-
-	for _, tt := range testCases {
-		context, rec := getContext(tt.command)
-		err := rest.handleCommands(context)
-		if err != nil {
-			logrus.Errorf("ReportByUser: %s failed. Error: %v\n", tt.title, err)
 		}
 		assert.Equal(t, tt.statusCode, rec.Code)
 		assert.Equal(t, tt.responseBody, rec.Body.String())

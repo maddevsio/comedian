@@ -103,7 +103,7 @@ func ParseTimeTextToInt(timeText string) (int64, error) {
 
 }
 
-func PrepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) (model.TimeTable, error) {
+func PrepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) model.TimeTable {
 	if strings.Contains(weekdays, "mon") || strings.Contains(weekdays, "пн") {
 		tt.Monday = timeInt
 	}
@@ -125,7 +125,7 @@ func PrepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) (model
 	if strings.Contains(weekdays, "sun") || strings.Contains(weekdays, "вс") {
 		tt.Sunday = timeInt
 	}
-	return tt, nil
+	return tt
 }
 
 //SetupDays gets dates and returns their differense in days
