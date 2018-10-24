@@ -291,6 +291,13 @@ func TestHandleTimeCommands(t *testing.T) {
 	assert.NoError(t, err)
 
 	admin, err := rest.db.CreateUser(model.User{
+		UserName: "adminUser",
+		UserID:   "SuperAdminID",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
+	user, err := rest.db.CreateUser(model.User{
 		UserName: "testUser",
 		UserID:   "testID",
 		Role:     "",
@@ -351,6 +358,7 @@ func TestHandleTimeCommands(t *testing.T) {
 
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
 	assert.NoError(t, rest.db.DeleteUser(admin.ID))
+	assert.NoError(t, rest.db.DeleteUser(user.ID))
 
 }
 
@@ -362,6 +370,13 @@ func TestTimeTableCommand(t *testing.T) {
 	assert.NoError(t, err)
 
 	admin, err := rest.db.CreateUser(model.User{
+		UserName: "adminUser",
+		UserID:   "SuperAdminID",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
+	user, err := rest.db.CreateUser(model.User{
 		UserName: "testUser",
 		UserID:   "testID",
 		Role:     "",
@@ -374,7 +389,7 @@ func TestTimeTableCommand(t *testing.T) {
 		StandupTime: int64(0),
 	})
 
-	user, err := rest.db.CreateUser(model.User{
+	user1, err := rest.db.CreateUser(model.User{
 		UserName: "testUser1",
 		UserID:   "testID1",
 		Role:     "",
@@ -440,6 +455,7 @@ func TestTimeTableCommand(t *testing.T) {
 
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
 	assert.NoError(t, rest.db.DeleteUser(user.ID))
+	assert.NoError(t, rest.db.DeleteUser(user1.ID))
 	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 }
 
