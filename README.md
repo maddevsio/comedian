@@ -10,6 +10,7 @@ The main goal of the project is a daily remote stand up meetings automation.
 [![](https://godoc.org/github.com/maddevsio/comedian?status.svg)](https://godoc.org/github.com/maddevsio/comedian)
 
 ![](show.gif)
+
 ## How can comedian help you to spend less time on the stand up meetings
 
 First, you need to start remote standups meetings in Slack. Create a channel for it. Then add Comedian and ask your team to write messages with the following template tagging bot in the message
@@ -40,15 +41,9 @@ Create the following commands (Request URL for all commands: ```http: // <ngrok 
 
 | Name | Hint | Description | Escape option |
 | --- | --- | --- | --- |
-| /admin_add | @user | Adds a new admin | V |
-| /admin_remove | @user | Removes an admin | V |
-| /admin_list | - | Lists all admins | - |
-| /pm_add | @user | Adds a new PM | V |
-| /pm_remove | @user | Removes an PM | V |
-| /pm_list | - | Lists all PMs | - |
-| /comedian_add | @user | Adds a new standuper | V |
-| /comedian_remove | @user | Removes a standuper | V |
-| /comedian_list | - | Lists all standupers | - |
+| /add | @user @user1 / (admin, pm, developer) | Adds a new user with selected role | V |
+| /remove | @user @user1 / (admin, pm, developer) | Removes an admin | V |
+| /list | (admin, pm, developer) | Lists users with selected role | - |
 | /standup_time_set | hh:mm | Set standup time | - |
 | /standup_time | - | Show standup time in current channel | - |
 | /standup_time_remove | - | Delete standup time in current channel | - |
@@ -57,7 +52,7 @@ Create the following commands (Request URL for all commands: ```http: // <ngrok 
 | /timetable_remove | @user1 @user2  | Delete individual standup time for users | V |
 | /report_by_project | #channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period | - |
 | /report_by_user | @user 2017-01-01 2017-01-31 | gets all standups for specified user for time period | - |
-| /report_by_project_and_user | #project @user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
+| /report_by_user_in_project | #project @user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
 
 Select "Bot users" in the menu.
 Create a new bot user.
