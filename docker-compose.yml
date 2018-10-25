@@ -1,7 +1,6 @@
 version: '2'
 networks:
-  comedian-local
-
+  comedian-local:
 
 services:
 
@@ -21,7 +20,7 @@ services:
 
 
   comedian:
-    image: anatoliyfedorenko/comedian:(use latest version here from dockerhub)
+    image: anatoliyfedorenko/comedian:2.24
     restart: on-failure
     links:
       - db:db

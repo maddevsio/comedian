@@ -138,12 +138,25 @@ In case something does not work correctly double check the configuration and mak
 If you are willing to use Comedian for your organization, we recommend you to proceed with Digital Ocean droplet. Here is the basic instructions how to deploy Comedian to DO:
 
 ### **Step 1**: Purchase Droplet
+1. Login to Digital Ocean
+2. Add new project 
+3. Add a droplet, choose Ubuntu 18.10 as your distributive
+4. Select $5 per month plan
+5. Do not add ssh key (if you are new to configuration)
+6. Choose a name for your droplet
+7. Press "create" button
+
+After some time you will get an email with all info needed to login to your droplet
+
+### **Step 2**: Configure the server
+Login to your newly created server using SSH. You should have recieved email from Digital Ocean with IP address, login and a password. 
+
+Open your terminal, type `ssh login@ipaddress` and then insert password. If this is your first time using this server, DO will ask you to reset the password. 
+
+Next step is to [install docker-compose](https://www.digitalocean.com/community/tutorials/how-to-install-docker-compose-on-ubuntu-18-04) and [docker](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)
 
 
-### **Step 2**: Login to your newly created server using SSH
-
-
-### **Step 3**: Create docker-compose file 
+### **Step 3**: Prepare docker-compose file 
 
 run `nano docker-compose.yml` to create your docker-compose file. Use docker-compose.yml file from the repository to set up it properly. You can use env variables inside or just type parameters right there for more readability. 
 
@@ -158,6 +171,7 @@ If you care about security, you may use HTTPS://github.com/JrCs/docker-letsencry
 Follow Steps 4-9 of the local installation guidelines before you proceed! 
 
 ### **Step 5**: Use docker-compose 
+
 Once your docker-compose.yml file is ready and you installed Comedian App in your workspace, run `docker-compose up` or `docker-compose up -d` to start Comedian on the background.
 
 Follow Step 10 of the local installation guide to check if Comedian was installed successfully. 
