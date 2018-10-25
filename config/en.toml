@@ -34,7 +34,7 @@ standupAccepted = "Good job! Standup accepted! Keep it up!"
 
 
 notifyNotAll = "In this channel not all standupers wrote standup today, shame on you: %v."
-notifyAllDone = "Congradulations! Everybody wrote their standups today!"
+notifyAllDone = "Congradulations! Nobody missed the deadline! Well done!"
 notifyManagerAllDone = "<@%v>, in channel <#%s> all standupers have written standup today"
 notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup today, these users ignored standup today: %v."
 notifyUsersWarning = "Hey, %v! %v minutes to deadline and the team is still waiting for standups from you!"
