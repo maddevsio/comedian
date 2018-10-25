@@ -48,7 +48,7 @@ git clone https://github.com/maddevsio/comedian
 
 ### **Step 3**: Configure environmental variables
 
-Create `.env` file and add the following env variables there. See .env.example for a reference:
+Create `.env` file in the root directory and add the following env variables there. See .env.example for a reference:
 
 | Title | Description | Default | Optional? |
 | --- | --- | --- | --- |

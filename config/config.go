@@ -9,14 +9,14 @@ type Config struct {
 	SlackToken            string `envconfig:"SLACK_TOKEN" required:"true"`
 	DatabaseURL           string `envconfig:"DATABASE" required:"true" default:"comedian:comedian@/comedian?parseTime=true"`
 	HTTPBindAddr          string `envconfig:"HTTP_BIND_ADDR" required:"true" default:"0.0.0.0:8080"`
-	NotifierInterval      int    `envconfig:"NOTIFIER_INTERVAL" required:"true" default:2`
-	ManagerSlackUserID    string `envconfig:"MANAGER_SLACK_USER_ID" required:"true"`
-	ReportingChannel      string `envconfig:"REPORTING_CHANNEL" required:"true"`
+	NotifierInterval      int    `envconfig:"REMINDER_INTERVAL" required:"true" default:2`
+	ManagerSlackUserID    string `envconfig:"SUPER_ADMIN_ID" required:"true"`
+	ReportingChannel      string `envconfig:"REPORT_CHANNEL" required:"true"`
 	ReportTime            string `envconfig:"REPORT_TIME" required:"true" default:"13:05"`
 	Language              string `envconfig:"LANGUAGE" required:"true" default:"en_US"`
-	ReminderRepeatsMax    int    `envconfig:"REMINDER_REPEATS_MAX" required:"true" default:5`
-	ReminderTime          int64  `envconfig:"REMINDER_TIME" required:"true" default:5`
-	TeamMonitoringEnabled bool   `envconfig:"ENABLE_TEAM_MONITORING" required:"true" default:true`
+	ReminderRepeatsMax    int    `envconfig:"MAX_REMINDERS" required:"true" default:5`
+	ReminderTime          int64  `envconfig:"WARNING_TIME" required:"true" default:5`
+	TeamMonitoringEnabled bool   `envconfig:"ENABLE_COLLECTOR" required:"true" default:true`
 	CollectorURL          string `envconfig:"COLLECTOR_URL" required:"true"`
 	CollectorToken        string `envconfig:"COLLECTOR_TOKEN" required:"true"`
 	TeamDomain            string `envconfig:"SLACK_DOMAIN"`
