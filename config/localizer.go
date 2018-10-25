@@ -132,6 +132,7 @@ type Translate struct {
 	AddAdminsAdded      string
 
 	SomethingWentWrong string
+	HelpCommand        string
 }
 
 // GetTranslation sets translation files for config
@@ -247,6 +248,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"AddAdminsExist",
 		"AddAdminsAdded",
 		"SomethingWentWrong",
+		"HelpCommand",
 	}
 
 	for _, t := range r {
@@ -374,6 +376,7 @@ func GetTranslation(lang string) (Translate, error) {
 
 		NeedCorrectUserRole: m["NeedCorrectUserRole"],
 		SomethingWentWrong:  m["SomethingWentWrong"],
+		HelpCommand:         m["HelpCommand"],
 	}
 
 	return t, nil

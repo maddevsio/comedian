@@ -49,6 +49,8 @@ const (
 	commandReportByProject       = "/report_by_project"
 	commandReportByUser          = "/report_by_user"
 	commandReportByUserInProject = "/report_by_user_in_project"
+
+	commandHelp = "/helper"
 )
 
 //ResponseText is Comedian API response text message to be displayed
@@ -93,6 +95,8 @@ func (r *REST) handleCommands(c echo.Context) error {
 	command := form.Get("command")
 
 	switch command {
+	case commandHelp:
+		return r.helpCommand(c, form)
 	case commandAdd:
 		return r.addCommand(c, form)
 	case commandList:
@@ -120,6 +124,14 @@ func (r *REST) handleCommands(c echo.Context) error {
 	default:
 		return c.String(http.StatusNotImplemented, "Not implemented")
 	}
+}
+
+func (r *REST) helpCommand(c echo.Context, f url.Values) error {
+	_, _, _, _, err := r.processCommand(c, f)
+	if err != nil {
+		return c.String(http.StatusOK, r.conf.Translate.SomethingWentWrong)
+	}
+	return c.String(http.StatusOK, r.conf.Translate.HelpCommand)
 }
 
 func (r *REST) addCommand(c echo.Context, f url.Values) error {

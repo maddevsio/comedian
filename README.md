@@ -47,6 +47,7 @@ Create the following commands (Request URL for all commands: ```http: // <ngrok 
 
 | Name | Hint | Description | Escape option |
 | --- | --- | --- | --- |
+| /helper | | displays helpfull info about slash commands | - |
 | /add | @user @user1 / (admin, pm, developer) | Adds a new user with selected role | V |
 | /delete | @user @user1 / (admin, pm, developer) | Removes user with selected role  | V |
 | /list | (admin, pm, developer) | Lists users with selected role | - |

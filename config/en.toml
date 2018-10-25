@@ -133,3 +133,4 @@ listNoPMs = "No PMs in this channel! To add one, please, use `/add` slash comman
 listPMs = "PMs in this channel: %v"
 
 SomethingWentWrong = "Something went wrong. Please, try again later or report the problem to chatbot support!"
+HelpCommand = "Hello! Bellow you can see the list of commands and how to use them:\n`/add` /add @user1 @user2 / role ('admin'|'pm'|'developer'|''). You can add users with no role as well\n`/list` /list role ('admin'|'pm'|'developer'|'') lists users with the selected role\n`/delete` /delete @user1 @user2 / role ('admin'|'pm'|'developer'|'') unassigns users with selected roles\n"

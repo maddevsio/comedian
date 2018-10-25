@@ -679,6 +679,43 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 }
 
+func TestHandleHelpCommand(t *testing.T) {
+
+	c, err := config.Get()
+	c.ManagerSlackUserID = "SuperAdminID"
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
+	assert.NoError(t, err)
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "adminUser",
+		UserID:   "SuperAdminID",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "TestChannel",
+		ChannelID:   "TestChannelID",
+		StandupTime: int64(0),
+	})
+
+	command := "user_id=SuperAdminID&command=/helper&channel_id=TestChannelID&channel_name=TestChannel&text="
+
+	body := "Hello! Bellow you can see the list of commands and how to use them:\n`/add` /add @user1 @user2 / role ('admin'|'pm'|'developer'|''). You can add users with no role as well\n`/list` /list role ('admin'|'pm'|'developer'|'') lists users with the selected role\n`/delete` /delete @user1 @user2 / role ('admin'|'pm'|'developer'|'') unassigns users with selected roles\n"
+	context, rec := getContext(command)
+	err = rest.handleCommands(context)
+	if err != nil {
+		logrus.Errorf("handleCommands failed. Error: %v\n", err)
+	}
+	assert.Equal(t, 200, rec.Code)
+	assert.Equal(t, body, rec.Body.String())
+
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
+
+}
+
 func TestUserHasAccess(t *testing.T) {
 	c, err := config.Get()
 	c.ManagerSlackUserID = "SUPERADMINID"
