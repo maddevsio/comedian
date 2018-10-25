@@ -1,7 +1,9 @@
-<div style="text-align:center">
+<p align="center">
 <img style="width: 300px" src ="logo.png" />
 
-Stand up bot for slack to help you with remote stand up meetings automation
+<p align="center"> Stand up bot for slack to help you with remote stand up meetings automation </p>
+
+<div align="center">
 
 ![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/maddevsio/comedian/badge.svg)](https://coveralls.io/github/maddevsio/comedian)
@@ -10,6 +12,7 @@ Stand up bot for slack to help you with remote stand up meetings automation
 [![](https://godoc.org/github.com/maddevsio/comedian?status.svg)](https://godoc.org/github.com/maddevsio/comedian)
 
 </div>
+</p>
 
 ![](show.gif)
 
