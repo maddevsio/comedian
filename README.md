@@ -1,5 +1,5 @@
 <div align="center">
-    <img style="width: 300px" src ="logo.png" />
+    <img style="width: 300px" src ="documentation/logo.png" />
 </div>
 
 <div align="center"> Stand up bot for slack to help you with remote stand up meetings automation </div>
@@ -14,22 +14,31 @@
 
 </div>
 
+![](documentation/show.gif)
 
-![](show.gif)
+## Comedian Features
 
-## How can comedian help you to spend less time on the stand up meetings
+- [x] Handle standup and show warnings if standup is not complete 
+- [x] Assign developers, Project Managers, and admins
+- [x] Control standup deadlines in channels
+- [x] Set up individual timetables (schedules) for developers to submit standups
+- [x] Remind about upcoming deadlines for teams and individuals
+- [x] Tag non-reporters in channels and DM them when deadline is missed
+- [x] Generate reports on projects, users or users in projects
+- [x] Provide daily report on team's yesterday performance, weekly report on Sundays
+- [x] Support English and Russian languages
 
-First, you need to start remote standups meetings in Slack. Create a channel for it. Then add Comedian and ask your team to write messages with the following template tagging bot in the message
 
-1. What I did yesterday(with tasks description)
-2. What I'm going to do today
-3. What problems I've faced.
+## Getting started locally
 
-The comedian will store it for you and give a convinient reports for you about stand ups.
+These instructions will help you set up the project on your local machine for development and testing purposes with [ngrok](https://ngrok.com/product) 
 
-## Getting started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. 
+### **Step 1**: Create a public HTTPS URL for Comedian
+Install ngrok [ngrok](https://ngrok.com/product) and create a public HTTPS URL for Comedian on your development machine following the instruction from the web
+
+### **Step 2**: Clone the project
+Copy the project repository to your local machine. Note: Go should be already installed! If you do not have Go installed, please, follow [installation guidelines](https://golang.org/doc/install) from Go official website to install it and then proceed to Step 2
 
 ```
 mkdir -p $GOPATH/src/github.com/maddevsio/
@@ -37,17 +46,41 @@ cd $GOPATH/src/github.com/maddevsio/
 git clone https://github.com/maddevsio/comedian
 ```
 
+### **Step 3**: Configure environmental variables
+
+Create `.env` file and add the following env variables there. See .env.example for a reference:
+
+| Title | Description | Default | Optional? |
+| --- | --- | --- | --- |
+| COMEDIAN_SLACK_TOKEN | Bot User OAuth Access Token |  | No |
+| COMEDIAN_DATABASE | Database URL. Default: comedian:comedian@/comedian?parseTime=true |  | No |
+| COMEDIAN_SECRET_TOKEN | Include to secure Comedian API |  | Yes |
+| COMEDIAN_HTTP_BIND_ADDR | HTTP bind address | 0.0.0.0:8080 | No |
+| COMEDIAN_LANGUAGE | Comedian primary language | en_US | No |
+| COMEDIAN_SUPER_ADMIN_ID | Slack ID of super admin in your workspace |  | No |
+| COMEDIAN_REPORT_CHANNEL | Slack Channel ID to send daily reports to |  | No |
+| COMEDIAN_REPORT_TIME | Time to send daily reports | 10:00 | No |
+| COMEDIAN_MAX_REMINDERS | Number of times comedian keeps reminding non reporters | 3 | No |
+| COMEDIAN_REMINDER_INTERVAL | Duration of the intervals when Comedian waits before next reminder in minutes | 30 | No |
+| COMEDIAN_WARNING_TIME | Duration prior to deadline to remind about upcoming deadline | 10 | No |
+| COMEDIAN_ENABLE_COLLECTOR | Enables or Disables Collector API requests | false | Yes |
+| COMEDIAN_COLLECTOR_TOKEN | Secret Token for Collector* API requests |  | Yes |
+| COMEDIAN_COLLECTOR_URL | URL to send Collector* API requests |  | Yes |
+| COMEDIAN_SLACK_DOMAIN | Slack workspace title (copy first word of the link) |  | Yes |
+| TZ | Setup time zone for comedian DB | UTC | Yes |
+
+*Please note that Collector Servise is developed only for internal use of Mad Devs LLC, therefore when configuring Comedian, you may turn this feature off.
+
+### **Step 4**: Create Slack chatbot 
 Create "app" in slack workspace: https://api.slack.com/apps
 In the drop-down list at the top select the created "app"
-In the menu, select "Slash Commands".
 
-Create a public HTTPS URL for Comedian on your development machine with [ngrok](https://ngrok.com/product)
-
-Create the following commands (Request URL for all commands: ```http: // <ngrok https URL> /commands ``` ):
+### **Step 5**: Configure slash commands
+In the menu, select "Slash Commands". Create the following commands (Request URL for all commands: ```http://<ngrok https URL>/commands(here you can paste COMEDIAN_SECRET_TOKEN if it is not empty) ``` )
 
 | Name | Hint | Description | Escape option |
 | --- | --- | --- | --- |
-| /helper | | displays helpfull info about slash commands | - |
+| /helper | | displays helpful info about slash commands | - |
 | /add | @user @user1 / (admin, pm, developer) | Adds a new user with selected role | V |
 | /delete | @user @user1 / (admin, pm, developer) | Removes user with selected role  | V |
 | /list | (admin, pm, developer) | Lists users with selected role | - |
@@ -61,33 +94,88 @@ Create the following commands (Request URL for all commands: ```http: // <ngrok 
 | /report_by_user | @user 2017-01-01 2017-01-31 | gets all standups for specified user for time period | - |
 | /report_by_user_in_project | #project @user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
 
+### **Step 6**: Create bot user
 Select "Bot users" in the menu.
 Create a new bot user.
 
+### **Step 7**: Install Comedian to your workspace
 Go to "OAuth & Permissions"
-Copy Bot User OAuth Access Token ("xoxb-___________________")
+Press "Install App" button. Authorize bot
 
-Add access tokens and additional setup to your docker-compose.yml 
-
-Run:
+### **Step 8**: Configure permissions
+In "OAuth & Permissions" tab, scroll down to Scopes section and add additional permission scopes for Comedian:
 ```
-sudo make
-docker-compose up
+Access information about your workspace
+Add slash commands and add actions to messages (and view related content)
+Access the workspaces emoji
+Send messages as user
+Send messages as TestComedian
 ```
 
-Please read more instructions in [Comedian Wiki](https://github.com/maddevsio/comedian/wiki)
+Press "Save Changes" and Reinstall App
 
-Use Comedian Images from [DockerHub](https://hub.docker.com/r/anatoliyfedorenko/comedian/tags/) 
+### **Step 9**: Finish configuring environmental variables
+- Copy Bot User OAuth Access Token (begins with "xoxb") and assign it as COMEDIAN_SLACK_TOKEN env variable
+- Copy your Slack User ID and assign it as COMEDIAN_SUPER_ADMIN_ID
+- Create a separate channel for reporting and copy its ID, assign it to COMEDIAN_REPORT_CHANNEL
 
-## Team Monitoring 
-Please note that Team Monitoring Servise is developed only for internal use of Mad Devs LLC, therefore when configuring Comedian, you may turn this feature off. (look at env variables) 
-
-Variables assosiated with TM are:
+Run the following commands to update your env variables: 
 ```
-COMEDIAN_ENABLE_TEAM_MONITORING=false
-COMEDIAN_COLLECTOR_TOKEN=_______________________
-COMEDIAN_COLLECTOR_URL=_________________________
+set -a
+. .env
+set +a
 ```
+
+### **Step 10**: Start Comedian
+Run: go run main.go
+
+If your configuration is correct, you will receive a message from Comedian with simple "Hello Manager" text. Then proceed to check if slash commands are working. Try to get a list of comedian admins (/list admin) and see it it works. 
+
+In case something does not work correctly double check the configuration and make sure you did not miss any installation steps.
+
+
+## Deploy on [Digital Ocean](https://www.digitalocean.com/pricing/)
+If you are willing to use Comedian for your organization, we recommend you to proceed with Digital Ocean droplet. Here is the basic instructions how to deploy Comedian to DO:
+
+### **Step 1**: Purchase Droplet
+
+
+### **Step 2**: Login to your newly created server using SSH
+
+
+### **Step 3**: Create docker-compose file 
+
+run `nano docker-compose.yml` to create your docker-compose file. Use docker-compose.yml file from the repository to set up it properly. You can use env variables inside or just type parameters right there for more readability. 
+
+Make sure to use updated Comedian images from [DockerHub](HTTPS://hub.docker.com/r/anatoliyfedorenko/comedian/tags/) 
+
+Save the changes and proceed to the next step. If you use .env file, make sure you updated your env variables before Step 4.
+
+If you care about security, you may use HTTPS://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion to configure Let's Encrypt certificates. 
+
+
+### **Step 4**: Install chatbot to your workspace
+Follow Steps 4-9 of the local installation guidelines before you proceed! 
+
+### **Step 5**: Use docker-compose 
+Once your docker-compose.yml file is ready and you installed Comedian App in your workspace, run `docker-compose up` or `docker-compose up -d` to start Comedian on the background.
+
+Follow Step 10 of the local installation guide to check if Comedian was installed successfully. 
+
+## Usage
+
+First, you need to start remote standups meetings in Slack. 
+
+Create a channel for it. Then add Comedian in the channel and ask your team to write messages with answers to the following questions tagging bot in the message:
+
+1. What I did yesterday?
+2. What I'm going to do today?
+3. What problems I've faced?
+
+Setup standups deadline when users should be ready to submit standups
+Assign users to submit standups 
+
+Enjoy automated remote standups meetings each morning! 
 
 ## Issues
 

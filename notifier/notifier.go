@@ -159,8 +159,6 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 			nonReporters = append(nonReporters, u)
 		}
 	}
-	logrus.Infof("NON REPORTERS: %v", nonReporters)
-	// if everyone wrote their standups display all done message!
 	if len(nonReporters) == 0 {
 		err := n.s.SendMessage(channelID, n.conf.Translate.NotifyAllDone, nil)
 		if err != nil {

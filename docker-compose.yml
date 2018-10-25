@@ -1,40 +1,50 @@
-version: '3'
+version: '2'
+networks:
+  comedian-local
+
 
 services:
 
   db:
-    image: percona/percona-server:5.7 
+    image: percona/percona-server:5.7
     restart: on-failure
-    volumes:
-      - "./docker:/var/lib/mysql"
+    command: --max_allowed_packet=32505856
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: comedian
       MYSQL_USER: comedian
       MYSQL_PASSWORD: comedian
+    networks:
+      - comedian-local
+    volumes:
+      - "./docker:/var/lib/mysql"
+
 
   comedian:
-    image: comedian:latest
+    image: anatoliyfedorenko/comedian:(use latest version here from dockerhub)
     restart: on-failure
-    ports:
-      - 8080:8080
     links:
       - db:db
+    ports:
+      - 8080:8080
+    networks:
+      - comedian-local
     environment:
       TZ: Asia/Bishkek
-      COMEDIAN_HTTP_BIND_ADDR: 0.0.0.0:8080
       COMEDIAN_SLACK_TOKEN: ${COMEDIAN_SLACK_TOKEN}
-      COMEDIAN_SLACK_DOMAIN: "beehive"
       COMEDIAN_DATABASE: comedian:comedian@tcp(db:3306)/comedian?parseTime=true
-      COMEDIAN_REMINDER_REPEATS_MAX: "2"
-      COMEDIAN_REMINDER_TIME: "3"
-      COMEDIAN_NOTIFIER_INTERVAL: "1"
-      COMEDIAN_REPORT_TIME: "20:06"
-      COMEDIAN_REPORTING_CHANNEL: "CDMAHC571"
-      COMEDIAN_MANAGER_SLACK_USER_ID: "UB9AE7CL9"
-      COMEDIAN_LANGUAGE: "ru_RU"
-      COMEDIAN_ENABLE_TEAM_MONITORING: "false"
-      COMEDIAN_COLLECTOR_TOKEN: ${COMEDIAN_COLLECTOR_TOKEN}
-      COMEDIAN_COLLECTOR_URL: ${COMEDIAN_COLLECTOR_URL}  
+      COMEDIAN_REMINDER_INTERVAL: ${COMEDIAN_REMINDER_INTERVAL}
+      COMEDIAN_HTTP_BIND_ADDR: 0.0.0.0:8080
+      COMEDIAN_SUPER_ADMIN_ID: ${COMEDIAN_SUPER_ADMIN_ID}
+      COMEDIAN_REPORT_CHANNEL: "XXX"
+      COMEDIAN_REPORT_TIME: "10:50"
+      COMEDIAN_LANGUAGE: en_US
+      COMEDIAN_COLLECTOR_TOKEN: collectorTokenTest
+      COMEDIAN_COLLECTOR_URL: "http://1111.1111"
+      COMEDIAN_ENABLE_COLLECTOR: ${COMEDIAN_ENABLE_COLLECTOR}
+      COMEDIAN_MAX_REMINDERS: ${COMEDIAN_MAX_REMINDERS}
+      COMEDIAN_WARNING_TIME: ${COMEDIAN_WARNING_TIME}
+      COMEDIAN_SLACK_DOMAIN: yourSlackDomain
+      COMEDIAN_SECRET_TOKEN: secureToken
     depends_on:
       - db
