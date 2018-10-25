@@ -1,7 +1,8 @@
-<p align="center">
-<img style="width: 300px" src ="logo.png" />
+<div align="center">
+    <img style="width: 300px" src ="logo.png" />
+</div>
 
-<p align="center"> Stand up bot for slack to help you with remote stand up meetings automation </p>
+<div align="center"> Stand up bot for slack to help you with remote stand up meetings automation </div>
 
 <div align="center">
 
@@ -12,7 +13,7 @@
 [![](https://godoc.org/github.com/maddevsio/comedian?status.svg)](https://godoc.org/github.com/maddevsio/comedian)
 
 </div>
-</p>
+
 
 ![](show.gif)
 
