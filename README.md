@@ -3,13 +3,15 @@
 
 <p align="center"> Stand up bot for slack to help you with remote stand up meetings automation </p>
 
-<p align="center">
+<div align="center">
+
 ![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/maddevsio/comedian/badge.svg)](https://coveralls.io/github/maddevsio/comedian)
 [![Go Report Card](https://goreportcard.com/badge/github.com/maddevsio/comedian)](https://goreportcard.com/report/github.com/maddevsio/comedian)
 [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
 [![](https://godoc.org/github.com/maddevsio/comedian?status.svg)](https://godoc.org/github.com/maddevsio/comedian)
-</p>
+
+</div>
 </p>
 
 ![](show.gif)
