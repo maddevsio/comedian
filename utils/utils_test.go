@@ -165,8 +165,7 @@ func TestPrepareTimetable(t *testing.T) {
 
 	timeUpdate := time.Date(2018, 10, 7, 12, 0, 0, 0, time.UTC).Unix()
 
-	tt, err = PrepareTimeTable(tt, "mon tue wed thu fri sat sun", timeUpdate)
-	assert.NoError(t, err)
+	tt = PrepareTimeTable(tt, "mon tue wed thu fri sat sun", timeUpdate)
 	assert.Equal(t, timeUpdate, tt.Monday)
 	assert.NoError(t, slack.DB.DeleteChannelMember(m.UserID, m.ChannelID))
 	assert.NoError(t, slack.DB.DeleteTimeTable(tt.ID))

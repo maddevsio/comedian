@@ -103,7 +103,7 @@ func ParseTimeTextToInt(timeText string) (int64, error) {
 
 }
 
-func PrepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) (model.TimeTable, error) {
+func PrepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) model.TimeTable {
 	if strings.Contains(weekdays, "mon") || strings.Contains(weekdays, "пн") {
 		tt.Monday = timeInt
 	}
@@ -125,5 +125,19 @@ func PrepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) (model
 	if strings.Contains(weekdays, "sun") || strings.Contains(weekdays, "вс") {
 		tt.Sunday = timeInt
 	}
-	return tt, nil
+	return tt
+}
+
+//SetupDays gets dates and returns their differense in days
+func SetupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
+	if dateTo.Before(dateFrom) {
+		return time.Now(), 0, errors.New("date to is less than date from")
+	}
+	if dateTo.After(time.Now()) {
+		return time.Now(), 0, errors.New("date to is in the future")
+	}
+	dateFromRounded := time.Date(dateFrom.Year(), dateFrom.Month(), dateFrom.Day(), 0, 0, 0, 0, time.UTC)
+	dateToRounded := time.Date(dateTo.Year(), dateTo.Month(), dateTo.Day(), 0, 0, 0, 0, time.UTC)
+	numberOfDays := int(dateToRounded.Sub(dateFromRounded).Hours() / 24)
+	return dateFromRounded, numberOfDays, nil
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/notifier"
-	"github.com/maddevsio/comedian/teammonitoring"
+	"github.com/maddevsio/comedian/reporting"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -27,20 +27,15 @@ func main() {
 
 	go func() { log.Fatal(api.Start()) }()
 
+	r := reporting.NewReporter(slack)
+	go func() { r.Start() }()
+
 	notifier, err := notifier.NewNotifier(slack)
 	if err != nil {
 		log.Fatal(err)
 	}
-	go func() { log.Fatal(notifier.Start()) }()
 
-	//team monitoring servise is optional
-	if c.TeamMonitoringEnabled {
-		tm, err := teammonitoring.NewTeamMonitoring(slack)
-		if err != nil {
-			log.Fatal(err)
-		}
-		tm.Start()
-	}
+	go func() { log.Fatal(notifier.Start()) }()
 
 	slack.Run()
 }

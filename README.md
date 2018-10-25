@@ -1,13 +1,17 @@
-# Comedian
+<div style="text-align:center">
+<img style="width: 300px" src ="logo.png" />
 
-This is a stand up bot for slack. 
-The main goal of the project is a daily remote stand up meetings automation. 
+Stand up bot for slack to help you with remote stand up meetings automation
 
 ![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/maddevsio/comedian/badge.svg)](https://coveralls.io/github/maddevsio/comedian)
 [![Go Report Card](https://goreportcard.com/badge/github.com/maddevsio/comedian)](https://goreportcard.com/report/github.com/maddevsio/comedian)
 [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
 [![](https://godoc.org/github.com/maddevsio/comedian?status.svg)](https://godoc.org/github.com/maddevsio/comedian)
+
+</div>
+
+![](show.gif)
 
 ## How can comedian help you to spend less time on the stand up meetings
 
@@ -39,15 +43,9 @@ Create the following commands (Request URL for all commands: ```http: // <ngrok 
 
 | Name | Hint | Description | Escape option |
 | --- | --- | --- | --- |
-| /admin_add | @user | Adds a new admin | V |
-| /admin_remove | @user | Removes an admin | V |
-| /admin_list | - | Lists all admins | - |
-| /pm_add | @user | Adds a new PM | V |
-| /pm_remove | @user | Removes an PM | V |
-| /pm_list | - | Lists all PMs | - |
-| /comedian_add | @user | Adds a new standuper | V |
-| /comedian_remove | @user | Removes a standuper | V |
-| /comedian_list | - | Lists all standupers | - |
+| /add | @user @user1 / (admin, pm, developer) | Adds a new user with selected role | V |
+| /delete | @user @user1 / (admin, pm, developer) | Removes user with selected role  | V |
+| /list | (admin, pm, developer) | Lists users with selected role | - |
 | /standup_time_set | hh:mm | Set standup time | - |
 | /standup_time | - | Show standup time in current channel | - |
 | /standup_time_remove | - | Delete standup time in current channel | - |
@@ -56,7 +54,7 @@ Create the following commands (Request URL for all commands: ```http: // <ngrok 
 | /timetable_remove | @user1 @user2  | Delete individual standup time for users | V |
 | /report_by_project | #channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period | - |
 | /report_by_user | @user 2017-01-01 2017-01-31 | gets all standups for specified user for time period | - |
-| /report_by_project_and_user | #project @user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
+| /report_by_user_in_project | #project @user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
 
 Select "Bot users" in the menu.
 Create a new bot user.

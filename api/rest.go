@@ -59,10 +59,7 @@ func NewRESTAPI(slack *chat.Slack) (*REST, error) {
 	e := echo.New()
 	decoder := schema.NewDecoder()
 	decoder.IgnoreUnknownKeys(true)
-	rep, err := reporting.NewReporter(slack.Conf)
-	if err != nil {
-		return nil, err
-	}
+	rep := reporting.NewReporter(slack)
 
 	r := &REST{
 		echo:    e,
@@ -556,9 +553,6 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 	users := strings.Split(usersText, " ")
-	if len(users) < 1 {
-		return c.String(http.StatusOK, r.conf.Translate.TimetableNoUsers)
-	}
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
@@ -569,14 +563,11 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 
 		m, err := r.db.FindChannelMemberByUserID(userID, f.Get("channel_id"))
 		if err != nil {
-			logrus.Errorf("FindChannelMemberByUserID failed: %v", err)
 			m, err = r.db.CreateChannelMember(model.ChannelMember{
 				UserID:    userID,
 				ChannelID: f.Get("channel_id"),
 			})
 			if err != nil {
-				logrus.Errorf("rest: CreateChannelMember failed: %v\n", err)
-				c.String(http.StatusBadRequest, fmt.Sprintf("failed to create user:%v\n", err))
 				continue
 			}
 		}
@@ -587,11 +578,7 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 			ttNew, err := r.db.CreateTimeTable(model.TimeTable{
 				ChannelMemberID: m.ID,
 			})
-			ttNew, err = utils.PrepareTimeTable(ttNew, weekdays, time)
-			if err != nil {
-				c.String(http.StatusOK, fmt.Sprintf("Could not fetch data into timetable for user <@%v>\n", userName))
-				continue
-			}
+			ttNew = utils.PrepareTimeTable(ttNew, weekdays, time)
 			ttNew, err = r.db.UpdateTimeTable(ttNew)
 			if err != nil {
 				c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.CanNotUpdateTimetable, userName, err))
@@ -601,11 +588,7 @@ func (r *REST) addTimeTable(c echo.Context, f url.Values) error {
 			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.TimetableCreated, userID, ttNew.Show()))
 			continue
 		}
-		tt, err = utils.PrepareTimeTable(tt, weekdays, time)
-		if err != nil {
-			c.String(http.StatusOK, fmt.Sprintf("Could not fetch data into timetable for user <@%v>\n", userName))
-			continue
-		}
+		tt = utils.PrepareTimeTable(tt, weekdays, time)
 		tt, err = r.db.UpdateTimeTable(tt)
 		if err != nil {
 			c.String(http.StatusOK, fmt.Sprintf(r.conf.Translate.CanNotUpdateTimetable, userName, err))
@@ -625,10 +608,6 @@ func (r *REST) showTimeTable(c echo.Context, f url.Values) error {
 	}
 
 	users := strings.Split(ca.Text, " ")
-	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, "Select standupers to show their timetables")
-	}
-
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
@@ -666,10 +645,6 @@ func (r *REST) removeTimeTable(c echo.Context, f url.Values) error {
 	}
 
 	users := strings.Split(ca.Text, " ")
-	if len(users) < 1 {
-		return c.String(http.StatusBadRequest, "Select standupers to delete their timetables")
-	}
-
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
