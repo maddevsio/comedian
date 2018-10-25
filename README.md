@@ -35,7 +35,7 @@ These instructions will help you set up the project on your local machine for de
 
 
 ### **Step 1**: Create a public HTTPS URL for Comedian
-Install ngrok [ngrok](https://ngrok.com/product) and create a public HTTPS URL for Comedian on your development machine following the instruction from the web
+Install [ngrok](https://ngrok.com/product) and create a public HTTPS URL for Comedian on your development machine following the instruction from the web
 
 ### **Step 2**: Clone the project
 Copy the project repository to your local machine. Note: Go should be already installed! If you do not have Go installed, please, follow [installation guidelines](https://golang.org/doc/install) from Go official website to install it and then proceed to Step 2
@@ -63,7 +63,7 @@ Create `.env` file in the root directory and add the following env variables the
 | COMEDIAN_MAX_REMINDERS | Number of times comedian keeps reminding non reporters | 3 | No |
 | COMEDIAN_REMINDER_INTERVAL | Duration of the intervals when Comedian waits before next reminder in minutes | 30 | No |
 | COMEDIAN_WARNING_TIME | Duration prior to deadline to remind about upcoming deadline | 10 | No |
-| COMEDIAN_ENABLE_COLLECTOR | Enables or Disables Collector API requests | false | Yes |
+| COMEDIAN_ENABLE_COLLECTOR | Enables or Disables Collector* API requests | false | Yes |
 | COMEDIAN_COLLECTOR_TOKEN | Secret Token for Collector* API requests |  | Yes |
 | COMEDIAN_COLLECTOR_URL | URL to send Collector* API requests |  | Yes |
 | COMEDIAN_SLACK_DOMAIN | Slack workspace title (copy first word of the link) |  | Yes |
@@ -107,7 +107,7 @@ In "OAuth & Permissions" tab, scroll down to Scopes section and add additional p
 ```
 Access information about your workspace
 Add slash commands and add actions to messages (and view related content)
-Access the workspaces emoji
+Access the workspace's emoji
 Send messages as user
 Send messages as TestComedian
 ```
