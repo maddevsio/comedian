@@ -159,6 +159,8 @@ Next step is to [install docker-compose](https://www.digitalocean.com/community/
 
 run `nano docker-compose.yml` to create your docker-compose file. Use docker-compose-example.yml file from the repository to set up it properly. You can use env variables inside or just type parameters right there for better readability. 
 
+Save changes and create new folder `docker`. Execute the following command to give it proper access `chmod 755 docker`. Now you have your volumes configured so that your DB never gets dropped if something happens with the container. 
+
 Make sure to use updated Comedian images from [DockerHub](HTTPS://hub.docker.com/r/anatoliyfedorenko/comedian/tags/) 
 
 Save the changes and proceed to the next step. If you use .env file, make sure you updated your env variables before Step 4.
