@@ -4,3 +4,4 @@
 comedian
 .env
 /docker/
+docker-compose.yml

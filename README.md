@@ -155,20 +155,21 @@ Open your terminal, type `ssh login@ipaddress` and then insert password. If this
 
 Next step is to [install docker-compose](https://www.digitalocean.com/community/tutorials/how-to-install-docker-compose-on-ubuntu-18-04) and [docker](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)
 
-
 ### **Step 3**: Prepare docker-compose file 
 
-run `nano docker-compose.yml` to create your docker-compose file. Use docker-compose.yml file from the repository to set up it properly. You can use env variables inside or just type parameters right there for more readability. 
+run `nano docker-compose.yml` to create your docker-compose file. Use docker-compose-example.yml file from the repository to set up it properly. You can use env variables inside or just type parameters right there for better readability. 
 
 Make sure to use updated Comedian images from [DockerHub](HTTPS://hub.docker.com/r/anatoliyfedorenko/comedian/tags/) 
 
 Save the changes and proceed to the next step. If you use .env file, make sure you updated your env variables before Step 4.
 
-If you care about security, you may use HTTPS://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion to configure Let's Encrypt certificates. 
+If you care about security, you may use https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion to configure Let's Encrypt certificates. 
 
 
 ### **Step 4**: Install chatbot to your workspace
 Follow Steps 4-9 of the local installation guidelines before you proceed! 
+ATTENTION
+Request URL for all slash commands will be the following: ```http://yourIPaddress:8080/commands(here you can paste COMEDIAN_SECRET_TOKEN if it is not empty) ``` )
 
 ### **Step 5**: Use docker-compose 
 

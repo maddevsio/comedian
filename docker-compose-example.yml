@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: comedian
+      MYSQL_USER: comedian
+      MYSQL_PASSWORD: comedian
+    ports:
+      - "9906:3306"
+    volumes:
+      - "./docker:/var/lib/mysql"
+
+  comedian:
+    image: anatoliyfedorenko/comedian:2.24
+    restart: on-failure
+    links:
+      - db:db
+    ports:
+      - 8080:8080
+    environment:
+      TZ: Asia/Bishkek
+      COMEDIAN_SLACK_TOKEN: xoxb-234klfdsjklfsd
+      COMEDIAN_DATABASE: comedian:comedian@tcp(db:3306)/comedian?parseTime=true
+      COMEDIAN_REMINDER_INTERVAL: 1
+      COMEDIAN_HTTP_BIND_ADDR: 0.0.0.0:8080
+      COMEDIAN_SUPER_ADMIN_ID: YOURADMINID
+      COMEDIAN_REPORT_CHANNEL: YOURREPORTINGCHANNEL
+      COMEDIAN_REPORT_TIME: "18:30"
+      COMEDIAN_LANGUAGE: en_US
+      COMEDIAN_COLLECTOR_TOKEN: COLLECTORTOKEN
+      COMEDIAN_COLLECTOR_URL: "HTTPS://EXAMPLE.COM"
+      COMEDIAN_ENABLE_COLLECTOR: "false"
+      COMEDIAN_MAX_REMINDERS: 3
+      COMEDIAN_WARNING_TIME: 2
+      COMEDIAN_SLACK_DOMAIN: YOURSLACKDOMAIN
+      COMEDIAN_SECRET_TOKEN: ""
+    depends_on:
+      - db
+
