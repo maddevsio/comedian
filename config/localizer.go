@@ -113,6 +113,7 @@ type Translate struct {
 	ErrorRooksReportWeekend string
 	ReportHeaderMonday      string
 	ReportHeader            string
+	ReportHeaderWeekly      string
 
 	AccessAtLeastPM           string
 	AccessAtLeastAdmin        string
@@ -231,6 +232,7 @@ func GetTranslation(lang string) (Translate, error) {
 		"ErrorRooksReportWeekend",
 		"ReportHeaderMonday",
 		"ReportHeader",
+		"ReportHeaderWeekly",
 		"UserIsNotPM",
 		"AccessAtLeastPM",
 		"AccessAtLeastAdmin",
@@ -367,6 +369,7 @@ func GetTranslation(lang string) (Translate, error) {
 		ErrorRooksReportWeekend: m["ErrorRooksReportWeekend"],
 		ReportHeaderMonday:      m["ReportHeaderMonday"],
 		ReportHeader:            m["ReportHeader"],
+		ReportHeaderWeekly:      m["ReportHeaderWeekly"],
 
 		AccessAtLeastPM:           m["AccessAtLeastPM"],
 		AccessAtLeastAdmin:        m["AccessAtLeastAdmin"],

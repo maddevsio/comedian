@@ -353,8 +353,6 @@ func (r *Reporter) generateReportForWeek() ([]slack.Attachment, error) {
 	attachments := []slack.Attachment{}
 	startDate := time.Now().AddDate(0, 0, -7)
 	endDate := time.Now().AddDate(0, 0, -1)
-	startDateTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.Local)
-	endDateTime := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.Local)
 
 	allUsers, err := r.db.ListAllChannelMembers()
 	if err != nil {
@@ -367,8 +365,7 @@ func (r *Reporter) generateReportForWeek() ([]slack.Attachment, error) {
 	for _, user := range allUsers {
 		var attachment slack.Attachment
 		var attachmentFields []slack.AttachmentField
-		var worklogs, commits, standup, worklogsEmoji, worklogsTime string
-		var points int
+		var worklogs, commits, worklogsTime string
 
 		project, err := r.db.SelectChannel(user.ChannelID)
 		if err != nil {
@@ -434,8 +431,7 @@ func (r *Reporter) generateReportForSunday() ([]slack.Attachment, error) {
 	for _, user := range allUsers {
 		var attachment slack.Attachment
 		var attachmentFields []slack.AttachmentField
-		var worklogs, commits, standup, worklogsEmoji, worklogsTime string
-		var points int
+		var worklogsTime, fieldValue string
 
 		project, err := r.db.SelectChannel(user.ChannelID)
 		if err != nil {
@@ -458,22 +454,32 @@ func (r *Reporter) generateReportForSunday() ([]slack.Attachment, error) {
 			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
 		}
 
-		worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
+		isNonReporter, err := r.db.IsNonReporter(user.UserID, user.ChannelID, startDateTime, endDateTime)
+		if err != nil {
+			logrus.Infof("User is non reporter failed: %v", err)
+		}
 
-		if dataOnUser.Worklogs == 0 || dataOnUserInProject.Worklogs == 0 {
-			logrus.Infof("worklogs for user %v in channel %v are empty. Skip!", user.UserID, user.ChannelID)
+		if dataOnUser.Worklogs == 0 && dataOnUser.TotalCommits == 0 && isNonReporter == true {
+			logrus.Infof("worklogs, commits, standup for user %v in channel %v are empty. Skip!", user.UserID, user.ChannelID)
 			continue
 		}
 
+		worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
 		if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
 			worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
 		}
-		worklogs = fmt.Sprintf(" worklogs: %v ", worklogsTime)
-		commits = fmt.Sprintf(" commits: %v ", dataOnUserInProject.TotalCommits)
+
+		fieldValue += fmt.Sprintf(" worklogs: %v ", worklogsTime)
+
+		if dataOnUserInProject.TotalCommits != 0 {
+			fieldValue += fmt.Sprintf(" commits: %v ", dataOnUserInProject.TotalCommits)
+		}
+
+		if isNonReporter != true {
+			fieldValue += r.conf.Translate.HasStandup
+		}
 
 		whoAndWhere := fmt.Sprintf(r.conf.Translate.IsRook, user.UserID, project.ChannelName)
-
-		fieldValue := fmt.Sprintf("%-16v|%-12v|\n", worklogs, commits)
 
 		attachmentFields = append(attachmentFields, slack.AttachmentField{
 			Value: fieldValue,
