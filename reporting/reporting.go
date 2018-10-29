@@ -52,31 +52,38 @@ func (r *Reporter) teamReport() {
 	var err error
 
 	day := int(time.Now().Weekday())
-	logrus.Infof("Reporting day on %v", day)
+	logrus.Infof("Generate report on day %v", day)
 	switch day {
 	case 1:
 		attachments, err = r.generateReportForSunday()
-	case 2, 3, 4, 5, 6:
-		attachments, err = r.generateReportForYesterday()
-	case 0:
-		attachments, err = r.generateReportForWeek()
-	}
-
-	//remove this code. Do not send errors to reporting channel!!!
-	if err != nil {
-		r.s.SendMessage(r.conf.ReportingChannel, err.Error(), nil)
-	}
-	if len(attachments) == 0 {
-		logrus.Info("Empty Report")
-		return
-	}
-
-	switch int(time.Now().Weekday()) {
-	case 1:
+		if err != nil {
+			logrus.Errorf("Failed to generate report for Sunday! Error: %v", err)
+			fail := fmt.Sprintf(":warning: Failed to generate report for Sunday! Error: %v", err)
+			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
+			return
+		}
+		if len(attachments) == 0 {
+			r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.EmptyReportForSunday, nil)
+			return
+		}
 		r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderMonday, attachments)
 	case 2, 3, 4, 5, 6:
+		attachments, err = r.generateReportForYesterday()
+		if err != nil {
+			logrus.Errorf("Failed to generate report for yesterday! Error: %v", err)
+			fail := fmt.Sprintf(":warning: Failed to generate report for yesterday! Error: %v", err)
+			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
+			return
+		}
 		r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, attachments)
 	case 0:
+		attachments, err = r.generateReportForWeek()
+		if err != nil {
+			logrus.Errorf("Failed to generate weekly report! Error: %v", err)
+			fail := fmt.Sprintf(":warning: Failed to generate weekly report! Error: %v", err)
+			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
+			return
+		}
 		r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderWeekly, attachments)
 	}
 }

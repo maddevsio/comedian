@@ -104,6 +104,7 @@ ErrorRooksReportWeekend = "Weekend! Next report on Monday"
 ReportHeaderMonday = "Sunday report"    
 ReportHeader = "Yesterday report"
 ReportHeaderWeekly = "Weekly report"
+EmptyReportForSunday = "No activity on Sunday!"
 
 AccessAtLeastPM = "Access Denied! You need to be at least PM in this project to use this command!"
 AccessAtLeastAdmin = "Access Denied! You need to be at least admin in this slack to use this command!"
