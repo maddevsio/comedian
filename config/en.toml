@@ -100,6 +100,7 @@ StandupHandleNoTodayPlansMentioned = "No 'today' related keywords detected! Plea
 StandupHandleUpdatedStandup = "Standup edited, Good job!"
 StandupHandleCreatedStandup = "Standup saved, well done!"
 
+ErrorRooksReportWeekend = "Weekend! Next report on Monday"
 ReportHeaderMonday = "Sunday report"    
 ReportHeader = "Yesterday report"
 ReportHeaderWeekly = "Weekly report"

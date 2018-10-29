@@ -323,23 +323,13 @@ func TestWeeklyReport(t *testing.T) {
 	r := NewReporter(s)
 
 	testCases := []struct {
-		userID                             string
 		collectorResponseUserBody          string
 		collectorResponseUserInProjectBody string
 		value                              string
 	}{
-		{"userID1", `{"worklogs": 35000, "total_commits": 23}`,
+		{`{"worklogs": 35000, "total_commits": 23}`,
 			`{"worklogs": 35000, "total_commits": 23}`,
-			" worklogs: 9:43 :sunglasses: | commits: 23 :tada: | standup :heavy_check_mark: |\n"},
-		{"userID2", `{"worklogs": 0, "total_commits": 0}`,
-			`{"worklogs": 0, "total_commits": 0}`,
-			" worklogs: 0:00 :angry: | commits: 0 :shit: | standup :x: |\n"},
-		{"userID3", `{"worklogs": 28800, "total_commits": 1}`,
-			`{"worklogs": 28800, "total_commits": 1}`,
-			" worklogs: 8:00 :wink: | commits: 1 :tada: | standup :heavy_check_mark: |\n"},
-		{"userID4", `{"worklogs": 14400, "total_commits": 1}`,
-			`{"worklogs": 12400, "total_commits": 1}`,
-			" worklogs: 3:26 out of 4:00 :disappointed: | commits: 1 :tada: | standup :heavy_check_mark: |\n"},
+			" worklogs: 9:43 | commits: 23 |\n"},
 	}
 
 	for _, tt := range testCases {
@@ -357,24 +347,28 @@ func TestWeeklyReport(t *testing.T) {
 		assert.NoError(t, err)
 
 		user, err := r.db.CreateUser(model.User{
-			UserID:   tt.userID,
-			UserName: "Alfa",
+			UserID:   "userID",
+			UserName: "user",
 		})
 		assert.NoError(t, err)
 
 		channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
-			UserID:    tt.userID,
+			UserID:    user.UserID,
 			ChannelID: channel.ChannelID,
 		})
 		assert.NoError(t, err)
 
-		d = time.Date(2018, 9, 18, 10, 0, 0, 0, time.UTC)
+		d = time.Date(2018, 9, 16, 10, 0, 0, 0, time.UTC)
 		monkey.Patch(time.Now, func() time.Time { return d })
 
-		dateOfRequest := fmt.Sprintf("%d-%02d-%02d", time.Now().AddDate(0, 0, -1).Year(), time.Now().AddDate(0, 0, -1).Month(), time.Now().AddDate(0, 0, -1).Day())
+		beginDateOfRequest := fmt.Sprintf("%d-%02d-%02d", time.Now().AddDate(0, 0, -7).Year(), time.Now().AddDate(0, 0, -7).Month(), time.Now().AddDate(0, 0, -7).Day())
+		endDateOfRequest := fmt.Sprintf("%d-%02d-%02d", time.Now().AddDate(0, 0, -1).Year(), time.Now().AddDate(0, 0, -1).Month(), time.Now().AddDate(0, 0, -1).Day())
 
-		linkURLUsers := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "users", user.UserID, dateOfRequest, dateOfRequest)
-		linkURLUserInProject := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "user-in-project", fmt.Sprintf("%v/%v", user.UserID, channel.ChannelName), dateOfRequest, dateOfRequest)
+		linkURLUsers := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "users", user.UserID, beginDateOfRequest, endDateOfRequest)
+		fmt.Println(linkURLUsers)
+		linkURLUserInProject := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "user-in-project", fmt.Sprintf("%v/%v", user.UserID, channel.ChannelName), beginDateOfRequest, endDateOfRequest)
+		fmt.Println(linkURLUserInProject)
+
 		httpmock.RegisterResponder("GET", linkURLUsers, httpmock.NewStringResponder(200, tt.collectorResponseUserBody))
 		httpmock.RegisterResponder("GET", linkURLUserInProject, httpmock.NewStringResponder(200, tt.collectorResponseUserInProjectBody))
 
@@ -405,16 +399,16 @@ func TestMondayReport(t *testing.T) {
 	}{
 		{"users", "userID1", `{"worklogs": 35000, "total_commits": 23}`,
 			`{"worklogs": 35000, "total_commits": 23}`,
-			" worklogs: 9:43  commits: 23 "},
+			" worklogs: 9:43 | commits: 23 | standup :heavy_check_mark: |\n"},
 		{"", "userID2", `{"worklogs": 0, "total_commits": 0}`,
 			`{"worklogs": 0, "total_commits": 0}`,
-			" worklogs: 0:00 :angry: | commits: 0 :shit: | standup :x: |\n"},
-		{"test", "userID3", `{"worklogs": 28800, "total_commits": 1}`,
-			`{"worklogs": 28800, "total_commits": 1}`,
-			" worklogs: 8:00 :wink: | commits: 1 :tada: | standup :heavy_check_mark: |\n"},
-		{"test", "userID4", `{"worklogs": 14400, "total_commits": 1}`,
-			`{"worklogs": 12400, "total_commits": 1}`,
-			" worklogs: 3:26 out of 4:00 :disappointed: | commits: 1 :tada: | standup :heavy_check_mark: |\n"},
+			""},
+		{"test", "userID3", `{"worklogs": 28800, "total_commits": 0}`,
+			`{"worklogs": 28800, "total_commits": 0}`,
+			" worklogs: 8:00 | standup :heavy_check_mark: |\n"},
+		{"test", "userID4", `{"worklogs": 14400, "total_commits": 0}`,
+			`{"worklogs": 12400, "total_commits": 0}`,
+			" worklogs: 3:26 out of 4:00 | standup :heavy_check_mark: |\n"},
 	}
 
 	for _, tt := range testCases {
@@ -460,11 +454,16 @@ func TestMondayReport(t *testing.T) {
 
 		linkURLUsers := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "users", user.UserID, dateOfRequest, dateOfRequest)
 		linkURLUserInProject := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "user-in-project", fmt.Sprintf("%v/%v", user.UserID, channel.ChannelName), dateOfRequest, dateOfRequest)
+
 		httpmock.RegisterResponder("GET", linkURLUsers, httpmock.NewStringResponder(200, tt.collectorResponseUserBody))
 		httpmock.RegisterResponder("GET", linkURLUserInProject, httpmock.NewStringResponder(200, tt.collectorResponseUserInProjectBody))
 
 		attachments, err := r.generateReportForSunday()
+
 		assert.NoError(t, err)
+		if len(attachments) == 0 {
+			continue
+		}
 		assert.Equal(t, "good", attachments[0].Color)
 		assert.Equal(t, fmt.Sprintf("<@%v> in #%v", user.UserID, channel.ChannelName), attachments[0].Text)
 		assert.Equal(t, tt.value, attachments[0].Fields[0].Value)

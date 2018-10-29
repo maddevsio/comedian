@@ -1,6 +1,7 @@
 package reporting
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -350,6 +351,9 @@ func (r *Reporter) generateReportForYesterday() ([]slack.Attachment, error) {
 }
 
 func (r *Reporter) generateReportForWeek() ([]slack.Attachment, error) {
+	if r.conf.TeamMonitoringEnabled == false {
+		return nil, errors.New(r.conf.Translate.ErrorRooksReportWeekend)
+	}
 	attachments := []slack.Attachment{}
 	startDate := time.Now().AddDate(0, 0, -7)
 	endDate := time.Now().AddDate(0, 0, -1)
@@ -375,6 +379,7 @@ func (r *Reporter) generateReportForWeek() ([]slack.Attachment, error) {
 
 		dataOnUser, collectorErrorOnUser := teammonitoring.GetCollectorData(r.conf, "users", user.UserID, dateFrom, dateTo)
 		if collectorErrorOnUser != nil {
+			logrus.Errorf("collectorErrorOnUser failed: %v", collectorErrorOnUser)
 			userFull, _ := r.db.SelectUser(user.UserID)
 			fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
 			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
@@ -383,13 +388,13 @@ func (r *Reporter) generateReportForWeek() ([]slack.Attachment, error) {
 		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
 		dataOnUserInProject, collectorErrorOnUserInProject := teammonitoring.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
 		if collectorErrorOnUserInProject != nil {
+			logrus.Errorf("collectorErrorOnUserInProject failed: %v", collectorErrorOnUserInProject)
 			userFull, _ := r.db.SelectUser(user.UserID)
 			fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
 			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
 		}
 
 		worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
-
 		if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
 			worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
 		}
@@ -470,13 +475,16 @@ func (r *Reporter) generateReportForSunday() ([]slack.Attachment, error) {
 		}
 
 		fieldValue += fmt.Sprintf(" worklogs: %v ", worklogsTime)
+		fieldValue += "|"
 
 		if dataOnUserInProject.TotalCommits != 0 {
 			fieldValue += fmt.Sprintf(" commits: %v ", dataOnUserInProject.TotalCommits)
+			fieldValue += "|"
 		}
 
 		if isNonReporter != true {
 			fieldValue += r.conf.Translate.HasStandup
+			fieldValue += "|\n"
 		}
 
 		whoAndWhere := fmt.Sprintf(r.conf.Translate.IsRook, user.UserID, project.ChannelName)
