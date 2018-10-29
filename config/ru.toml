@@ -114,8 +114,9 @@ StandupHandleCreatedStandup = "Сохранил твой стендап! Всё 
 
 ErrorRooksReportWeekend = "Сегодня выходной! Следующий отчет в понедельник!"
 
-ReportHeaderMonday = "Отчёт за прошлую пятницу и выходные"    
-ReportHeader = "Отчет за вчерашний день" 
+ReportHeaderMonday = "Отчет за воскресенье"    
+ReportHeader = "Отчет за вчерашний день"
+ReportHeaderWeekly = "Еженедельный отчет"
 
 
 AccessAtLeastPM = "Доступ запрещен! Вам необходимо быть как минимум ПМом в этом проекте чтобы использовать эту команду"

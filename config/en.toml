@@ -100,10 +100,9 @@ StandupHandleNoTodayPlansMentioned = "No 'today' related keywords detected! Plea
 StandupHandleUpdatedStandup = "Standup edited, Good job!"
 StandupHandleCreatedStandup = "Standup saved, well done!"
 
-ErrorRooksReportWeekend = "Day off today! Next report on Monday!"
-
-ReportHeaderMonday = "Report for last Friday and weekends"    
-ReportHeader = "Report for yesterday"   
+ReportHeaderMonday = "Sunday report"    
+ReportHeader = "Yesterday report"
+ReportHeaderWeekly = "Weekly report"
 
 AccessAtLeastPM = "Access Denied! You need to be at least PM in this project to use this command!"
 AccessAtLeastAdmin = "Access Denied! You need to be at least admin in this slack to use this command!"
