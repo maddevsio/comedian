@@ -50,6 +50,8 @@ func NewSlack(conf config.Config) (*Slack, error) {
 // Run runs a listener loop for slack
 func (s *Slack) Run() {
 
+	s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
+
 	gocron.Every(1).Day().At("23:50").Do(s.FillStandupsForNonReporters)
 	gocron.Every(1).Day().At("23:55").Do(s.UpdateUsersList)
 	gocron.Start()
@@ -60,9 +62,6 @@ func (s *Slack) Run() {
 
 	for msg := range s.RTM.IncomingEvents {
 		switch ev := msg.Data.(type) {
-		case *slack.ConnectedEvent:
-			s.UpdateUsersList()
-			s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 		case *slack.MessageEvent:
 			botUserID := fmt.Sprintf("<@%s>", s.RTM.GetInfo().User.ID)
 			s.handleMessage(ev, botUserID)
