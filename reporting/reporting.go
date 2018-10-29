@@ -43,7 +43,7 @@ func NewReporter(slack *chat.Slack) *Reporter {
 
 // Start starts all team monitoring treads
 func (r *Reporter) Start() {
-	gocron.Every(1).Day().At("13:00").Do(r.teamReport)
+	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.teamReport)
 }
 
 // teamReport generates report on users who did not fullfill their working duties
@@ -51,7 +51,9 @@ func (r *Reporter) teamReport() {
 	attachments := []slack.Attachment{}
 	var err error
 
-	switch int(time.Now().Weekday()) {
+	day := int(time.Now().Weekday())
+	logrus.Infof("Reporting day on %v", day)
+	switch day {
 	case 1:
 		attachments, err = r.generateReportForSunday()
 	case 2, 3, 4, 5, 6:
@@ -460,11 +462,7 @@ func (r *Reporter) generateReportForSunday() ([]slack.Attachment, error) {
 		}
 
 		isNonReporter, err := r.db.IsNonReporter(user.UserID, user.ChannelID, startDateTime, endDateTime)
-		if err != nil {
-			logrus.Infof("User is non reporter failed: %v", err)
-		}
-
-		if dataOnUser.Worklogs == 0 && dataOnUser.TotalCommits == 0 && isNonReporter == true {
+		if dataOnUserInProject.Worklogs == 0 && dataOnUser.TotalCommits == 0 && err != nil {
 			logrus.Infof("worklogs, commits, standup for user %v in channel %v are empty. Skip!", user.UserID, user.ChannelID)
 			continue
 		}
@@ -474,15 +472,17 @@ func (r *Reporter) generateReportForSunday() ([]slack.Attachment, error) {
 			worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
 		}
 
-		fieldValue += fmt.Sprintf(" worklogs: %v ", worklogsTime)
-		fieldValue += "|"
+		if dataOnUserInProject.Worklogs != 0 {
+			fieldValue += fmt.Sprintf(" worklogs: %v ", worklogsTime)
+			fieldValue += "|"
+		}
 
 		if dataOnUserInProject.TotalCommits != 0 {
 			fieldValue += fmt.Sprintf(" commits: %v ", dataOnUserInProject.TotalCommits)
 			fieldValue += "|"
 		}
 
-		if isNonReporter != true {
+		if isNonReporter != true && err == nil {
 			fieldValue += r.conf.Translate.HasStandup
 			fieldValue += "|\n"
 		}
