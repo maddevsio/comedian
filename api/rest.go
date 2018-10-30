@@ -127,10 +127,6 @@ func (r *REST) handleCommands(c echo.Context) error {
 }
 
 func (r *REST) helpCommand(c echo.Context, f url.Values) error {
-	_, _, _, _, err := r.processCommand(c, f)
-	if err != nil {
-		return c.String(http.StatusOK, r.conf.Translate.SomethingWentWrong)
-	}
 	return c.String(http.StatusOK, r.conf.Translate.HelpCommand)
 }
 

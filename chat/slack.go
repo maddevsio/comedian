@@ -50,6 +50,7 @@ func NewSlack(conf config.Config) (*Slack, error) {
 // Run runs a listener loop for slack
 func (s *Slack) Run() {
 
+	s.UpdateUsersList()
 	s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 
 	gocron.Every(1).Day().At("23:50").Do(s.FillStandupsForNonReporters)
@@ -313,6 +314,7 @@ func (s *Slack) UpdateUsersList() {
 			}
 		}
 	}
+	logrus.Info("Users list updated successfully")
 }
 
 //FillStandupsForNonReporters fills standup entries with empty standups to later recognize
