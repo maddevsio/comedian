@@ -122,9 +122,9 @@ type Translate struct {
 	AccessAtLeastPMOrOwner    string
 
 	NeedCorrectUserRole string
-	AddUsersFailed      string
-	AddUsersExist       string
-	AddUsersAdded       string
+	AddMembersFailed    string
+	AddMembersExist     string
+	AddMembersAdded     string
 	AddPMsFailed        string
 	AddPMsExist         string
 	AddPMsAdded         string
@@ -241,9 +241,9 @@ func GetTranslation(lang string) (Translate, error) {
 		"AccessAtLeastAdminOrOwner",
 		"AccessAtLeastPMOrOwner",
 		"NeedCorrectUserRole",
-		"AddUsersFailed",
-		"AddUsersExist",
-		"AddUsersAdded",
+		"AddMembersFailed",
+		"AddMembersExist",
+		"AddMembersAdded",
 		"AddPMsFailed",
 		"AddPMsExist",
 		"AddPMsAdded",
@@ -266,9 +266,9 @@ func GetTranslation(lang string) (Translate, error) {
 
 	t := Translate{
 
-		AddUsersFailed: m["AddUsersFailed"],
-		AddUsersExist:  m["AddUsersExist"],
-		AddUsersAdded:  m["AddUsersAdded"],
+		AddMembersFailed: m["AddMembersFailed"],
+		AddMembersExist:  m["AddMembersExist"],
+		AddMembersAdded:  m["AddMembersAdded"],
 
 		AddPMsFailed: m["AddPMsFailed"],
 		AddPMsExist:  m["AddPMsExist"],

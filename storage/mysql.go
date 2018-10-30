@@ -190,7 +190,13 @@ func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Ti
 }
 
 // ListChannelMembers returns array of standup entries from database
-func (m *MySQL) ListChannelMembers(channelID, role string) ([]model.ChannelMember, error) {
+func (m *MySQL) ListChannelMembers(channelID string) ([]model.ChannelMember, error) {
+	items := []model.ChannelMember{}
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=?", channelID)
+	return items, err
+}
+
+func (m *MySQL) ListChannelMembersByRole(channelID, role string) ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
 	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel=?", channelID, role)
 	return items, err
@@ -433,7 +439,7 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 		return false
 	}
 	logrus.Infof("Role in channel %v", role)
-	if role == "PM" {
+	if role == "pm" {
 		return true
 	}
 	return false

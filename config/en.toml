@@ -114,9 +114,9 @@ AccessAtLeastPMOrOwner = "Access Denied! You need to be at least PM in this proj
 
 NeedCorrectUserRole = "Please, check correct role name (admin, developer, pm)"
 
-AddUsersFailed = "Could not assign users as developers: %v\n"
-AddUsersExist = "Users already have roles: %v\n"
-AddUsersAdded = "Users are assigned as developers: %v\n"
+AddMembersFailed = "Could not assign members: %v\n"
+AddMembersExist = "Members already have roles: %v\n"
+AddMembersAdded = "Members are assigned: %v\n"
 
 AddPMsFailed = "Could not assign users as PMs: %v\n"
 AddPMsExist = "Users already have roles: %v\n"
