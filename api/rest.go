@@ -135,7 +135,7 @@ func (r *REST) helpCommand(c echo.Context, f url.Values) error {
 }
 
 func (r *REST) addCommand(c echo.Context, f url.Values) error {
-	users, role, channel, accessLevel, err := r.processCommand(c, f)
+	members, role, channel, accessLevel, err := r.processCommand(c, f)
 	if err != nil {
 		return c.String(http.StatusOK, r.conf.Translate.SomethingWentWrong)
 	}
@@ -144,22 +144,22 @@ func (r *REST) addCommand(c echo.Context, f url.Values) error {
 		if accessLevel > 2 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 		}
-		return c.String(http.StatusOK, r.addAdmins(users))
+		return c.String(http.StatusOK, r.addAdmins(members))
 	case "developer", "разработчик", "":
 		if accessLevel > 3 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
-		return c.String(http.StatusOK, r.addUsers(users, "developer", channel))
+		return c.String(http.StatusOK, r.addMembers(members, "developer", channel))
 	case "designer", "дизайнер":
 		if accessLevel > 3 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
-		return c.String(http.StatusOK, r.addUsers(users, "designer", channel))
+		return c.String(http.StatusOK, r.addMembers(members, "designer", channel))
 	case "pm", "пм":
 		if accessLevel > 2 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 		}
-		return c.String(http.StatusOK, r.addUsers(users, "pm", channel))
+		return c.String(http.StatusOK, r.addMembers(members, "pm", channel))
 	default:
 		return c.String(http.StatusOK, r.conf.Translate.NeedCorrectUserRole)
 	}
@@ -172,11 +172,13 @@ func (r *REST) listCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 
-	switch ca.Text {
+	role := ca.Text
+
+	switch role {
 	case "admin", "админ":
 		return c.String(http.StatusOK, r.listAdmins())
-	case "developer", "разработчик", "":
-		return c.String(http.StatusOK, r.listUsers(ca.ChannelID))
+	case "developer", "разработчик", "designer", "дизайнер", "":
+		return c.String(http.StatusOK, r.listMembers(ca.ChannelID, role))
 	case "pm", "пм":
 		return c.String(http.StatusOK, r.listPMs(ca.ChannelID))
 	default:
@@ -197,7 +199,7 @@ func (r *REST) deleteCommand(c echo.Context, f url.Values) error {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 		}
 		return c.String(http.StatusOK, r.deleteAdmins(users))
-	case "developer", "разработчик":
+	case "developer", "разработчик", "designer", "дизайнер":
 		if accessLevel > 3 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
@@ -212,7 +214,7 @@ func (r *REST) deleteCommand(c echo.Context, f url.Values) error {
 	}
 }
 
-func (r *REST) addUsers(users []string, role, channel string) string {
+func (r *REST) addMembers(users []string, role, channel string) string {
 	var failed, exist, added, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -241,13 +243,13 @@ func (r *REST) addUsers(users []string, role, channel string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddUsersFailed, failed)
+		text += fmt.Sprintf(r.conf.Translate.addMembersFailed, failed)
 	}
 	if len(exist) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddUsersExist, exist)
+		text += fmt.Sprintf(r.conf.Translate.addMembersExist, exist)
 	}
 	if len(added) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddUsersAdded, added)
+		text += fmt.Sprintf(r.conf.Translate.addMembersAdded, added)
 	}
 	return text
 }
@@ -295,14 +297,20 @@ func (r *REST) addAdmins(users []string) string {
 	return text
 }
 
-func (r *REST) listUsers(channel string) string {
-	users, err := r.db.ListChannelMembers(channel)
+func (r *REST) listMembers(channel, role string) string {
+	members, err := r.db.ListChannelMembers(channel, role)
 	if err != nil {
-		return fmt.Sprintf("failed to list users :%v\n", err)
+		return fmt.Sprintf("failed to list members :%v\n", err)
 	}
 	var userIDs []string
-	for _, user := range users {
+	for _, user := range members {
 		userIDs = append(userIDs, "<@"+user.UserID+">")
+	}
+	if role == "pm" {
+		if len(userIDs) < 1 {
+			return r.conf.Translate.ListNoPMs
+		}
+		return fmt.Sprintf(r.conf.Translate.ListPMs, strings.Join(userIDs, ", "))
 	}
 	if len(userIDs) < 1 {
 		return r.conf.Translate.ListNoStandupers
@@ -324,21 +332,6 @@ func (r *REST) listAdmins() string {
 	}
 	return fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", "))
 
-}
-
-func (r *REST) listPMs(channel string) string {
-	users, err := r.db.ListPMs(channel)
-	if err != nil {
-		return fmt.Sprintf("failed to list users :%v\n", err)
-	}
-	var userIDs []string
-	for _, user := range users {
-		userIDs = append(userIDs, "<@"+user.UserID+">")
-	}
-	if len(userIDs) < 1 {
-		return r.conf.Translate.ListNoPMs
-	}
-	return fmt.Sprintf(r.conf.Translate.ListPMs, strings.Join(userIDs, ", "))
 }
 
 func (r *REST) deleteUsers(users []string, channel string) string {

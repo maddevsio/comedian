@@ -190,16 +190,9 @@ func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Ti
 }
 
 // ListChannelMembers returns array of standup entries from database
-func (m *MySQL) ListChannelMembers(channelID string) ([]model.ChannelMember, error) {
+func (m *MySQL) ListChannelMembers(channelID, role string) ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel != 'PM'", channelID)
-	return items, err
-}
-
-// ListPMs returns array of standup entries from database
-func (m *MySQL) ListPMs(channelID string) ([]model.ChannelMember, error) {
-	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel='PM'", channelID)
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel=?", channelID, role)
 	return items, err
 }
 
