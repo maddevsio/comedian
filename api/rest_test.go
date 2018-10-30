@@ -758,9 +758,10 @@ func TestUserHasAccess(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	pm, err := r.db.CreatePM(model.ChannelMember{
-		UserID:    pmUser.UserID,
-		ChannelID: "RANDOMCHAN",
+	pm, err := r.db.CreateUser(model.ChannelMember{
+		UserID:        pmUser.UserID,
+		ChannelID:     "RANDOMCHAN",
+		RoleInChannel: "pm",
 	})
 	assert.NoError(t, err)
 

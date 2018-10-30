@@ -159,7 +159,7 @@ func (r *REST) addCommand(c echo.Context, f url.Values) error {
 		if accessLevel > 2 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 		}
-		return c.String(http.StatusOK, r.addPMs(users, channel))
+		return c.String(http.StatusOK, r.addUsers(users, "pm", channel))
 	default:
 		return c.String(http.StatusOK, r.conf.Translate.NeedCorrectUserRole)
 	}
@@ -249,41 +249,6 @@ func (r *REST) addUsers(users []string, role, channel string) string {
 	if len(added) != 0 {
 		text += fmt.Sprintf(r.conf.Translate.AddUsersAdded, added)
 	}
-	return text
-}
-
-func (r *REST) addPMs(users []string, channel string) string {
-	var failed, exist, added, text string
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			failed += u
-			continue
-		}
-		userID, _ := utils.SplitUser(u)
-		_, err := r.db.FindChannelMemberByUserID(userID, channel)
-		if err != nil {
-			r.db.CreatePM(model.ChannelMember{
-				UserID:    userID,
-				ChannelID: channel,
-			})
-			added += u
-			continue
-		}
-		exist += u
-	}
-	if len(failed) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddPMsFailed, failed)
-	}
-	if len(exist) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddPMsExist, exist)
-	}
-	if len(added) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddPMsAdded, added)
-	}
-
 	return text
 }
 
