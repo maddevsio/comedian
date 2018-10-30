@@ -106,8 +106,8 @@ func (m *MySQL) CreateChannelMember(s model.ChannelMember) (model.ChannelMember,
 		return s, err
 	}
 	res, err := m.conn.Exec(
-		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, created) VALUES (?, ?, ?, ?)",
-		s.UserID, s.ChannelID, 0, time.Now())
+		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, role_in_channel, created) VALUES (?, ?,?, ?, ?)",
+		s.UserID, s.ChannelID, 0, s.RoleInChannel, time.Now())
 	if err != nil {
 		return s, err
 	}
