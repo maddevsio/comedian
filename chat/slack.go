@@ -196,7 +196,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 func (s *Slack) analizeStandup(message string) (bool, string) {
 	message = strings.ToLower(message)
 	mentionsProblem := false
-	problemKeys := []string{"problem", "difficult", "stuck", "question", "issue", "проблем", "трудност", "затрдуднени", "вопрос"}
+	problemKeys := []string{"problem", "difficult", "stuck", "question", "issue", "block", "проблем", "трудност", "затрдуднени", "вопрос"}
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
