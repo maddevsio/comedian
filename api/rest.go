@@ -149,7 +149,12 @@ func (r *REST) addCommand(c echo.Context, f url.Values) error {
 		if accessLevel > 3 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
-		return c.String(http.StatusOK, r.addUsers(users, channel))
+		return c.String(http.StatusOK, r.addUsers(users, "developer", channel))
+	case "designer", "дизайнер":
+		if accessLevel > 3 {
+			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
+		}
+		return c.String(http.StatusOK, r.addUsers(users, "designer", channel))
 	case "pm", "пм":
 		if accessLevel > 2 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
@@ -207,7 +212,7 @@ func (r *REST) deleteCommand(c echo.Context, f url.Values) error {
 	}
 }
 
-func (r *REST) addUsers(users []string, channel string) string {
+func (r *REST) addUsers(users []string, role, channel string) string {
 	var failed, exist, added, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -222,8 +227,9 @@ func (r *REST) addUsers(users []string, channel string) string {
 		if err != nil {
 			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
 			chanMember, _ := r.db.CreateChannelMember(model.ChannelMember{
-				UserID:    userID,
-				ChannelID: channel,
+				UserID:        userID,
+				ChannelID:     channel,
+				RoleInChannel: role,
 			})
 			logrus.Infof("ChannelMember created! ID:%v", chanMember.ID)
 		}

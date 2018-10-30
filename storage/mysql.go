@@ -151,7 +151,7 @@ func (m *MySQL) FindChannelMemberByUserName(userName, channelID string) (model.C
 // ListAllChannelMembers returns array of standup entries from database
 func (m *MySQL) ListAllChannelMembers() ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members` where role_in_channel != 'pm'")
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members`")
 	return items, err
 }
 

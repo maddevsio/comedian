@@ -336,7 +336,7 @@ func (r *Reporter) generateReportForYesterday() ([]slack.Attachment, error) {
 
 		whoAndWhere := fmt.Sprintf(r.conf.Translate.IsRook, user.UserID, project.ChannelName)
 		fieldValue := fmt.Sprintf("%-16v|%-12v|%-10v|\n", worklogs, commits, standup)
-		if user.RoleInChannel == "pm" {
+		if user.RoleInChannel == "pm" || user.RoleInChannel == "designer" {
 			fieldValue = fmt.Sprintf("%-16v|%-10v|\n", worklogs, standup)
 			points++
 		}
