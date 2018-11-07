@@ -275,7 +275,7 @@ func TestCRUDStandupTime(t *testing.T) {
 
 	channels, err := db.GetAllChannels()
 	for _, channel := range channels {
-		ch, err := db.SelectChannel(channel)
+		ch, err := db.SelectChannel(channel.ChannelID)
 		assert.NoError(t, err)
 		assert.NoError(t, db.DeleteChannel(ch.ID))
 	}

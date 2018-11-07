@@ -268,9 +268,9 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 }
 
 //GetAllChannels returns list of unique channels
-func (m *MySQL) GetAllChannels() ([]string, error) {
-	channels := []string{}
-	err := m.conn.Select(&channels, "SELECT channel_id FROM `channels`")
+func (m *MySQL) GetAllChannels() ([]model.Channel, error) {
+	channels := []model.Channel{}
+	err := m.conn.Select(&channels, "SELECT * FROM `channels`")
 	return channels, err
 }
 
