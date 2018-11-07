@@ -1,7 +1,6 @@
 package reporting
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -48,44 +47,24 @@ func (r *Reporter) Start() {
 
 // teamReport generates report on users who did not fullfill their working duties
 func (r *Reporter) teamReport() {
-	attachments := []slack.Attachment{}
-	var err error
 
-	day := int(time.Now().Weekday())
-	logrus.Infof("Generate report on day %v", day)
-	switch day {
-	case 1:
-		attachments, err = r.generateReportForSunday()
+	if int(time.Now().Weekday()) == 0 {
+		attachments, err := r.generateReportForWeek()
 		if err != nil {
-			logrus.Errorf("Failed to generate report for Sunday! Error: %v", err)
-			fail := fmt.Sprintf(":warning: Failed to generate report for Sunday! Error: %v", err)
-			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
-			return
-		}
-		if len(attachments) == 0 {
-			r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.EmptyReportForSunday, nil)
-			return
-		}
-		r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderMonday, attachments)
-	case 2, 3, 4, 5, 6:
-		attachments, err = r.generateReportForYesterday()
-		if err != nil {
-			logrus.Errorf("Failed to generate report for yesterday! Error: %v", err)
-			fail := fmt.Sprintf(":warning: Failed to generate report for yesterday! Error: %v", err)
-			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
-			return
-		}
-		r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, attachments)
-	case 0:
-		attachments, err = r.generateReportForWeek()
-		if err != nil {
-			logrus.Errorf("Failed to generate weekly report! Error: %v", err)
-			fail := fmt.Sprintf(":warning: Failed to generate weekly report! Error: %v", err)
-			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
+			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fmt.Sprintf(":warning: Failed to generate weekly report! Error: %v", err))
 			return
 		}
 		r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderWeekly, attachments)
+		return
 	}
+
+	attachments, err := r.generateReportForYesterday()
+	if err != nil {
+		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fmt.Sprintf(":warning: Failed to generate report for yesterday! Error: %v", err))
+		return
+	}
+	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, attachments)
+
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
@@ -365,8 +344,9 @@ func (r *Reporter) generateReportForYesterday() ([]slack.Attachment, error) {
 
 func (r *Reporter) generateReportForWeek() ([]slack.Attachment, error) {
 	if r.conf.TeamMonitoringEnabled == false {
-		return nil, errors.New(r.conf.Translate.ErrorRooksReportWeekend)
+		break
 	}
+
 	attachments := []slack.Attachment{}
 	startDate := time.Now().AddDate(0, 0, -7)
 	endDate := time.Now().AddDate(0, 0, -1)
@@ -417,88 +397,6 @@ func (r *Reporter) generateReportForWeek() ([]slack.Attachment, error) {
 		whoAndWhere := fmt.Sprintf(r.conf.Translate.IsRook, user.UserID, project.ChannelName)
 
 		fieldValue := fmt.Sprintf("%-16v|%-12v|\n", worklogs, commits)
-
-		attachmentFields = append(attachmentFields, slack.AttachmentField{
-			Value: fieldValue,
-			Short: false,
-		})
-
-		attachment.Text = whoAndWhere
-		attachment.Color = "good"
-		attachment.Fields = attachmentFields
-		attachments = append(attachments, attachment)
-	}
-	return attachments, nil
-}
-
-func (r *Reporter) generateReportForSunday() ([]slack.Attachment, error) {
-	attachments := []slack.Attachment{}
-	startDate := time.Now().AddDate(0, 0, -1)
-	endDate := time.Now().AddDate(0, 0, -1)
-	startDateTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.Local)
-	endDateTime := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.Local)
-
-	allUsers, err := r.db.ListAllChannelMembers()
-	if err != nil {
-		return attachments, err
-	}
-
-	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
-	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
-
-	for _, user := range allUsers {
-		var attachment slack.Attachment
-		var attachmentFields []slack.AttachmentField
-		var worklogsTime, fieldValue string
-
-		project, err := r.db.SelectChannel(user.ChannelID)
-		if err != nil {
-			logrus.Infof("Select channel failed: %v", err)
-			continue
-		}
-
-		dataOnUser, collectorErrorOnUser := teammonitoring.GetCollectorData(r.conf, "users", user.UserID, dateFrom, dateTo)
-		if collectorErrorOnUser != nil {
-			userFull, _ := r.db.SelectUser(user.UserID)
-			fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
-			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
-		}
-
-		userInProject := fmt.Sprintf("%v/%v", user.UserID, project.ChannelName)
-		dataOnUserInProject, collectorErrorOnUserInProject := teammonitoring.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
-		if collectorErrorOnUserInProject != nil {
-			userFull, _ := r.db.SelectUser(user.UserID)
-			fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
-			r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
-		}
-
-		isNonReporter, err := r.db.IsNonReporter(user.UserID, user.ChannelID, startDateTime, endDateTime)
-		if dataOnUserInProject.Worklogs == 0 && dataOnUser.TotalCommits == 0 && err != nil {
-			logrus.Infof("worklogs, commits, standup for user %v in channel %v are empty. Skip!", user.UserID, user.ChannelID)
-			continue
-		}
-
-		worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
-		if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
-			worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
-		}
-
-		if dataOnUserInProject.Worklogs != 0 {
-			fieldValue += fmt.Sprintf(" worklogs: %v ", worklogsTime)
-			fieldValue += "|"
-		}
-
-		if dataOnUserInProject.TotalCommits != 0 {
-			fieldValue += fmt.Sprintf(" commits: %v ", dataOnUserInProject.TotalCommits)
-			fieldValue += "|"
-		}
-
-		if isNonReporter != true && err == nil {
-			fieldValue += r.conf.Translate.HasStandup
-			fieldValue += "|\n"
-		}
-
-		whoAndWhere := fmt.Sprintf(r.conf.Translate.IsRook, user.UserID, project.ChannelName)
 
 		attachmentFields = append(attachmentFields, slack.AttachmentField{
 			Value: fieldValue,
