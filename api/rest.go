@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -84,52 +83,13 @@ func NewRESTAPI(slack *chat.Slack) (*REST, error) {
 }
 
 func (r *REST) initEndpoints() {
-	t := &Template{
-		templates: template.Must(template.ParseGlob("admin/*.html")),
-	}
 	endPoint := fmt.Sprintf("/commands%s", r.conf.SecretToken)
 	r.echo.POST(endPoint, r.handleCommands)
-	r.echo.Renderer = t
-	r.echo.GET("/admin", r.renderAdminPannel)
-	r.echo.POST("/config", r.updateConfig)
-
 }
 
 // Start starts http server
 func (r *REST) Start() error {
 	return r.echo.Start(r.conf.HTTPBindAddr)
-}
-
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
-func (r *REST) renderAdminPannel(c echo.Context) error {
-
-	data := map[string]interface{}{
-		"slackBotToken":         r.conf.SlackToken,
-		"secretKey":             r.conf.SecretToken,
-		"slackTeamDomain":       r.conf.TeamDomain,
-		"managerSlackUserID":    r.conf.ManagerSlackUserID,
-		"reportingSlackChannel": r.conf.ReportingChannel,
-		"reportingTime":         r.conf.ReportTime,
-		"notifierInterval":      r.conf.NotifierInterval,
-		"reminderTime":          r.conf.ReminderTime,
-		"maxNotifierAttempts":   r.conf.ReminderRepeatsMax,
-		"collectorURL":          r.conf.CollectorURL,
-		"collectorSecretToken":  r.conf.CollectorToken,
-	}
-	return c.Render(http.StatusOK, "admin", data)
-}
-
-func (r *REST) updateConfig(c echo.Context) error {
-	form, err := c.FormParams()
-	if err != nil {
-		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
-		return err
-	}
-	fmt.Println(form)
-	return r.renderAdminPannel(c)
 }
 
 func (r *REST) handleCommands(c echo.Context) error {
