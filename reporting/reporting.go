@@ -71,6 +71,8 @@ func (r *Reporter) teamReport() {
 
 		for _, member := range channelMembers {
 			attachment := r.generateReportAttachment(member, channel)
+			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+
 			attachments = append(attachments, attachment)
 		}
 
@@ -87,6 +89,183 @@ func (r *Reporter) teamReport() {
 	}
 
 	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
+}
+
+func (r *Reporter) generateReportAttachment(member model.ChannelMember, project model.Channel) slack.Attachment {
+
+	startDate := time.Now().AddDate(0, 0, -1)
+	endDate := time.Now().AddDate(0, 0, -1)
+	if int(time.Now().Weekday()) == 0 {
+		startDate = time.Now().AddDate(0, 0, -7)
+		endDate = time.Now().AddDate(0, 0, -1)
+	}
+
+	dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, project, startDate, endDate)
+
+	if collectorError != nil {
+		userFull, _ := r.db.SelectUser(member.UserID)
+		fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
+		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
+	}
+
+	startDateTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.Local)
+	endDateTime := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.Local)
+
+	isNonReporter, err := r.db.IsNonReporter(member.UserID, member.ChannelID, startDateTime, endDateTime)
+	if err != nil {
+		logrus.Infof("User is non reporter failed: %v", err)
+	}
+
+	fieldValue, points := r.PrepareAttachment(member, dataOnUser, dataOnUserInProject, isNonReporter, collectorError)
+
+	if int(time.Now().Weekday()) == 0 {
+		fieldValue, points = r.PrepareWeeklyAttachment(member, dataOnUser, dataOnUserInProject, isNonReporter, collectorError)
+	}
+
+	return r.GenerateAttachment(fieldValue, points)
+}
+
+func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, project model.Channel, startDate, endDate time.Time) (teammonitoring.CollectorData, teammonitoring.CollectorData, error) {
+	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
+	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
+
+	dataOnUser, err := teammonitoring.GetCollectorData(r.conf, "users", member.UserID, dateFrom, dateTo)
+	if err != nil {
+		return teammonitoring.CollectorData{}, teammonitoring.CollectorData{}, err
+	}
+
+	userInProject := fmt.Sprintf("%v/%v", member.UserID, project.ChannelName)
+	dataOnUserInProject, err := teammonitoring.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
+	if err != nil {
+		return teammonitoring.CollectorData{}, teammonitoring.CollectorData{}, err
+	}
+
+	return dataOnUser, dataOnUserInProject, err
+}
+
+func (r *Reporter) PrepareAttachment(user model.ChannelMember, dataOnUser, dataOnUserInProject teammonitoring.CollectorData, isNonReporter bool, collectorError error) (string, int) {
+	var worklogs, commits, standup, worklogsEmoji, worklogsTime string
+	var points int
+
+	//configure worklogs
+	w := dataOnUser.Worklogs / 3600
+	switch {
+	case w < 3:
+		worklogsEmoji = ":angry:"
+	case w >= 3 && w < 7:
+		worklogsEmoji = ":disappointed:"
+	case w >= 7 && w < 9:
+		worklogsEmoji = ":wink:"
+		points++
+	case w >= 9:
+		worklogsEmoji = ":sunglasses:"
+		points++
+	}
+	worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
+	if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
+		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
+	}
+	worklogs = fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
+
+	//configure commits
+	if dataOnUserInProject.TotalCommits == 0 {
+		commits = fmt.Sprintf(r.conf.Translate.NoCommits, dataOnUserInProject.TotalCommits)
+	} else {
+		commits = fmt.Sprintf(r.conf.Translate.HasCommits, dataOnUserInProject.TotalCommits)
+		points++
+	}
+
+	//configure standup
+	if isNonReporter == true {
+		standup = r.conf.Translate.NoStandup
+	} else {
+		standup = r.conf.Translate.HasStandup
+		points++
+	}
+
+	// prepare field value and assign points
+	fieldValue := fmt.Sprintf("%-16v|%-12v|%-10v|\n", worklogs, commits, standup)
+
+	if user.RoleInChannel == "pm" || user.RoleInChannel == "designer" {
+		fieldValue = fmt.Sprintf("%-16v|%-10v|\n", worklogs, standup)
+		points++
+	}
+
+	if r.conf.TeamMonitoringEnabled == false || collectorError != nil {
+		fieldValue = fmt.Sprintf("%-10v\n", standup)
+	}
+
+	return fieldValue, points
+}
+
+func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser, dataOnUserInProject teammonitoring.CollectorData, isNonReporter bool, collectorError error) (string, int) {
+	var worklogs, commits, standup, worklogsEmoji, worklogsTime string
+	var points int
+
+	//configure worklogs
+	w := dataOnUser.Worklogs / 3600
+	switch {
+	case w < 31:
+		worklogsEmoji = ":disappointed:"
+	case w >= 31 && w < 35:
+		worklogsEmoji = ":wink:"
+		points++
+	case w >= 35:
+		worklogsEmoji = ":sunglasses:"
+		points++
+	}
+	worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
+	if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
+		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
+	}
+
+	worklogs = fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime)
+
+	//configure commits
+	if dataOnUserInProject.TotalCommits == 0 {
+		commits = fmt.Sprintf(r.conf.Translate.NoCommits, dataOnUserInProject.TotalCommits)
+	} else {
+		commits = fmt.Sprintf(r.conf.Translate.HasCommits, dataOnUserInProject.TotalCommits)
+		points++
+	}
+
+	// prepare field value and assign points
+	fieldValue := fmt.Sprintf("%-16v|%-12v|\n", worklogs, commits)
+
+	if user.RoleInChannel == "pm" || user.RoleInChannel == "designer" {
+		fieldValue = fmt.Sprintf("%-16v|\n", worklogs)
+		points++
+	}
+
+	if r.conf.TeamMonitoringEnabled == false || collectorError != nil {
+		fieldValue = ""
+	}
+
+	points++
+
+	return fieldValue, points
+}
+
+func (r *Reporter) GenerateAttachment(fieldValue string, points int) slack.Attachment {
+	var attachment slack.Attachment
+	var attachmentFields []slack.AttachmentField
+
+	attachmentFields = append(attachmentFields, slack.AttachmentField{
+		Value: fieldValue,
+		Short: false,
+	})
+
+	attachment.Text = ""
+	switch p := points; p {
+	case 0:
+		attachment.Color = "danger"
+	case 1, 2:
+		attachment.Color = "warning"
+	case 3:
+		attachment.Color = "good"
+	}
+	attachment.Fields = attachmentFields
+	return attachment
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
@@ -245,126 +424,4 @@ func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUse
 		}
 	}
 	return report, nil
-}
-
-func (r *Reporter) generateReportAttachment(member model.ChannelMember, project model.Channel) slack.Attachment {
-
-	startDate := time.Now().AddDate(0, 0, -1)
-	endDate := time.Now().AddDate(0, 0, -1)
-	if int(time.Now().Weekday()) == 0 {
-		startDate = time.Now().AddDate(0, 0, -7)
-		endDate = time.Now().AddDate(0, 0, -1)
-	}
-
-	dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, project, startDate, endDate)
-
-	if collectorError != nil {
-		userFull, _ := r.db.SelectUser(member.UserID)
-		fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
-		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
-	}
-
-	startDateTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.Local)
-	endDateTime := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.Local)
-
-	isNonReporter, err := r.db.IsNonReporter(member.UserID, member.ChannelID, startDateTime, endDateTime)
-	if err != nil {
-		logrus.Infof("User is non reporter failed: %v", err)
-	}
-
-	fieldValue, whoAndWhere, points := r.PrepareAttachment(member, project, dataOnUser, dataOnUserInProject, isNonReporter, collectorError)
-
-	return r.GenerateAttachment(fieldValue, whoAndWhere, points)
-}
-
-func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, project model.Channel, startDate, endDate time.Time) (teammonitoring.CollectorData, teammonitoring.CollectorData, error) {
-	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
-	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
-
-	dataOnUser, err := teammonitoring.GetCollectorData(r.conf, "users", member.UserID, dateFrom, dateTo)
-	if err != nil {
-		return teammonitoring.CollectorData{}, teammonitoring.CollectorData{}, err
-	}
-
-	userInProject := fmt.Sprintf("%v/%v", member.UserID, project.ChannelName)
-	dataOnUserInProject, err := teammonitoring.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
-	if err != nil {
-		return teammonitoring.CollectorData{}, teammonitoring.CollectorData{}, err
-	}
-
-	return dataOnUser, dataOnUserInProject, err
-}
-
-func (r *Reporter) PrepareAttachment(user model.ChannelMember, project model.Channel, dataOnUser, dataOnUserInProject teammonitoring.CollectorData, isNonReporter bool, collectorError error) (string, string, int) {
-	var worklogs, commits, standup, worklogsEmoji, worklogsTime string
-	var points int
-
-	w := dataOnUser.Worklogs / 3600
-
-	switch {
-	case w < 3:
-		worklogsEmoji = ":angry:"
-	case w >= 3 && w < 7:
-		worklogsEmoji = ":disappointed:"
-	case w >= 7 && w < 9:
-		worklogsEmoji = ":wink:"
-		points++
-	case w >= 9:
-		worklogsEmoji = ":sunglasses:"
-		points++
-	}
-
-	worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
-
-	if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
-		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
-	}
-	worklogs = fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
-
-	if dataOnUserInProject.TotalCommits == 0 {
-		commits = fmt.Sprintf(r.conf.Translate.NoCommits, dataOnUserInProject.TotalCommits)
-	} else {
-		commits = fmt.Sprintf(r.conf.Translate.HasCommits, dataOnUserInProject.TotalCommits)
-		points++
-	}
-	if isNonReporter == true {
-		standup = r.conf.Translate.NoStandup
-	} else {
-		standup = r.conf.Translate.HasStandup
-		points++
-	}
-
-	whoAndWhere := fmt.Sprintf(r.conf.Translate.IsRook, user.UserID, project.ChannelName)
-	fieldValue := fmt.Sprintf("%-16v|%-12v|%-10v|\n", worklogs, commits, standup)
-	if user.RoleInChannel == "pm" || user.RoleInChannel == "designer" {
-		fieldValue = fmt.Sprintf("%-16v|%-10v|\n", worklogs, standup)
-		points++
-	}
-	if r.conf.TeamMonitoringEnabled == false || collectorError != nil {
-		fieldValue = fmt.Sprintf("%-10v\n", standup)
-	}
-
-	return fieldValue, whoAndWhere, points
-}
-
-func (r *Reporter) GenerateAttachment(fieldValue, whoAndWhere string, points int) slack.Attachment {
-	var attachment slack.Attachment
-	var attachmentFields []slack.AttachmentField
-
-	attachmentFields = append(attachmentFields, slack.AttachmentField{
-		Value: fieldValue,
-		Short: false,
-	})
-
-	attachment.Text = whoAndWhere
-	switch p := points; p {
-	case 0:
-		attachment.Color = "danger"
-	case 1, 2:
-		attachment.Color = "warning"
-	case 3:
-		attachment.Color = "good"
-	}
-	attachment.Fields = attachmentFields
-	return attachment
 }

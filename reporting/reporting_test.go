@@ -307,25 +307,17 @@ func TestPrepareAttachment(t *testing.T) {
 		isNonReporter   bool
 		collectorError  error
 		fieldValue      string
-		whoAndWhere     string
 		points          int
 	}{
-		{"developer", 0, 0, 0, true, nil, " worklogs: 0:00 :angry: | commits: 0 :shit: | standup :x: |\n", "<@testUserID> in #testChannel", 0},
-		{"developer", 4000, 4000, 20, false, nil, " worklogs: 1:06 :angry: | commits: 20 :tada: | standup :heavy_check_mark: |\n", "<@testUserID> in #testChannel", 2},
-		{"developer", 14400, 4000, 20, false, nil, " worklogs: 1:06 out of 4:00 :disappointed: | commits: 20 :tada: | standup :heavy_check_mark: |\n", "<@testUserID> in #testChannel", 2},
-		{"developer", 28800, 28800, 20, false, nil, " worklogs: 8:00 :wink: | commits: 20 :tada: | standup :heavy_check_mark: |\n", "<@testUserID> in #testChannel", 3},
-		{"pm", 40000, 28800, 0, false, nil, " worklogs: 8:00 out of 11:06 :sunglasses: | standup :heavy_check_mark: |\n", "<@testUserID> in #testChannel", 3},
-		{"pm", 40000, 28800, 20, false, errors.New("anyErr"), " standup :heavy_check_mark: \n", "<@testUserID> in #testChannel", 4},
+		{"developer", 0, 0, 0, true, nil, " worklogs: 0:00 :angry: | commits: 0 :shit: | standup :x: |\n", 0},
+		{"developer", 4000, 4000, 20, false, nil, " worklogs: 1:06 :angry: | commits: 20 :tada: | standup :heavy_check_mark: |\n", 2},
+		{"developer", 14400, 4000, 20, false, nil, " worklogs: 1:06 out of 4:00 :disappointed: | commits: 20 :tada: | standup :heavy_check_mark: |\n", 2},
+		{"developer", 28800, 28800, 20, false, nil, " worklogs: 8:00 :wink: | commits: 20 :tada: | standup :heavy_check_mark: |\n", 3},
+		{"pm", 40000, 28800, 0, false, nil, " worklogs: 8:00 out of 11:06 :sunglasses: | standup :heavy_check_mark: |\n", 3},
+		{"pm", 40000, 28800, 20, false, errors.New("anyErr"), " standup :heavy_check_mark: \n", 4},
 	}
 
 	for _, tt := range testCases {
-
-		channel, err := r.db.CreateChannel(model.Channel{
-			ChannelID:   "testChannelID",
-			ChannelName: "testChannel",
-			StandupTime: int64(0),
-		})
-		assert.NoError(t, err)
 
 		channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
 			UserID:        "testUserID",
@@ -337,9 +329,8 @@ func TestPrepareAttachment(t *testing.T) {
 		userData := teammonitoring.CollectorData{tt.commits, tt.totalWorklogs}
 		userInProjectData := teammonitoring.CollectorData{tt.commits, tt.projectWorklogs}
 
-		fieldValue, whoAndWhere, points := r.PrepareAttachment(channelMember, channel, userData, userInProjectData, tt.isNonReporter, tt.collectorError)
+		fieldValue, points := r.PrepareAttachment(channelMember, userData, userInProjectData, tt.isNonReporter, tt.collectorError)
 		assert.Equal(t, tt.fieldValue, fieldValue)
-		assert.Equal(t, tt.whoAndWhere, whoAndWhere)
 		assert.Equal(t, tt.points, points)
 	}
 
@@ -352,21 +343,19 @@ func TestGenerateAttachment(t *testing.T) {
 	r := NewReporter(s)
 
 	testCases := []struct {
-		fieldValue  string
-		whoAndWhere string
-		points      int
-		color       string
+		fieldValue string
+		points     int
+		color      string
 	}{
-		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", "@TestUser in #test", 3, "good"},
-		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", "@TestUser in #test", 2, "warning"},
-		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", "@TestUser in #test", 1, "warning"},
-		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", "@TestUser in #test", 0, "danger"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 3, "good"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 2, "warning"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 1, "warning"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 0, "danger"},
 	}
 
 	for _, tt := range testCases {
-		attachment := r.GenerateAttachment(tt.fieldValue, tt.whoAndWhere, tt.points)
+		attachment := r.GenerateAttachment(tt.fieldValue, tt.points)
 		assert.Equal(t, tt.color, attachment.Color)
-		assert.Equal(t, tt.whoAndWhere, attachment.Text)
 		assert.Equal(t, tt.fieldValue, attachment.Fields[0].Value)
 	}
 
