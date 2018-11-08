@@ -42,7 +42,7 @@ func NewReporter(slack *chat.Slack) *Reporter {
 
 // Start starts all team monitoring treads
 func (r *Reporter) Start() {
-	gocron.Every(1).Day().At("12:20").Do(r.teamReport)
+	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.teamReport)
 }
 
 // teamReport generates report on users who did not fullfill their working duties
@@ -74,13 +74,10 @@ func (r *Reporter) teamReport() {
 			attachments = append(attachments, attachment)
 		}
 
-		if channel.ChannelID == "CDQNP8LN4" {
-			logrus.Infof("Info only for %v channel", channel.ChannelID)
-			if int(time.Now().Weekday()) == 0 {
-				r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
-			}
-			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		if int(time.Now().Weekday()) == 0 {
+			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
 		}
+		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
 
 		allReports = append(allReports, attachments...)
 	}
