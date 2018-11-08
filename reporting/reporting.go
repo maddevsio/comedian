@@ -42,7 +42,7 @@ func NewReporter(slack *chat.Slack) *Reporter {
 
 // Start starts all team monitoring treads
 func (r *Reporter) Start() {
-	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.teamReport)
+	gocron.Every(1).Day().At("12:20").Do(r.teamReport)
 }
 
 // teamReport generates report on users who did not fullfill their working duties
@@ -64,17 +64,29 @@ func (r *Reporter) teamReport() {
 			continue
 		}
 
+		if len(channelMembers) == 0 {
+			logrus.Infof("Skip %v channel", channel.ChannelID)
+			continue
+		}
+
 		for _, member := range channelMembers {
 			attachment := r.generateReportAttachment(member, channel)
 			attachments = append(attachments, attachment)
 		}
 
-		if int(time.Now().Weekday()) == 0 {
-			r.s.SendMessage(channel.ChannelID, "Weekly Total Report", attachments)
+		if channel.ChannelID == "CDQNP8LN4" {
+			logrus.Infof("Info only for %v channel", channel.ChannelID)
+			if int(time.Now().Weekday()) == 0 {
+				r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
+			}
+			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
 		}
-		r.s.SendMessage(channel.ChannelID, "Report for yesterday", attachments)
 
 		allReports = append(allReports, attachments...)
+	}
+
+	if len(allReports) == 0 {
+		return
 	}
 
 	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
@@ -249,6 +261,12 @@ func (r *Reporter) generateReportAttachment(member model.ChannelMember, project 
 
 	dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, project, startDate, endDate)
 
+	if collectorError != nil {
+		userFull, _ := r.db.SelectUser(member.UserID)
+		fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
+		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
+	}
+
 	startDateTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.Local)
 	endDateTime := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.Local)
 
@@ -268,17 +286,13 @@ func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, project 
 
 	dataOnUser, err := teammonitoring.GetCollectorData(r.conf, "users", member.UserID, dateFrom, dateTo)
 	if err != nil {
-		userFull, _ := r.db.SelectUser(member.UserID)
-		fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
-		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
+		return teammonitoring.CollectorData{}, teammonitoring.CollectorData{}, err
 	}
 
 	userInProject := fmt.Sprintf("%v/%v", member.UserID, project.ChannelName)
 	dataOnUserInProject, err := teammonitoring.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
 	if err != nil {
-		userFull, _ := r.db.SelectUser(member.UserID)
-		fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
-		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
+		return teammonitoring.CollectorData{}, teammonitoring.CollectorData{}, err
 	}
 
 	return dataOnUser, dataOnUserInProject, err
