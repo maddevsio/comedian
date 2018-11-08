@@ -71,6 +71,9 @@ func (r *Reporter) teamReport() {
 
 		for _, member := range channelMembers {
 			attachment := r.generateReportAttachment(member, channel)
+			if len(attachment.Fields) == 0 {
+				continue
+			}
 			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
 
 			attachments = append(attachments, attachment)
@@ -106,6 +109,14 @@ func (r *Reporter) generateReportAttachment(member model.ChannelMember, project 
 		userFull, _ := r.db.SelectUser(member.UserID)
 		fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
 		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
+	}
+
+	//if report is being made for weekends, and user did not do anywork on these days, generate no report
+	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
+		if dataOnUser.Worklogs == 0 && dataOnUser.TotalCommits == 0 {
+			logrus.Infof("User %v in %v did not do anything yesterday. Skip!", member.UserID, project.ChannelName)
+			return slack.Attachment{}
+		}
 	}
 
 	startDateTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.Local)
@@ -264,6 +275,11 @@ func (r *Reporter) GenerateAttachment(fieldValue string, points int) slack.Attac
 	case 3:
 		attachment.Color = "good"
 	}
+
+	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
+		attachment.Color = "good"
+	}
+
 	attachment.Fields = attachmentFields
 	return attachment
 }
