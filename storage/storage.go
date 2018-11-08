@@ -76,7 +76,7 @@ type Storage interface {
 	AddToStandupHistory(model.StandupEditHistory) (model.StandupEditHistory, error)
 
 	//GetAllChannels returns list of unique channels
-	GetAllChannels() ([]string, error)
+	GetAllChannels() ([]model.Channel, error)
 
 	//GetUserChannels returns list of user's channels
 	GetUserChannels(string) ([]string, error)
