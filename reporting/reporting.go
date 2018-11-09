@@ -42,11 +42,13 @@ func NewReporter(slack *chat.Slack) *Reporter {
 
 // Start starts all team monitoring treads
 func (r *Reporter) Start() {
-	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.teamReport)
+	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.displayYesterdayTeamReport)
+	gocron.Every(1).Sunday().At(r.conf.ReportTime).Do(r.displayWeeklyTeamReport)
+
 }
 
 // teamReport generates report on users who submit standups
-func (r *Reporter) teamReport() {
+func (r *Reporter) displayYesterdayTeamReport() {
 	var allReports []slack.Attachment
 
 	channels, err := r.db.GetAllChannels()
@@ -79,10 +81,53 @@ func (r *Reporter) teamReport() {
 			attachments = append(attachments, attachment)
 		}
 
-		if int(time.Now().Weekday()) == 0 {
-			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
-		}
 		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+
+		allReports = append(allReports, attachments...)
+	}
+
+	if len(allReports) == 0 {
+		return
+	}
+
+	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
+}
+
+// teamReport generates report on users who submit standups
+func (r *Reporter) displayWeeklyTeamReport() {
+	var allReports []slack.Attachment
+
+	channels, err := r.db.GetAllChannels()
+	if err != nil {
+		logrus.Errorf("GetAllChannels failed: %v", err)
+		return
+	}
+
+	for _, channel := range channels {
+		var attachments []slack.Attachment
+
+		channelMembers, err := r.db.ListChannelMembers(channel.ChannelID)
+		if err != nil {
+			logrus.Errorf("ListChannelMembers failed for channel %v: %v", channel.ChannelName, err)
+			continue
+		}
+
+		if len(channelMembers) == 0 {
+			logrus.Infof("Skip %v channel", channel.ChannelID)
+			continue
+		}
+
+		for _, member := range channelMembers {
+			attachment := r.generateWeeklyReportAttachment(member, channel)
+			if len(attachment.Fields) == 0 {
+				continue
+			}
+			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+
+			attachments = append(attachments, attachment)
+		}
+
+		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
 
 		allReports = append(allReports, attachments...)
 	}
@@ -98,10 +143,6 @@ func (r *Reporter) generateReportAttachment(member model.ChannelMember, project 
 
 	startDate := time.Now().AddDate(0, 0, -1)
 	endDate := time.Now().AddDate(0, 0, -1)
-	if int(time.Now().Weekday()) == 0 {
-		startDate = time.Now().AddDate(0, 0, -7)
-		endDate = time.Now().AddDate(0, 0, -1)
-	}
 
 	dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, project, startDate, endDate)
 
@@ -129,11 +170,50 @@ func (r *Reporter) generateReportAttachment(member model.ChannelMember, project 
 
 	fieldValue, points := r.PrepareAttachment(member, dataOnUser, dataOnUserInProject, isNonReporter, collectorError)
 
-	if int(time.Now().Weekday()) == 0 {
-		fieldValue, points = r.PrepareWeeklyAttachment(member, dataOnUser, dataOnUserInProject, isNonReporter, collectorError)
+	return r.GenerateAttachment(fieldValue, points)
+}
+
+func (r *Reporter) generateWeeklyReportAttachment(member model.ChannelMember, project model.Channel) slack.Attachment {
+
+	startDate := time.Now().AddDate(0, 0, -7)
+	endDate := time.Now().AddDate(0, 0, -1)
+
+	dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, project, startDate, endDate)
+
+	if collectorError != nil {
+		userFull, _ := r.db.SelectUser(member.UserID)
+		fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
+		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
 	}
 
-	return r.GenerateAttachment(fieldValue, points)
+	fieldValue, points := r.PrepareWeeklyAttachment(member, dataOnUser, dataOnUserInProject, collectorError)
+
+	var attachment slack.Attachment
+	var attachmentFields []slack.AttachmentField
+
+	//if there is nothing to show, do not create attachment
+	if fieldValue == "" {
+		logrus.Infof("Noting to show on attachment on member: %v in %v. Skip!", member.UserID, member.ChannelID)
+		return attachment
+	}
+
+	attachmentFields = append(attachmentFields, slack.AttachmentField{
+		Value: fieldValue,
+		Short: false,
+	})
+
+	attachment.Text = ""
+	switch p := points; p {
+	case 0:
+		attachment.Color = "danger"
+	case 1:
+		attachment.Color = "warning"
+	case 2:
+		attachment.Color = "good"
+	}
+
+	attachment.Fields = attachmentFields
+	return attachment
 }
 
 func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, project model.Channel, startDate, endDate time.Time) (teammonitoring.CollectorData, teammonitoring.CollectorData, error) {
@@ -209,7 +289,7 @@ func (r *Reporter) PrepareAttachment(user model.ChannelMember, dataOnUser, dataO
 	return fieldValue, points
 }
 
-func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser, dataOnUserInProject teammonitoring.CollectorData, isNonReporter bool, collectorError error) (string, int) {
+func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser, dataOnUserInProject teammonitoring.CollectorData, collectorError error) (string, int) {
 	var worklogs, commits, worklogsEmoji, worklogsTime string
 	var points int
 
@@ -251,8 +331,6 @@ func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser,
 	if r.conf.TeamMonitoringEnabled == false || collectorError != nil {
 		fieldValue = ""
 	}
-
-	points++
 
 	return fieldValue, points
 }

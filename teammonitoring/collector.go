@@ -39,6 +39,7 @@ func GetCollectorData(conf config.Config, getDataOn, data, dateFrom, dateTo stri
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
+		logrus.Errorf("teammonitoring: res status code - %v. Could not get data", res.StatusCode)
 		return collectorData, errors.New("could not get data on this request")
 	}
 	body, _ := ioutil.ReadAll(res.Body)

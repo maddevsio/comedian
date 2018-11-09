@@ -332,6 +332,53 @@ func TestPrepareAttachment(t *testing.T) {
 		fieldValue, points := r.PrepareAttachment(channelMember, userData, userInProjectData, tt.isNonReporter, tt.collectorError)
 		assert.Equal(t, tt.fieldValue, fieldValue)
 		assert.Equal(t, tt.points, points)
+
+		r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
+
+	}
+
+}
+
+func TestPrepareWeeklyAttachment(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	testCases := []struct {
+		memberRole      string
+		totalWorklogs   int
+		projectWorklogs int
+		commits         int
+		isNonReporter   bool
+		collectorError  error
+		fieldValue      string
+		points          int
+	}{
+		{"developer", 0, 0, 0, true, nil, " worklogs: 0:00 :disappointed: | commits: 0 :shit: |\n", 0},
+		{"developer", 115200, 114200, 0, false, nil, " worklogs: 31:43 out of 32:00 :wink: | commits: 0 :shit: |\n", 1},
+		{"developer", 129600, 129600, 20, false, nil, " worklogs: 36:00 :sunglasses: | commits: 20 :tada: |\n", 2},
+		{"pm", 40000, 28800, 20, false, errors.New("anyErr"), "", 2},
+	}
+
+	for _, tt := range testCases {
+
+		channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
+			UserID:        "testUserID",
+			ChannelID:     "testChannelID",
+			RoleInChannel: tt.memberRole,
+		})
+		assert.NoError(t, err)
+
+		userData := teammonitoring.CollectorData{tt.commits, tt.totalWorklogs}
+		userInProjectData := teammonitoring.CollectorData{tt.commits, tt.projectWorklogs}
+
+		fieldValue, points := r.PrepareWeeklyAttachment(channelMember, userData, userInProjectData, tt.collectorError)
+		assert.Equal(t, tt.fieldValue, fieldValue)
+		assert.Equal(t, tt.points, points)
+
+		r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
 	}
 
 }
@@ -341,6 +388,9 @@ func TestGenerateAttachment(t *testing.T) {
 	s, err := chat.NewSlack(c)
 	assert.NoError(t, err)
 	r := NewReporter(s)
+
+	d := time.Date(2018, 11, 9, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
 
 	testCases := []struct {
 		fieldValue string
@@ -363,4 +413,134 @@ func TestGenerateAttachment(t *testing.T) {
 			assert.Equal(t, 0, len(attachment.Fields))
 		}
 	}
+
+	d = time.Date(2018, 11, 4, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	testCases = []struct {
+		fieldValue string
+		points     int
+		color      string
+	}{
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 3, "good"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 2, "good"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 1, "good"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 0, "good"},
+		{"", 0, "good"},
+	}
+
+	for _, tt := range testCases {
+		attachment := r.GenerateAttachment(tt.fieldValue, tt.points)
+		assert.Equal(t, tt.color, attachment.Color)
+		if len(attachment.Fields) != 0 {
+			assert.Equal(t, tt.fieldValue, attachment.Fields[0].Value)
+		} else {
+			assert.Equal(t, 0, len(attachment.Fields))
+		}
+	}
+
+	d = time.Date(2018, 11, 5, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	testCases = []struct {
+		fieldValue string
+		points     int
+		color      string
+	}{
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 3, "good"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 2, "good"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 1, "good"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 0, "good"},
+		{"", 0, "good"},
+	}
+
+	for _, tt := range testCases {
+		attachment := r.GenerateAttachment(tt.fieldValue, tt.points)
+		assert.Equal(t, tt.color, attachment.Color)
+		if len(attachment.Fields) != 0 {
+			assert.Equal(t, tt.fieldValue, attachment.Fields[0].Value)
+		} else {
+			assert.Equal(t, 0, len(attachment.Fields))
+		}
+	}
+}
+
+func TestGenerateReportAttachment(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	d := time.Date(2018, 11, 9, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	channel, err := r.db.CreateChannel(model.Channel{
+		ChannelName: "chanName",
+		ChannelID:   "chanid",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "testUserID",
+		ChannelID:     "testChannelID",
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+
+	attachment := r.generateReportAttachment(channelMember, channel)
+	assert.Equal(t, "", attachment.Text)
+	assert.Equal(t, "warning", attachment.Color)
+	if len(attachment.Fields) != 0 {
+		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
+	}
+
+	d = time.Date(2018, 11, 11, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	attachment = r.generateReportAttachment(channelMember, channel)
+	assert.Equal(t, "", attachment.Text)
+	assert.Equal(t, "", attachment.Color)
+	if len(attachment.Fields) != 0 {
+		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
+	}
+
+	r.db.DeleteChannel(channel.ID)
+	r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
+}
+
+func TestGenerateWeeklyReportAttachment(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	d := time.Date(2018, 11, 4, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	channel, err := r.db.CreateChannel(model.Channel{
+		ChannelName: "chanName",
+		ChannelID:   "chanid",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "testUserID",
+		ChannelID:     "testChannelID",
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+
+	attachment := r.generateWeeklyReportAttachment(channelMember, channel)
+	assert.Equal(t, "", attachment.Text)
+	assert.Equal(t, "", attachment.Color)
+	if len(attachment.Fields) != 0 {
+		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
+	}
+
+	r.db.DeleteChannel(channel.ID)
+	r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
 }
