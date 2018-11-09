@@ -351,12 +351,16 @@ func TestGenerateAttachment(t *testing.T) {
 		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 2, "warning"},
 		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 1, "warning"},
 		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 0, "danger"},
+		{"", 0, "danger"},
 	}
 
 	for _, tt := range testCases {
 		attachment := r.GenerateAttachment(tt.fieldValue, tt.points)
 		assert.Equal(t, tt.color, attachment.Color)
-		assert.Equal(t, tt.fieldValue, attachment.Fields[0].Value)
+		if len(attachment.Fields) != 0 {
+			assert.Equal(t, tt.fieldValue, attachment.Fields[0].Value)
+		} else {
+			assert.Equal(t, 0, len(attachment.Fields))
+		}
 	}
-
 }

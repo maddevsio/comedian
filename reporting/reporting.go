@@ -210,7 +210,7 @@ func (r *Reporter) PrepareAttachment(user model.ChannelMember, dataOnUser, dataO
 }
 
 func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser, dataOnUserInProject teammonitoring.CollectorData, isNonReporter bool, collectorError error) (string, int) {
-	var worklogs, commits, standup, worklogsEmoji, worklogsTime string
+	var worklogs, commits, worklogsEmoji, worklogsTime string
 	var points int
 
 	//configure worklogs
@@ -230,7 +230,7 @@ func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser,
 		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
 	}
 
-	worklogs = fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime)
+	worklogs = fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
 
 	//configure commits
 	if dataOnUserInProject.TotalCommits == 0 {
@@ -261,7 +261,7 @@ func (r *Reporter) GenerateAttachment(fieldValue string, points int) slack.Attac
 	var attachment slack.Attachment
 	var attachmentFields []slack.AttachmentField
 
-	//if there is nothing to show, do not create attachment fields
+	//if there is nothing to show, do not create attachment
 	if fieldValue != "" {
 		attachmentFields = append(attachmentFields, slack.AttachmentField{
 			Value: fieldValue,
