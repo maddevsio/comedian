@@ -136,7 +136,7 @@ func (r *Reporter) displayWeeklyTeamReport() {
 		return
 	}
 
-	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
+	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderWeekly, allReports)
 }
 
 func (r *Reporter) generateReportAttachment(member model.ChannelMember, project model.Channel) slack.Attachment {
