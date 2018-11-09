@@ -45,7 +45,7 @@ func (r *Reporter) Start() {
 	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.teamReport)
 }
 
-// teamReport generates report on users who did not fullfill their working duties
+// teamReport generates report on users who submit standups
 func (r *Reporter) teamReport() {
 	var allReports []slack.Attachment
 
@@ -261,10 +261,13 @@ func (r *Reporter) GenerateAttachment(fieldValue string, points int) slack.Attac
 	var attachment slack.Attachment
 	var attachmentFields []slack.AttachmentField
 
-	attachmentFields = append(attachmentFields, slack.AttachmentField{
-		Value: fieldValue,
-		Short: false,
-	})
+	//if there is nothing to show, do not create attachment fields
+	if fieldValue != "" {
+		attachmentFields = append(attachmentFields, slack.AttachmentField{
+			Value: fieldValue,
+			Short: false,
+		})
+	}
 
 	attachment.Text = ""
 	switch p := points; p {
