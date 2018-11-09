@@ -173,14 +173,6 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		return
 	}
 
-	// othervise Direct Message non reporters
-	for _, nonReporter := range nonReporters {
-		err := n.s.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
-		if err != nil {
-			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
-		}
-	}
-
 	repeats := 0
 
 	notifyNotAll := func() error {
@@ -209,6 +201,13 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 			err := errors.New("Continue backoff")
 			return err
 		}
+		// othervise Direct Message non reporters
+		for _, nonReporter := range nonReporters {
+			err := n.s.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
+			if err != nil {
+				logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
+			}
+		}
 		//n.notifyAdminsAboutNonReporters(channelID, nonReportersSlackIDs)
 		return nil
 	}
@@ -233,11 +232,8 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 		return
 	}
 	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
-	if !submittedStandup {
-		err := n.s.SendUserMessage(chm.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, chm.UserID, channel.ChannelID, channel.ChannelName))
-		if err != nil {
-			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
-		}
+	if submittedStandup {
+		return
 	}
 	repeats := 0
 	notify := func() error {
@@ -247,6 +243,12 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 			repeats++
 			err := errors.New("Continue backoff")
 			return err
+		}
+		if !submittedStandup {
+			err := n.s.SendUserMessage(chm.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, chm.UserID, channel.ChannelID, channel.ChannelName))
+			if err != nil {
+				logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
+			}
 		}
 		logrus.Infof("User %v submitted standup!", chm.UserID)
 		return nil
