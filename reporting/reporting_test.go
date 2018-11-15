@@ -237,9 +237,9 @@ func TestPrepareAttachment(t *testing.T) {
 		fieldValue    string
 		points        int
 	}{
-		{"developer", true, " worklogs: 0:00 :angry: | commits: 0 :shit: | standup :x: |\n", 0},
-		{"developer", false, " worklogs: 1:06 :angry: | commits: 20 :tada: | standup :heavy_check_mark: |\n", 1},
-		{"pm", true, " worklogs: 8:00 out of 11:06 :sunglasses: | standup :heavy_check_mark: |\n", 0},
+		{"developer", true, " standup :x: \n", 0},
+		{"developer", false, " standup :heavy_check_mark: \n", 1},
+		{"pm", true, " standup :x: \n", 0},
 		{"pm", false, " standup :heavy_check_mark: \n", 1},
 	}
 
@@ -315,7 +315,7 @@ func TestGenerateReportAttachment(t *testing.T) {
 
 	attachment := r.generateReportAttachment(channelMember, channel)
 	assert.Equal(t, "", attachment.Text)
-	assert.Equal(t, "warning", attachment.Color)
+	assert.Equal(t, "good", attachment.Color)
 	if len(attachment.Fields) != 0 {
 		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
 	}
@@ -325,7 +325,7 @@ func TestGenerateReportAttachment(t *testing.T) {
 
 	attachment = r.generateReportAttachment(channelMember, channel)
 	assert.Equal(t, "", attachment.Text)
-	assert.Equal(t, "", attachment.Color)
+	assert.Equal(t, "good", attachment.Color)
 	if len(attachment.Fields) != 0 {
 		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
 	}

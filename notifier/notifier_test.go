@@ -1,7 +1,6 @@
 package notifier
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -148,18 +147,6 @@ func TestCheckUser(t *testing.T) {
 
 	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage",
 		httpmock.NewStringResponder(200, `{"OK": true}`))
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-25/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `{"total_commits": 2, "total_merges": 1, "worklogs": 100000}`))
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID2/2018-06-25/2018-06-25/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `{"total_commits": 30, "total_merges": 0, "worklogs": 13600}`))
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID3/2018-06-25/2018-06-25/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `{"total_commits": 0, "total_merges": 0, "worklogs": 0}`))
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/rest/api/v1/logger/users/userID4/2018-06-25/2018-06-25/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `{"total_commits": 20, "total_merges": 0, "worklogs": 50000}`))
 
 	testCases := []struct {
 		title         string
