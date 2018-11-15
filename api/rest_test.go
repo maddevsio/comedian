@@ -711,6 +711,7 @@ func TestUserHasAccess(t *testing.T) {
 	assert.NoError(t, r.db.DeleteUser(admin.ID))
 	assert.NoError(t, r.db.DeleteUser(pmUser.ID))
 	assert.NoError(t, r.db.DeleteUser(user.ID))
+	assert.NoError(t, r.db.DeleteUser(superAdmin.ID))
 	assert.NoError(t, r.db.DeleteChannelMember(pmUser.UserID, "RANDOMCHAN"))
 
 }
