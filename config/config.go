@@ -16,7 +16,6 @@ type Config struct {
 	Language           string `envconfig:"LANGUAGE" required:"true" default:"en_US"`
 	ReminderRepeatsMax int    `envconfig:"MAX_REMINDERS" required:"true" default:"5"`
 	ReminderTime       int64  `envconfig:"WARNING_TIME" required:"true" default:"5"`
-	SecretToken        string `envconfig:"SECRET_TOKEN" default:""`
 	Translate          Translate
 }
 

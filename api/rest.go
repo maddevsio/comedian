@@ -85,8 +85,7 @@ func NewRESTAPI(slack *chat.Slack) (*REST, error) {
 }
 
 func (r *REST) initEndpoints() {
-	endPoint := fmt.Sprintf("/commands%s", r.conf.SecretToken)
-	r.echo.POST(endPoint, r.handleCommands)
+	r.echo.POST("/commands", r.handleCommands)
 }
 
 // Start starts http server
