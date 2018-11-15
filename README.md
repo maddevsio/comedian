@@ -2,7 +2,7 @@
     <img style="width: 300px" src ="documentation/logo.png" />
 </div>
 
-<div align="center"> Stand up bot for slack to help you with remote stand up meetings automation </div>
+<div align="center"> Simple stand up bot for slack to help you with remote stand up meetings automation </div>
 
 <div align="center">
 
@@ -25,7 +25,7 @@
 - [x] Remind about upcoming deadlines for teams and individuals
 - [x] Tag non-reporters in channels and DM them when deadline is missed
 - [x] Generate reports on projects, users or users in projects
-- [x] Provide daily report on team's yesterday performance, weekly report on Sundays
+- [x] Provide daily report on team's yesterday performance
 - [x] Support English and Russian languages
 
 
@@ -54,7 +54,6 @@ Create `.env` file in the root directory and add the following env variables the
 | --- | --- | --- | --- |
 | COMEDIAN_SLACK_TOKEN | Bot User OAuth Access Token |  | No |
 | COMEDIAN_DATABASE | Database URL. Default: comedian:comedian@/comedian?parseTime=true |  | No |
-| COMEDIAN_SECRET_TOKEN | Include to secure Comedian API |  | Yes |
 | COMEDIAN_HTTP_BIND_ADDR | HTTP bind address | 0.0.0.0:8080 | No |
 | COMEDIAN_LANGUAGE | Comedian primary language | en_US | No |
 | COMEDIAN_SUPER_ADMIN_ID | Slack ID of super admin in your workspace |  | No |
@@ -63,13 +62,7 @@ Create `.env` file in the root directory and add the following env variables the
 | COMEDIAN_MAX_REMINDERS | Number of times comedian keeps reminding non reporters | 3 | No |
 | COMEDIAN_REMINDER_INTERVAL | Duration of the intervals when Comedian waits before next reminder in minutes | 30 | No |
 | COMEDIAN_WARNING_TIME | Duration prior to deadline to remind about upcoming deadline | 10 | No |
-| COMEDIAN_ENABLE_COLLECTOR | Enables or Disables Collector* API requests | false | Yes |
-| COMEDIAN_COLLECTOR_TOKEN | Secret Token for Collector* API requests |  | Yes |
-| COMEDIAN_COLLECTOR_URL | URL to send Collector* API requests |  | Yes |
-| COMEDIAN_SLACK_DOMAIN | Slack workspace title (copy first word of the link) |  | Yes |
 | TZ | Setup time zone for comedian DB | UTC | Yes |
-
-*Please note that Collector Servise is developed only for internal use of Mad Devs LLC, therefore when configuring Comedian, you may turn this feature off.
 
 ### **Step 4**: Create Slack chatbot 
 Create "app" in slack workspace: https://api.slack.com/apps
@@ -155,13 +148,21 @@ Open your terminal, type `ssh login@ipaddress` and then insert password. If this
 
 Next step is to [install docker-compose](https://www.digitalocean.com/community/tutorials/how-to-install-docker-compose-on-ubuntu-18-04) and [docker](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)
 
-### **Step 3**: Prepare docker-compose file 
+### **Step 3.0**: Push your code to Dockerhub 
 
-run `nano docker-compose.yml` to create your docker-compose file. Use docker-compose-example.yml file from the repository to set up it properly. You can use env variables inside or just type parameters right there for better readability. 
+1. run `sudo make` to build local up-to-date Comedian image
+2. Create dockerhub repository for Comedian
+3. run `docker tag comedian <yourDockerHubRepo/here>` to create new tag and 
+4. run `docker push <yourDockerHubRepo/here>` to push it to your repository
+
+
+### **Step 3.1**: Prepare docker-compose file 
+
+run `nano docker-compose.yml` to create your docker-compose file. Use docker-compose.yml file from the repository to set up it properly. You can use env variables inside or just type parameters right there for better readability. 
 
 Save changes and create new folder `docker`. Execute the following command to give it proper access `chmod 755 docker`. Now you have your volumes configured so that your DB never gets dropped if something happens with the container. 
 
-Make sure to use updated Comedian images from [DockerHub](HTTPS://hub.docker.com/r/anatoliyfedorenko/comedian/tags/) 
+Make sure to use updated Comedian images from your repository on DockerHub, where you will push your code
 
 Save the changes and proceed to the next step. If you use .env file, make sure you updated your env variables before Step 4.
 
@@ -171,7 +172,7 @@ If you care about security, you may use https://github.com/JrCs/docker-letsencry
 ### **Step 4**: Install chatbot to your workspace
 Follow Steps 4-9 of the local installation guidelines before you proceed! 
 ATTENTION
-Request URL for all slash commands will be the following: ```http://yourIPaddress:8080/commands(here you can paste COMEDIAN_SECRET_TOKEN if it is not empty) ``` )
+Request URL for all slash commands will be the following: ```http://yourIPaddress:8080/commands``` )
 
 ### **Step 5**: Use docker-compose 
 
