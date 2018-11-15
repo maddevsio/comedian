@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -17,7 +16,6 @@ import (
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/reporting"
 	"github.com/maddevsio/comedian/storage"
-	"github.com/maddevsio/comedian/teammonitoring"
 	"github.com/maddevsio/comedian/utils"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
@@ -32,10 +30,6 @@ type REST struct {
 	report  *reporting.Reporter
 	slack   *chat.Slack
 	api     *slack.Client
-}
-
-type Template struct {
-	templates *template.Template
 }
 
 const (
@@ -151,11 +145,6 @@ func (r *REST) addCommand(c echo.Context, f url.Values) error {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
 		return c.String(http.StatusOK, r.addMembers(members, "developer", channel))
-	case "designer", "дизайнер":
-		if accessLevel > 3 {
-			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
-		}
-		return c.String(http.StatusOK, r.addMembers(members, "designer", channel))
 	case "pm", "пм":
 		if accessLevel > 2 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
@@ -180,8 +169,6 @@ func (r *REST) listCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, r.listAdmins())
 	case "developer", "разработчик", "":
 		return c.String(http.StatusOK, r.listMembers(ca.ChannelID, "developer"))
-	case "designer", "дизайнер":
-		return c.String(http.StatusOK, r.listMembers(ca.ChannelID, "designer"))
 	case "pm", "пм":
 		return c.String(http.StatusOK, r.listMembers(ca.ChannelID, "pm"))
 	default:
@@ -202,7 +189,7 @@ func (r *REST) deleteCommand(c echo.Context, f url.Values) error {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 		}
 		return c.String(http.StatusOK, r.deleteAdmins(users))
-	case "developer", "разработчик", "designer", "дизайнер", "pm", "пм", "":
+	case "developer", "разработчик", "pm", "пм", "":
 		if accessLevel > 3 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
@@ -667,13 +654,6 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	}
 	for _, t := range report.ReportBody {
 		text += t.Text
-		if r.conf.TeamMonitoringEnabled {
-			cd, err := teammonitoring.GetCollectorData(r.conf, "projects", channel.ChannelName, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
-			if err != nil {
-				continue
-			}
-			text += fmt.Sprintf(r.conf.Translate.ReportOnProjectCollectorData, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
-		}
 	}
 	return c.String(http.StatusOK, text)
 }
@@ -726,13 +706,6 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	}
 	for _, t := range report.ReportBody {
 		text += t.Text
-		if r.conf.TeamMonitoringEnabled {
-			cd, err := teammonitoring.GetCollectorData(r.conf, "users", user.UserID, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
-			if err != nil {
-				continue
-			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
-		}
 	}
 	return c.String(http.StatusOK, text)
 }
@@ -804,14 +777,6 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	}
 	for _, t := range report.ReportBody {
 		text += t.Text
-		if r.conf.TeamMonitoringEnabled {
-			data := fmt.Sprintf("%v/%v", member.UserID, channel.ChannelName)
-			cd, err := teammonitoring.GetCollectorData(r.conf, "user-in-project", data, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
-			if err != nil {
-				continue
-			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
-		}
 	}
 	return c.String(http.StatusOK, text)
 }

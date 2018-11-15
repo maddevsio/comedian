@@ -20,26 +20,6 @@ func TestSplitUser(t *testing.T) {
 	assert.Equal(t, "userName", name)
 }
 
-func TestSecondsToHuman(t *testing.T) {
-	testCases := []struct {
-		output  string
-		seconds int
-	}{
-		{"0:03", 180},
-		{"0:04", 240},
-		{"1:00", 3600},
-		{"1:03", 3780},
-		{"1:03", 3782},
-		{"4:10", 15000},
-		{"12:30", 45000},
-	}
-	for _, tt := range testCases {
-		text := SecondsToHuman(tt.seconds)
-		assert.Equal(t, tt.output, text)
-	}
-
-}
-
 func TestSplitTimeTalbeCommand(t *testing.T) {
 	d := time.Date(2018, 1, 2, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })

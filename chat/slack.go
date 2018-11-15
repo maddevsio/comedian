@@ -70,6 +70,8 @@ func (s *Slack) Run() {
 			s.handleJoin(ev.Channel)
 		case *slack.InvalidAuthEvent:
 			return
+		case *slack.ConnectedEvent:
+			logrus.Info("Reconnected!")
 		}
 	}
 }
