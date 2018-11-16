@@ -34,7 +34,7 @@ standupAccepted = "Good job! Standup accepted! Keep it up!"
 
 
 notifyNotAll = "In this channel not all standupers wrote standup today, shame on you: %v."
-notifyAllDone = "Congradulations! Everybody wrote their standups today!"
+notifyAllDone = "Congradulations! Nobody missed the deadline! Well done!"
 notifyManagerAllDone = "<@%v>, in channel <#%s> all standupers have written standup today"
 notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup today, these users ignored standup today: %v."
 notifyUsersWarning = "Hey, %v! %v minutes to deadline and the team is still waiting for standups from you!"
@@ -100,10 +100,11 @@ StandupHandleNoTodayPlansMentioned = "No 'today' related keywords detected! Plea
 StandupHandleUpdatedStandup = "Standup edited, Good job!"
 StandupHandleCreatedStandup = "Standup saved, well done!"
 
-ErrorRooksReportWeekend = "Day off today! Next report on Monday!"
-
-ReportHeaderMonday = "Report for last Friday and weekends"    
-ReportHeader = "Report for yesterday"   
+ErrorRooksReportWeekend = "Weekend! Next report on Monday"
+ReportHeaderMonday = "Sunday report"    
+ReportHeader = "Yesterday report"
+ReportHeaderWeekly = "Weekly report"
+EmptyReportForSunday = "No activity on Sunday!"
 
 AccessAtLeastPM = "Access Denied! You need to be at least PM in this project to use this command!"
 AccessAtLeastAdmin = "Access Denied! You need to be at least admin in this slack to use this command!"
@@ -113,9 +114,9 @@ AccessAtLeastPMOrOwner = "Access Denied! You need to be at least PM in this proj
 
 NeedCorrectUserRole = "Please, check correct role name (admin, developer, pm)"
 
-AddUsersFailed = "Could not assign users as developers: %v\n"
-AddUsersExist = "Users already have roles: %v\n"
-AddUsersAdded = "Users are assigned as developers: %v\n"
+AddMembersFailed = "Could not assign members: %v\n"
+AddMembersExist = "Members already have roles: %v\n"
+AddMembersAdded = "Members are assigned: %v\n"
 
 AddPMsFailed = "Could not assign users as PMs: %v\n"
 AddPMsExist = "Users already have roles: %v\n"
@@ -133,3 +134,4 @@ listNoPMs = "No PMs in this channel! To add one, please, use `/add` slash comman
 listPMs = "PMs in this channel: %v"
 
 SomethingWentWrong = "Something went wrong. Please, try again later or report the problem to chatbot support!"
+HelpCommand = "Hello! Bellow you can see the list of commands and how to use them:\n`/add` /add @user1 @user2 / role ('admin'|'pm'|'developer'|''). You can add users with no role as well\n`/list` /list role ('admin'|'pm'|'developer'|'') lists users with the selected role\n`/delete` /delete @user1 @user2 / role ('admin'|'pm'|'developer'|'') unassigns users with selected roles\n"

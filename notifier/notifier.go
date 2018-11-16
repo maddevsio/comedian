@@ -159,8 +159,6 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 			nonReporters = append(nonReporters, u)
 		}
 	}
-	logrus.Infof("NON REPORTERS: %v", nonReporters)
-	// if everyone wrote their standups display all done message!
 	if len(nonReporters) == 0 {
 		err := n.s.SendMessage(channelID, n.conf.Translate.NotifyAllDone, nil)
 		if err != nil {
@@ -173,14 +171,6 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	if err != nil {
 		logrus.Errorf("notifier: SelectChannel failed: %v\n", err)
 		return
-	}
-
-	// othervise Direct Message non reporters
-	for _, nonReporter := range nonReporters {
-		err := n.s.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
-		if err != nil {
-			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
-		}
 	}
 
 	repeats := 0
@@ -211,6 +201,13 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 			err := errors.New("Continue backoff")
 			return err
 		}
+		// othervise Direct Message non reporters
+		for _, nonReporter := range nonReporters {
+			err := n.s.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
+			if err != nil {
+				logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
+			}
+		}
 		//n.notifyAdminsAboutNonReporters(channelID, nonReportersSlackIDs)
 		return nil
 	}
@@ -235,11 +232,8 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 		return
 	}
 	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
-	if !submittedStandup {
-		err := n.s.SendUserMessage(chm.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, chm.UserID, channel.ChannelID, channel.ChannelName))
-		if err != nil {
-			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
-		}
+	if submittedStandup {
+		return
 	}
 	repeats := 0
 	notify := func() error {
@@ -249,6 +243,12 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 			repeats++
 			err := errors.New("Continue backoff")
 			return err
+		}
+		if !submittedStandup {
+			err := n.s.SendUserMessage(chm.UserID, fmt.Sprintf(n.conf.Translate.NotifyDirectMessage, chm.UserID, channel.ChannelID, channel.ChannelName))
+			if err != nil {
+				logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
+			}
 		}
 		logrus.Infof("User %v submitted standup!", chm.UserID)
 		return nil

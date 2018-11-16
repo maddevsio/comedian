@@ -52,8 +52,7 @@ type Storage interface {
 
 	ListChannelMembers(string) ([]model.ChannelMember, error)
 
-	// ListPMs returns array of PM entries from database
-	ListPMs(string) ([]model.ChannelMember, error)
+	ListChannelMembersByRole(string, string) ([]model.ChannelMember, error)
 
 	// DeleteChannelMember deletes channel_members entry from database
 	DeleteChannelMember(string, string) error
@@ -77,7 +76,7 @@ type Storage interface {
 	AddToStandupHistory(model.StandupEditHistory) (model.StandupEditHistory, error)
 
 	//GetAllChannels returns list of unique channels
-	GetAllChannels() ([]string, error)
+	GetAllChannels() ([]model.Channel, error)
 
 	//GetUserChannels returns list of user's channels
 	GetUserChannels(string) ([]string, error)
@@ -124,9 +123,6 @@ type Storage interface {
 
 	//SubmittedStandupToday shows if a user submitted standup today
 	SubmittedStandupToday(string, string) bool
-
-	// CreatePM creates comedian entry in database
-	CreatePM(model.ChannelMember) (model.ChannelMember, error)
 
 	// UserIsPMForProject returns true if user is a project's PM.
 	UserIsPMForProject(string, string) bool

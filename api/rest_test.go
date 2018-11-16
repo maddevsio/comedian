@@ -15,7 +15,6 @@ import (
 	"github.com/maddevsio/comedian/model"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 func TestHandleCommands(t *testing.T) {
@@ -66,11 +65,11 @@ func TestHandleCommands(t *testing.T) {
 		{"SuperAdminID", "TestChannelID", "TestChannel", "", "", "Not implemented"},
 
 		{"", "TestChannelID", "TestChannel", "add", "<@userID1|userName>", "Something went wrong. Please, try again later or report the problem to chatbot support!"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID1|userName>", "Users are assigned as developers: <@userID1|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID1|userName>", "Members are assigned: <@userID1|userName>\n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID2|userName> / admin", "Users are assigned as admins: <@userID2|userName>\n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID2|userName> / wrongUserRole", "Please, check correct role name (admin, developer, pm)"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID3|userName> / developer", "Users are assigned as developers: <@userID3|userName>\n"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID4|userName> / pm", "Users are assigned as PMs: <@userID4|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID3|userName> / developer", "Members are assigned: <@userID3|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@userID4|userName> / pm", "Members are assigned: <@userID4|userName>\n"},
 
 		{"userID", "TestChannelID", "TestChannel", "add", "<@userID1|userName>", "Access Denied! You need to be at least PM in this project to use this command!"},
 		{"userID", "TestChannelID", "TestChannel", "add", "<@userID2|userName> / admin", "Access Denied! You need to be at least admin in this slack to use this command!"},
@@ -78,16 +77,16 @@ func TestHandleCommands(t *testing.T) {
 		{"userID", "TestChannelID", "TestChannel", "add", "<@userID4|userName> / pm", "Access Denied! You need to be at least admin in this slack to use this command!"},
 
 		{"SuperAdminID", "", "", "delete", "<@userID1|userName>", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID1|userName>", "The following users were removed as developers: <@userID1|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID1|userName>", "The following members were removed: <@userID1|userName>\n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID2|userName> / admin", "Users are removed as admins: <@userID2|userName>\n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID2|userName> / wrongUserRole", "Please, check correct role name (admin, developer, pm)"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID3|userName> / developer", "The following users were removed as developers: <@userID3|userName>\n"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID4|userName> / pm", "Users are removed as PMs: <@userID4|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID3|userName> / developer", "The following members were removed: <@userID3|userName>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@userID4|userName> / pm", "The following members were removed: <@userID4|userName>\n"},
 
 		{"userID", "TestChannelID", "TestChannel", "delete", "<@userID1|userName>", "Access Denied! You need to be at least PM in this project to use this command!"},
 		{"userID", "TestChannelID", "TestChannel", "delete", "<@userID2|userName> / admin", "Access Denied! You need to be at least admin in this slack to use this command!"},
 		{"userID", "TestChannelID", "TestChannel", "delete", "<@userID3|userName> / developer", "Access Denied! You need to be at least PM in this project to use this command!"},
-		{"userID", "TestChannelID", "TestChannel", "delete", "<@userID4|userName> / pm", "Access Denied! You need to be at least admin in this slack to use this command!"},
+		{"userID", "TestChannelID", "TestChannel", "delete", "<@userID4|userName> / pm", "Access Denied! You need to be at least PM in this project to use this command!"},
 
 		{"SuperAdminID", "WrongChannelID", "TestChannel", "list", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "list", "", "No standupers in this channel! To add one, please, use `/add` slash command"},
@@ -143,80 +142,27 @@ func TestUsers(t *testing.T) {
 		output   string
 	}{
 		{"list", []string{}, "TestChannelID", "No standupers in this channel! To add one, please, use `/add` slash command"},
-		{"add", []string{"<@userID1|userName1>", "<@userID2|userName1>", "<@userID3|userName1>"}, "TestChannelID", "Users are assigned as developers: <@userID1|userName1><@userID2|userName1><@userID3|userName1>\n"},
-		{"add", []string{"<@userID1|userName1>", "@randomUser"}, "TestChannelID", "Could not assign users as developers: @randomUser\nUsers already have roles: <@userID1|userName1>\n"},
+		{"add", []string{"<@userID1|userName1>", "<@userID2|userName1>", "<@userID3|userName1>"}, "TestChannelID", "Members are assigned: <@userID1|userName1><@userID2|userName1><@userID3|userName1>\n"},
+		{"add", []string{"<@userID1|userName1>", "@randomUser"}, "TestChannelID", "Could not assign members: @randomUser\nMembers already have roles: <@userID1|userName1>\n"},
 		{"list", []string{}, "TestChannelID", "Standupers in this channel: <@userID1>, <@userID2>, <@userID3>"},
-		{"delete", []string{"<@userIDwrong|userName1>", "@doesNotMatchUser"}, "TestChannelID", "Could not remove the following users as developers: <@userIDwrong|userName1>@doesNotMatchUser\n"},
-		{"delete", []string{"<@userID1|userName1>", "<@userID2|userName1>", "<@userID3|userName1>"}, "TestChannelID", "The following users were removed as developers: <@userID1|userName1><@userID2|userName1><@userID3|userName1>\n"},
+		{"delete", []string{"<@userIDwrong|userName1>", "@doesNotMatchUser"}, "TestChannelID", "Could not remove the following members: <@userIDwrong|userName1>@doesNotMatchUser\n"},
+		{"delete", []string{"<@userID1|userName1>", "<@userID2|userName1>", "<@userID3|userName1>"}, "TestChannelID", "The following members were removed: <@userID1|userName1><@userID2|userName1><@userID3|userName1>\n"},
 	}
 
 	for _, tt := range testCases {
 		var output string
 		switch tt.function {
 		case "add":
-			output = rest.addUsers(tt.users, tt.channel)
+			output = rest.addMembers(tt.users, "developer", tt.channel)
 		case "list":
-			output = rest.listUsers(tt.channel)
+			output = rest.listMembers(tt.channel, "developer")
 		case "delete":
-			output = rest.deleteUsers(tt.users, tt.channel)
+			output = rest.deleteMembers(tt.users, tt.channel)
 		}
 		assert.Equal(t, tt.output, output)
 	}
 
 	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
-}
-
-func TestPMs(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	c.ManagerSlackUserID = "SuperAdminID"
-	slack, err := chat.NewSlack(c)
-	assert.NoError(t, err)
-	rest, err := NewRESTAPI(slack)
-	assert.NoError(t, err)
-
-	channel, err := rest.db.CreateChannel(model.Channel{
-		ChannelName: "TestChannel",
-		ChannelID:   "TestChannelID",
-		StandupTime: int64(0),
-	})
-
-	chm, err := rest.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID3",
-		ChannelID: "TestChannelID",
-	})
-	assert.NoError(t, err)
-
-	testCases := []struct {
-		function string
-		users    []string
-		channel  string
-		output   string
-	}{
-		{"list", []string{}, "TestChannelID", "No PMs in this channel! To add one, please, use `/add` slash command"},
-		{"add", []string{"<@userID1|userName1>", "<@userID2|userName1>"}, "TestChannelID", "Users are assigned as PMs: <@userID1|userName1><@userID2|userName1>\n"},
-		{"add", []string{"<@userID1|userName1>", "@randomUser"}, "TestChannelID", "Could not assign users as PMs: @randomUser\nUsers already have roles: <@userID1|userName1>\n"},
-		{"list", []string{}, "TestChannelID", "PMs in this channel: <@userID1>, <@userID2>"},
-		{"delete", []string{"<@userIDwrong|userName1>", "@doesNotMatchUser"}, "TestChannelID", "Could not remove users as PMs: <@userIDwrong|userName1>@doesNotMatchUser\n"},
-		{"delete", []string{"<@userID1|userName1>", "<@userID2|userName1>", "<@userID3|userName1>"}, "TestChannelID", "Could not remove users as PMs: <@userID3|userName1>\nUsers are removed as PMs: <@userID1|userName1><@userID2|userName1>\n"},
-	}
-
-	for _, tt := range testCases {
-		var output string
-		switch tt.function {
-		case "add":
-			output = rest.addPMs(tt.users, tt.channel)
-		case "list":
-			output = rest.listPMs(tt.channel)
-		case "delete":
-			output = rest.deletePMs(tt.users, tt.channel)
-		}
-		assert.Equal(t, tt.output, output)
-	}
-
-	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
-	assert.NoError(t, rest.db.DeleteChannelMember(chm.UserID, chm.ChannelID))
-
 }
 
 func TestAdmins(t *testing.T) {
@@ -325,21 +271,21 @@ func TestHandleTimeCommands(t *testing.T) {
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "No standup time set for this channel yet! Please, add a standup time using `/standup_time_set` command!"},
 		{"SuperAdminID", "wrongchannel", "xyz", "standup_time", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"testID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "Access Denied! You need to be at least PM in this project to use this command!"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Users are assigned as PMs: <@testID|testUser>\n"},
-		{"testID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1539151500^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "Users are removed as PMs: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Members are assigned: <@testID|testUser>\n"},
+		{"testID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1539151500^Standup time set at {time}|Standup time set at 12:00>"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "The following members were removed: <@testID|testUser>\n"},
 		{"SuperAdminID", "wrongchannel", "xyz", "standup_time_set", "12:05", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "1205", "Could not understand how you mention time. Please, use 24:00 hour format and try again!"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1539151500^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "<!date^1539151500^Standup time is {time}|Standup time set at 12:00>"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_remove", "", "standup time for TestChannel channel deleted"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / developer", "Users are assigned as developers: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / developer", "Members are assigned: <@testID|testUser>\n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_set", "12:05", "<!date^1539151500^Standup time set at {time}|Standup time set at 12:00>"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time", "", "<!date^1539151500^Standup time is {time}|Standup time set at 12:00>"},
 		{"SuperAdminID", "wrongchannel", "xyz", "standup_time_remove", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"testID", "TestChannelID", "TestChannel", "standup_time_remove", "", "Access Denied! You need to be at least PM in this project to use this command!"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "standup_time_remove", "", "standup time for this channel removed, but there are people marked as a standuper."},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following users were removed as developers: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following members were removed: <@testID|testUser>\n"},
 	}
 
 	for _, tt := range testCases {
@@ -409,9 +355,9 @@ func TestTimeTableCommand(t *testing.T) {
 	}{
 		{"testID", "", "", "timetable_set", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"testID", "TestChannelID", "TestChannel", "timetable_set", "", "Access Denied! You need to be at least PM in this project to use this command!"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Users are assigned as PMs: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Members are assigned: <@testID|testUser>\n"},
 		{"testID", "TestChannelID", "TestChannel", "timetable_set", "12:05", "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "Users are removed as PMs: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "The following members were removed: <@testID|testUser>\n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_set", "@user on mon at 10:00", "Seems like you misspelled username. Please, check and try command again!"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_set", "<@testID|testUser> on mon at 10:00", "Timetable for <@testID> created: | Monday 10:00 | \n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_set", "<@testID|testUser> on mon, tue at 10:00", "Timetable for <@testID> updated: | Monday 10:00 | Tuesday 10:00 | \n"},
@@ -422,21 +368,21 @@ func TestTimeTableCommand(t *testing.T) {
 		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_remove", "<@testID|testUser>", "Timetable removed for <@testUser>\n"},
 
 		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_show", "<@testID1|testUser1>", "Seems like <@testUser1> is not even assigned as standuper in this channel!\n"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID1|testUser1> / developer", "Users are assigned as developers: <@testID1|testUser1>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID1|testUser1> / developer", "Members are assigned: <@testID1|testUser1>\n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_show", "<@testID1|testUser1>", "<@testUser1> does not have a timetable!\n"},
 
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID1|testUser1> / developer", "The following users were removed as developers: <@testID1|testUser1>\n"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following users were removed as developers: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID1|testUser1> / developer", "The following members were removed: <@testID1|testUser1>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following members were removed: <@testID|testUser>\n"},
 
 		{"testID", "", "", "timetable_remove", "", "I do not have this channel in my database... Please, reinvite me if I am already here and try again!"},
 		{"testID", "TestChannelID", "TestChannel", "timetable_remove", "", "Access Denied! You need to be at least PM in this project to use this command!"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Users are assigned as PMs: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser> / pm", "Members are assigned: <@testID|testUser>\n"},
 		{"testID", "TestChannelID", "TestChannel", "timetable_remove", "", "Seems like you misspelled username. Please, check and try command again!"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "Users are removed as PMs: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / pm", "The following members were removed: <@testID|testUser>\n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_remove", "<@testID1|testUser1>", "Seems like <@testUser1> is not even assigned as standuper in this channel!\n"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser>", "Users are assigned as developers: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "add", "<@testID|testUser>", "Members are assigned: <@testID|testUser>\n"},
 		{"SuperAdminID", "TestChannelID", "TestChannel", "timetable_remove", "<@testID|testUser>", "<@testUser> does not have a timetable!\n"},
-		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following users were removed as developers: <@testID|testUser>\n"},
+		{"SuperAdminID", "TestChannelID", "TestChannel", "delete", "<@testID|testUser> / developer", "The following members were removed: <@testID|testUser>\n"},
 	}
 
 	for _, tt := range testCases {
@@ -485,11 +431,6 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects/chanName/2018-06-25/2018-06-26/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
-
 	testCases := []struct {
 		title        string
 		command      string
@@ -528,18 +469,12 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-
 	admin, err := rest.db.CreateUser(model.User{
 		UserName: "Admin",
 		UserID:   "SuperAdminID",
 		Role:     "admin",
 	})
 	assert.NoError(t, err)
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-26/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0, "worklogs": 0}]`))
 
 	channel, err := rest.db.CreateChannel(model.Channel{
 		ChannelName: "chanName",
@@ -624,12 +559,6 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/user-in-project/userID1/chanid/2018-06-25/2018-06-26/", c.CollectorURL),
-		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
-
 	channel, err := rest.db.CreateChannel(model.Channel{
 		ChannelName: "chanid",
 		ChannelID:   "123qwe",
@@ -679,6 +608,43 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 	assert.NoError(t, rest.db.DeleteUser(admin.ID))
 }
 
+func TestHandleHelpCommand(t *testing.T) {
+
+	c, err := config.Get()
+	c.ManagerSlackUserID = "SuperAdminID"
+	slack, err := chat.NewSlack(c)
+	rest, err := NewRESTAPI(slack)
+	assert.NoError(t, err)
+
+	admin, err := rest.db.CreateUser(model.User{
+		UserName: "adminUser",
+		UserID:   "SuperAdminID",
+		Role:     "user",
+	})
+	assert.NoError(t, err)
+
+	channel, err := rest.db.CreateChannel(model.Channel{
+		ChannelName: "TestChannel",
+		ChannelID:   "TestChannelID",
+		StandupTime: int64(0),
+	})
+
+	command := "user_id=SuperAdminID&command=/helper&channel_id=TestChannelID&channel_name=TestChannel&text="
+
+	body := "Hello! Bellow you can see the list of commands and how to use them:\n`/add` /add @user1 @user2 / role ('admin'|'pm'|'developer'|''). You can add users with no role as well\n`/list` /list role ('admin'|'pm'|'developer'|'') lists users with the selected role\n`/delete` /delete @user1 @user2 / role ('admin'|'pm'|'developer'|'') unassigns users with selected roles\n"
+	context, rec := getContext(command)
+	err = rest.handleCommands(context)
+	if err != nil {
+		logrus.Errorf("handleCommands failed. Error: %v\n", err)
+	}
+	assert.Equal(t, 200, rec.Code)
+	assert.Equal(t, body, rec.Body.String())
+
+	assert.NoError(t, rest.db.DeleteChannel(channel.ID))
+	assert.NoError(t, rest.db.DeleteUser(admin.ID))
+
+}
+
 func TestUserHasAccess(t *testing.T) {
 	c, err := config.Get()
 	c.ManagerSlackUserID = "SUPERADMINID"
@@ -721,9 +687,10 @@ func TestUserHasAccess(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	pm, err := r.db.CreatePM(model.ChannelMember{
-		UserID:    pmUser.UserID,
-		ChannelID: "RANDOMCHAN",
+	pm, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        pmUser.UserID,
+		ChannelID:     "RANDOMCHAN",
+		RoleInChannel: "pm",
 	})
 	assert.NoError(t, err)
 
@@ -744,6 +711,7 @@ func TestUserHasAccess(t *testing.T) {
 	assert.NoError(t, r.db.DeleteUser(admin.ID))
 	assert.NoError(t, r.db.DeleteUser(pmUser.ID))
 	assert.NoError(t, r.db.DeleteUser(user.ID))
+	assert.NoError(t, r.db.DeleteUser(superAdmin.ID))
 	assert.NoError(t, r.db.DeleteChannelMember(pmUser.UserID, "RANDOMCHAN"))
 
 }

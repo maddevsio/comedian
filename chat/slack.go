@@ -50,6 +50,9 @@ func NewSlack(conf config.Config) (*Slack, error) {
 // Run runs a listener loop for slack
 func (s *Slack) Run() {
 
+	s.UpdateUsersList()
+	s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
+
 	gocron.Every(1).Day().At("23:50").Do(s.FillStandupsForNonReporters)
 	gocron.Every(1).Day().At("23:55").Do(s.UpdateUsersList)
 	gocron.Start()
@@ -60,9 +63,6 @@ func (s *Slack) Run() {
 
 	for msg := range s.RTM.IncomingEvents {
 		switch ev := msg.Data.(type) {
-		case *slack.ConnectedEvent:
-			s.UpdateUsersList()
-			s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 		case *slack.MessageEvent:
 			botUserID := fmt.Sprintf("<@%s>", s.RTM.GetInfo().User.ID)
 			s.handleMessage(ev, botUserID)
@@ -70,6 +70,8 @@ func (s *Slack) Run() {
 			s.handleJoin(ev.Channel)
 		case *slack.InvalidAuthEvent:
 			return
+		case *slack.ConnectedEvent:
+			logrus.Info("Reconnected!")
 		}
 	}
 }
@@ -197,7 +199,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 func (s *Slack) analizeStandup(message string) (bool, string) {
 	message = strings.ToLower(message)
 	mentionsProblem := false
-	problemKeys := []string{"problem", "difficult", "stuck", "question", "issue", "проблем", "трудност", "затрдуднени", "вопрос"}
+	problemKeys := []string{"problem", "difficult", "stuck", "question", "issue", "block", "проблем", "трудност", "затрдуднени", "вопрос"}
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
@@ -314,6 +316,7 @@ func (s *Slack) UpdateUsersList() {
 			}
 		}
 	}
+	logrus.Info("Users list updated successfully")
 }
 
 //FillStandupsForNonReporters fills standup entries with empty standups to later recognize

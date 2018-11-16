@@ -1,12 +1,10 @@
 package reporting
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/bouk/monkey"
-	"github.com/jarcoal/httpmock"
 	"github.com/maddevsio/comedian/chat"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
@@ -226,8 +224,7 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	assert.NoError(t, r.db.DeleteChannelMember(user1.UserID, user1.ChannelID))
 	assert.NoError(t, r.db.DeleteChannel(channel.ID))
 }
-
-func TestTeamMonitoringOnWeekDay(t *testing.T) {
+func TestPrepareAttachment(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
 	s, err := chat.NewSlack(c)
@@ -235,88 +232,104 @@ func TestTeamMonitoringOnWeekDay(t *testing.T) {
 	r := NewReporter(s)
 
 	testCases := []struct {
-		standupComment                           string
-		userID                                   string
-		collectorResponseUserStatusCode          int
-		collectorResponseUserBody                string
-		collectorResponseUserInProjectStatusCode int
-		collectorResponseUserInProjectBody       string
-		color                                    string
-		value                                    string
+		memberRole    string
+		isNonReporter bool
+		fieldValue    string
+		points        int
 	}{
-		{"users", "userID1", 200, `{"worklogs": 35000, "total_commits": 23}`, 200,
-			`{"worklogs": 35000, "total_commits": 23}`, "good",
-			" worklogs: 9:43 :sunglasses: | commits: 23 :tada: | standup :heavy_check_mark: |\n"},
-		{"", "userID2", 200, `{"worklogs": 0, "total_commits": 0}`, 200,
-			`{"worklogs": 0, "total_commits": 0}`, "danger",
-			" worklogs: 0:00 :angry: | commits: 0 :shit: | standup :x: |\n"},
-		{"test", "userID3", 200, `{"worklogs": 28800, "total_commits": 1}`, 200,
-			`{"worklogs": 28800, "total_commits": 1}`, "good",
-			" worklogs: 8:00 :wink: | commits: 1 :tada: | standup :heavy_check_mark: |\n"},
-		{"test", "userID4", 200, `{"worklogs": 14400, "total_commits": 1}`, 200,
-			`{"worklogs": 12400, "total_commits": 1}`, "warning",
-			" worklogs: 3:26 out of 4:00 :disappointed: | commits: 1 :tada: | standup :heavy_check_mark: |\n"},
+		{"developer", true, " standup :x: \n", 0},
+		{"developer", false, " standup :heavy_check_mark: \n", 1},
+		{"pm", true, " standup :x: \n", 0},
+		{"pm", false, " standup :heavy_check_mark: \n", 1},
 	}
 
 	for _, tt := range testCases {
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-
-		d := time.Date(2018, 9, 17, 10, 0, 0, 0, time.UTC)
-		monkey.Patch(time.Now, func() time.Time { return d })
-
-		channel, err := r.db.CreateChannel(model.Channel{
-			ChannelID:   "QWERTY123",
-			ChannelName: "chanName1",
-			StandupTime: int64(0),
-		})
-		assert.NoError(t, err)
-
-		user, err := r.db.CreateUser(model.User{
-			UserID:   tt.userID,
-			UserName: "Alfa",
-		})
-		assert.NoError(t, err)
 
 		channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
-			UserID:    tt.userID,
-			ChannelID: channel.ChannelID,
+			UserID:        "testUserID",
+			ChannelID:     "testChannelID",
+			RoleInChannel: tt.memberRole,
 		})
 		assert.NoError(t, err)
 
-		// if create stanupd yes, create standup!
-
-		standup, err := r.db.CreateStandup(model.Standup{
-			Created:   time.Now(),
-			Modified:  time.Now(),
-			ChannelID: channel.ChannelID,
-			Comment:   tt.standupComment,
-			UserID:    channelMember.UserID,
-			MessageTS: "randomMessageTS",
-		})
-		assert.NoError(t, err)
-
-		d = time.Date(2018, 9, 18, 10, 0, 0, 0, time.UTC)
-		monkey.Patch(time.Now, func() time.Time { return d })
-
-		dateOfRequest := fmt.Sprintf("%d-%02d-%02d", time.Now().AddDate(0, 0, -1).Year(), time.Now().AddDate(0, 0, -1).Month(), time.Now().AddDate(0, 0, -1).Day())
-
-		linkURLUsers := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "users", user.UserID, dateOfRequest, dateOfRequest)
-		linkURLUserInProject := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "user-in-project", fmt.Sprintf("%v/%v", user.UserID, channel.ChannelName), dateOfRequest, dateOfRequest)
-		httpmock.RegisterResponder("GET", linkURLUsers, httpmock.NewStringResponder(tt.collectorResponseUserStatusCode, tt.collectorResponseUserBody))
-		httpmock.RegisterResponder("GET", linkURLUserInProject, httpmock.NewStringResponder(tt.collectorResponseUserInProjectStatusCode, tt.collectorResponseUserInProjectBody))
-
-		attachments, err := r.generateWorkReport()
-		assert.NoError(t, err)
-		assert.Equal(t, tt.color, attachments[0].Color)
-		assert.Equal(t, fmt.Sprintf("<@%v> in #%v", user.UserID, channel.ChannelName), attachments[0].Text)
-		assert.Equal(t, tt.value, attachments[0].Fields[0].Value)
-
-		r.ReportRooks()
-
-		assert.NoError(t, r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID))
-		assert.NoError(t, r.db.DeleteStandup(standup.ID))
-		assert.NoError(t, r.db.DeleteUser(user.ID))
-		assert.NoError(t, r.db.DeleteChannel(channel.ID))
+		fieldValue, points := r.prepareAttachment(channelMember, tt.isNonReporter)
+		assert.Equal(t, tt.fieldValue, fieldValue)
+		assert.Equal(t, tt.points, points)
+		r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
 	}
+}
+
+func TestGenerateAttachment(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	d := time.Date(2018, 11, 9, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	testCases := []struct {
+		fieldValue string
+		points     int
+		color      string
+	}{
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 0, "danger"},
+		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 1, "good"},
+	}
+
+	for _, tt := range testCases {
+		attachment := r.generateAttachment(tt.fieldValue, tt.points)
+		assert.Equal(t, tt.color, attachment.Color)
+		if len(attachment.Fields) != 0 {
+			assert.Equal(t, tt.fieldValue, attachment.Fields[0].Value)
+		} else {
+			assert.Equal(t, 0, len(attachment.Fields))
+		}
+	}
+}
+
+func TestGenerateReportAttachment(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	d := time.Date(2018, 11, 9, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	channel, err := r.db.CreateChannel(model.Channel{
+		ChannelName: "chanName",
+		ChannelID:   "chanid",
+		StandupTime: int64(0),
+	})
+	assert.NoError(t, err)
+
+	channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "testUserID",
+		ChannelID:     "testChannelID",
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+
+	attachment := r.generateReportAttachment(channelMember, channel)
+	assert.Equal(t, "", attachment.Text)
+	assert.Equal(t, "good", attachment.Color)
+	if len(attachment.Fields) != 0 {
+		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
+	}
+
+	d = time.Date(2018, 11, 11, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	attachment = r.generateReportAttachment(channelMember, channel)
+	assert.Equal(t, "", attachment.Text)
+	assert.Equal(t, "good", attachment.Color)
+	if len(attachment.Fields) != 0 {
+		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
+	}
+
+	r.db.DeleteChannel(channel.ID)
+	r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
 }

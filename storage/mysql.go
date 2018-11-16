@@ -106,8 +106,8 @@ func (m *MySQL) CreateChannelMember(s model.ChannelMember) (model.ChannelMember,
 		return s, err
 	}
 	res, err := m.conn.Exec(
-		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, created) VALUES (?, ?, ?, ?)",
-		s.UserID, s.ChannelID, 0, time.Now())
+		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, role_in_channel, created) VALUES (?, ?,?, ?, ?)",
+		s.UserID, s.ChannelID, 0, s.RoleInChannel, time.Now())
 	if err != nil {
 		return s, err
 	}
@@ -151,7 +151,7 @@ func (m *MySQL) FindChannelMemberByUserName(userName, channelID string) (model.C
 // ListAllChannelMembers returns array of standup entries from database
 func (m *MySQL) ListAllChannelMembers() ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members` where role_in_channel != 'pm'")
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members`")
 	return items, err
 }
 
@@ -192,14 +192,13 @@ func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Ti
 // ListChannelMembers returns array of standup entries from database
 func (m *MySQL) ListChannelMembers(channelID string) ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel != 'PM'", channelID)
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=?", channelID)
 	return items, err
 }
 
-// ListPMs returns array of standup entries from database
-func (m *MySQL) ListPMs(channelID string) ([]model.ChannelMember, error) {
+func (m *MySQL) ListChannelMembersByRole(channelID, role string) ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
-	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel='PM'", channelID)
+	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel=?", channelID, role)
 	return items, err
 }
 
@@ -269,9 +268,9 @@ func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEd
 }
 
 //GetAllChannels returns list of unique channels
-func (m *MySQL) GetAllChannels() ([]string, error) {
-	channels := []string{}
-	err := m.conn.Select(&channels, "SELECT channel_id FROM `channels`")
+func (m *MySQL) GetAllChannels() ([]model.Channel, error) {
+	channels := []model.Channel{}
+	err := m.conn.Select(&channels, "SELECT * FROM `channels`")
 	return channels, err
 }
 
@@ -432,27 +431,6 @@ func (m *MySQL) ListAdmins() ([]model.User, error) {
 	return c, err
 }
 
-// CreatePM creates comedian entry in database
-func (m *MySQL) CreatePM(s model.ChannelMember) (model.ChannelMember, error) {
-	err := s.Validate()
-	if err != nil {
-		return s, err
-	}
-	res, err := m.conn.Exec(
-		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, created, role_in_channel) VALUES (?, ?, ?, ?,?)",
-		s.UserID, s.ChannelID, 0, time.Now(), "PM")
-	if err != nil {
-		return s, err
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		return s, err
-	}
-	s.ID = id
-
-	return s, nil
-}
-
 // UserIsPMForProject returns true if user is a project's PM.
 func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	var role string
@@ -461,7 +439,7 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 		return false
 	}
 	logrus.Infof("Role in channel %v", role)
-	if role == "PM" {
+	if role == "pm" {
 		return true
 	}
 	return false

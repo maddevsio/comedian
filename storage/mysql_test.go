@@ -138,9 +138,10 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 
 	su1, err := db.CreateChannelMember(model.ChannelMember{
-		UserID:      "userID1",
-		ChannelID:   "123qwe",
-		StandupTime: 0,
+		UserID:        "userID1",
+		ChannelID:     "123qwe",
+		StandupTime:   0,
+		RoleInChannel: "developer",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "123qwe", su1.ChannelID)
@@ -149,9 +150,10 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 
 	su2, err := db.CreateChannelMember(model.ChannelMember{
-		UserID:      "userID2",
-		ChannelID:   "qwe123",
-		StandupTime: 0,
+		UserID:        "userID2",
+		ChannelID:     "qwe123",
+		StandupTime:   0,
+		RoleInChannel: "developer",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "userID2", su2.UserID)
@@ -161,8 +163,9 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.Equal(t, 1, len(listOfChannels))
 
 	su3, err := db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID3",
-		ChannelID: "123qwe",
+		UserID:        "userID3",
+		ChannelID:     "123qwe",
+		RoleInChannel: "developer",
 	})
 	assert.NoError(t, err)
 
@@ -171,8 +174,9 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.Equal(t, false, isNonReporter)
 
 	su4, err := db.CreateChannelMember(model.ChannelMember{
-		UserID:    "",
-		ChannelID: "",
+		UserID:        "",
+		ChannelID:     "",
+		RoleInChannel: "developer",
 	})
 	assert.Error(t, err)
 	assert.NoError(t, db.DeleteChannelMember(su4.UserID, su4.ChannelID))
@@ -193,7 +197,7 @@ func TestCRUDChannelMember(t *testing.T) {
 	_, err = db.SelectChannelMember(345)
 	assert.Error(t, err)
 
-	users, err := db.ListChannelMembers(su1.ChannelID)
+	users, err := db.ListChannelMembersByRole(su1.ChannelID, "developer")
 	assert.NoError(t, err)
 	assert.Equal(t, users[0].UserID, su1.UserID)
 
@@ -271,7 +275,7 @@ func TestCRUDStandupTime(t *testing.T) {
 
 	channels, err := db.GetAllChannels()
 	for _, channel := range channels {
-		ch, err := db.SelectChannel(channel)
+		ch, err := db.SelectChannel(channel.ChannelID)
 		assert.NoError(t, err)
 		assert.NoError(t, db.DeleteChannel(ch.ID))
 	}
@@ -378,9 +382,10 @@ func TestPMForProject(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	pm, err := db.CreatePM(model.ChannelMember{
-		UserID:    "ID4",
-		ChannelID: ch.ChannelID,
+	pm, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:        "ID4",
+		ChannelID:     ch.ChannelID,
+		RoleInChannel: "pm",
 	})
 	assert.NoError(t, err)
 
@@ -393,7 +398,7 @@ func TestPMForProject(t *testing.T) {
 	ok4 := db.UserIsPMForProject(pm.UserID, pm.ChannelID)
 	assert.Equal(t, true, ok4)
 
-	pms, err := db.ListPMs(ch.ChannelID)
+	pms, err := db.ListChannelMembersByRole(ch.ChannelID, "pm")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(pms))
 
