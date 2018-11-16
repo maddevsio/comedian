@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/bouk/monkey"
-	"github.com/maddevsio/comedian/chat"
-	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/chat"
+	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/model"
 )
 
 func TestStandupReportByProject(t *testing.T) {

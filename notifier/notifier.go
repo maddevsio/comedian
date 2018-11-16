@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/maddevsio/comedian/model"
+	"gitlab.com/team-monitoring/comedian/model"
 
-	"github.com/maddevsio/comedian/chat"
-	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/storage"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/chat"
+	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/storage"
 )
 
 // Notifier struct is used to notify users about upcoming or skipped standups
@@ -160,10 +160,6 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		}
 	}
 	if len(nonReporters) == 0 {
-		err := n.s.SendMessage(channelID, n.conf.Translate.NotifyAllDone, nil)
-		if err != nil {
-			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
-		}
 		return
 	}
 

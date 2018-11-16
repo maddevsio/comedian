@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/jasonlvhit/gocron"
-	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/model"
-	"github.com/maddevsio/comedian/storage"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/model"
+	"gitlab.com/team-monitoring/comedian/storage"
 
 	"strings"
 )
@@ -130,7 +130,6 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
 			time.Sleep(2 * time.Second)
 			s.API.AddReaction("heavy_check_mark", item)
-			s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleCreatedStandup)
 			return
 		}
 	case typeEditMessage:
@@ -167,7 +166,6 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 				item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
 				time.Sleep(2 * time.Second)
 				s.API.AddReaction("heavy_check_mark", item)
-				s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCreatedStandup)
 				return
 			}
 		}
@@ -179,10 +177,14 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 		}
 		if messageIsStandup {
 			standup.Comment = msg.SubMessage.Text
-			st, _ := s.DB.UpdateStandup(standup)
+			st, err := s.DB.UpdateStandup(standup)
+			if err != nil {
+				logrus.Errorf("UpdateStandup failed: %v", err)
+				s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
+				return
+			}
 			logrus.Infof("Standup updated #id:%v\n", st.ID)
 			time.Sleep(2 * time.Second)
-			s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleUpdatedStandup)
 			return
 		}
 

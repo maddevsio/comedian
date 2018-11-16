@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/maddevsio/comedian/config"
+	"gitlab.com/team-monitoring/comedian/config"
 )
 
 type (

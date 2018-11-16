@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/maddevsio/comedian/api"
-	"github.com/maddevsio/comedian/chat"
-	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/notifier"
-	"github.com/maddevsio/comedian/reporting"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/api"
+	"gitlab.com/team-monitoring/comedian/chat"
+	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/notifier"
+	"gitlab.com/team-monitoring/comedian/reporting"
 )
 
 func main() {
