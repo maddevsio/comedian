@@ -81,7 +81,13 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			attachments = append(attachments, attachment)
 		}
 
-		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		if len(attachments) == 0 {
+			continue
+		}
+
+		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		}
 
 		allReports = append(allReports, attachments...)
 	}
@@ -127,7 +133,13 @@ func (r *Reporter) displayWeeklyTeamReport() {
 			attachments = append(attachments, attachment)
 		}
 
-		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
+		if len(attachments) == 0 {
+			continue
+		}
+
+		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
+		}
 
 		allReports = append(allReports, attachments...)
 	}
