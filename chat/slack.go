@@ -338,7 +338,8 @@ func (s *Slack) FillStandupsForNonReporters() {
 			continue
 		}
 		hasStandup := s.DB.SubmittedStandupToday(user.UserID, user.ChannelID)
-		if !hasStandup {
+		shouldBeTracked := s.DB.MemberShouldBeTracked(user.ID, time.Now())
+		if !hasStandup && shouldBeTracked {
 			_, err := s.DB.CreateStandup(model.Standup{
 				ChannelID: user.ChannelID,
 				UserID:    user.UserID,
