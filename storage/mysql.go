@@ -528,7 +528,6 @@ func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
 	logrus.Infof("MemberHasTimeTable ID:%v not empty", tt.ID)
 
 	day := fmt.Sprintf("%v", date.Weekday())
-	logrus.Infof("Weekday: %s", day)
 	if tt.ShowDeadlineOn(strings.ToLower(day)) != 0 {
 		return true
 	}

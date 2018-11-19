@@ -333,6 +333,7 @@ func (s *Slack) FillStandupsForNonReporters() {
 	}
 	allUsers, err := s.DB.ListAllChannelMembers()
 	if err != nil {
+		logrus.Errorf("ListAllChannelMembers while FillStandupsForNonReporters failed: %v", err)
 		return
 	}
 	for _, user := range allUsers {
@@ -350,6 +351,7 @@ func (s *Slack) FillStandupsForNonReporters() {
 				errorReportToManager := fmt.Sprintf("I could not create empty standup for user %s in channel %s because of the following reasons: %v", user.UserID, user.ChannelID, err)
 				s.SendUserMessage(s.Conf.ManagerSlackUserID, errorReportToManager)
 			}
+			logrus.Infof("Empty standup created for user [%v] in [%v]", user.UserID, user.ChannelID)
 		}
 	}
 }
