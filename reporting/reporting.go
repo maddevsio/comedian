@@ -72,11 +72,61 @@ func (r *Reporter) displayYesterdayTeamReport() {
 		}
 
 		for _, member := range channelMembers {
-			attachment := r.generateReportAttachment(member, channel)
-			if len(attachment.Fields) == 0 {
+			var attachment slack.Attachment
+			var attachmentFields []slack.AttachmentField
+			var worklogs, commits, standup string
+			var worklogsPoints, commitsPoints, standupPoints int
+
+			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+			dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, -1))
+
+			if collectorError == nil {
+				worklogs, worklogsPoints = r.processWorklogs(dataOnUser, dataOnUserInProject)
+				commits, commitsPoints = r.processCommits(dataOnUser, dataOnUserInProject)
+			}
+
+			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
+				commits = ""
+				commitsPoints++
+			}
+
+			if r.conf.CollectorEnabled == false || collectorError != nil {
+				worklogs = ""
+				worklogsPoints++
+				commits = ""
+				commitsPoints++
+			}
+
+			standup, standupPoints = r.processStandup(member)
+
+			fieldValue := worklogs + commits + standup
+
+			//if there is nothing to show, do not create attachment
+			if fieldValue == "" {
 				continue
 			}
-			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+
+			attachmentFields = append(attachmentFields, slack.AttachmentField{
+				Value: fieldValue,
+				Short: false,
+			})
+
+			points := worklogsPoints + commitsPoints + standupPoints
+
+			switch points {
+			case 0:
+				attachment.Color = "danger"
+			case 1:
+				attachment.Color = "warning"
+			case 2:
+				attachment.Color = "good"
+			}
+
+			if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
+				attachment.Color = "good"
+			}
+
+			attachment.Fields = attachmentFields
 
 			attachments = append(attachments, attachment)
 		}
@@ -97,6 +147,89 @@ func (r *Reporter) displayYesterdayTeamReport() {
 	}
 
 	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
+}
+
+func (r *Reporter) processWorklogs(dataOnUser, dataOnUserInProject collector.CollectorData) (string, int) {
+	points := 0
+	worklogsEmoji := ""
+
+	w := dataOnUser.Worklogs / 3600
+	switch {
+	case w < 3:
+		worklogsEmoji = ":angry:"
+	case w >= 3 && w < 7:
+		worklogsEmoji = ":disappointed:"
+	case w >= 7 && w < 9:
+		worklogsEmoji = ":wink:"
+		points++
+	case w >= 9:
+		worklogsEmoji = ":sunglasses:"
+		points++
+	}
+	worklogsTime := utils.SecondsToHuman(dataOnUser.Worklogs)
+
+	if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
+		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
+	}
+
+	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
+		worklogsEmoji = ""
+	}
+
+	worklogs := fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
+	return worklogs, points
+}
+
+func (r *Reporter) processCommits(dataOnUser, dataOnUserInProject collector.CollectorData) (string, int) {
+	points := 0
+	commitsEmoji := ""
+
+	c := dataOnUserInProject.TotalCommits
+	switch {
+	case c == 0:
+		commitsEmoji = ":shit:"
+	case c > 0:
+		commitsEmoji = ":wink:"
+		points++
+	}
+
+	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
+		commitsEmoji = ""
+	}
+
+	commits := fmt.Sprintf(r.conf.Translate.Commits, dataOnUserInProject.TotalCommits, commitsEmoji)
+	return commits, points
+}
+
+func (r *Reporter) processStandup(member model.ChannelMember) (string, int) {
+	points := 0
+	standup := ""
+	t := time.Now().AddDate(0, 0, -1)
+
+	shouldBeTracked := r.db.MemberShouldBeTracked(member.ID, t)
+	if !shouldBeTracked {
+		points++
+		return "", points
+	}
+
+	timeFrom := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+	timeTo := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.Local)
+
+	isNonReporter, err := r.db.IsNonReporter(member.UserID, member.ChannelID, timeFrom, timeTo)
+
+	if err != nil {
+		points++
+		return "", points
+	}
+
+	if isNonReporter == true {
+		standup = r.conf.Translate.NoStandup
+	} else {
+		standup = r.conf.Translate.HasStandup
+		points++
+	}
+
+	return standup, points
 }
 
 // teamReport generates report on users who submit standups
@@ -151,46 +284,12 @@ func (r *Reporter) displayWeeklyTeamReport() {
 	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderWeekly, allReports)
 }
 
-func (r *Reporter) generateReportAttachment(member model.ChannelMember, project model.Channel) slack.Attachment {
-
-	startDate := time.Now().AddDate(0, 0, -1)
-	endDate := time.Now().AddDate(0, 0, -1)
-
-	dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, project, startDate, endDate)
-
-	if collectorError != nil {
-		userFull, _ := r.db.SelectUser(member.UserID)
-		fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
-		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
-	}
-
-	//if report is being made for weekends, and user did not do anywork on these days, generate no report
-	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
-		if dataOnUser.Worklogs == 0 && dataOnUser.TotalCommits == 0 {
-			logrus.Infof("User %v in %v did not do anything yesterday. Skip!", member.UserID, project.ChannelName)
-			return slack.Attachment{}
-		}
-	}
-
-	startDateTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.Local)
-	endDateTime := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.Local)
-
-	isNonReporter, err := r.db.IsNonReporter(member.UserID, member.ChannelID, startDateTime, endDateTime)
-	if err != nil {
-		logrus.Infof("User is non reporter failed: %v", err)
-	}
-
-	fieldValue, points := r.PrepareAttachment(member, dataOnUser, dataOnUserInProject, isNonReporter, collectorError)
-
-	return r.GenerateAttachment(fieldValue, points)
-}
-
 func (r *Reporter) generateWeeklyReportAttachment(member model.ChannelMember, project model.Channel) slack.Attachment {
 
 	startDate := time.Now().AddDate(0, 0, -7)
 	endDate := time.Now().AddDate(0, 0, -1)
 
-	dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, project, startDate, endDate)
+	dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, startDate, endDate)
 
 	if collectorError != nil {
 		userFull, _ := r.db.SelectUser(member.UserID)
@@ -226,79 +325,6 @@ func (r *Reporter) generateWeeklyReportAttachment(member model.ChannelMember, pr
 
 	attachment.Fields = attachmentFields
 	return attachment
-}
-
-func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, project model.Channel, startDate, endDate time.Time) (collector.CollectorData, collector.CollectorData, error) {
-	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
-	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
-
-	dataOnUser, err := collector.GetCollectorData(r.conf, "users", member.UserID, dateFrom, dateTo)
-	if err != nil {
-		return collector.CollectorData{}, collector.CollectorData{}, err
-	}
-
-	userInProject := fmt.Sprintf("%v/%v", member.UserID, project.ChannelName)
-	dataOnUserInProject, err := collector.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
-	if err != nil {
-		return collector.CollectorData{}, collector.CollectorData{}, err
-	}
-
-	return dataOnUser, dataOnUserInProject, err
-}
-
-func (r *Reporter) PrepareAttachment(user model.ChannelMember, dataOnUser, dataOnUserInProject collector.CollectorData, isNonReporter bool, collectorError error) (string, int) {
-	var worklogs, commits, standup, worklogsEmoji, worklogsTime string
-	var points int
-
-	//configure worklogs
-	w := dataOnUser.Worklogs / 3600
-	switch {
-	case w < 3:
-		worklogsEmoji = ":angry:"
-	case w >= 3 && w < 7:
-		worklogsEmoji = ":disappointed:"
-	case w >= 7 && w < 9:
-		worklogsEmoji = ":wink:"
-		points++
-	case w >= 9:
-		worklogsEmoji = ":sunglasses:"
-		points++
-	}
-	worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
-	if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
-		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
-	}
-	worklogs = fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
-
-	//configure commits
-	if dataOnUserInProject.TotalCommits == 0 {
-		commits = fmt.Sprintf(r.conf.Translate.NoCommits, dataOnUserInProject.TotalCommits)
-	} else {
-		commits = fmt.Sprintf(r.conf.Translate.HasCommits, dataOnUserInProject.TotalCommits)
-		points++
-	}
-
-	//configure standup
-	if isNonReporter == true {
-		standup = r.conf.Translate.NoStandup
-	} else {
-		standup = r.conf.Translate.HasStandup
-		points++
-	}
-
-	// prepare field value and assign points
-	fieldValue := fmt.Sprintf("%-16v|%-12v|%-10v|\n", worklogs, commits, standup)
-
-	if user.RoleInChannel == "pm" || user.RoleInChannel == "designer" {
-		fieldValue = fmt.Sprintf("%-16v|%-10v|\n", worklogs, standup)
-		points++
-	}
-
-	if r.conf.CollectorEnabled == false || collectorError != nil {
-		fieldValue = fmt.Sprintf("%-10v\n", standup)
-	}
-
-	return fieldValue, points
 }
 
 func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser, dataOnUserInProject collector.CollectorData, collectorError error) (string, int) {
@@ -345,36 +371,6 @@ func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser,
 	}
 
 	return fieldValue, points
-}
-
-func (r *Reporter) GenerateAttachment(fieldValue string, points int) slack.Attachment {
-	var attachment slack.Attachment
-	var attachmentFields []slack.AttachmentField
-
-	//if there is nothing to show, do not create attachment
-	if fieldValue != "" {
-		attachmentFields = append(attachmentFields, slack.AttachmentField{
-			Value: fieldValue,
-			Short: false,
-		})
-	}
-
-	attachment.Text = ""
-	switch p := points; p {
-	case 0:
-		attachment.Color = "danger"
-	case 1, 2:
-		attachment.Color = "warning"
-	case 3:
-		attachment.Color = "good"
-	}
-
-	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
-		attachment.Color = "good"
-	}
-
-	attachment.Fields = attachmentFields
-	return attachment
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
@@ -533,4 +529,28 @@ func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUse
 		}
 	}
 	return report, nil
+}
+
+//GetCollectorDataOnMember sends API request to Collector endpoint and returns CollectorData type
+func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, startDate, endDate time.Time) (collector.CollectorData, collector.CollectorData, error) {
+	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
+	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
+
+	project, err := r.db.GetChannelName(member.ChannelID)
+	if err != nil {
+		return collector.CollectorData{}, collector.CollectorData{}, err
+	}
+
+	dataOnUser, err := collector.GetCollectorData(r.conf, "users", member.UserID, dateFrom, dateTo)
+	if err != nil {
+		return collector.CollectorData{}, collector.CollectorData{}, err
+	}
+
+	userInProject := fmt.Sprintf("%v/%v", member.UserID, project)
+	dataOnUserInProject, err := collector.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
+	if err != nil {
+		return collector.CollectorData{}, collector.CollectorData{}, err
+	}
+
+	return dataOnUser, dataOnUserInProject, err
 }

@@ -40,7 +40,8 @@ notifyManagerNotAll = "<@%v>, in channel <#%s> not all standupers wrote standup 
 notifyUsersWarning = "Hey, %v! %v minutes to deadline and the team is still waiting for standups from you!"
 notifyDirectMessage = "Hello, <@%s>! You missed the standup deadline in <#%s|%s> channel. Please, write you standup ASAP!"
 
-Worklogs = " worklogs: %v %v "
+Worklogs = " worklogs: %v %v |"
+Commits = " commits: %v %v |"
 WorklogsTime = "%v out of %v"
 
 noCommits = " commits: %v :shit: "
