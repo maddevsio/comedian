@@ -128,7 +128,6 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			}
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
 			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
-			time.Sleep(2 * time.Second)
 			s.API.AddReaction("heavy_check_mark", item)
 			return
 		}
@@ -164,7 +163,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 				}
 				logrus.Infof("Standup created #id:%v\n", standup.ID)
 				item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
-				time.Sleep(2 * time.Second)
+
 				s.API.AddReaction("heavy_check_mark", item)
 				return
 			}
@@ -184,7 +183,6 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 				return
 			}
 			logrus.Infof("Standup updated #id:%v\n", st.ID)
-			time.Sleep(2 * time.Second)
 			return
 		}
 
@@ -193,7 +191,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 		if err != nil {
 			logrus.Errorf("SelectStandupByMessageTS failed: %v", err)
 		}
-		if standup.UserID == msg.SubMessage.User {
+		if standup.UserID == msg.User {
 			s.DB.DeleteStandup(standup.ID)
 			logrus.Infof("Standup deleted #id:%v\n", standup.ID)
 		} else {
