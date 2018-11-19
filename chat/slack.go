@@ -193,8 +193,12 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 		if err != nil {
 			logrus.Errorf("SelectStandupByMessageTS failed: %v", err)
 		}
-		s.DB.DeleteStandup(standup.ID)
-		logrus.Infof("Standup deleted #id:%v\n", standup.ID)
+		if standup.UserID == msg.SubMessage.User {
+			s.DB.DeleteStandup(standup.ID)
+			logrus.Infof("Standup deleted #id:%v\n", standup.ID)
+		} else {
+			logrus.Infof("Could not delete standup #id:%v. User is not the owner!\n", standup.ID)
+		}
 	}
 }
 
