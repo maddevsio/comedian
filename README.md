@@ -8,9 +8,9 @@
 
 ![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/maddevsio/comedian/badge.svg)](https://coveralls.io/github/maddevsio/comedian)
-[![Go Report Card](https://goreportcard.com/badge/github.com/maddevsio/comedian)](https://goreportcard.com/report/github.com/maddevsio/comedian)
+[![Go Report Card](https://goreportcard.com/badge/gitlab.com/team-monitoring/comedian)](https://goreportcard.com/report/gitlab.com/team-monitoring/comedian)
 [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
-[![](https://godoc.org/github.com/maddevsio/comedian?status.svg)](https://godoc.org/github.com/maddevsio/comedian)
+[![](https://godoc.org/gitlab.com/team-monitoring/comedian?status.svg)](https://godoc.org/gitlab.com/team-monitoring/comedian)
 
 </div>
 
@@ -41,9 +41,9 @@ Install [ngrok](https://ngrok.com/product) and create a public HTTPS URL for Com
 Copy the project repository to your local machine. Note: Go should be already installed! If you do not have Go installed, please, follow [installation guidelines](https://golang.org/doc/install) from Go official website to install it and then proceed to Step 2
 
 ```
-mkdir -p $GOPATH/src/github.com/maddevsio/
-cd $GOPATH/src/github.com/maddevsio/
-git clone https://github.com/maddevsio/comedian
+mkdir -p $GOPATH/src/gitlab.com/team-monitoring/
+cd $GOPATH/src/gitlab.com/team-monitoring/
+git clone https://gitlab.com/team-monitoring/comedian
 ```
 
 ### **Step 3**: Configure environmental variables

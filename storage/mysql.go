@@ -8,9 +8,9 @@ import (
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/model"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/model"
 )
 
 // MySQL provides api for work with mysql database
@@ -528,7 +528,6 @@ func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
 	logrus.Infof("MemberHasTimeTable ID:%v not empty", tt.ID)
 
 	day := fmt.Sprintf("%v", date.Weekday())
-	logrus.Infof("Weekday: %s", day)
 	if tt.ShowDeadlineOn(strings.ToLower(day)) != 0 {
 		return true
 	}

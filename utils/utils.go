@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maddevsio/comedian/model"
+	"gitlab.com/team-monitoring/comedian/model"
 )
 
 //SplitUser divides full user object to name & id

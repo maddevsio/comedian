@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"github.com/maddevsio/comedian/model"
+	"gitlab.com/team-monitoring/comedian/model"
 )
 
 // Storage is interface for all supported storages(e.g. MySQL, Postgresql)

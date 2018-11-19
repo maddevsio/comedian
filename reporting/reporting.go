@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"github.com/jasonlvhit/gocron"
-	"github.com/maddevsio/comedian/chat"
-	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/model"
-	"github.com/maddevsio/comedian/storage"
-	"github.com/maddevsio/comedian/utils"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/chat"
+	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/model"
+	"gitlab.com/team-monitoring/comedian/storage"
+	"gitlab.com/team-monitoring/comedian/utils"
 )
 
 //Reporter provides db and translation to functions
@@ -77,8 +77,9 @@ func (r *Reporter) displayYesterdayTeamReport() {
 
 			attachments = append(attachments, attachment)
 		}
-
-		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		if channel.ChannelID == "G6H5YVB3Q" {
+			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		}
 
 		allReports = append(allReports, attachments...)
 	}
