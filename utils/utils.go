@@ -2,6 +2,8 @@ package utils
 
 import (
 	"errors"
+	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,6 +18,14 @@ func SplitUser(user string) (string, string) {
 	userID := strings.Replace(userFull[0], "<@", "", -1)
 	userName := strings.Replace(userFull[1], ">", "", -1)
 	return userID, userName
+}
+
+//SecondsToHuman converts seconds (int) to HH:MM format
+func SecondsToHuman(input int) string {
+	hours := math.Floor(float64(input) / 60 / 60)
+	seconds := input % (60 * 60)
+	minutes := math.Floor(float64(seconds) / 60)
+	return fmt.Sprintf("%v:%02d", int(hours), int(minutes))
 }
 
 // FormatTime returns hour and minutes from string
