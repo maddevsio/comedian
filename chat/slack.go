@@ -53,7 +53,7 @@ func (s *Slack) Run() {
 	s.UpdateUsersList()
 	s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 
-	gocron.Every(1).Day().At("23:50").Do(s.FillStandupsForNonReporters)
+	gocron.Every(1).Day().At("23:59").Do(s.FillStandupsForNonReporters)
 	gocron.Every(1).Day().At("23:55").Do(s.UpdateUsersList)
 	gocron.Start()
 
@@ -326,7 +326,9 @@ func (s *Slack) UpdateUsersList() {
 //FillStandupsForNonReporters fills standup entries with empty standups to later recognize
 //non reporters vs those who did not have to write standups
 func (s *Slack) FillStandupsForNonReporters() {
+	logrus.Info("FillStandupsForNonReporters begin")
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
+		logrus.Info("Weekends! Do not check!")
 		return
 	}
 	allUsers, err := s.DB.ListAllChannelMembers()
@@ -334,11 +336,9 @@ func (s *Slack) FillStandupsForNonReporters() {
 		return
 	}
 	for _, user := range allUsers {
-		if user.Created.Day() == time.Now().Day() {
-			continue
-		}
 		hasStandup := s.DB.SubmittedStandupToday(user.UserID, user.ChannelID)
 		shouldBeTracked := s.DB.MemberShouldBeTracked(user.ID, time.Now())
+		logrus.Infof("User [%v] in [%v] should be tracked [%v] and has standup [%v]", user.UserID, user.ChannelID, shouldBeTracked, hasStandup)
 		if !hasStandup && shouldBeTracked {
 			_, err := s.DB.CreateStandup(model.Standup{
 				ChannelID: user.ChannelID,
