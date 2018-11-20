@@ -36,6 +36,6 @@ func TestGetCollectorData(t *testing.T) {
 		httpmock.RegisterResponder("GET", url, httpmock.NewStringResponder(200, ""))
 		result, err := GetCollectorData(c, tt.getDataOn, tt.data, tt.dateFrom, tt.dateTo)
 		assert.Equal(t, tt.err, err)
-		fmt.Printf("Report on user: Total Commits: %v, Total Worklogs: %v\n\n", result.TotalCommits, utils.SecondsToHuman(result.Worklogs))
+		fmt.Printf("Report on user: Total Commits: %v, Total Worklogs: %v\n\n", result.Commits, utils.SecondsToHuman(result.Worklogs))
 	}
 }

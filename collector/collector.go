@@ -13,8 +13,8 @@ import (
 
 // CollectorData used to parse data on user from Collector
 type CollectorData struct {
-	TotalCommits int `json:"total_commits"`
-	Worklogs     int `json:"worklogs"`
+	Commits  int `json:"total_commits"`
+	Worklogs int `json:"worklogs"`
 }
 
 //GetCollectorData sends api request to collector servise and returns collector object

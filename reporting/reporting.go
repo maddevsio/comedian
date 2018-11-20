@@ -81,8 +81,8 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, -1))
 
 			if collectorError == nil {
-				worklogs, worklogsPoints = r.processWorklogs(dataOnUser, dataOnUserInProject)
-				commits, commitsPoints = r.processCommits(dataOnUser, dataOnUserInProject)
+				worklogs, worklogsPoints = r.processWorklogs(dataOnUser.Worklogs, dataOnUserInProject.Worklogs)
+				commits, commitsPoints = r.processCommits(dataOnUser.Commits, dataOnUserInProject.Commits)
 			}
 
 			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
@@ -149,11 +149,11 @@ func (r *Reporter) displayYesterdayTeamReport() {
 	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
 }
 
-func (r *Reporter) processWorklogs(dataOnUser, dataOnUserInProject collector.CollectorData) (string, int) {
+func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
 	points := 0
 	worklogsEmoji := ""
 
-	w := dataOnUser.Worklogs / 3600
+	w := totalWorklogs / 3600
 	switch {
 	case w < 3:
 		worklogsEmoji = ":angry:"
@@ -166,10 +166,10 @@ func (r *Reporter) processWorklogs(dataOnUser, dataOnUserInProject collector.Col
 		worklogsEmoji = ":sunglasses:"
 		points++
 	}
-	worklogsTime := utils.SecondsToHuman(dataOnUser.Worklogs)
+	worklogsTime := utils.SecondsToHuman(totalWorklogs)
 
-	if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
-		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
+	if totalWorklogs != projectWorklogs {
+		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(projectWorklogs), utils.SecondsToHuman(totalWorklogs))
 	}
 
 	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
@@ -180,11 +180,11 @@ func (r *Reporter) processWorklogs(dataOnUser, dataOnUserInProject collector.Col
 	return worklogs, points
 }
 
-func (r *Reporter) processCommits(dataOnUser, dataOnUserInProject collector.CollectorData) (string, int) {
+func (r *Reporter) processCommits(totalCommits, projectCommits int) (string, int) {
 	points := 0
 	commitsEmoji := ""
 
-	c := dataOnUserInProject.TotalCommits
+	c := projectCommits
 	switch {
 	case c == 0:
 		commitsEmoji = ":shit:"
@@ -197,7 +197,7 @@ func (r *Reporter) processCommits(dataOnUser, dataOnUserInProject collector.Coll
 		commitsEmoji = ""
 	}
 
-	commits := fmt.Sprintf(r.conf.Translate.Commits, dataOnUserInProject.TotalCommits, commitsEmoji)
+	commits := fmt.Sprintf(r.conf.Translate.Commits, projectCommits, commitsEmoji)
 	return commits, points
 }
 
@@ -351,10 +351,10 @@ func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser,
 	worklogs = fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
 
 	//configure commits
-	if dataOnUserInProject.TotalCommits == 0 {
-		commits = fmt.Sprintf(r.conf.Translate.NoCommits, dataOnUserInProject.TotalCommits)
+	if dataOnUserInProject.Commits == 0 {
+		commits = fmt.Sprintf(r.conf.Translate.NoCommits, dataOnUserInProject.Commits)
 	} else {
-		commits = fmt.Sprintf(r.conf.Translate.HasCommits, dataOnUserInProject.TotalCommits)
+		commits = fmt.Sprintf(r.conf.Translate.HasCommits, dataOnUserInProject.Commits)
 		points++
 	}
 

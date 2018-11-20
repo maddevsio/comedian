@@ -675,7 +675,7 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportOnProjectCollectorData, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
+			text += fmt.Sprintf(r.conf.Translate.ReportOnProjectCollectorData, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return c.String(http.StatusOK, text)
@@ -734,7 +734,7 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return c.String(http.StatusOK, text)
@@ -813,7 +813,7 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.TotalCommits, utils.SecondsToHuman(cd.Worklogs))
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return c.String(http.StatusOK, text)
