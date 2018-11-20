@@ -15,6 +15,7 @@ import (
 	"gitlab.com/team-monitoring/comedian/chat"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
+	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 func TestHandleCommands(t *testing.T) {
@@ -431,6 +432,11 @@ func TestHandleReportByProjectCommands(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/projects/chanName/2018-06-25/2018-06-26/", c.CollectorURL),
+		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
+
 	testCases := []struct {
 		title        string
 		command      string
@@ -469,12 +475,18 @@ func TestHandleReportByUserCommands(t *testing.T) {
 	rest, err := NewRESTAPI(slack)
 	assert.NoError(t, err)
 
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
 	admin, err := rest.db.CreateUser(model.User{
 		UserName: "Admin",
 		UserID:   "SuperAdminID",
 		Role:     "admin",
 	})
 	assert.NoError(t, err)
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/users/userID1/2018-06-25/2018-06-26/", c.CollectorURL),
+		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0, "worklogs": 0}]`))
 
 	channel, err := rest.db.CreateChannel(model.Channel{
 		ChannelName: "chanName",
@@ -558,6 +570,12 @@ func TestHandleReportByProjectAndUserCommands(t *testing.T) {
 		Role:     "admin",
 	})
 	assert.NoError(t, err)
+
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%v/rest/api/v1/logger/user-in-project/userID1/chanid/2018-06-25/2018-06-26/", c.CollectorURL),
+		httpmock.NewStringResponder(200, `[{"total_commits": 0, "total_merges": 0}]`))
 
 	channel, err := rest.db.CreateChannel(model.Channel{
 		ChannelName: "chanid",
@@ -710,8 +728,8 @@ func TestUserHasAccess(t *testing.T) {
 
 	assert.NoError(t, r.db.DeleteUser(admin.ID))
 	assert.NoError(t, r.db.DeleteUser(pmUser.ID))
-	assert.NoError(t, r.db.DeleteUser(user.ID))
 	assert.NoError(t, r.db.DeleteUser(superAdmin.ID))
+	assert.NoError(t, r.db.DeleteUser(user.ID))
 	assert.NoError(t, r.db.DeleteChannelMember(pmUser.UserID, "RANDOMCHAN"))
 
 }
