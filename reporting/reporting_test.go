@@ -304,7 +304,7 @@ func TestProcessWorklogs(t *testing.T) {
 		textOutput      string
 		points          int
 	}{
-		{3600, 3600, " worklogs: 1:00 :angry: |", 0},
+		{3600, 0, " worklogs: 0:00 out of 1:00 :angry: |", 0},
 		{4 * 3600, 3600, " worklogs: 1:00 out of 4:00 :disappointed: |", 0},
 		{8 * 3600, 3600, " worklogs: 1:00 out of 8:00 :wink: |", 1},
 		{10 * 3600, 3600, " worklogs: 1:00 out of 10:00 :sunglasses: |", 1},
@@ -312,6 +312,54 @@ func TestProcessWorklogs(t *testing.T) {
 
 	for _, tt := range testCases {
 		text, points := r.processWorklogs(tt.totalWorklogs, tt.projectWorklogs)
+		assert.Equal(t, tt.textOutput, text)
+		assert.Equal(t, tt.points, points)
+	}
+
+	d := time.Date(2018, 11, 18, 10, 0, 0, 0, time.UTC)
+	pg := monkey.Patch(time.Now, func() time.Time { return d })
+
+	testCases = []struct {
+		totalWorklogs   int
+		projectWorklogs int
+		textOutput      string
+		points          int
+	}{
+		{3600, 0, " worklogs: 0:00 out of 1:00  |", 0},
+	}
+
+	for _, tt := range testCases {
+		text, points := r.processWorklogs(tt.totalWorklogs, tt.projectWorklogs)
+		assert.Equal(t, tt.textOutput, text)
+		assert.Equal(t, tt.points, points)
+	}
+
+	pg.Unpatch()
+}
+
+func TestProcessWeeklyWorklogs(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	testCases := []struct {
+		totalWorklogs   int
+		projectWorklogs int
+		textOutput      string
+		points          int
+	}{
+		{30 * 3600, 30 * 3600, " worklogs: 30:00 :disappointed: |", 0},
+		{33 * 3600, 33 * 3600, " worklogs: 33:00 :wink: |", 1},
+		{36 * 3600, 36 * 3600, " worklogs: 36:00 :sunglasses: |", 1},
+		{30 * 3600, 0, " worklogs: 0:00 out of 30:00 :disappointed: |", 0},
+		{33 * 3600, 0, " worklogs: 0:00 out of 33:00 :wink: |", 1},
+		{36 * 3600, 0, " worklogs: 0:00 out of 36:00 :sunglasses: |", 1},
+	}
+
+	for _, tt := range testCases {
+		text, points := r.processWeeklyWorklogs(tt.totalWorklogs, tt.projectWorklogs)
 		assert.Equal(t, tt.textOutput, text)
 		assert.Equal(t, tt.points, points)
 	}
@@ -339,6 +387,27 @@ func TestProcessCommits(t *testing.T) {
 		assert.Equal(t, tt.textOutput, text)
 		assert.Equal(t, tt.points, points)
 	}
+
+	d := time.Date(2018, 11, 18, 10, 0, 0, 0, time.UTC)
+	pg := monkey.Patch(time.Now, func() time.Time { return d })
+
+	testCases = []struct {
+		totalCommits   int
+		projectCommits int
+		textOutput     string
+		points         int
+	}{
+		{0, 0, " commits: 0  |", 0},
+		{1, 1, " commits: 1  |", 1},
+	}
+
+	for _, tt := range testCases {
+		text, points := r.processCommits(tt.totalCommits, tt.projectCommits)
+		assert.Equal(t, tt.textOutput, text)
+		assert.Equal(t, tt.points, points)
+	}
+
+	pg.Unpatch()
 }
 
 func TestProcessStandup(t *testing.T) {
