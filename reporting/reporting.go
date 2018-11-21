@@ -118,7 +118,7 @@ func (r *Reporter) displayYesterdayTeamReport() {
 				attachment.Color = "danger"
 			case 1:
 				attachment.Color = "warning"
-			case 2:
+			case 2, 3:
 				attachment.Color = "good"
 			}
 
@@ -135,9 +135,9 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			continue
 		}
 
-		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
-		}
+		// if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+		// 	r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		// }
 
 		allReports = append(allReports, attachments...)
 	}
@@ -270,9 +270,9 @@ func (r *Reporter) displayWeeklyTeamReport() {
 			continue
 		}
 
-		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
-		}
+		// if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+		// 	r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
+		// }
 
 		allReports = append(allReports, attachments...)
 	}
