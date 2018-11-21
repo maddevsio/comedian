@@ -135,9 +135,9 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			continue
 		}
 
-		// if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-		// 	r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
-		// }
+		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		}
 
 		allReports = append(allReports, attachments...)
 	}
@@ -174,6 +174,31 @@ func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, 
 
 	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
 		worklogsEmoji = ""
+	}
+
+	worklogs := fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
+	return worklogs, points
+}
+
+func (r *Reporter) processWeeklyWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
+	points := 0
+	worklogsEmoji := ""
+
+	w := totalWorklogs / 3600
+	switch {
+	case w < 31:
+		worklogsEmoji = ":disappointed:"
+	case w >= 31 && w < 35:
+		worklogsEmoji = ":wink:"
+		points++
+	case w >= 35:
+		worklogsEmoji = ":sunglasses:"
+		points++
+	}
+	worklogsTime := utils.SecondsToHuman(totalWorklogs)
+
+	if totalWorklogs != projectWorklogs {
+		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(projectWorklogs), utils.SecondsToHuman(totalWorklogs))
 	}
 
 	worklogs := fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
@@ -243,6 +268,7 @@ func (r *Reporter) displayWeeklyTeamReport() {
 	}
 
 	for _, channel := range channels {
+
 		var attachments []slack.Attachment
 
 		channelMembers, err := r.db.ListChannelMembers(channel.ChannelID)
@@ -257,11 +283,55 @@ func (r *Reporter) displayWeeklyTeamReport() {
 		}
 
 		for _, member := range channelMembers {
-			attachment := r.generateWeeklyReportAttachment(member, channel)
-			if len(attachment.Fields) == 0 {
+			var attachment slack.Attachment
+			var attachmentFields []slack.AttachmentField
+			var worklogs, commits string
+			var worklogsPoints, commitsPoints int
+
+			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+			dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, -1))
+
+			if collectorError == nil {
+				worklogs, worklogsPoints = r.processWeeklyWorklogs(dataOnUser.Worklogs, dataOnUserInProject.Worklogs)
+				commits, commitsPoints = r.processCommits(dataOnUser.Commits, dataOnUserInProject.Commits)
+			}
+
+			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
+				commits = ""
+				commitsPoints++
+			}
+
+			if r.conf.CollectorEnabled == false || collectorError != nil {
+				worklogs = ""
+				worklogsPoints++
+				commits = ""
+				commitsPoints++
+			}
+
+			fieldValue := worklogs + commits
+
+			//if there is nothing to show, do not create attachment
+			if fieldValue == "" {
 				continue
 			}
-			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+
+			attachmentFields = append(attachmentFields, slack.AttachmentField{
+				Value: fieldValue,
+				Short: false,
+			})
+
+			points := worklogsPoints + commitsPoints
+
+			switch points {
+			case 0:
+				attachment.Color = "danger"
+			case 1:
+				attachment.Color = "warning"
+			case 2:
+				attachment.Color = "good"
+			}
+
+			attachment.Fields = attachmentFields
 
 			attachments = append(attachments, attachment)
 		}
@@ -270,9 +340,9 @@ func (r *Reporter) displayWeeklyTeamReport() {
 			continue
 		}
 
-		// if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-		// 	r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
-		// }
+		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		}
 
 		allReports = append(allReports, attachments...)
 	}
@@ -281,96 +351,7 @@ func (r *Reporter) displayWeeklyTeamReport() {
 		return
 	}
 
-	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderWeekly, allReports)
-}
-
-func (r *Reporter) generateWeeklyReportAttachment(member model.ChannelMember, project model.Channel) slack.Attachment {
-
-	startDate := time.Now().AddDate(0, 0, -7)
-	endDate := time.Now().AddDate(0, 0, -1)
-
-	dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, startDate, endDate)
-
-	if collectorError != nil {
-		userFull, _ := r.db.SelectUser(member.UserID)
-		fail := fmt.Sprintf(":warning: Failed to get data on %v|%v in %v! Check Collector servise!", userFull.UserName, userFull.UserID, project.ChannelName)
-		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fail)
-	}
-
-	fieldValue, points := r.PrepareWeeklyAttachment(member, dataOnUser, dataOnUserInProject, collectorError)
-
-	var attachment slack.Attachment
-	var attachmentFields []slack.AttachmentField
-
-	//if there is nothing to show, do not create attachment
-	if fieldValue == "" {
-		logrus.Infof("Noting to show on attachment on member: %v in %v. Skip!", member.UserID, member.ChannelID)
-		return attachment
-	}
-
-	attachmentFields = append(attachmentFields, slack.AttachmentField{
-		Value: fieldValue,
-		Short: false,
-	})
-
-	attachment.Text = ""
-	switch p := points; p {
-	case 0:
-		attachment.Color = "danger"
-	case 1:
-		attachment.Color = "warning"
-	case 2:
-		attachment.Color = "good"
-	}
-
-	attachment.Fields = attachmentFields
-	return attachment
-}
-
-func (r *Reporter) PrepareWeeklyAttachment(user model.ChannelMember, dataOnUser, dataOnUserInProject collector.CollectorData, collectorError error) (string, int) {
-	var worklogs, commits, worklogsEmoji, worklogsTime string
-	var points int
-
-	//configure worklogs
-	w := dataOnUser.Worklogs / 3600
-	switch {
-	case w < 31:
-		worklogsEmoji = ":disappointed:"
-	case w >= 31 && w < 35:
-		worklogsEmoji = ":wink:"
-		points++
-	case w >= 35:
-		worklogsEmoji = ":sunglasses:"
-		points++
-	}
-	worklogsTime = utils.SecondsToHuman(dataOnUser.Worklogs)
-	if dataOnUser.Worklogs != dataOnUserInProject.Worklogs {
-		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(dataOnUserInProject.Worklogs), utils.SecondsToHuman(dataOnUser.Worklogs))
-	}
-
-	worklogs = fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
-
-	//configure commits
-	if dataOnUserInProject.Commits == 0 {
-		commits = fmt.Sprintf(r.conf.Translate.NoCommits, dataOnUserInProject.Commits)
-	} else {
-		commits = fmt.Sprintf(r.conf.Translate.HasCommits, dataOnUserInProject.Commits)
-		points++
-	}
-
-	// prepare field value and assign points
-	fieldValue := fmt.Sprintf("%-16v|%-12v|\n", worklogs, commits)
-
-	if user.RoleInChannel == "pm" || user.RoleInChannel == "designer" {
-		fieldValue = fmt.Sprintf("%-16v|\n", worklogs)
-		points++
-	}
-
-	if r.conf.CollectorEnabled == false || collectorError != nil {
-		fieldValue = ""
-	}
-
-	return fieldValue, points
+	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
