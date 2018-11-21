@@ -450,3 +450,25 @@ func TestSweep(t *testing.T) {
 		}
 	}
 }
+
+func TestSortReportEntries(t *testing.T) {
+
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	attachment := slack.Attachment{}
+	entries := []AttachmentItem{
+		{attachment, 0},
+		{attachment, 3},
+		{attachment, 1},
+		{attachment, 20},
+		{attachment, 21},
+		{attachment, 50},
+	}
+
+	sorted := r.sortReportEntries(entries)
+	fmt.Println(sorted)
+}
