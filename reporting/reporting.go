@@ -149,9 +149,9 @@ func (r *Reporter) displayYesterdayTeamReport() {
 
 		attachments = r.sortReportEntries(attachmentsPull)
 
-		// if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-		// 	r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
-		// }
+		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		}
 
 		allReports = append(allReports, attachments...)
 	}
@@ -174,7 +174,7 @@ func (r *Reporter) displayWeeklyTeamReport() {
 	}
 
 	for _, channel := range channels {
-
+		var attachmentsPull []AttachmentItem
 		var attachments []slack.Attachment
 
 		channelMembers, err := r.db.ListChannelMembers(channel.ChannelID)
@@ -239,16 +239,23 @@ func (r *Reporter) displayWeeklyTeamReport() {
 
 			attachment.Fields = attachmentFields
 
-			attachments = append(attachments, attachment)
+			item := AttachmentItem{
+				attachment: attachment,
+				points:     dataOnUserInProject.Worklogs,
+			}
+
+			attachmentsPull = append(attachmentsPull, item)
 		}
 
-		if len(attachments) == 0 {
+		if len(attachmentsPull) == 0 {
 			continue
 		}
 
-		// if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-		// 	r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
-		// }
+		attachments = r.sortReportEntries(attachmentsPull)
+
+		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
+		}
 
 		allReports = append(allReports, attachments...)
 	}
