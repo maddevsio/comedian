@@ -14,6 +14,7 @@ import (
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/chat"
+	"gitlab.com/team-monitoring/comedian/collector"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/reporting"
@@ -85,7 +86,8 @@ func NewRESTAPI(slack *chat.Slack) (*REST, error) {
 }
 
 func (r *REST) initEndpoints() {
-	r.echo.POST("/commands", r.handleCommands)
+	endPoint := fmt.Sprintf("/commands%s", r.conf.SecretToken)
+	r.echo.POST(endPoint, r.handleCommands)
 }
 
 // Start starts http server
@@ -152,6 +154,11 @@ func (r *REST) addCommand(c echo.Context, f url.Values) error {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
 		return c.String(http.StatusOK, r.addMembers(members, "developer", channel))
+	case "designer", "дизайнер":
+		if accessLevel > 3 {
+			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
+		}
+		return c.String(http.StatusOK, r.addMembers(members, "designer", channel))
 	case "pm", "пм":
 		if accessLevel > 2 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
@@ -176,6 +183,8 @@ func (r *REST) listCommand(c echo.Context, f url.Values) error {
 		return c.String(http.StatusOK, r.listAdmins())
 	case "developer", "разработчик", "":
 		return c.String(http.StatusOK, r.listMembers(ca.ChannelID, "developer"))
+	case "designer", "дизайнер":
+		return c.String(http.StatusOK, r.listMembers(ca.ChannelID, "designer"))
 	case "pm", "пм":
 		return c.String(http.StatusOK, r.listMembers(ca.ChannelID, "pm"))
 	default:
@@ -196,7 +205,7 @@ func (r *REST) deleteCommand(c echo.Context, f url.Values) error {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 		}
 		return c.String(http.StatusOK, r.deleteAdmins(users))
-	case "developer", "разработчик", "pm", "пм", "":
+	case "developer", "разработчик", "designer", "дизайнер", "pm", "пм", "":
 		if accessLevel > 3 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
@@ -661,6 +670,13 @@ func (r *REST) reportByProject(c echo.Context, f url.Values) error {
 	}
 	for _, t := range report.ReportBody {
 		text += t.Text
+		if r.conf.CollectorEnabled {
+			cd, err := collector.GetCollectorData(r.conf, "projects", channel.ChannelName, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
+			if err != nil {
+				continue
+			}
+			text += fmt.Sprintf(r.conf.Translate.ReportOnProjectCollectorData, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
+		}
 	}
 	return c.String(http.StatusOK, text)
 }
@@ -713,6 +729,13 @@ func (r *REST) reportByUser(c echo.Context, f url.Values) error {
 	}
 	for _, t := range report.ReportBody {
 		text += t.Text
+		if r.conf.CollectorEnabled {
+			cd, err := collector.GetCollectorData(r.conf, "users", user.UserID, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
+			if err != nil {
+				continue
+			}
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
+		}
 	}
 	return c.String(http.StatusOK, text)
 }
@@ -784,6 +807,14 @@ func (r *REST) reportByProjectAndUser(c echo.Context, f url.Values) error {
 	}
 	for _, t := range report.ReportBody {
 		text += t.Text
+		if r.conf.CollectorEnabled {
+			data := fmt.Sprintf("%v/%v", member.UserID, channel.ChannelName)
+			cd, err := collector.GetCollectorData(r.conf, "user-in-project", data, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
+			if err != nil {
+				continue
+			}
+			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
+		}
 	}
 	return c.String(http.StatusOK, text)
 }

@@ -1,10 +1,14 @@
 package reporting
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/bouk/monkey"
+	"github.com/jarcoal/httpmock"
+	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/team-monitoring/comedian/chat"
 	"gitlab.com/team-monitoring/comedian/config"
@@ -224,112 +228,168 @@ func TestStandupReportByProjectAndUser(t *testing.T) {
 	assert.NoError(t, r.db.DeleteChannelMember(user1.UserID, user1.ChannelID))
 	assert.NoError(t, r.db.DeleteChannel(channel.ID))
 }
-func TestPrepareAttachment(t *testing.T) {
+
+func TestGetCollectorDataOnMember(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
 	s, err := chat.NewSlack(c)
 	assert.NoError(t, err)
 	r := NewReporter(s)
 
-	testCases := []struct {
-		memberRole    string
-		isNonReporter bool
-		fieldValue    string
-		points        int
-	}{
-		{"developer", true, " standup :x: \n", 0},
-		{"developer", false, " standup :heavy_check_mark: \n", 1},
-		{"pm", true, " standup :x: \n", 0},
-		{"pm", false, " standup :heavy_check_mark: \n", 1},
-	}
-
-	for _, tt := range testCases {
-
-		channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
-			UserID:        "testUserID",
-			ChannelID:     "testChannelID",
-			RoleInChannel: tt.memberRole,
-		})
-		assert.NoError(t, err)
-
-		fieldValue, points := r.prepareAttachment(channelMember, tt.isNonReporter)
-		assert.Equal(t, tt.fieldValue, fieldValue)
-		assert.Equal(t, tt.points, points)
-		r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
-	}
-}
-
-func TestGenerateAttachment(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
-	assert.NoError(t, err)
-	r := NewReporter(s)
-
-	d := time.Date(2018, 11, 9, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
-
-	testCases := []struct {
-		fieldValue string
-		points     int
-		color      string
-	}{
-		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 0, "danger"},
-		{"worklogs: 4:30 :disappointed: | commits: 2 :tada: | standup :heavy_check_mark: |", 1, "good"},
-	}
-
-	for _, tt := range testCases {
-		attachment := r.generateAttachment(tt.fieldValue, tt.points)
-		assert.Equal(t, tt.color, attachment.Color)
-		if len(attachment.Fields) != 0 {
-			assert.Equal(t, tt.fieldValue, attachment.Fields[0].Value)
-		} else {
-			assert.Equal(t, 0, len(attachment.Fields))
-		}
-	}
-}
-
-func TestGenerateReportAttachment(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
-	assert.NoError(t, err)
-	r := NewReporter(s)
-
-	d := time.Date(2018, 11, 9, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
 
 	channel, err := r.db.CreateChannel(model.Channel{
-		ChannelName: "chanName",
-		ChannelID:   "chanid",
+		ChannelID:   "testChannelID",
+		ChannelName: "testChannel",
 		StandupTime: int64(0),
 	})
 	assert.NoError(t, err)
 
 	channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
-		UserID:        "testUserID",
-		ChannelID:     "testChannelID",
-		RoleInChannel: "",
+		UserID:    "testUserID",
+		ChannelID: channel.ChannelID,
 	})
 	assert.NoError(t, err)
 
-	attachment := r.generateReportAttachment(channelMember, channel)
-	assert.Equal(t, "", attachment.Text)
-	assert.Equal(t, "good", attachment.Color)
-	if len(attachment.Fields) != 0 {
-		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
-	}
-
-	d = time.Date(2018, 11, 11, 10, 0, 0, 0, time.UTC)
+	d := time.Date(2018, 9, 18, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	attachment = r.generateReportAttachment(channelMember, channel)
-	assert.Equal(t, "", attachment.Text)
-	assert.Equal(t, "good", attachment.Color)
-	if len(attachment.Fields) != 0 {
-		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
+	startDate := time.Now().AddDate(0, 0, -1)
+	endDate := time.Now().AddDate(0, 0, -1)
+
+	testCases := []struct {
+		totalWorklogs               int
+		projectWorklogs             int
+		commits                     int
+		userRespStatusCode          int
+		userInProjectRespStatusCode int
+		collectorErr                error
+	}{
+		{35000, 3500, 20, 200, 200, nil},
+		{0, 0, 0, 500, 200, errors.New("could not get data on this request")},
+		{0, 0, 0, 200, 500, errors.New("could not get data on this request")},
 	}
 
-	r.db.DeleteChannel(channel.ID)
-	r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
+	dateOfRequest := fmt.Sprintf("%d-%02d-%02d", time.Now().AddDate(0, 0, -1).Year(), time.Now().AddDate(0, 0, -1).Month(), time.Now().AddDate(0, 0, -1).Day())
+
+	linkURLUsers := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "users", channelMember.UserID, dateOfRequest, dateOfRequest)
+	linkURLUserInProject := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "user-in-project", fmt.Sprintf("%v/%v", channelMember.UserID, channel.ChannelName), dateOfRequest, dateOfRequest)
+
+	for _, tt := range testCases {
+		httpmock.RegisterResponder("GET", linkURLUsers, httpmock.NewStringResponder(tt.userRespStatusCode, fmt.Sprintf(`{"worklogs": %v, "total_commits": %v}`, tt.totalWorklogs, tt.commits)))
+		httpmock.RegisterResponder("GET", linkURLUserInProject, httpmock.NewStringResponder(tt.userInProjectRespStatusCode, fmt.Sprintf(`{"worklogs": %v, "total_commits": %v}`, tt.projectWorklogs, tt.commits)))
+
+		dataOnUser, dataOnUserInProject, err := r.GetCollectorDataOnMember(channelMember, startDate, endDate)
+		assert.Equal(t, tt.totalWorklogs, dataOnUser.Worklogs)
+		assert.Equal(t, tt.commits, dataOnUser.Commits)
+		assert.Equal(t, tt.projectWorklogs, dataOnUserInProject.Worklogs)
+		assert.Equal(t, tt.commits, dataOnUserInProject.Commits)
+		assert.Equal(t, tt.collectorErr, err)
+
+		assert.NoError(t, r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID))
+		assert.NoError(t, r.db.DeleteChannel(channel.ID))
+	}
+
+}
+func TestProcessWorklogs(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	testCases := []struct {
+		totalWorklogs   int
+		projectWorklogs int
+		textOutput      string
+		points          int
+	}{
+		{3600, 3600, " worklogs: 1:00 :angry: |", 0},
+		{4 * 3600, 3600, " worklogs: 1:00 out of 4:00 :disappointed: |", 0},
+		{8 * 3600, 3600, " worklogs: 1:00 out of 8:00 :wink: |", 1},
+		{10 * 3600, 3600, " worklogs: 1:00 out of 10:00 :sunglasses: |", 1},
+	}
+
+	for _, tt := range testCases {
+		text, points := r.processWorklogs(tt.totalWorklogs, tt.projectWorklogs)
+		assert.Equal(t, tt.textOutput, text)
+		assert.Equal(t, tt.points, points)
+	}
+}
+
+func TestProcessCommits(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	testCases := []struct {
+		totalCommits   int
+		projectCommits int
+		textOutput     string
+		points         int
+	}{
+		{0, 0, " commits: 0 :shit: |", 0},
+		{1, 1, " commits: 1 :wink: |", 1},
+	}
+
+	for _, tt := range testCases {
+		text, points := r.processCommits(tt.totalCommits, tt.projectCommits)
+		assert.Equal(t, tt.textOutput, text)
+		assert.Equal(t, tt.points, points)
+	}
+}
+
+func TestProcessStandup(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	testCases := []struct {
+		shouldBeTracked bool
+		isNonReporter   bool
+		textOutput      string
+		points          int
+	}{
+		{true, true, "", 0},
+	}
+
+	for _, tt := range testCases {
+
+		member, err := r.db.CreateChannelMember(model.ChannelMember{
+			UserID:        "testUserID",
+			ChannelID:     "testChannelID",
+			RoleInChannel: "developer",
+		})
+		assert.NoError(t, err)
+
+		text, points := r.processStandup(member)
+		assert.Equal(t, tt.textOutput, text)
+		assert.Equal(t, tt.points, points)
+
+		r.db.DeleteChannelMember(member.UserID, member.ChannelID)
+	}
+}
+
+func TestSweep(t *testing.T) {
+	attachment := slack.Attachment{}
+	entries := []AttachmentItem{
+		{attachment, 0},
+		{attachment, 3},
+		{attachment, 1},
+		{attachment, 20},
+		{attachment, 21},
+		{attachment, 50},
+	}
+
+	for i := 0; i < len(entries); i++ {
+		if !sweep(entries, i) {
+			fmt.Println(entries)
+			break
+		}
+	}
 }
