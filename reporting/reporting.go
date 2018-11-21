@@ -34,6 +34,12 @@ type ReportBodyContent struct {
 	Text string
 }
 
+//AttachmentItem is needed to sort attachments
+type AttachmentItem struct {
+	attachment slack.Attachment
+	points     int
+}
+
 // NewReporter creates a new reporter instance
 func NewReporter(slack *chat.Slack) *Reporter {
 	reporter := &Reporter{s: slack, db: slack.DB, conf: slack.Conf}
@@ -59,6 +65,7 @@ func (r *Reporter) displayYesterdayTeamReport() {
 
 	for _, channel := range channels {
 		var attachments []slack.Attachment
+		var attachmentsPull []AttachmentItem
 
 		channelMembers, err := r.db.ListChannelMembers(channel.ChannelID)
 		if err != nil {
@@ -128,6 +135,110 @@ func (r *Reporter) displayYesterdayTeamReport() {
 
 			attachment.Fields = attachmentFields
 
+			item := AttachmentItem{
+				attachment: attachment,
+				points:     dataOnUserInProject.Worklogs,
+			}
+
+			attachmentsPull = append(attachmentsPull, item)
+		}
+
+		if len(attachmentsPull) == 0 {
+			continue
+		}
+
+		attachments = r.sortReportEntries(attachmentsPull)
+
+		// if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+		// 	r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		// }
+
+		allReports = append(allReports, attachments...)
+	}
+
+	if len(allReports) == 0 {
+		return
+	}
+
+	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
+}
+
+// teamReport generates report on users who submit standups
+func (r *Reporter) displayWeeklyTeamReport() {
+	var allReports []slack.Attachment
+
+	channels, err := r.db.GetAllChannels()
+	if err != nil {
+		logrus.Errorf("GetAllChannels failed: %v", err)
+		return
+	}
+
+	for _, channel := range channels {
+
+		var attachments []slack.Attachment
+
+		channelMembers, err := r.db.ListChannelMembers(channel.ChannelID)
+		if err != nil {
+			logrus.Errorf("ListChannelMembers failed for channel %v: %v", channel.ChannelName, err)
+			continue
+		}
+
+		if len(channelMembers) == 0 {
+			logrus.Infof("Skip %v channel", channel.ChannelID)
+			continue
+		}
+
+		for _, member := range channelMembers {
+			var attachment slack.Attachment
+			var attachmentFields []slack.AttachmentField
+			var worklogs, commits string
+			var worklogsPoints, commitsPoints int
+
+			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+			dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, -1))
+
+			if collectorError == nil {
+				worklogs, worklogsPoints = r.processWeeklyWorklogs(dataOnUser.Worklogs, dataOnUserInProject.Worklogs)
+				commits, commitsPoints = r.processCommits(dataOnUser.Commits, dataOnUserInProject.Commits)
+			}
+
+			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
+				commits = ""
+				commitsPoints++
+			}
+
+			if r.conf.CollectorEnabled == false || collectorError != nil {
+				worklogs = ""
+				worklogsPoints++
+				commits = ""
+				commitsPoints++
+			}
+
+			fieldValue := worklogs + commits
+
+			//if there is nothing to show, do not create attachment
+			if fieldValue == "" {
+				continue
+			}
+
+			attachmentFields = append(attachmentFields, slack.AttachmentField{
+				Value: fieldValue,
+				Short: false,
+			})
+
+			points := worklogsPoints + commitsPoints
+
+			switch points {
+			case 0:
+				attachment.Color = "danger"
+			case 1:
+				attachment.Color = "warning"
+			case 2:
+				attachment.Color = "good"
+			}
+
+			attachment.Fields = attachmentFields
+
 			attachments = append(attachments, attachment)
 		}
 
@@ -135,9 +246,9 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			continue
 		}
 
-		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
-		}
+		// if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
+		// 	r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		// }
 
 		allReports = append(allReports, attachments...)
 	}
@@ -255,103 +366,6 @@ func (r *Reporter) processStandup(member model.ChannelMember) (string, int) {
 	}
 
 	return standup, points
-}
-
-// teamReport generates report on users who submit standups
-func (r *Reporter) displayWeeklyTeamReport() {
-	var allReports []slack.Attachment
-
-	channels, err := r.db.GetAllChannels()
-	if err != nil {
-		logrus.Errorf("GetAllChannels failed: %v", err)
-		return
-	}
-
-	for _, channel := range channels {
-
-		var attachments []slack.Attachment
-
-		channelMembers, err := r.db.ListChannelMembers(channel.ChannelID)
-		if err != nil {
-			logrus.Errorf("ListChannelMembers failed for channel %v: %v", channel.ChannelName, err)
-			continue
-		}
-
-		if len(channelMembers) == 0 {
-			logrus.Infof("Skip %v channel", channel.ChannelID)
-			continue
-		}
-
-		for _, member := range channelMembers {
-			var attachment slack.Attachment
-			var attachmentFields []slack.AttachmentField
-			var worklogs, commits string
-			var worklogsPoints, commitsPoints int
-
-			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
-			dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, -1))
-
-			if collectorError == nil {
-				worklogs, worklogsPoints = r.processWeeklyWorklogs(dataOnUser.Worklogs, dataOnUserInProject.Worklogs)
-				commits, commitsPoints = r.processCommits(dataOnUser.Commits, dataOnUserInProject.Commits)
-			}
-
-			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
-				commits = ""
-				commitsPoints++
-			}
-
-			if r.conf.CollectorEnabled == false || collectorError != nil {
-				worklogs = ""
-				worklogsPoints++
-				commits = ""
-				commitsPoints++
-			}
-
-			fieldValue := worklogs + commits
-
-			//if there is nothing to show, do not create attachment
-			if fieldValue == "" {
-				continue
-			}
-
-			attachmentFields = append(attachmentFields, slack.AttachmentField{
-				Value: fieldValue,
-				Short: false,
-			})
-
-			points := worklogsPoints + commitsPoints
-
-			switch points {
-			case 0:
-				attachment.Color = "danger"
-			case 1:
-				attachment.Color = "warning"
-			case 2:
-				attachment.Color = "good"
-			}
-
-			attachment.Fields = attachmentFields
-
-			attachments = append(attachments, attachment)
-		}
-
-		if len(attachments) == 0 {
-			continue
-		}
-
-		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
-		}
-
-		allReports = append(allReports, attachments...)
-	}
-
-	if len(allReports) == 0 {
-		return
-	}
-
-	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
 }
 
 // StandupReportByProject creates a standup report for a specified period of time
@@ -534,4 +548,42 @@ func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, startDat
 	}
 
 	return dataOnUser, dataOnUserInProject, err
+}
+
+func (r *Reporter) sortReportEntries(entries []AttachmentItem) []slack.Attachment {
+	var attachments []slack.Attachment
+
+	for i := 0; i < len(entries); i++ {
+		if !sweep(entries, i) {
+			break
+		}
+	}
+
+	for _, item := range entries {
+		attachments = append(attachments, item.attachment)
+	}
+
+	return attachments
+}
+
+func sweep(entries []AttachmentItem, prevPasses int) bool {
+	var N = len(entries)
+	var didSwap = false
+	var firstIndex = 0
+	var secondIndex = 1
+
+	for secondIndex < (N - prevPasses) {
+
+		var firstItem = entries[firstIndex]
+		var secondItem = entries[secondIndex]
+		if entries[firstIndex].points < entries[secondIndex].points {
+			entries[firstIndex] = secondItem
+			entries[secondIndex] = firstItem
+			didSwap = true
+		}
+		firstIndex++
+		secondIndex++
+	}
+
+	return didSwap
 }

@@ -8,9 +8,9 @@ import (
 
 	"github.com/bouk/monkey"
 	"github.com/jarcoal/httpmock"
+	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/team-monitoring/comedian/chat"
-	"gitlab.com/team-monitoring/comedian/collector"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 )
@@ -375,81 +375,21 @@ func TestProcessStandup(t *testing.T) {
 	}
 }
 
-func TestGenerateWeeklyReportAttachment(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
-	assert.NoError(t, err)
-	r := NewReporter(s)
-
-	d := time.Date(2018, 11, 4, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
-
-	channel, err := r.db.CreateChannel(model.Channel{
-		ChannelName: "chanName",
-		ChannelID:   "chanid",
-		StandupTime: int64(0),
-	})
-	assert.NoError(t, err)
-
-	channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
-		UserID:        "testUserID",
-		ChannelID:     "testChannelID",
-		RoleInChannel: "",
-	})
-	assert.NoError(t, err)
-
-	attachment := r.generateWeeklyReportAttachment(channelMember, channel)
-	assert.Equal(t, "", attachment.Text)
-	assert.Equal(t, "", attachment.Color)
-	if len(attachment.Fields) != 0 {
-		assert.Equal(t, " standup :heavy_check_mark: \n", attachment.Fields[0].Value)
+func TestSweep(t *testing.T) {
+	attachment := slack.Attachment{}
+	entries := []AttachmentItem{
+		{attachment, 0},
+		{attachment, 3},
+		{attachment, 1},
+		{attachment, 20},
+		{attachment, 21},
+		{attachment, 50},
 	}
 
-	r.db.DeleteChannel(channel.ID)
-	r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
-}
-
-func TestPrepareWeeklyAttachment(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
-	assert.NoError(t, err)
-	r := NewReporter(s)
-
-	testCases := []struct {
-		memberRole      string
-		totalWorklogs   int
-		projectWorklogs int
-		commits         int
-		isNonReporter   bool
-		collectorError  error
-		fieldValue      string
-		points          int
-	}{
-		{"developer", 0, 0, 0, true, nil, " worklogs: 0:00 :disappointed: | commits: 0 :shit: |\n", 0},
-		{"developer", 115200, 114200, 0, false, nil, " worklogs: 31:43 out of 32:00 :wink: | commits: 0 :shit: |\n", 1},
-		{"developer", 129600, 129600, 20, false, nil, " worklogs: 36:00 :sunglasses: | commits: 20 :tada: |\n", 2},
-		{"pm", 40000, 28800, 20, false, errors.New("anyErr"), "", 2},
+	for i := 0; i < len(entries); i++ {
+		if !sweep(entries, i) {
+			fmt.Println(entries)
+			break
+		}
 	}
-
-	for _, tt := range testCases {
-
-		channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
-			UserID:        "testUserID",
-			ChannelID:     "testChannelID",
-			RoleInChannel: tt.memberRole,
-		})
-		assert.NoError(t, err)
-
-		userData := collector.CollectorData{tt.commits, tt.totalWorklogs}
-		userInProjectData := collector.CollectorData{tt.commits, tt.projectWorklogs}
-
-		fieldValue, points := r.PrepareWeeklyAttachment(channelMember, userData, userInProjectData, tt.collectorError)
-		assert.Equal(t, tt.fieldValue, fieldValue)
-		assert.Equal(t, tt.points, points)
-
-		r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
-	}
-
 }

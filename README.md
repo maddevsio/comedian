@@ -29,7 +29,7 @@
 - [x] Support English and Russian languages
 
 
-## Getting started locally
+## Getting started
 
 These instructions will help you set up the project on your local machine for development and testing purposes with [ngrok](https://ngrok.com/product) 
 
@@ -119,6 +119,18 @@ set -a
 set +a
 ```
 
+### **Step 10**: Set up DB and apply migrations
+
+create new database "comedian" in your local mysql agent
+```
+mysql -uroot -proot
+create database comedian
+```
+From project root directory apply migrations with the following command: 
+```
+goose -dir "migrations" mysql "root:root@/comedian?parseTime=true" up
+```
+
 ### **Step 10**: Start Comedian
 Run: go run main.go
 
@@ -126,59 +138,6 @@ If your configuration is correct, you will receive a message from Comedian with 
 
 In case something does not work correctly double check the configuration and make sure you did not miss any installation steps.
 
-
-## Deploy on [Digital Ocean](https://www.digitalocean.com/pricing/)
-If you are willing to use Comedian for your organization, we recommend you to proceed with Digital Ocean droplet. Here is the basic instructions how to deploy Comedian to DO:
-
-### **Step 1**: Purchase Droplet
-1. Login to Digital Ocean
-2. Add new project 
-3. Add a droplet, choose Ubuntu 18.10 as your distributive
-4. Select $5 per month plan
-5. Do not add ssh key (if you are new to configuration)
-6. Choose a name for your droplet
-7. Press "create" button
-
-After some time you will get an email with all info needed to login to your droplet
-
-### **Step 2**: Configure the server
-Login to your newly created server using SSH. You should have recieved email from Digital Ocean with IP address, login and a password. 
-
-Open your terminal, type `ssh login@ipaddress` and then insert password. If this is your first time using this server, DO will ask you to reset the password. 
-
-Next step is to [install docker-compose](https://www.digitalocean.com/community/tutorials/how-to-install-docker-compose-on-ubuntu-18-04) and [docker](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)
-
-### **Step 3.0**: Push your code to Dockerhub 
-
-1. run `sudo make` to build local up-to-date Comedian image
-2. Create dockerhub repository for Comedian
-3. run `docker tag comedian <yourDockerHubRepo/here>` to create new tag and 
-4. run `docker push <yourDockerHubRepo/here>` to push it to your repository
-
-
-### **Step 3.1**: Prepare docker-compose file 
-
-run `nano docker-compose.yml` to create your docker-compose file. Use docker-compose.yml file from the repository to set up it properly. You can use env variables inside or just type parameters right there for better readability. 
-
-Save changes and create new folder `docker`. Execute the following command to give it proper access `chmod 755 docker`. Now you have your volumes configured so that your DB never gets dropped if something happens with the container. 
-
-Make sure to use updated Comedian images from your repository on DockerHub, where you will push your code
-
-Save the changes and proceed to the next step. If you use .env file, make sure you updated your env variables before Step 4.
-
-If you care about security, you may use https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion to configure Let's Encrypt certificates. 
-
-
-### **Step 4**: Install chatbot to your workspace
-Follow Steps 4-9 of the local installation guidelines before you proceed! 
-ATTENTION
-Request URL for all slash commands will be the following: ```http://yourIPaddress:8080/commands``` )
-
-### **Step 5**: Use docker-compose 
-
-Once your docker-compose.yml file is ready and you installed Comedian App in your workspace, run `docker-compose up` or `docker-compose up -d` to start Comedian on the background.
-
-Follow Step 10 of the local installation guide to check if Comedian was installed successfully. 
 
 ## Usage
 
