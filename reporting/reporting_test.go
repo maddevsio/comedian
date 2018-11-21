@@ -239,6 +239,9 @@ func TestGetCollectorDataOnMember(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
+	d := time.Date(2018, 9, 18, 10, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
 	channel, err := r.db.CreateChannel(model.Channel{
 		ChannelID:   "testChannelID",
 		ChannelName: "testChannel",
@@ -251,9 +254,6 @@ func TestGetCollectorDataOnMember(t *testing.T) {
 		ChannelID: channel.ChannelID,
 	})
 	assert.NoError(t, err)
-
-	d := time.Date(2018, 9, 18, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
 
 	startDate := time.Now().AddDate(0, 0, -1)
 	endDate := time.Now().AddDate(0, 0, -1)
@@ -286,11 +286,10 @@ func TestGetCollectorDataOnMember(t *testing.T) {
 		assert.Equal(t, tt.projectWorklogs, dataOnUserInProject.Worklogs)
 		assert.Equal(t, tt.commits, dataOnUserInProject.Commits)
 		assert.Equal(t, tt.collectorErr, err)
-
-		assert.NoError(t, r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID))
-		assert.NoError(t, r.db.DeleteChannel(channel.ID))
 	}
 
+	assert.NoError(t, r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID))
+	assert.NoError(t, r.db.DeleteChannel(channel.ID))
 }
 func TestProcessWorklogs(t *testing.T) {
 	c, err := config.Get()
@@ -349,30 +348,19 @@ func TestProcessStandup(t *testing.T) {
 	assert.NoError(t, err)
 	r := NewReporter(s)
 
-	testCases := []struct {
-		shouldBeTracked bool
-		isNonReporter   bool
-		textOutput      string
-		points          int
-	}{
-		{true, true, "", 0},
-	}
+	member, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "testUserID",
+		ChannelID:     "testChannelID",
+		RoleInChannel: "developer",
+	})
+	assert.NoError(t, err)
 
-	for _, tt := range testCases {
+	text, points := r.processStandup(member)
+	assert.Equal(t, "", text)
+	assert.Equal(t, 1, points)
 
-		member, err := r.db.CreateChannelMember(model.ChannelMember{
-			UserID:        "testUserID",
-			ChannelID:     "testChannelID",
-			RoleInChannel: "developer",
-		})
-		assert.NoError(t, err)
+	r.db.DeleteChannelMember(member.UserID, member.ChannelID)
 
-		text, points := r.processStandup(member)
-		assert.Equal(t, tt.textOutput, text)
-		assert.Equal(t, tt.points, points)
-
-		r.db.DeleteChannelMember(member.UserID, member.ChannelID)
-	}
 }
 
 func TestSweep(t *testing.T) {
