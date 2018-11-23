@@ -123,9 +123,9 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			switch points {
 			case 0:
 				attachment.Color = "danger"
-			case 1:
+			case 1, 2:
 				attachment.Color = "warning"
-			case 2, 3:
+			case 3:
 				attachment.Color = "good"
 			}
 
