@@ -325,7 +325,7 @@ func TestProcessWorklogs(t *testing.T) {
 		textOutput      string
 		points          int
 	}{
-		{3600, 0, " worklogs: 0:00 out of 1:00  |", 0},
+		{3600, 0, "", 0},
 	}
 
 	for _, tt := range testCases {
@@ -397,7 +397,7 @@ func TestProcessCommits(t *testing.T) {
 		textOutput     string
 		points         int
 	}{
-		{0, 0, " commits: 0  |", 0},
+		{0, 0, "", 0},
 		{1, 1, " commits: 1  |", 1},
 	}
 

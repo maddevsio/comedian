@@ -94,7 +94,6 @@ func (r *Reporter) displayYesterdayTeamReport() {
 
 			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
 				commits = ""
-				commitsPoints++
 			}
 
 			if r.conf.CollectorEnabled == false || collectorError != nil {
@@ -102,6 +101,10 @@ func (r *Reporter) displayYesterdayTeamReport() {
 				worklogsPoints++
 				commits = ""
 				commitsPoints++
+			}
+
+			if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
+
 			}
 
 			standup, standupPoints = r.processStandup(member)
@@ -137,7 +140,7 @@ func (r *Reporter) displayYesterdayTeamReport() {
 
 			item := AttachmentItem{
 				attachment: attachment,
-				points:     dataOnUserInProject.Worklogs,
+				points:     points,
 			}
 
 			attachmentsPull = append(attachmentsPull, item)
@@ -264,7 +267,7 @@ func (r *Reporter) displayWeeklyTeamReport() {
 		return
 	}
 
-	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
+	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderWeekly, allReports)
 }
 
 func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
@@ -292,6 +295,9 @@ func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, 
 
 	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
 		worklogsEmoji = ""
+		if projectWorklogs == 0 {
+			return "", points
+		}
 	}
 
 	worklogs := fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
@@ -338,6 +344,9 @@ func (r *Reporter) processCommits(totalCommits, projectCommits int) (string, int
 
 	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
 		commitsEmoji = ""
+		if projectCommits == 0 {
+			return "", points
+		}
 	}
 
 	commits := fmt.Sprintf(r.conf.Translate.Commits, projectCommits, commitsEmoji)
