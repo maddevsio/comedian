@@ -244,13 +244,28 @@ func (r *REST) addMembers(users []string, role, channel string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddMembersFailed, failed)
+		if role == "pm" {
+			text += fmt.Sprintf(r.conf.Translate.AddPMsFailed, failed)
+		} else {
+			text += fmt.Sprintf(r.conf.Translate.AddMembersFailed, failed)
+		}
+
 	}
 	if len(exist) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddMembersExist, exist)
+		if role == "pm" {
+			text += fmt.Sprintf(r.conf.Translate.AddPMsExist, exist)
+		} else {
+			text += fmt.Sprintf(r.conf.Translate.AddMembersExist, exist)
+		}
+
 	}
 	if len(added) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddMembersAdded, added)
+		if role == "pm" {
+			text += fmt.Sprintf(r.conf.Translate.AddPMsAdded, added)
+		} else {
+			text += fmt.Sprintf(r.conf.Translate.AddMembersAdded, added)
+		}
+
 	}
 	return text
 }
