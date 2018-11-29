@@ -140,7 +140,7 @@ func (r *Reporter) displayYesterdayTeamReport() {
 
 			item := AttachmentItem{
 				attachment: attachment,
-				points:     points,
+				points:     dataOnUserInProject.Worklogs,
 			}
 
 			attachmentsPull = append(attachmentsPull, item)
