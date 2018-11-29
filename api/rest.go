@@ -205,11 +205,16 @@ func (r *REST) deleteCommand(c echo.Context, f url.Values) error {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastAdmin)
 		}
 		return c.String(http.StatusOK, r.deleteAdmins(users))
-	case "developer", "разработчик", "designer", "дизайнер", "pm", "пм", "":
+	case "developer", "разработчик", "designer", "дизайнер", "":
 		if accessLevel > 3 {
 			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
 		}
-		return c.String(http.StatusOK, r.deleteMembers(users, channel))
+		return c.String(http.StatusOK, r.deleteMembers(users, "developer", channel))
+	case "pm", "пм":
+		if accessLevel > 3 {
+			return c.String(http.StatusOK, r.conf.Translate.AccessAtLeastPM)
+		}
+		return c.String(http.StatusOK, r.deleteMembers(users, "pm", channel))
 	default:
 		return c.String(http.StatusOK, r.conf.Translate.NeedCorrectUserRole)
 	}
@@ -349,7 +354,7 @@ func (r *REST) listAdmins() string {
 	return fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", "))
 }
 
-func (r *REST) deleteMembers(members []string, channel string) string {
+func (r *REST) deleteMembers(members []string, role, channel string) string {
 	var failed, deleted, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -371,10 +376,18 @@ func (r *REST) deleteMembers(members []string, channel string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not remove the following members: %v\n", failed)
+		if role == "pm" {
+			text += fmt.Sprintf(r.conf.Translate.DeletePMsFailed, failed)
+		} else {
+			text += fmt.Sprintf(r.conf.Translate.DeleteMembersFailed, failed)
+		}
 	}
 	if len(deleted) != 0 {
-		text += fmt.Sprintf("The following members were removed: %v\n", deleted)
+		if role == "pm" {
+			text += fmt.Sprintf(r.conf.Translate.DeletePMsSucceed, deleted)
+		} else {
+			text += fmt.Sprintf(r.conf.Translate.DeleteMembersSucceed, deleted)
+		}
 	}
 
 	return text
@@ -411,10 +424,10 @@ func (r *REST) deleteAdmins(users []string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not remove users as admins: %v\n", failed)
+		text += fmt.Sprintf(r.conf.Translate.DeleteAdminsFailed, failed)
 	}
 	if len(deleted) != 0 {
-		text += fmt.Sprintf("Users are removed as admins: %v\n", deleted)
+		text += fmt.Sprintf(r.conf.Translate.DeleteAdminsSucceed, deleted)
 	}
 
 	return text

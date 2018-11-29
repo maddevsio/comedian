@@ -134,5 +134,14 @@ listAdmins = "Admins in this workspace: %v"
 listNoPMs = "No PMs in this channel! To add one, please, use `/add` slash command"
 listPMs = "PMs in this channel: %v"
 
+DeleteMembersFailed = "Could not remove the following members: %v\n"
+DeleteMembersSucceed = "The following members were removed: %v\n"
+
+DeletePMsFailed = "Could not remove the following PMs: %v\n"
+DeletePMsSucceed = "The following PMs were removed: %v\n"
+
+DeleteAdminsFailed = "Could not remove users as admins: %v\n"
+DeleteAdminsSucceed = "Users were removed as admins: %v\n"
+
 SomethingWentWrong = "Something went wrong. Please, try again later or report the problem to chatbot support!"
 HelpCommand = "Hello! Bellow you can see the list of commands and how to use them:\n`/add` /add @user1 @user2 / role ('admin'|'pm'|'developer'|''). You can add users with no role as well\n`/list` /list role ('admin'|'pm'|'developer'|'') lists users with the selected role\n`/delete` /delete @user1 @user2 / role ('admin'|'pm'|'developer'|'') unassigns users with selected roles\n"
