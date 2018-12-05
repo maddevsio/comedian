@@ -133,6 +133,15 @@ type Translate struct {
 	AddAdminsExist      string
 	AddAdminsAdded      string
 
+	DeleteMembersFailed  string
+	DeleteMembersSucceed string
+
+	DeletePMsFailed  string
+	DeletePMsSucceed string
+
+	DeleteAdminsFailed  string
+	DeleteAdminsSucceed string
+
 	SomethingWentWrong   string
 	HelpCommand          string
 	EmptyReportForSunday string
@@ -254,6 +263,15 @@ func GetTranslation(lang string) (Translate, error) {
 		"SomethingWentWrong",
 		"HelpCommand",
 		"EmptyReportForSunday",
+
+		"DeleteMembersFailed",
+		"DeleteMembersSucceed",
+
+		"DeletePMsFailed",
+		"DeletePMsSucceed",
+
+		"DeleteAdminsFailed",
+		"DeleteAdminsSucceed",
 	}
 
 	for _, t := range r {
@@ -285,6 +303,15 @@ func GetTranslation(lang string) (Translate, error) {
 		ListAdmins:       m["listAdmins"],
 		ListNoPMs:        m["listNoPMs"],
 		ListPMs:          m["listPMs"],
+
+		DeleteMembersFailed:  m["DeleteMembersFailed"],
+		DeleteMembersSucceed: m["DeleteMembersSucceed"],
+
+		DeletePMsFailed:  m["DeletePMsFailed"],
+		DeletePMsSucceed: m["DeletePMsSucceed"],
+
+		DeleteAdminsFailed:  m["DeleteAdminsFailed"],
+		DeleteAdminsSucceed: m["DeleteAdminsSucceed"],
 
 		AddStandupTimeNoUsers:        m["addStandupTimeNoUsers"],
 		AddStandupTime:               m["addStandupTime"],

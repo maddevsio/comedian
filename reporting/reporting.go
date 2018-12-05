@@ -94,7 +94,6 @@ func (r *Reporter) displayYesterdayTeamReport() {
 
 			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
 				commits = ""
-				commitsPoints++
 			}
 
 			if r.conf.CollectorEnabled == false || collectorError != nil {
@@ -102,6 +101,10 @@ func (r *Reporter) displayYesterdayTeamReport() {
 				worklogsPoints++
 				commits = ""
 				commitsPoints++
+			}
+
+			if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
+
 			}
 
 			standup, standupPoints = r.processStandup(member)
@@ -123,9 +126,9 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			switch points {
 			case 0:
 				attachment.Color = "danger"
-			case 1:
+			case 1, 2:
 				attachment.Color = "warning"
-			case 2, 3:
+			case 3:
 				attachment.Color = "good"
 			}
 
@@ -149,9 +152,7 @@ func (r *Reporter) displayYesterdayTeamReport() {
 
 		attachments = r.sortReportEntries(attachmentsPull)
 
-		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
-		}
+		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
 
 		allReports = append(allReports, attachments...)
 	}
@@ -253,9 +254,7 @@ func (r *Reporter) displayWeeklyTeamReport() {
 
 		attachments = r.sortReportEntries(attachmentsPull)
 
-		if channel.ChannelID == "G5ZEM8X7E" || channel.ChannelID == "G6H5YVB3Q" {
-			r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
-		}
+		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
 
 		allReports = append(allReports, attachments...)
 	}
@@ -264,7 +263,7 @@ func (r *Reporter) displayWeeklyTeamReport() {
 		return
 	}
 
-	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
+	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderWeekly, allReports)
 }
 
 func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
@@ -292,6 +291,9 @@ func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, 
 
 	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
 		worklogsEmoji = ""
+		if projectWorklogs == 0 {
+			return "", points
+		}
 	}
 
 	worklogs := fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
@@ -338,6 +340,9 @@ func (r *Reporter) processCommits(totalCommits, projectCommits int) (string, int
 
 	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
 		commitsEmoji = ""
+		if projectCommits == 0 {
+			return "", points
+		}
 	}
 
 	commits := fmt.Sprintf(r.conf.Translate.Commits, projectCommits, commitsEmoji)
