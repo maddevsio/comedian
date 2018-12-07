@@ -84,7 +84,12 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			var worklogs, commits, standup string
 			var worklogsPoints, commitsPoints, standupPoints int
 
-			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+			UserInfo, err := r.db.SelectUser(member.UserID)
+			if err != nil {
+				logrus.Errorf("SelectUser failed for  user %v: %v", UserInfo.UserName, err)
+				continue
+			}
+
 			dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, -1))
 
 			if collectorError == nil {
@@ -122,6 +127,13 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			})
 
 			points := worklogsPoints + commitsPoints + standupPoints
+
+			//attachment text will be depend on worklogsPoints,commitsPoints and standupPoints
+			if points == 3 {
+				attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, UserInfo.UserName, channel.ChannelName)
+			} else {
+				attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+			}
 
 			switch points {
 			case 0:
