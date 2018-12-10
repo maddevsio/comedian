@@ -129,8 +129,8 @@ func (r *Reporter) displayYesterdayTeamReport() {
 			points := worklogsPoints + commitsPoints + standupPoints
 
 			//attachment text will be depend on worklogsPoints,commitsPoints and standupPoints
-			if points == 3 {
-				attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, UserInfo.UserName, channel.ChannelName)
+			if points >= 3 {
+				attachment.Text = fmt.Sprintf(r.conf.Translate.NotTagStanduper, UserInfo.UserName, channel.ChannelName)
 			} else {
 				attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
 			}
