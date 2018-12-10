@@ -51,7 +51,7 @@ noStandup = " standup :x: "
 hasStandup = " standup :heavy_check_mark: "
 
 isRook = "<@%v> in #%v"
-
+NotTagStanduper="%v in #%v"
 
 wrongUsernameError = "Seems like you misspelled username. Please, check and try command again!"
 
