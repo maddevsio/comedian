@@ -64,6 +64,8 @@ noStandup = " стендап :x: "
 hasStandup = " стендап :heavy_check_mark: "
 
 isRook = "<@%v> в #%v"
+NotTagStanduper="%v в #%v"
+
 
 wrongUsernameError = "Кажется, вы допустили ошибку в имени пользователя. Пожалуйста, перепроверьте и попытайтесь еще раз!"
 

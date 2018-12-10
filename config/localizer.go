@@ -37,6 +37,7 @@ type Translate struct {
 	HasCommits          string
 	HasStandup          string
 	IsRook              string
+	NotTagStanduper     string
 	NotifyAllDone       string
 	NotifyNotAll        string
 	NotifyManagerNotAll string
@@ -174,7 +175,7 @@ func GetTranslation(lang string) (Translate, error) {
 	m := make(map[string]string)
 	r := []string{
 		"Worklogs", "Commits", "noCommits", "noStandup", "WorklogsTime",
-		"hasCommits", "hasStandup", "isRook", "notifyAllDone",
+		"hasCommits", "hasStandup", "isRook", "NotTagStanduper", "notifyAllDone",
 		"notifyNotAll", "notifyManagerNotAll", "notifyUsersWarning",
 		"notifyDirectMessage",
 		"reportByProjectAndUser", "reportOnProjectHead", "reportOnProjectCollectorData", "reportOnUserHead",
@@ -328,6 +329,7 @@ func GetTranslation(lang string) (Translate, error) {
 		HasCommits:                   m["hasCommits"],
 		HasStandup:                   m["hasStandup"],
 		IsRook:                       m["isRook"],
+		NotTagStanduper:              m["NotTagStanduper"],
 		NotifyAllDone:                m["notifyAllDone"],
 		NotifyNotAll:                 m["notifyNotAll"],
 		NotifyManagerNotAll:          m["notifyManagerNotAll"],
