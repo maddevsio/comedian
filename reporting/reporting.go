@@ -203,7 +203,12 @@ func (r *Reporter) displayWeeklyTeamReport() {
 			var worklogs, commits string
 			var worklogsPoints, commitsPoints int
 
-			attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+			UserInfo, err := r.db.SelectUser(member.UserID)
+			if err != nil {
+				logrus.Errorf("SelectUser failed for  user %v: %v", UserInfo.UserName, err)
+				continue
+			}
+
 			dataOnUser, dataOnUserInProject, collectorError := r.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, -1))
 
 			if collectorError == nil {
@@ -236,6 +241,13 @@ func (r *Reporter) displayWeeklyTeamReport() {
 			})
 
 			points := worklogsPoints + commitsPoints
+
+			//attachment text will be depend on worklogsPoints and commitsPoints
+			if points >= 2 {
+				attachment.Text = fmt.Sprintf(r.conf.Translate.NotTagStanduper, UserInfo.UserName, channel.ChannelName)
+			} else {
+				attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+			}
 
 			switch points {
 			case 0:
