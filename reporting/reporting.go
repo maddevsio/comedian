@@ -108,10 +108,6 @@ func (r *Reporter) displayYesterdayTeamReport() {
 				commitsPoints++
 			}
 
-			if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
-
-			}
-
 			standup, standupPoints = r.processStandup(member)
 
 			fieldValue := worklogs + commits + standup
