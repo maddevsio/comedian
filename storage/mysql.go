@@ -515,6 +515,7 @@ func (m *MySQL) MemberHasTimeTable(id int64) bool {
 
 //MemberShouldBeTracked returns true if member should be tracked
 func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
+	//todo 428
 	var tt model.TimeTable
 	err := m.conn.Get(&tt, "SELECT * FROM `timetables` WHERE channel_member_id=?", id)
 	if err != nil {
