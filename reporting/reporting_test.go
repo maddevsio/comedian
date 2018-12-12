@@ -15,6 +15,346 @@ import (
 	"gitlab.com/team-monitoring/comedian/model"
 )
 
+func TestDisplayYesterdayTeamReport(t *testing.T) {
+	d := time.Date(2018, 11, 10, 10, 0, 0, 0, time.Local)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	httpmock.Activate()
+	//user1's worklogs, commits
+	url1_1 := "www.collector.some/rest/api/v1/logger//users/uid1/2018-11-09/2018-11-09/"
+	httpmock.RegisterResponder("GET", url1_1, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":20000}`))
+	url1_2 := "www.collector.some/rest/api/v1/logger//user-in-project/uid1/testChannel1/2018-11-09/2018-11-09/"
+	httpmock.RegisterResponder("GET", url1_2, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":20000}`))
+	//user2's worlogs, commits
+	url2_1 := "www.collector.some/rest/api/v1/logger//users/uid2/2018-11-09/2018-11-09/"
+	httpmock.RegisterResponder("GET", url2_1, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":28000}`))
+	url2_2 := "www.collector.some/rest/api/v1/logger//user-in-project/uid2/testChannel1/2018-11-09/2018-11-09/"
+	httpmock.RegisterResponder("GET", url2_2, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":28000}`))
+	//user4's worklogs, commits
+	url4_1 := "www.collector.some/rest/api/v1/logger//users/uid4/2018-11-09/2018-11-09/"
+	httpmock.RegisterResponder("GET", url4_1, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":28000}`))
+	url4_2 := "www.collector.some/rest/api/v1/logger//user-in-project/uid4/testChannel1/2018-11-09/2018-11-09/"
+	httpmock.RegisterResponder("GET", url4_2, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":28000}`))
+
+	//creates channel with channel members
+	channel1, err := r.db.CreateChannel(model.Channel{
+		ChannelName: "testChannel1",
+		ChannelID:   "chanId1",
+	})
+	assert.NoError(t, err)
+	//creates channel without channel members
+	channel2, err := r.db.CreateChannel(model.Channel{
+		ChannelName: "testChannel2",
+		ChannelID:   "chanId2",
+	})
+	assert.NoError(t, err)
+
+	//creates channel members of channel1
+	//with timetable where Monday=0,Tuesday=0...Sunday=0
+	//channelMember1 doesn't obey send standup
+	channelMember1, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid1",
+		ChannelID:     channel1.ChannelID,
+		RoleInChannel: "",
+		Created:       time.Now(),
+	})
+	assert.NoError(t, err)
+	user1, err := r.db.CreateUser(model.User{
+		UserName: "username1",
+		UserID:   channelMember1.UserID,
+		Role:     "",
+	})
+	assert.NoError(t, err)
+	timeTable1, err := r.db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: channelMember1.ID,
+		Created:         time.Now(),
+		Modified:        time.Now(),
+		Monday:          0,
+		Tuesday:         0,
+		Wednesday:       0,
+		Thursday:        0,
+		Friday:          0,
+		Saturday:        0,
+		Sunday:          0,
+	})
+	assert.NoError(t, err)
+	_, err = r.db.UpdateTimeTable(timeTable1)
+	assert.NoError(t, err)
+
+	//creates channel members channel1
+	//channelMember2 hasn't timetable and must sends standup
+	channelMember2, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid2",
+		ChannelID:     channel1.ChannelID,
+		RoleInChannel: "",
+		Created:       time.Now(),
+	})
+	assert.NoError(t, err)
+	user2, err := r.db.CreateUser(model.User{
+		UserName: "username2",
+		UserID:   channelMember2.UserID,
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	//create channel member channel1 without raw in users table
+	channelMember3, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid3",
+		ChannelID:     channel1.ChannelID,
+		RoleInChannel: "",
+		Created:       time.Now(),
+	})
+	assert.NoError(t, err)
+
+	//creates channel members of channel1
+	//with timetable where Monday=0,Tuesday=0...Sunday=0
+	//channelMember4 doesn't obey send standup
+	channelMember4, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid4",
+		ChannelID:     channel1.ChannelID,
+		RoleInChannel: "",
+		Created:       time.Now(),
+	})
+	assert.NoError(t, err)
+	user4, err := r.db.CreateUser(model.User{
+		UserName: "username4",
+		UserID:   channelMember4.UserID,
+		Role:     "",
+	})
+	assert.NoError(t, err)
+	timeTable2, err := r.db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: channelMember4.ID,
+		Created:         time.Now(),
+		Modified:        time.Now(),
+		Monday:          0,
+		Tuesday:         0,
+		Wednesday:       0,
+		Thursday:        0,
+		Friday:          0,
+		Saturday:        0,
+		Sunday:          0,
+	})
+	assert.NoError(t, err)
+	_, err = r.db.UpdateTimeTable(timeTable1)
+	assert.NoError(t, err)
+
+	testCase := []struct {
+		ExpectedReport string
+	}{
+		{"Yesterday report%!(EXTRA []slack.Attachment=[{good   0         username2 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   } {good   0         username4 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   } {warning   0         <@uid1> in #testChannel1   [{  worklogs: 5:33 :disappointed: | commits: 1 :wink: | false}] [] []   }])"},
+		//{good   0         username2 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   }
+		//channelMember2 must sends standup but IsNonReporter() return error
+		//{warning   0         <@uid1> in #testChannel1   [{  worklogs: 5:33 :disappointed: | commits: 1 :wink: | false}] [] []   }]
+		//channelMember1 doesn't obey sends standup but he has not enough worklogs
+		//{good   0         username4 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   }
+		//channelMember4 doen't obey send standup and he has enough worklogs
+	}
+	for _, test := range testCase {
+		actualReport, _ := r.displayYesterdayTeamReport()
+		assert.Equal(t, test.ExpectedReport, actualReport)
+	}
+	httpmock.DeactivateAndReset()
+	//delete user
+	err = r.db.DeleteUser(user1.ID)
+	assert.NoError(t, err)
+	err = r.db.DeleteUser(user2.ID)
+	assert.NoError(t, err)
+	err = r.db.DeleteUser(user4.ID)
+	assert.NoError(t, err)
+	//delete timetables
+	err = r.db.DeleteTimeTable(timeTable1.ID)
+	assert.NoError(t, err)
+	err = r.db.DeleteTimeTable(timeTable2.ID)
+	assert.NoError(t, err)
+	//delete channel members
+	err = r.db.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	err = r.db.DeleteChannelMember(channelMember2.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	err = r.db.DeleteChannelMember(channelMember3.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	err = r.db.DeleteChannelMember(channelMember4.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	//delete channels
+	err = r.db.DeleteChannel(channel1.ID)
+	assert.NoError(t, err)
+	err = r.db.DeleteChannel(channel2.ID)
+	assert.NoError(t, err)
+}
+
+func TestDisplayWeeklyTeamReport(t *testing.T) {
+	d := time.Date(2018, 11, 10, 10, 0, 0, 0, time.Local)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := chat.NewSlack(c)
+	assert.NoError(t, err)
+	r := NewReporter(s)
+
+	httpmock.Activate()
+	//user1's worklogs, commits
+	url1_1 := "www.collector.some/rest/api/v1/logger//users/uid1/2018-11-03/2018-11-09/"
+	httpmock.RegisterResponder("GET", url1_1, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":20000}`))
+	url1_2 := "www.collector.some/rest/api/v1/logger//user-in-project/uid1/testChannel1/2018-11-03/2018-11-09/"
+	httpmock.RegisterResponder("GET", url1_2, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":20000}`))
+	//user2's worlogs, commits
+	url2_1 := "www.collector.some/rest/api/v1/logger//users/uid2/2018-11-03/2018-11-09/"
+	httpmock.RegisterResponder("GET", url2_1, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":144000}`))
+	url2_2 := "www.collector.some/rest/api/v1/logger//user-in-project/uid2/testChannel1/2018-11-03/2018-11-09/"
+	httpmock.RegisterResponder("GET", url2_2, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":144000}`))
+	//user4's worklogs, commits
+	url4_1 := "www.collector.some/rest/api/v1/logger//users/uid4/2018-11-03/2018-11-09/"
+	httpmock.RegisterResponder("GET", url4_1, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":144000}`))
+	url4_2 := "www.collector.some/rest/api/v1/logger//user-in-project/uid4/testChannel1/2018-11-03/2018-11-09/"
+	httpmock.RegisterResponder("GET", url4_2, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":144000}`))
+
+	//creates channel with channel members
+	channel1, err := r.db.CreateChannel(model.Channel{
+		ChannelName: "testChannel1",
+		ChannelID:   "chanId1",
+	})
+	assert.NoError(t, err)
+	//creates channel without channel members
+	channel2, err := r.db.CreateChannel(model.Channel{
+		ChannelName: "testChannel2",
+		ChannelID:   "chanId2",
+	})
+	assert.NoError(t, err)
+
+	//creates channel members of channel1
+	//with timetable where Monday=0,Tuesday=0...Sunday=0
+	//channelMember1 doesn't obey send standup
+	channelMember1, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid1",
+		ChannelID:     channel1.ChannelID,
+		RoleInChannel: "",
+		Created:       time.Now(),
+	})
+	assert.NoError(t, err)
+	user1, err := r.db.CreateUser(model.User{
+		UserName: "username1",
+		UserID:   channelMember1.UserID,
+		Role:     "",
+	})
+	assert.NoError(t, err)
+	timeTable1, err := r.db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: channelMember1.ID,
+		Created:         time.Now(),
+		Modified:        time.Now(),
+		Monday:          0,
+		Tuesday:         0,
+		Wednesday:       0,
+		Thursday:        0,
+		Friday:          0,
+		Saturday:        0,
+		Sunday:          0,
+	})
+	assert.NoError(t, err)
+	_, err = r.db.UpdateTimeTable(timeTable1)
+	assert.NoError(t, err)
+
+	//creates channel members channel1
+	//channelMember2 hasn't timetable and must sends standup
+	channelMember2, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid2",
+		ChannelID:     channel1.ChannelID,
+		RoleInChannel: "",
+		Created:       time.Now(),
+	})
+	assert.NoError(t, err)
+	user2, err := r.db.CreateUser(model.User{
+		UserName: "username2",
+		UserID:   channelMember2.UserID,
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	//create channel member channel1 without raw in users table
+	channelMember3, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid3",
+		ChannelID:     channel1.ChannelID,
+		RoleInChannel: "",
+		Created:       time.Now(),
+	})
+	assert.NoError(t, err)
+
+	//creates channel members of channel1
+	//with timetable where Monday=0,Tuesday=0...Sunday=0
+	//channelMember4 doesn't obey send standup
+	channelMember4, err := r.db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid4",
+		ChannelID:     channel1.ChannelID,
+		RoleInChannel: "",
+		Created:       time.Now(),
+	})
+	assert.NoError(t, err)
+	user4, err := r.db.CreateUser(model.User{
+		UserName: "username4",
+		UserID:   channelMember4.UserID,
+		Role:     "",
+	})
+	assert.NoError(t, err)
+	timeTable2, err := r.db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: channelMember4.ID,
+		Created:         time.Now(),
+		Modified:        time.Now(),
+		Monday:          0,
+		Tuesday:         0,
+		Wednesday:       0,
+		Thursday:        0,
+		Friday:          0,
+		Saturday:        0,
+		Sunday:          0,
+	})
+	assert.NoError(t, err)
+	_, err = r.db.UpdateTimeTable(timeTable1)
+	assert.NoError(t, err)
+
+	testCase := []struct {
+		ExpectedReport string
+	}{
+		{"Weekly report%!(EXTRA []slack.Attachment=[{good   0         username2 in #testChannel1   [{  worklogs: 40:00 :sunglasses: | commits: 1 :wink: | false}] [] []   } {good   0         username4 in #testChannel1   [{  worklogs: 40:00 :sunglasses: | commits: 1 :wink: | false}] [] []   } {warning   0         <@uid1> in #testChannel1   [{  worklogs: 5:33 :disappointed: | commits: 1 :wink: | false}] [] []   }])"},
+	}
+	for _, test := range testCase {
+		actualReport, _ := r.displayWeeklyTeamReport()
+		assert.Equal(t, test.ExpectedReport, actualReport)
+	}
+	httpmock.DeactivateAndReset()
+	//delete user
+	err = r.db.DeleteUser(user1.ID)
+	assert.NoError(t, err)
+	err = r.db.DeleteUser(user2.ID)
+	assert.NoError(t, err)
+	err = r.db.DeleteUser(user4.ID)
+	assert.NoError(t, err)
+	//delete timetables
+	err = r.db.DeleteTimeTable(timeTable1.ID)
+	assert.NoError(t, err)
+	err = r.db.DeleteTimeTable(timeTable2.ID)
+	assert.NoError(t, err)
+	//delete channel members
+	err = r.db.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	err = r.db.DeleteChannelMember(channelMember2.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	err = r.db.DeleteChannelMember(channelMember3.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	err = r.db.DeleteChannelMember(channelMember4.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	//delete channels
+	err = r.db.DeleteChannel(channel1.ID)
+	assert.NoError(t, err)
+	err = r.db.DeleteChannel(channel2.ID)
+	assert.NoError(t, err)
+}
+
 func TestStandupReportByProject(t *testing.T) {
 	d := time.Date(2018, 6, 5, 0, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })

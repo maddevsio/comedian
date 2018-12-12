@@ -48,19 +48,37 @@ func NewReporter(slack *chat.Slack) *Reporter {
 
 // Start starts all team monitoring treads
 func (r *Reporter) Start() {
-	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.displayYesterdayTeamReport)
-	gocron.Every(1).Sunday().At(r.conf.ReportTime).Do(r.displayWeeklyTeamReport)
+	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.CallDisplayYesterdayTeamReport)
+	gocron.Every(1).Sunday().At(r.conf.ReportTime).Do(r.CallDisplayWeeklyTeamReport)
 
 }
 
-// teamReport generates report on users who submit standups
-func (r *Reporter) displayYesterdayTeamReport() {
+// CallDisplayYesterdayTeamReport calls displayYesterdayTeamReport
+func (r *Reporter) CallDisplayYesterdayTeamReport() {
+	_, err := r.displayYesterdayTeamReport()
+	if err != nil {
+		logrus.Error("Error in displayYesterdayTeamReport: ", err)
+		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fmt.Sprintf("Error sending yesterday report: %v", err))
+	}
+}
+
+// CallDisplayWeeklyTeamReport calls displayWeeklyTeamReport
+func (r *Reporter) CallDisplayWeeklyTeamReport() {
+	_, err := r.displayWeeklyTeamReport()
+	if err != nil {
+		logrus.Error("Error in displayWeeklyTeamReport: ", err)
+		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fmt.Sprintf("Error sending weekly report: %v", err))
+	}
+}
+
+// displayYesterdayTeamReport generates report on users who submit standups
+func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) {
 	var allReports []slack.Attachment
 
 	channels, err := r.db.GetAllChannels()
 	if err != nil {
 		logrus.Errorf("GetAllChannels failed: %v", err)
-		return
+		return FinalReport, err
 	}
 
 	for _, channel := range channels {
@@ -170,16 +188,18 @@ func (r *Reporter) displayYesterdayTeamReport() {
 	}
 
 	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
+	FinalReport = fmt.Sprintf(r.conf.Translate.ReportHeader, allReports)
+	return FinalReport, nil
 }
 
-// teamReport generates report on users who submit standups
-func (r *Reporter) displayWeeklyTeamReport() {
+// displayWeeklyTeamReport generates report on users who submit standups
+func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 	var allReports []slack.Attachment
 
 	channels, err := r.db.GetAllChannels()
 	if err != nil {
 		logrus.Errorf("GetAllChannels failed: %v", err)
-		return
+		return FinalReport, err
 	}
 
 	for _, channel := range channels {
@@ -284,6 +304,8 @@ func (r *Reporter) displayWeeklyTeamReport() {
 	}
 
 	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderWeekly, allReports)
+	FinalReport = fmt.Sprintf(r.conf.Translate.ReportHeaderWeekly, allReports)
+	return FinalReport, nil
 }
 
 func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
