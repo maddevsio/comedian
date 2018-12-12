@@ -55,16 +55,24 @@ func (r *Reporter) Start() {
 
 // CallDisplayYesterdayTeamReport calls displayYesterdayTeamReport
 func (r *Reporter) CallDisplayYesterdayTeamReport() {
-	r.displayYesterdayTeamReport()
+	_, err := r.displayYesterdayTeamReport()
+	if err != nil {
+		logrus.Error("Error in displayYesterdayTeamReport: ", err)
+		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fmt.Sprintf("Error sending yesterday report: %v", err))
+	}
 }
 
 // CallDisplayWeeklyTeamReport calls displayWeeklyTeamReport
 func (r *Reporter) CallDisplayWeeklyTeamReport() {
-	r.displayWeeklyTeamReport()
+	_, err := r.displayWeeklyTeamReport()
+	if err != nil {
+		logrus.Error("Error in displayWeeklyTeamReport: ", err)
+		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fmt.Sprintf("Error sending weekly report: %v", err))
+	}
 }
 
 // displayYesterdayTeamReport generates report on users who submit standups
-func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, e error) {
+func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) {
 	var allReports []slack.Attachment
 
 	channels, err := r.db.GetAllChannels()
