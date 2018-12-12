@@ -60,7 +60,7 @@ func SplitTimeTalbeCommand(t, on, at string) (string, string, int64, error) {
 	}
 	users := strings.TrimSpace(a[0])
 	b := strings.Split(a[1], at)
-	if len(a) != 2 {
+	if len(b) != 2 {
 		return "", "", int64(0), errors.New("Sorry, could not understand where are the weekdays and where is the time. Please, check the text for mistakes and try again")
 	}
 	weekdays := strings.ToLower(strings.TrimSpace(b[0]))
