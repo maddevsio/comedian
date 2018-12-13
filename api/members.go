@@ -182,8 +182,8 @@ func (r *REST) addAdmins(users []string) string {
 	return text
 }
 
-func (r *REST) listMembers(channel, role string) string {
-	members, err := r.db.ListChannelMembersByRole(channel, role)
+func (r *REST) listMembers(channelID, role string) string {
+	members, err := r.db.ListChannelMembersByRole(channelID, role)
 	if err != nil {
 		return fmt.Sprintf("failed to list members :%v\n", err)
 	}
