@@ -141,3 +141,12 @@ func SetupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
 	numberOfDays := int(dateToRounded.Sub(dateFromRounded).Hours() / 24)
 	return dateFromRounded, numberOfDays, nil
 }
+
+//CommandParsing parses string into command Title and Command Body
+func CommandParsing(text string) (commandTitle, commandBody string) {
+	text = strings.TrimSpace(text)
+	splitText := strings.Split(text, " ")
+	commandTitle = splitText[0]
+	commandBody = strings.Join(splitText[1:], " ")
+	return commandTitle, commandBody
+}
