@@ -39,7 +39,7 @@ func (r *REST) addCommand(accessLevel int, channelID, params string) string {
 		}
 		return r.addMembers(members, "pm", channelID)
 	default:
-		return r.conf.Translate.NeedCorrectUserRole
+		return r.displayHelpText("add")
 	}
 }
 
@@ -52,7 +52,7 @@ func (r *REST) listCommand(channelID, params string) string {
 	case "pm", "пм":
 		return r.listMembers(channelID, "pm")
 	default:
-		return r.conf.Translate.NeedCorrectUserRole
+		return r.displayHelpText("show")
 	}
 }
 
@@ -80,7 +80,7 @@ func (r *REST) deleteCommand(accessLevel int, channelID, params string) string {
 		}
 		return r.deleteMembers(members, channelID)
 	default:
-		return r.conf.Translate.NeedCorrectUserRole
+		return r.displayHelpText("remove")
 	}
 }
 

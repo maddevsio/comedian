@@ -14,11 +14,11 @@ import (
 func (r *REST) generateReportOnProject(accessLevel int, params string) string {
 	commandParams := strings.Fields(params)
 	if len(commandParams) != 3 {
-		return r.conf.Translate.WrongNArgs
+		return r.displayHelpText("report_on_project")
 	}
 	channelName, err := GetChannelNameFromString(commandParams[0])
 	if err != nil {
-		logrus.Error("Something wrong. Unexpected error")
+		r.displayHelpText("report_on_project")
 	}
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
@@ -71,11 +71,11 @@ func (r *REST) generateReportOnProject(accessLevel int, params string) string {
 func (r *REST) generateReportOnUser(accessLevel int, params string) string {
 	commandParams := strings.Fields(params)
 	if len(commandParams) != 3 {
-		return r.conf.Translate.WrongNArgs
+		return r.displayHelpText("report_on_user")
 	}
 	username, err := GetUserNameFromString(commandParams[0])
 	if err != nil {
-		logrus.Error("Something wrong. Unexpected error")
+		r.displayHelpText("report_on_user")
 	}
 	user, err := r.db.SelectUserByUserName(username)
 	if err != nil {
@@ -121,11 +121,11 @@ func (r *REST) generateReportOnUser(accessLevel int, params string) string {
 func (r *REST) generateReportOnUserInProject(accessLevel int, params string) string {
 	commandParams := strings.Fields(params)
 	if len(commandParams) != 4 {
-		return r.conf.Translate.WrongNArgs
+		return r.displayHelpText("report_on_user_in_project")
 	}
 	channelName, err := GetChannelNameFromString(commandParams[0])
 	if err != nil {
-		logrus.Error("Something wrong. Unexpected error")
+		r.displayHelpText("report_on_user_in_project")
 	}
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
@@ -136,11 +136,11 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 	channel, err := r.db.SelectChannel(channelID)
 	if err != nil {
 		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
-		return err.Error()
+		return "Could not select channlel! \n" + r.displayHelpText("report_on_user_in_project")
 	}
 	username, err := GetUserNameFromString(commandParams[1])
 	if err != nil {
-		logrus.Error("Something wrong. Unexpected error")
+		return "Could not get user! \n" + r.displayHelpText("report_on_user_in_project")
 	}
 
 	user, err := r.db.SelectUserByUserName(username)
@@ -155,12 +155,12 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return err.Error()
+		return "Could not parse date from! \n" + r.displayHelpText("report_on_user_in_project")
 	}
 	dateTo, err := time.Parse("2006-01-02", commandParams[3])
 	if err != nil {
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return err.Error()
+		return "Could not parse date to! \n" + r.displayHelpText("report_on_user_in_project")
 	}
 
 	report, err := r.report.StandupReportByProjectAndUser(channel, member.UserID, dateFrom, dateTo)

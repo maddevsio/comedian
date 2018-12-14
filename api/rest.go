@@ -98,7 +98,7 @@ func (r *REST) implementCommands(form FullSlackForm) string {
 	switch command {
 	case "add":
 		return r.addCommand(accessLevel, form.ChannelID, params)
-	case "list":
+	case "show":
 		return r.listCommand(form.ChannelID, params)
 	case "remove":
 		return r.deleteCommand(accessLevel, form.ChannelID, params)
@@ -121,7 +121,7 @@ func (r *REST) implementCommands(form FullSlackForm) string {
 	case "report_on_user_in_project":
 		return r.generateReportOnUserInProject(accessLevel, params)
 	default:
-		return r.displayHelpText()
+		return r.displayHelpText("")
 	}
 }
 
