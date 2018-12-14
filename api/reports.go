@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -15,7 +16,10 @@ func (r *REST) generateReportOnProject(accessLevel int, params string) string {
 	if len(commandParams) != 3 {
 		return r.conf.Translate.WrongNArgs
 	}
-	channelName := strings.Replace(commandParams[0], "#", "", -1)
+	channelName, err := GetChannelNameFromString(commandParams[0])
+	if err != nil {
+		logrus.Error("Something wrong. Unexpected error")
+	}
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
@@ -69,7 +73,10 @@ func (r *REST) generateReportOnUser(accessLevel int, params string) string {
 	if len(commandParams) != 3 {
 		return r.conf.Translate.WrongNArgs
 	}
-	username := strings.Replace(commandParams[0], "@", "", -1)
+	username, err := GetUserNameFromString(commandParams[0])
+	if err != nil {
+		logrus.Error("Something wrong. Unexpected error")
+	}
 	user, err := r.db.SelectUserByUserName(username)
 	if err != nil {
 		return "User does not exist!"
@@ -116,8 +123,10 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 	if len(commandParams) != 4 {
 		return r.conf.Translate.WrongNArgs
 	}
-
-	channelName := strings.Replace(commandParams[0], "#", "", -1)
+	channelName, err := GetChannelNameFromString(commandParams[0])
+	if err != nil {
+		logrus.Error("Something wrong. Unexpected error")
+	}
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
@@ -129,8 +138,10 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
 		return err.Error()
 	}
-
-	username := strings.Replace(commandParams[1], "@", "", -1)
+	username, err := GetUserNameFromString(commandParams[1])
+	if err != nil {
+		logrus.Error("Something wrong. Unexpected error")
+	}
 
 	user, err := r.db.SelectUserByUserName(username)
 	if err != nil {
@@ -176,4 +187,38 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 		}
 	}
 	return text
+}
+
+//GetChannelNameFromString return channel name
+func GetChannelNameFromString(channel string) (string, error) {
+	var channelName string
+	rg, err := regexp.Compile("<#([a-z0-9]+)|([a-z0-9]+)>")
+	if err != nil {
+		logrus.Error("Error in regexp.Compile")
+	}
+	//if <#channelname>
+	if rg.MatchString(channel) {
+		_, channelName = utils.SplitChannel(channel)
+	} else {
+		//#channelname
+		channelName = strings.Replace(channel, "#", "", -1)
+	}
+	return channelName, err
+}
+
+//GetUserNameFromString return username
+func GetUserNameFromString(user string) (string, error) {
+	var username string
+	rg, err := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+	if err != nil {
+		logrus.Error("Error in regexp.Compile")
+	}
+	//if <@userid|username>
+	if rg.MatchString(user) {
+		_, username = utils.SplitUser(user)
+	} else {
+		//@username
+		username = strings.Replace(user, "@", "", -1)
+	}
+	return username, err
 }

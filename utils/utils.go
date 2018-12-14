@@ -20,6 +20,14 @@ func SplitUser(user string) (string, string) {
 	return userID, userName
 }
 
+//SplitChannel divides full channel object to name & id
+func SplitChannel(channel string) (string, string) {
+	channelFull := strings.Split(channel, "|")
+	channelID := strings.Replace(channelFull[0], "<#", "", -1)
+	channelName := strings.Replace(channelFull[1], ">", "", -1)
+	return channelID, channelName
+}
+
 //SecondsToHuman converts seconds (int) to HH:MM format
 func SecondsToHuman(input int) string {
 	hours := math.Floor(float64(input) / 60 / 60)
