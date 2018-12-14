@@ -72,7 +72,7 @@ func generateHelpText() HelpText {
 
 func (ht HelpText) showAllHelp() string {
 	textHead := "Below you will see examples of how to use Comedian slash commands: \n"
-	textBody := ht.AddMembers + ht.ShowMembers + ht.RemoveMembers
+	textBody := ht.AddMembers + ht.ShowMembers + ht.RemoveMembers + ht.AddDeadline + ht.ShowDeadline + ht.RemoveDeadline + ht.AddTimetable + ht.RemoveTimetable + ht.ShowTimetable + ht.ReportOnUser + ht.ReportOnProject + ht.ReportOnUserInProject
 
 	return textHead + textBody
 }

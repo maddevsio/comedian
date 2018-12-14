@@ -123,7 +123,7 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 	if len(commandParams) != 4 {
 		return r.displayHelpText("report_on_user_in_project")
 	}
-	channelName, err := GetChannelNameFromString(commandParams[0])
+	channelName, err := GetChannelNameFromString(commandParams[1])
 	if err != nil {
 		r.displayHelpText("report_on_user_in_project")
 	}
@@ -138,7 +138,7 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
 		return "Could not select channlel! \n" + r.displayHelpText("report_on_user_in_project")
 	}
-	username, err := GetUserNameFromString(commandParams[1])
+	username, err := GetUserNameFromString(commandParams[0])
 	if err != nil {
 		return "Could not get user! \n" + r.displayHelpText("report_on_user_in_project")
 	}
