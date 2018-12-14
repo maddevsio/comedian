@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"testing"
@@ -51,8 +50,10 @@ func TestAddTimeTable(t *testing.T) {
 	//calculate hours and minutes from timestamp
 	//there may be different values on different computers
 	timeSt := time.Unix(12345, 0)
-	hour := strconv.Itoa(timeSt.Hour())
-	minute := strconv.Itoa(timeSt.Minute())
+	hour := timeSt.Hour()
+	minute := timeSt.Minute()
+	Strhour := strconv.Itoa(hour)
+	Strminute := strconv.Itoa(minute)
 
 	testCase := []struct {
 		accessLevel int
@@ -74,7 +75,12 @@ func TestAddTimeTable(t *testing.T) {
 	for _, test := range testCase {
 		actual := r.addTimeTable(test.accessLevel, test.channelID, test.params)
 		//replace "08:25" on calculated hour and minute from timestamp
-		expected := strings.Replace(test.expected, "08:25", "0"+hour+":"+minute, -1)
+		var expected string
+		if hour < 9 {
+			expected = strings.Replace(test.expected, "08:25", "0"+Strhour+":"+Strminute, -1)
+		} else {
+			expected = strings.Replace(test.expected, "08:25", Strhour+":"+Strminute, -1)
+		}
 		assert.Equal(t, expected, actual)
 	}
 	//delete timetable
@@ -132,8 +138,10 @@ func TestShowTimeTable(t *testing.T) {
 	//calculate hours and minutes from timestamp
 	//there may be different values on different computers
 	timeSt := time.Unix(12345, 0)
-	hour := strconv.Itoa(timeSt.Hour())
-	minute := strconv.Itoa(timeSt.Minute())
+	hour := timeSt.Hour()
+	minute := timeSt.Minute()
+	Strhour := strconv.Itoa(hour)
+	Strminute := strconv.Itoa(minute)
 	//updates timetable
 	_, err = r.db.UpdateTimeTable(timeTable1)
 	assert.NoError(t, err)
@@ -161,8 +169,12 @@ func TestShowTimeTable(t *testing.T) {
 	for _, test := range testCases {
 		actual := r.showTimeTable(test.accessLevel, test.channelID, test.params)
 		//replace "08:25" on calculated hour and minute from timestamp
-		expected := strings.Replace(test.expected, "08:25", "0"+hour+":"+minute, -1)
-		log.Println(expected)
+		var expected string
+		if hour < 9 {
+			expected = strings.Replace(test.expected, "08:25", "0"+Strhour+":"+Strminute, -1)
+		} else {
+			expected = strings.Replace(test.expected, "08:25", Strhour+":"+Strminute, -1)
+		}
 		assert.Equal(t, expected, actual)
 	}
 	//deletes timetables
