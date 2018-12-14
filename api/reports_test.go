@@ -187,3 +187,37 @@ func TestGenerateReportOnUserInProject(t *testing.T) {
 	err = r.db.DeleteChannel(Channel2.ID)
 	assert.NoError(t, err)
 }
+
+func TestGetChannelNameFromString(t *testing.T) {
+	testCase := []struct {
+		channel     string
+		expected    string
+		expectedErr error
+	}{
+		{"channel", "channel", nil},
+		{"#channel", "channel", nil},
+		{"<#channelid|channelname>", "channelname", nil},
+	}
+	for _, test := range testCase {
+		actual, err := GetChannelNameFromString(test.channel)
+		assert.Equal(t, test.expected, actual)
+		assert.Equal(t, test.expectedErr, err)
+	}
+}
+
+func TestGetUserNameFromString(t *testing.T) {
+	testCase := []struct {
+		channel     string
+		expected    string
+		expectedErr error
+	}{
+		{"user", "user", nil},
+		{"@user", "user", nil},
+		{"<@userid|username>", "username", nil},
+	}
+	for _, test := range testCase {
+		actual, err := GetUserNameFromString(test.channel)
+		assert.Equal(t, test.expected, actual)
+		assert.Equal(t, test.expectedErr, err)
+	}
+}
