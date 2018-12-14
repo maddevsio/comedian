@@ -20,6 +20,14 @@ func SplitUser(user string) (string, string) {
 	return userID, userName
 }
 
+//SplitChannel divides full channel object to name & id
+func SplitChannel(channel string) (string, string) {
+	channelFull := strings.Split(channel, "|")
+	channelID := strings.Replace(channelFull[0], "<#", "", -1)
+	channelName := strings.Replace(channelFull[1], ">", "", -1)
+	return channelID, channelName
+}
+
 //SecondsToHuman converts seconds (int) to HH:MM format
 func SecondsToHuman(input int) string {
 	hours := math.Floor(float64(input) / 60 / 60)
@@ -140,4 +148,13 @@ func SetupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
 	dateToRounded := time.Date(dateTo.Year(), dateTo.Month(), dateTo.Day(), 0, 0, 0, 0, time.UTC)
 	numberOfDays := int(dateToRounded.Sub(dateFromRounded).Hours() / 24)
 	return dateFromRounded, numberOfDays, nil
+}
+
+//CommandParsing parses string into command Title and Command Body
+func CommandParsing(text string) (commandTitle, commandBody string) {
+	text = strings.TrimSpace(text)
+	splitText := strings.Split(text, " ")
+	commandTitle = splitText[0]
+	commandBody = strings.Join(splitText[1:], " ")
+	return commandTitle, commandBody
 }
