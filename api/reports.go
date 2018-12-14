@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -15,7 +16,15 @@ func (r *REST) generateReportOnProject(accessLevel int, params string) string {
 	if len(commandParams) != 3 {
 		return r.conf.Translate.WrongNArgs
 	}
-	channelName := strings.Replace(commandParams[0], "#", "", -1)
+	var channelName string
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+	//if <#channelname>
+	if rg.MatchString(commandParams[0]) {
+		_, channelName = utils.SplitChannel(commandParams[0])
+	} else {
+		//#channelname
+		channelName = strings.Replace(commandParams[0], "#", "", -1)
+	}
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
@@ -69,7 +78,15 @@ func (r *REST) generateReportOnUser(accessLevel int, params string) string {
 	if len(commandParams) != 3 {
 		return r.conf.Translate.WrongNArgs
 	}
-	username := strings.Replace(commandParams[0], "@", "", -1)
+	var username string
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+	//if <@userid|username>
+	if rg.MatchString(commandParams[0]) {
+		_, username = utils.SplitUser(commandParams[0])
+	} else {
+		//@username
+		username = strings.Replace(commandParams[0], "@", "", -1)
+	}
 	user, err := r.db.SelectUserByUserName(username)
 	if err != nil {
 		return "User does not exist!"
@@ -116,8 +133,15 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 	if len(commandParams) != 4 {
 		return r.conf.Translate.WrongNArgs
 	}
-
-	channelName := strings.Replace(commandParams[0], "#", "", -1)
+	var channelName string
+	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
+	if rg.MatchString(commandParams[0]) {
+		//<#channelid|channelname>
+		_, channelName = utils.SplitChannel(commandParams[0])
+	} else {
+		//#channelname
+		channelName = strings.Replace(commandParams[0], "#", "", -1)
+	}
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
@@ -129,8 +153,14 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
 		return err.Error()
 	}
-
-	username := strings.Replace(commandParams[1], "@", "", -1)
+	var username string
+	if rg.MatchString(commandParams[1]) {
+		//<@userid|username>
+		_, username = utils.SplitUser(commandParams[1])
+	} else {
+		//@username
+		username = strings.Replace(commandParams[1], "@", "", -1)
+	}
 
 	user, err := r.db.SelectUserByUserName(username)
 	if err != nil {
