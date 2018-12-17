@@ -25,17 +25,17 @@ func (r *REST) addCommand(accessLevel int, channelID, params string) string {
 	switch role {
 	case "admin", "админ":
 		if accessLevel > 2 {
-			return r.conf.Translate.AccessAtLeastAdmin
+			return r.slack.Translate.AccessAtLeastAdmin
 		}
 		return r.addAdmins(members)
 	case "developer", "разработчик", "":
 		if accessLevel > 3 {
-			return r.conf.Translate.AccessAtLeastPM
+			return r.slack.Translate.AccessAtLeastPM
 		}
 		return r.addMembers(members, "developer", channelID)
 	case "pm", "пм":
 		if accessLevel > 2 {
-			return r.conf.Translate.AccessAtLeastAdmin
+			return r.slack.Translate.AccessAtLeastAdmin
 		}
 		return r.addMembers(members, "pm", channelID)
 	default:
@@ -71,12 +71,12 @@ func (r *REST) deleteCommand(accessLevel int, channelID, params string) string {
 	switch role {
 	case "admin", "админ":
 		if accessLevel > 2 {
-			return r.conf.Translate.AccessAtLeastAdmin
+			return r.slack.Translate.AccessAtLeastAdmin
 		}
 		return r.deleteAdmins(members)
 	case "developer", "разработчик", "pm", "пм", "":
 		if accessLevel > 3 {
-			return r.conf.Translate.AccessAtLeastPM
+			return r.slack.Translate.AccessAtLeastPM
 		}
 		return r.deleteMembers(members, channelID)
 	default:
@@ -114,25 +114,25 @@ func (r *REST) addMembers(users []string, role, channel string) string {
 
 	if len(failed) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(r.conf.Translate.AddPMsFailed, failed)
+			text += fmt.Sprintf(r.slack.Translate.AddPMsFailed, failed)
 		} else {
-			text += fmt.Sprintf(r.conf.Translate.AddMembersFailed, failed)
+			text += fmt.Sprintf(r.slack.Translate.AddMembersFailed, failed)
 		}
 
 	}
 	if len(exist) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(r.conf.Translate.AddPMsExist, exist)
+			text += fmt.Sprintf(r.slack.Translate.AddPMsExist, exist)
 		} else {
-			text += fmt.Sprintf(r.conf.Translate.AddMembersExist, exist)
+			text += fmt.Sprintf(r.slack.Translate.AddMembersExist, exist)
 		}
 
 	}
 	if len(added) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(r.conf.Translate.AddPMsAdded, added)
+			text += fmt.Sprintf(r.slack.Translate.AddPMsAdded, added)
 		} else {
-			text += fmt.Sprintf(r.conf.Translate.AddMembersAdded, added)
+			text += fmt.Sprintf(r.slack.Translate.AddMembersAdded, added)
 		}
 
 	}
@@ -161,7 +161,7 @@ func (r *REST) addAdmins(users []string) string {
 		}
 		user.Role = "admin"
 		r.db.UpdateUser(user)
-		message := r.conf.Translate.PMAssigned
+		message := r.slack.Translate.PMAssigned
 		err = r.slack.SendUserMessage(userID, message)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
@@ -170,13 +170,13 @@ func (r *REST) addAdmins(users []string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddAdminsFailed, failed)
+		text += fmt.Sprintf(r.slack.Translate.AddAdminsFailed, failed)
 	}
 	if len(exist) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddAdminsExist, exist)
+		text += fmt.Sprintf(r.slack.Translate.AddAdminsExist, exist)
 	}
 	if len(added) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddAdminsAdded, added)
+		text += fmt.Sprintf(r.slack.Translate.AddAdminsAdded, added)
 	}
 
 	return text
@@ -193,14 +193,14 @@ func (r *REST) listMembers(channelID, role string) string {
 	}
 	if role == "pm" {
 		if len(userIDs) < 1 {
-			return r.conf.Translate.ListNoPMs
+			return r.slack.Translate.ListNoPMs
 		}
-		return fmt.Sprintf(r.conf.Translate.ListPMs, strings.Join(userIDs, ", "))
+		return fmt.Sprintf(r.slack.Translate.ListPMs, strings.Join(userIDs, ", "))
 	}
 	if len(userIDs) < 1 {
-		return r.conf.Translate.ListNoStandupers
+		return r.slack.Translate.ListNoStandupers
 	}
-	return fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userIDs, ", "))
+	return fmt.Sprintf(r.slack.Translate.ListStandupers, strings.Join(userIDs, ", "))
 }
 
 func (r *REST) listAdmins() string {
@@ -213,9 +213,9 @@ func (r *REST) listAdmins() string {
 		userNames = append(userNames, "<@"+admin.UserName+">")
 	}
 	if len(userNames) < 1 {
-		return r.conf.Translate.ListNoAdmins
+		return r.slack.Translate.ListNoAdmins
 	}
-	return fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", "))
+	return fmt.Sprintf(r.slack.Translate.ListAdmins, strings.Join(userNames, ", "))
 }
 
 func (r *REST) deleteMembers(members []string, channelID string) string {
@@ -271,7 +271,7 @@ func (r *REST) deleteAdmins(users []string) string {
 		}
 		user.Role = ""
 		r.db.UpdateUser(user)
-		message := fmt.Sprintf(r.conf.Translate.PMRemoved)
+		message := fmt.Sprintf(r.slack.Translate.PMRemoved)
 		err = r.slack.SendUserMessage(userID, message)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
@@ -280,10 +280,10 @@ func (r *REST) deleteAdmins(users []string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.DeleteAdminsFailed, failed)
+		text += fmt.Sprintf(r.slack.Translate.DeleteAdminsFailed, failed)
 	}
 	if len(deleted) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.DeleteAdminsSucceed, deleted)
+		text += fmt.Sprintf(r.slack.Translate.DeleteAdminsSucceed, deleted)
 	}
 
 	return text

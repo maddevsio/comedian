@@ -130,7 +130,7 @@ func (r *REST) getAccessLevel(userID, channelID string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if userID == r.conf.ManagerSlackUserID {
+	if userID == r.slack.CP.ManagerSlackUserID {
 		return 1, nil
 	}
 	if user.IsAdmin() {

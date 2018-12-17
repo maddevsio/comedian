@@ -150,4 +150,6 @@ type Storage interface {
 
 	// SelectUser selects User entry from database
 	ListUsers() ([]model.User, error)
+
+	GetControllPannel() (model.ControllPannel, error)
 }

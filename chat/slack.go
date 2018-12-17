@@ -24,11 +24,14 @@ var (
 
 // Slack struct used for storing and communicating with slack api
 type Slack struct {
-	API  *slack.Client
-	RTM  *slack.RTM
-	WG   sync.WaitGroup
-	DB   *storage.MySQL
-	Conf config.Config
+	API        *slack.Client
+	RTM        *slack.RTM
+	WG         sync.WaitGroup
+	DB         *storage.MySQL
+	Conf       config.Config
+	CP         model.ControllPannel
+	Translate  config.Translate
+	TeamDomain string
 }
 
 // NewSlack creates a new copy of slack handler
@@ -39,11 +42,23 @@ func NewSlack(conf config.Config) (*Slack, error) {
 		return nil, err
 	}
 
+	cp, err := db.GetControllPannel()
+	if err != nil {
+		logrus.Errorf("slack: GetControllPannel failed: %v\n", err)
+		return nil, err
+	}
+
 	s := &Slack{}
 	s.Conf = conf
 	s.API = slack.New(conf.SlackToken)
 	s.RTM = s.API.NewRTM()
 	s.DB = db
+	s.CP = cp
+	s.Translate, err = config.GetTranslation(cp.Language)
+	if err != nil {
+		return nil, err
+	}
+
 	return s, nil
 }
 
@@ -55,11 +70,11 @@ func (s *Slack) Run() {
 	if err != nil {
 		logrus.Error(err)
 	}
-	if s.Conf.TeamDomain == "" {
-		s.Conf.TeamDomain = team.Domain
+	if s.TeamDomain == "" {
+		s.TeamDomain = team.Domain
 	}
 
-	s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
+	s.SendUserMessage(s.CP.ManagerSlackUserID, s.Translate.HelloManager)
 
 	gocron.Every(1).Day().At("23:59").Do(s.FillStandupsForNonReporters)
 	gocron.Every(1).Day().At("23:55").Do(s.UpdateUsersList)
@@ -118,7 +133,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 		}
 		if messageIsStandup {
 			if s.DB.SubmittedStandupToday(msg.User, msg.Channel) {
-				s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleOneDayOneStandup)
+				s.SendEphemeralMessage(msg.Channel, msg.User, s.Translate.StandupHandleOneDayOneStandup)
 				return
 			}
 			standup, err := s.DB.CreateStandup(model.Standup{
@@ -130,8 +145,8 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			if err != nil {
 				logrus.Errorf("CreateStandup failed: %v", err)
 				errorReportToManager := fmt.Sprintf("I could not save standup for user %s in channel %s because of the following reasons: %v", msg.User, msg.Channel, err)
-				s.SendUserMessage(s.Conf.ManagerSlackUserID, errorReportToManager)
-				s.SendEphemeralMessage(msg.Channel, msg.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
+				s.SendUserMessage(s.CP.ManagerSlackUserID, errorReportToManager)
+				s.SendEphemeralMessage(msg.Channel, msg.User, s.Translate.StandupHandleCouldNotSaveStandup)
 				return
 			}
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
@@ -152,7 +167,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			}
 			if messageIsStandup {
 				if s.DB.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
-					s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleOneDayOneStandup)
+					s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Translate.StandupHandleOneDayOneStandup)
 					return
 				}
 				logrus.Infof("CreateStandup while updating text ChannelID (%v), UserID (%v), Comment (%v), TimeStamp (%v)", msg.Channel, msg.SubMessage.User, msg.SubMessage.Text, msg.SubMessage.Timestamp)
@@ -165,8 +180,8 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 				if err != nil {
 					logrus.Errorf("CreateStandup while updating text failed: %v", err)
 					errorReportToManager := fmt.Sprintf("I could not create standup while updating msg for user %s in channel %s because of the following reasons: %v", msg.SubMessage.User, msg.Channel, err)
-					s.SendUserMessage(s.Conf.ManagerSlackUserID, errorReportToManager)
-					s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
+					s.SendUserMessage(s.CP.ManagerSlackUserID, errorReportToManager)
+					s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Translate.StandupHandleCouldNotSaveStandup)
 					return
 				}
 				logrus.Infof("Standup created #id:%v\n", standup.ID)
@@ -187,7 +202,7 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			st, err := s.DB.UpdateStandup(standup)
 			if err != nil {
 				logrus.Errorf("UpdateStandup failed: %v", err)
-				s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Conf.Translate.StandupHandleCouldNotSaveStandup)
+				s.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, s.Translate.StandupHandleCouldNotSaveStandup)
 				return
 			}
 			logrus.Infof("Standup updated #id:%v\n", st.ID)
@@ -214,7 +229,7 @@ func (s *Slack) analizeStandup(message string) (bool, string) {
 		}
 	}
 	if !mentionsProblem {
-		return false, s.Conf.Translate.StandupHandleNoProblemsMentioned
+		return false, s.Translate.StandupHandleNoProblemsMentioned
 	}
 
 	mentionsYesterdayWork := false
@@ -225,7 +240,7 @@ func (s *Slack) analizeStandup(message string) (bool, string) {
 		}
 	}
 	if !mentionsYesterdayWork {
-		return false, s.Conf.Translate.StandupHandleNoYesterdayWorkMentioned
+		return false, s.Translate.StandupHandleNoYesterdayWorkMentioned
 	}
 
 	mentionsTodayPlans := false
@@ -236,7 +251,7 @@ func (s *Slack) analizeStandup(message string) (bool, string) {
 		}
 	}
 	if !mentionsTodayPlans {
-		return false, s.Conf.Translate.StandupHandleNoTodayPlansMentioned
+		return false, s.Translate.StandupHandleNoTodayPlansMentioned
 	}
 	return true, ""
 }
@@ -353,7 +368,7 @@ func (s *Slack) FillStandupsForNonReporters() {
 			})
 			if err != nil {
 				errorReportToManager := fmt.Sprintf("I could not create empty standup for user %s in channel %s because of the following reasons: %v", user.UserID, user.ChannelID, err)
-				s.SendUserMessage(s.Conf.ManagerSlackUserID, errorReportToManager)
+				s.SendUserMessage(s.CP.ManagerSlackUserID, errorReportToManager)
 			}
 			logrus.Infof("Empty standup created for user [%v] in [%v]", user.UserID, user.ChannelID)
 		}

@@ -52,17 +52,17 @@ func (r *REST) generateReportOnProject(accessLevel int, params string) string {
 	text := ""
 	text += report.ReportHead
 	if len(report.ReportBody) == 0 {
-		text += r.conf.Translate.ReportNoData
+		text += r.slack.Translate.ReportNoData
 		return text
 	}
 	for _, t := range report.ReportBody {
 		text += t.Text
-		if r.conf.CollectorEnabled {
-			cd, err := collector.GetCollectorData(r.conf, "projects", channel.ChannelName, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
+		if r.slack.CP.CollectorEnabled {
+			cd, err := collector.GetCollectorData(*r.slack, "projects", channel.ChannelName, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportOnProjectCollectorData, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
+			text += fmt.Sprintf(r.slack.Translate.ReportOnProjectCollectorData, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return text
@@ -102,17 +102,17 @@ func (r *REST) generateReportOnUser(accessLevel int, params string) string {
 	text := ""
 	text += report.ReportHead
 	if len(report.ReportBody) == 0 {
-		text += r.conf.Translate.ReportNoData
+		text += r.slack.Translate.ReportNoData
 		return text
 	}
 	for _, t := range report.ReportBody {
 		text += t.Text
-		if r.conf.CollectorEnabled {
-			cd, err := collector.GetCollectorData(r.conf, "users", user.UserID, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
+		if r.slack.CP.CollectorEnabled {
+			cd, err := collector.GetCollectorData(*r.slack, "users", user.UserID, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
+			text += fmt.Sprintf(r.slack.Translate.ReportCollectorDataUser, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return text
@@ -130,7 +130,7 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 	channelID, err := r.db.GetChannelID(channelName)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
-		return r.conf.Translate.WrongProjectName
+		return r.slack.Translate.WrongProjectName
 	}
 
 	channel, err := r.db.SelectChannel(channelID)
@@ -145,11 +145,11 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 
 	user, err := r.db.SelectUserByUserName(username)
 	if err != nil {
-		return r.conf.Translate.NoSuchUserInWorkspace
+		return r.slack.Translate.NoSuchUserInWorkspace
 	}
 	member, err := r.db.FindChannelMemberByUserName(user.UserName, channelID)
 	if err != nil {
-		return fmt.Sprintf(r.conf.Translate.CanNotFindMember, user.UserID)
+		return fmt.Sprintf(r.slack.Translate.CanNotFindMember, user.UserID)
 	}
 
 	dateFrom, err := time.Parse("2006-01-02", commandParams[2])
@@ -172,18 +172,18 @@ func (r *REST) generateReportOnUserInProject(accessLevel int, params string) str
 	text := ""
 	text += report.ReportHead
 	if len(report.ReportBody) == 0 {
-		text += r.conf.Translate.ReportNoData
+		text += r.slack.Translate.ReportNoData
 		return text
 	}
 	for _, t := range report.ReportBody {
 		text += t.Text
-		if r.conf.CollectorEnabled {
+		if r.slack.CP.CollectorEnabled {
 			data := fmt.Sprintf("%v/%v", member.UserID, channel.ChannelName)
-			cd, err := collector.GetCollectorData(r.conf, "user-in-project", data, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
+			cd, err := collector.GetCollectorData(*r.slack, "user-in-project", data, t.Date.Format("2006-01-02"), t.Date.Format("2006-01-02"))
 			if err != nil {
 				continue
 			}
-			text += fmt.Sprintf(r.conf.Translate.ReportCollectorDataUser, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
+			text += fmt.Sprintf(r.slack.Translate.ReportCollectorDataUser, cd.Commits, utils.SecondsToHuman(cd.Worklogs))
 		}
 	}
 	return text

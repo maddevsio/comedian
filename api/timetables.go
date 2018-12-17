@@ -14,10 +14,10 @@ func (r *REST) addTimeTable(accessLevel int, channelID, params string) string {
 	//add parsing of params
 	var totalString string
 	if accessLevel > 3 {
-		return r.conf.Translate.AccessAtLeastPM
+		return r.slack.Translate.AccessAtLeastPM
 	}
 
-	usersText, weekdays, time, err := utils.SplitTimeTalbeCommand(params, r.conf.Translate.DaysDivider, r.conf.Translate.TimeDivider)
+	usersText, weekdays, time, err := utils.SplitTimeTalbeCommand(params, r.slack.Translate.DaysDivider, r.slack.Translate.TimeDivider)
 	if err != nil {
 		return r.displayHelpText("add_timetable")
 	}
@@ -25,7 +25,7 @@ func (r *REST) addTimeTable(accessLevel int, channelID, params string) string {
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			totalString += r.conf.Translate.WrongUsernameError
+			totalString += r.slack.Translate.WrongUsernameError
 			continue
 		}
 		userID, userName := utils.SplitUser(u)
@@ -50,21 +50,21 @@ func (r *REST) addTimeTable(accessLevel int, channelID, params string) string {
 			ttNew = utils.PrepareTimeTable(ttNew, weekdays, time)
 			ttNew, err = r.db.UpdateTimeTable(ttNew)
 			if err != nil {
-				totalString += fmt.Sprintf(r.conf.Translate.CanNotUpdateTimetable, userName, err)
+				totalString += fmt.Sprintf(r.slack.Translate.CanNotUpdateTimetable, userName, err)
 				continue
 			}
 			logrus.Infof("Timetable created id:%v", ttNew.ID)
-			totalString += fmt.Sprintf(r.conf.Translate.TimetableCreated, userID, ttNew.Show())
+			totalString += fmt.Sprintf(r.slack.Translate.TimetableCreated, userID, ttNew.Show())
 			continue
 		}
 		tt = utils.PrepareTimeTable(tt, weekdays, time)
 		tt, err = r.db.UpdateTimeTable(tt)
 		if err != nil {
-			totalString += fmt.Sprintf(r.conf.Translate.CanNotUpdateTimetable, userName, err)
+			totalString += fmt.Sprintf(r.slack.Translate.CanNotUpdateTimetable, userName, err)
 			continue
 		}
 		logrus.Infof("Timetable updated id:%v", tt.ID)
-		totalString += fmt.Sprintf(r.conf.Translate.TimetableUpdated, userID, tt.Show())
+		totalString += fmt.Sprintf(r.slack.Translate.TimetableUpdated, userID, tt.Show())
 	}
 	return totalString
 }
@@ -76,22 +76,22 @@ func (r *REST) showTimeTable(accessLevel int, channelID, params string) string {
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			totalString += r.conf.Translate.WrongUsernameError
+			totalString += r.slack.Translate.WrongUsernameError
 			continue
 		}
 		userID, userName := utils.SplitUser(u)
 
 		m, err := r.db.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
-			totalString += fmt.Sprintf(r.conf.Translate.NotAStanduper, userName)
+			totalString += fmt.Sprintf(r.slack.Translate.NotAStanduper, userName)
 			continue
 		}
 		tt, err := r.db.SelectTimeTable(m.ID)
 		if err != nil {
-			totalString += fmt.Sprintf(r.conf.Translate.NoTimetableSet, userName)
+			totalString += fmt.Sprintf(r.slack.Translate.NoTimetableSet, userName)
 			continue
 		}
-		totalString += fmt.Sprintf(r.conf.Translate.TimetableShow, userName, tt.Show())
+		totalString += fmt.Sprintf(r.slack.Translate.TimetableShow, userName, tt.Show())
 	}
 	return totalString
 }
@@ -100,34 +100,34 @@ func (r *REST) removeTimeTable(accessLevel int, channelID, params string) string
 	//add parsing of params
 	var totalString string
 	if accessLevel > 3 {
-		return r.conf.Translate.AccessAtLeastPM
+		return r.slack.Translate.AccessAtLeastPM
 	}
 
 	users := strings.Split(params, " ")
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			totalString += r.conf.Translate.WrongUsernameError
+			totalString += r.slack.Translate.WrongUsernameError
 			continue
 		}
 		userID, userName := utils.SplitUser(u)
 
 		m, err := r.db.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
-			totalString += fmt.Sprintf(r.conf.Translate.NotAStanduper, userName)
+			totalString += fmt.Sprintf(r.slack.Translate.NotAStanduper, userName)
 			continue
 		}
 		tt, err := r.db.SelectTimeTable(m.ID)
 		if err != nil {
-			totalString += fmt.Sprintf(r.conf.Translate.NoTimetableSet, userName)
+			totalString += fmt.Sprintf(r.slack.Translate.NoTimetableSet, userName)
 			continue
 		}
 		err = r.db.DeleteTimeTable(tt.ID)
 		if err != nil {
-			totalString += fmt.Sprintf(r.conf.Translate.CanNotDeleteTimetable, userName)
+			totalString += fmt.Sprintf(r.slack.Translate.CanNotDeleteTimetable, userName)
 			continue
 		}
-		totalString += fmt.Sprintf(r.conf.Translate.TimetableDeleted, userName)
+		totalString += fmt.Sprintf(r.slack.Translate.TimetableDeleted, userName)
 	}
 	return totalString
 }

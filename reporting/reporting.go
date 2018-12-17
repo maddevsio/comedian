@@ -48,8 +48,8 @@ func NewReporter(slack *chat.Slack) *Reporter {
 
 // Start starts all team monitoring treads
 func (r *Reporter) Start() {
-	gocron.Every(1).Day().At(r.conf.ReportTime).Do(r.CallDisplayYesterdayTeamReport)
-	gocron.Every(1).Sunday().At(r.conf.ReportTime).Do(r.CallDisplayWeeklyTeamReport)
+	gocron.Every(1).Day().At(r.s.CP.ReportTime).Do(r.CallDisplayYesterdayTeamReport)
+	gocron.Every(1).Sunday().At(r.s.CP.ReportTime).Do(r.CallDisplayWeeklyTeamReport)
 
 }
 
@@ -58,7 +58,7 @@ func (r *Reporter) CallDisplayYesterdayTeamReport() {
 	_, err := r.displayYesterdayTeamReport()
 	if err != nil {
 		logrus.Error("Error in displayYesterdayTeamReport: ", err)
-		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fmt.Sprintf("Error sending yesterday report: %v", err))
+		r.s.SendUserMessage(r.s.CP.ManagerSlackUserID, fmt.Sprintf("Error sending yesterday report: %v", err))
 	}
 }
 
@@ -67,7 +67,7 @@ func (r *Reporter) CallDisplayWeeklyTeamReport() {
 	_, err := r.displayWeeklyTeamReport()
 	if err != nil {
 		logrus.Error("Error in displayWeeklyTeamReport: ", err)
-		r.s.SendUserMessage(r.conf.ManagerSlackUserID, fmt.Sprintf("Error sending weekly report: %v", err))
+		r.s.SendUserMessage(r.s.CP.ManagerSlackUserID, fmt.Sprintf("Error sending weekly report: %v", err))
 	}
 }
 
@@ -119,7 +119,7 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 				commits = ""
 			}
 
-			if r.conf.CollectorEnabled == false || collectorError != nil {
+			if r.s.CP.CollectorEnabled == false || collectorError != nil {
 				worklogs = ""
 				worklogsPoints++
 				commits = ""
@@ -144,9 +144,9 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 
 			//attachment text will be depend on worklogsPoints,commitsPoints and standupPoints
 			if points >= 3 {
-				attachment.Text = fmt.Sprintf(r.conf.Translate.NotTagStanduper, UserInfo.UserName, channel.ChannelName)
+				attachment.Text = fmt.Sprintf(r.s.Translate.NotTagStanduper, UserInfo.UserName, channel.ChannelName)
 			} else {
-				attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+				attachment.Text = fmt.Sprintf(r.s.Translate.IsRook, member.UserID, channel.ChannelName)
 			}
 
 			switch points {
@@ -178,7 +178,7 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 
 		attachments = r.sortReportEntries(attachmentsPull)
 
-		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeader, attachments)
+		r.s.SendMessage(channel.ChannelID, r.s.Translate.ReportHeader, attachments)
 
 		allReports = append(allReports, attachments...)
 	}
@@ -187,8 +187,8 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 		return
 	}
 
-	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeader, allReports)
-	FinalReport = fmt.Sprintf(r.conf.Translate.ReportHeader, allReports)
+	r.s.SendMessage(r.s.CP.ReportingChannel, r.s.Translate.ReportHeader, allReports)
+	FinalReport = fmt.Sprintf(r.s.Translate.ReportHeader, allReports)
 	return FinalReport, nil
 }
 
@@ -241,7 +241,7 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 				commitsPoints++
 			}
 
-			if r.conf.CollectorEnabled == false || collectorError != nil {
+			if r.s.CP.CollectorEnabled == false || collectorError != nil {
 				worklogs = ""
 				worklogsPoints++
 				commits = ""
@@ -264,9 +264,9 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 
 			//attachment text will be depend on worklogsPoints and commitsPoints
 			if points >= 2 {
-				attachment.Text = fmt.Sprintf(r.conf.Translate.NotTagStanduper, UserInfo.UserName, channel.ChannelName)
+				attachment.Text = fmt.Sprintf(r.s.Translate.NotTagStanduper, UserInfo.UserName, channel.ChannelName)
 			} else {
-				attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
+				attachment.Text = fmt.Sprintf(r.s.Translate.IsRook, member.UserID, channel.ChannelName)
 			}
 
 			switch points {
@@ -294,7 +294,7 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 
 		attachments = r.sortReportEntries(attachmentsPull)
 
-		r.s.SendMessage(channel.ChannelID, r.conf.Translate.ReportHeaderWeekly, attachments)
+		r.s.SendMessage(channel.ChannelID, r.s.Translate.ReportHeaderWeekly, attachments)
 
 		allReports = append(allReports, attachments...)
 	}
@@ -303,8 +303,8 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 		return
 	}
 
-	r.s.SendMessage(r.conf.ReportingChannel, r.conf.Translate.ReportHeaderWeekly, allReports)
-	FinalReport = fmt.Sprintf(r.conf.Translate.ReportHeaderWeekly, allReports)
+	r.s.SendMessage(r.s.CP.ReportingChannel, r.s.Translate.ReportHeaderWeekly, allReports)
+	FinalReport = fmt.Sprintf(r.s.Translate.ReportHeaderWeekly, allReports)
 	return FinalReport, nil
 }
 
@@ -328,7 +328,7 @@ func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, 
 	worklogsTime := utils.SecondsToHuman(totalWorklogs)
 
 	if totalWorklogs != projectWorklogs {
-		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(projectWorklogs), utils.SecondsToHuman(totalWorklogs))
+		worklogsTime = fmt.Sprintf(r.s.Translate.WorklogsTime, utils.SecondsToHuman(projectWorklogs), utils.SecondsToHuman(totalWorklogs))
 	}
 
 	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
@@ -338,7 +338,7 @@ func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, 
 		}
 	}
 
-	worklogs := fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
+	worklogs := fmt.Sprintf(r.s.Translate.Worklogs, worklogsTime, worklogsEmoji)
 	return worklogs, points
 }
 
@@ -360,10 +360,10 @@ func (r *Reporter) processWeeklyWorklogs(totalWorklogs, projectWorklogs int) (st
 	worklogsTime := utils.SecondsToHuman(totalWorklogs)
 
 	if totalWorklogs != projectWorklogs {
-		worklogsTime = fmt.Sprintf(r.conf.Translate.WorklogsTime, utils.SecondsToHuman(projectWorklogs), utils.SecondsToHuman(totalWorklogs))
+		worklogsTime = fmt.Sprintf(r.s.Translate.WorklogsTime, utils.SecondsToHuman(projectWorklogs), utils.SecondsToHuman(totalWorklogs))
 	}
 
-	worklogs := fmt.Sprintf(r.conf.Translate.Worklogs, worklogsTime, worklogsEmoji)
+	worklogs := fmt.Sprintf(r.s.Translate.Worklogs, worklogsTime, worklogsEmoji)
 	return worklogs, points
 }
 
@@ -387,7 +387,7 @@ func (r *Reporter) processCommits(totalCommits, projectCommits int) (string, int
 		}
 	}
 
-	commits := fmt.Sprintf(r.conf.Translate.Commits, projectCommits, commitsEmoji)
+	commits := fmt.Sprintf(r.s.Translate.Commits, projectCommits, commitsEmoji)
 	return commits, points
 }
 
@@ -413,9 +413,9 @@ func (r *Reporter) processStandup(member model.ChannelMember) (string, int) {
 	}
 
 	if isNonReporter == true {
-		standup = r.conf.Translate.NoStandup
+		standup = r.s.Translate.NoStandup
 	} else {
-		standup = r.conf.Translate.HasStandup
+		standup = r.s.Translate.HasStandup
 		points++
 	}
 
@@ -425,7 +425,7 @@ func (r *Reporter) processStandup(member model.ChannelMember) (string, int) {
 // StandupReportByProject creates a standup report for a specified period of time
 func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateTo time.Time) (Report, error) {
 	report := Report{}
-	report.ReportHead = fmt.Sprintf(r.conf.Translate.ReportOnProjectHead, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+	report.ReportHead = fmt.Sprintf(r.s.Translate.ReportOnProjectHead, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := utils.SetupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("SetupDays failed: %v", err)
@@ -450,20 +450,20 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 				continue
 			}
 			if userIsNonReporter {
-				dayInfo += fmt.Sprintf(r.conf.Translate.UserDidNotStandup, member.UserID)
+				dayInfo += fmt.Sprintf(r.s.Translate.UserDidNotStandup, member.UserID)
 			} else {
 				standup, err := r.db.SelectStandupsFiltered(member.UserID, channel.ChannelID, dateFrom, dateTo)
 				if err != nil {
 					logrus.Errorf("reporting:SelectStandupsFiltered failed: %v", err)
 					continue
 				}
-				dayInfo += fmt.Sprintf(r.conf.Translate.UserDidStandup, member.UserID)
+				dayInfo += fmt.Sprintf(r.s.Translate.UserDidStandup, member.UserID)
 				dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 			}
 			dayInfo += "================================================\n"
 		}
 		if dayInfo != "" {
-			text := fmt.Sprintf(r.conf.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			text := fmt.Sprintf(r.s.Translate.ReportDate, dateFrom.Format("2006-01-02"))
 			text += dayInfo
 			rbc := ReportBodyContent{dateFrom, text}
 			report.ReportBody = append(report.ReportBody, rbc)
@@ -476,7 +476,7 @@ func (r *Reporter) StandupReportByProject(channel model.Channel, dateFrom, dateT
 // StandupReportByUser creates a standup report for a specified period of time
 func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time.Time) (Report, error) {
 	report := Report{}
-	report.ReportHead = fmt.Sprintf(r.conf.Translate.ReportOnUserHead, slackUserID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+	report.ReportHead = fmt.Sprintf(r.s.Translate.ReportOnUserHead, slackUserID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := utils.SetupDays(dateFrom, dateTo)
 	if err != nil {
 		return report, err
@@ -510,19 +510,19 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 				continue
 			}
 			if userIsNonReporter {
-				dayInfo += fmt.Sprintf(r.conf.Translate.UserDidNotStandupInChannel, channelName, slackUserID)
+				dayInfo += fmt.Sprintf(r.s.Translate.UserDidNotStandupInChannel, channelName, slackUserID)
 			} else {
 				standup, err := r.db.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
 				if err != nil {
 					logrus.Errorf("reporting.go reportByUser SelectStandupsFiltered failed: %v", err)
 				}
-				dayInfo += fmt.Sprintf(r.conf.Translate.UserDidStandupInChannel, channelName, slackUserID)
+				dayInfo += fmt.Sprintf(r.s.Translate.UserDidStandupInChannel, channelName, slackUserID)
 				dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 			}
 			dayInfo += "================================================\n"
 		}
 		if dayInfo != "" {
-			text := fmt.Sprintf(r.conf.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			text := fmt.Sprintf(r.s.Translate.ReportDate, dateFrom.Format("2006-01-02"))
 			text += dayInfo
 			rbc := ReportBodyContent{dateFrom, text}
 			report.ReportBody = append(report.ReportBody, rbc)
@@ -534,7 +534,7 @@ func (r *Reporter) StandupReportByUser(slackUserID string, dateFrom, dateTo time
 // StandupReportByProjectAndUser creates a standup report for a specified period of time
 func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUserID string, dateFrom, dateTo time.Time) (Report, error) {
 	report := Report{}
-	report.ReportHead = fmt.Sprintf(r.conf.Translate.ReportOnProjectAndUserHead, slackUserID, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+	report.ReportHead = fmt.Sprintf(r.s.Translate.ReportOnProjectAndUserHead, slackUserID, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
 	dateFromBegin, numberOfDays, err := utils.SetupDays(dateFrom, dateTo)
 	if err != nil {
 		return report, err
@@ -559,7 +559,7 @@ func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUse
 			continue
 		}
 		if userIsNonReporter {
-			dayInfo += fmt.Sprintf(r.conf.Translate.UserDidNotStandup, slackUserID)
+			dayInfo += fmt.Sprintf(r.s.Translate.UserDidNotStandup, slackUserID)
 			dayInfo += "\n"
 		} else {
 			standup, err := r.db.SelectStandupsFiltered(slackUserID, channel.ChannelID, dateFrom, dateTo)
@@ -567,11 +567,11 @@ func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUse
 				logrus.Errorf("reporting.go reportByProjectAndUser SelectStandupsFiltered failed: %v", err)
 				continue
 			}
-			dayInfo += fmt.Sprintf(r.conf.Translate.UserDidStandup, slackUserID)
+			dayInfo += fmt.Sprintf(r.s.Translate.UserDidStandup, slackUserID)
 			dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 		}
 		if dayInfo != "" {
-			text := fmt.Sprintf(r.conf.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			text := fmt.Sprintf(r.s.Translate.ReportDate, dateFrom.Format("2006-01-02"))
 			text += dayInfo
 			rbc := ReportBodyContent{dateFrom, text}
 			report.ReportBody = append(report.ReportBody, rbc)
@@ -581,24 +581,24 @@ func (r *Reporter) StandupReportByProjectAndUser(channel model.Channel, slackUse
 }
 
 //GetCollectorDataOnMember sends API request to Collector endpoint and returns CollectorData type
-func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, startDate, endDate time.Time) (collector.CollectorData, collector.CollectorData, error) {
+func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, startDate, endDate time.Time) (collector.Data, collector.Data, error) {
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
 	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
 
 	project, err := r.db.GetChannelName(member.ChannelID)
 	if err != nil {
-		return collector.CollectorData{}, collector.CollectorData{}, err
+		return collector.Data{}, collector.Data{}, err
 	}
 
-	dataOnUser, err := collector.GetCollectorData(r.conf, "users", member.UserID, dateFrom, dateTo)
+	dataOnUser, err := collector.GetCollectorData(*r.s, "users", member.UserID, dateFrom, dateTo)
 	if err != nil {
-		return collector.CollectorData{}, collector.CollectorData{}, err
+		return collector.Data{}, collector.Data{}, err
 	}
 
 	userInProject := fmt.Sprintf("%v/%v", member.UserID, project)
-	dataOnUserInProject, err := collector.GetCollectorData(r.conf, "user-in-project", userInProject, dateFrom, dateTo)
+	dataOnUserInProject, err := collector.GetCollectorData(*r.s, "user-in-project", userInProject, dateFrom, dateTo)
 	if err != nil {
-		return collector.CollectorData{}, collector.CollectorData{}, err
+		return collector.Data{}, collector.Data{}, err
 	}
 
 	return dataOnUser, dataOnUserInProject, err

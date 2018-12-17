@@ -535,3 +535,12 @@ func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
 
 	return false
 }
+
+func (m *MySQL) GetControllPannel() (model.ControllPannel, error) {
+	var cp model.ControllPannel
+	err := m.conn.Get(&cp, "SELECT * FROM `controll_pannel`")
+	if err != nil {
+		return cp, err
+	}
+	return cp, nil
+}

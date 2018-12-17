@@ -6,23 +6,12 @@ import (
 
 // Config struct used for configuration of app with env variables
 type Config struct {
-	DatabaseURL    string
-	HTTPBindAddr   string
-	SlackToken     string
-	CollectorURL   string
-	CollectorToken string
-
-	NotifierInterval   int
-	ManagerSlackUserID string
-	ReportingChannel   string
-	ReportTime         string
-	Language           string
-	ReminderRepeatsMax int
-	ReminderTime       int64
-	CollectorEnabled   bool
-	SecretToken        string
-
-	Translate Translate
+	DatabaseURL    string `envconfig:"DATABASE" required:"true" default:"comedian:comedian@/comedian?parseTime=true"`
+	HTTPBindAddr   string `envconfig:"HTTP_BIND_ADDR" required:"true" default:"0.0.0.0:8080"`
+	SlackToken     string `envconfig:"SLACK_TOKEN" required:"true"`
+	CollectorURL   string `envconfig:"COLLECTOR_URL" required:"false"`
+	CollectorToken string `envconfig:"COLLECTOR_TOKEN" required:"false"`
+	SecretToken    string `envconfig:"SECRET_TOKEN" required:"false"`
 }
 
 // Get method processes env variables and fills Config struct
@@ -32,10 +21,5 @@ func Get() (Config, error) {
 	if err != nil {
 		return c, err
 	}
-	t, err := GetTranslation(c.Language)
-	if err != nil {
-		return c, err
-	}
-	c.Translate = t
 	return c, nil
 }
