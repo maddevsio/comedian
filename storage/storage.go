@@ -152,4 +152,6 @@ type Storage interface {
 	ListUsers() ([]model.User, error)
 
 	GetControllPannel() (model.ControllPannel, error)
+
+	UpdateControllPannel(model.ControllPannel) (model.ControllPannel, error)
 }

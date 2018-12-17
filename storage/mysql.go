@@ -544,3 +544,19 @@ func (m *MySQL) GetControllPannel() (model.ControllPannel, error) {
 	}
 	return cp, nil
 }
+
+func (m *MySQL) UpdateControllPannel(cp model.ControllPannel) (model.ControllPannel, error) {
+	_, err := m.conn.Exec(
+		"UPDATE `controll_pannel` set notifier_interval=?, manager_slack_user_id=?, reporting_channel=?, report_time=?, language=?, reminder_repeats_max=?, reminder_time=?, collector_enabled=? where id=?",
+		cp.NotifierInterval, cp.ManagerSlackUserID, cp.ReportingChannel, cp.ReportTime, cp.Language, cp.ReminderRepeatsMax, cp.ReminderTime, cp.CollectorEnabled, cp.ID,
+	)
+	if err != nil {
+		return cp, err
+	}
+	var controllPannel model.ControllPannel
+	err = m.conn.Get(&cp, "SELECT * FROM `controll_pannel`")
+	if err != nil {
+		return cp, err
+	}
+	return controllPannel, err
+}

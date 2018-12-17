@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/gorilla/schema"
@@ -46,8 +47,15 @@ func NewRESTAPI(slack *chat.Slack) (*REST, error) {
 		conf:   slack.Conf,
 	}
 
+	t := &Template{
+		templates: template.Must(template.ParseGlob("controll_pannel/*.html")),
+	}
+
 	endPoint := fmt.Sprintf("/commands%s", r.conf.SecretToken)
 	r.echo.POST(endPoint, r.handleCommands)
+	r.echo.Renderer = t
+	r.echo.GET("/admin", r.renderControllPannel)
+	r.echo.POST("/config", r.updateConfig)
 
 	return r, nil
 }

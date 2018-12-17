@@ -1,0 +1,150 @@
+{{define "admin"}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Comedian Configuration</title>
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  </head>
+
+  <body class="bg-light">
+
+    <div class="container">
+      <br><br>
+      <div class="row">
+        <img class="d-block mx-auto mb-2 text-center" src="https://github.com/maddevsio/comedian/raw/master/documentation/logo.png" alt="" height="40">
+      </div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <form class="needs-validation" action="/config" method="post" novalidate>
+            <hr class="mb-2">
+         
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label for="manager_slack_user_id">Manager Slack User ID</label>
+                    <input type="text" class="form-control" id="manager_slack_user_id" name="manager_slack_user_id" value={{.manager_slack_user_id}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Manager Slack User ID required.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="reporting_channel">Reporting Slack Channel</label>
+                    <input type="text" class="form-control" id="reporting_channel" name="reporting_channel" value={{.reporting_channel}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Reporting Slack Channel required.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="report_time">Reporting Time</label>
+                    <input type="text" class="form-control" id="report_time" name="report_time" value={{.report_time}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Reporting Time required.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                  <label for="language">Language</label>
+                  <select class="custom-select d-block w-100" name="language" id="language" required>
+                    <option value="en_US" placeholder="">Choose...</option>
+                    <option value="en_US" >English (US)</option>
+                    <option value="ru_RU" >Русский</option>
+                  </select>
+                  <div class="invalid-feedback">
+                    Please select a valid language.
+                  </div>
+                </div>
+            </div>
+
+            <hr class="mb-2">
+            
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label for="notifier_interval">Notifier Interval</label>
+                    <input type="text" class="form-control" id="notifier_interval" name="notifier_interval" value={{.notifier_interval}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Notifier Interval is required.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="reminder_time">Reminder Time</label>
+                    <input type="text" class="form-control" id="reminder_time" name="reminder_time" value={{.reminder_time}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Reminder Time is required.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="reminder_repeats_max">Maximum Notifier Attempts</label>
+                    <input type="text" class="form-control" id="reminder_repeats_max" name="reminder_repeats_max" value={{.reminder_repeats_max}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Maximum Notifier Attempts is required.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="collector_enabled">Collector</label>
+                    <select class="custom-select d-block w-100" name="collector_enabled" id="collector_enabled" required>
+                      <option value="false"  placeholder="">Choose...</option>
+                      <option value="true" >Enabled</option>
+                      <option value="false" >Disabled</option>
+                    </select>
+                    <div class="invalid-feedback">
+                      Please select Collector state!
+                    </div>
+                  </div>
+            </div>
+            
+            <hr class="mb-2">
+            
+            <div class="row">
+              <div class="col-md-4 mb-4"></div>
+              <div class="col-md-4 mb-4">
+                  <button class="btn btn-primary btn-lg btn-block" type="submit">Save Configuration</button>
+              </div>
+              <div class="col-md-4 mb-4"></div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <footer class="text-muted text-center text-small">
+        <p class="mb-1">&copy; 2018 Mad Devs LLC</p>
+        <ul class="list-inline">
+          <li class="list-inline-item"><a href="#">Privacy</a></li>
+          <li class="list-inline-item"><a href="#">Terms</a></li>
+          <li class="list-inline-item"><a href="#">Support</a></li>
+        </ul>
+      </footer>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script>
+      // Example starter JavaScript for disabling form submissions if there are invalid fields
+      (function() {
+        'use strict';
+
+        window.addEventListener('load', function() {
+          // Fetch all the forms we want to apply custom Bootstrap validation styles to
+          var forms = document.getElementsByClassName('needs-validation');
+
+          // Loop over them and prevent submission
+          var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+              if (form.checkValidity() === false) {
+                event.preventDefault();
+                event.stopPropagation();
+              }
+              form.classList.add('was-validated');
+            }, false);
+          });
+        }, false);
+      })();
+    </script>
+  </body>
+</html>
+{{end}}
