@@ -51,6 +51,14 @@ func NewSlack(conf config.Config) (*Slack, error) {
 func (s *Slack) Run() {
 
 	s.UpdateUsersList()
+	team, err := s.API.GetTeamInfo()
+	if err != nil {
+		logrus.Error(err)
+	}
+	if s.Conf.TeamDomain == "" {
+		s.Conf.TeamDomain = team.Domain
+	}
+
 	s.SendUserMessage(s.Conf.ManagerSlackUserID, s.Conf.Translate.HelloManager)
 
 	gocron.Every(1).Day().At("23:59").Do(s.FillStandupsForNonReporters)

@@ -68,6 +68,20 @@ type (
 		StandupID   int64     `db:"standup_id" json:"standupId"`
 		StandupText string    `db:"standuptext" json:"standuptext"`
 	}
+
+	// ControllPannel used for updating and storing different configuration parameters
+	ControllPannel struct {
+		ID                 int64  `db:"id" json:"id"`
+		NotifierInterval   int    `db:"notifier_interval" json:"notifier_interval"`
+		ManagerSlackUserID string `db:"manager_slack_user_id" json:"manager_slack_user_id"`
+		ReportingChannel   string `db:"reporting_channel" json:"reporting_channel"`
+		ReportTime         string `db:"report_time" json:"report_time"`
+		Language           string `db:"language" json:"language"`
+		ReminderRepeatsMax int    `db:"reminder_repeats_max" json:"reminder_repeats_max"`
+		ReminderTime       int64  `db:"reminder_time" json:"reminder_time"`
+		CollectorEnabled   bool   `db:"collector_enabled" json:"collector_enabled"`
+		SecretToken        string `db:"secret_token" json:"secret_token"`
+	}
 )
 
 // Validate validates Standup struct
