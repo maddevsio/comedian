@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/chat"
 )
 
 type Template struct {
@@ -20,21 +21,17 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 
 func (r *REST) renderControllPannel(c echo.Context) error {
 
-	cp, err := r.db.GetControllPannel()
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
+	logrus.Info(r.slack.CP)
 
 	data := map[string]interface{}{
-		"manager_slack_user_id": cp.ManagerSlackUserID,
-		"reporting_channel":     cp.ReportingChannel,
-		"report_time":           cp.ReportTime,
-		"notifier_interval":     cp.NotifierInterval,
-		"reminder_time":         cp.ReminderTime,
-		"reminder_repeats_max":  cp.ReminderRepeatsMax,
-		"language":              cp.Language,
-		"collector_enabled":     cp.CollectorEnabled,
+		"manager_slack_user_id": r.slack.CP.ManagerSlackUserID,
+		"reporting_channel":     r.slack.CP.ReportingChannel,
+		"report_time":           r.slack.CP.ReportTime,
+		"notifier_interval":     r.slack.CP.NotifierInterval,
+		"reminder_time":         r.slack.CP.ReminderTime,
+		"reminder_repeats_max":  r.slack.CP.ReminderRepeatsMax,
+		"language":              r.slack.CP.Language,
+		"collector_enabled":     r.slack.CP.CollectorEnabled,
 	}
 	return c.Render(http.StatusOK, "admin", data)
 }
@@ -88,6 +85,12 @@ func (r *REST) updateConfig(c echo.Context) error {
 		logrus.Error(err)
 		return err
 	}
+
+	s, err := chat.NewSlack(r.conf)
+	if err != nil {
+		return err
+	}
+	r.slack = s
 
 	logrus.Info("UpdateControllPannel success")
 
