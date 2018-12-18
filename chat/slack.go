@@ -190,8 +190,13 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 		standup, err := s.DB.SelectStandupByMessageTS(msg.DeletedTimestamp)
 		if err != nil {
 			logrus.Errorf("SelectStandupByMessageTS failed: %v", err)
+			return
 		}
-		s.DB.DeleteStandup(standup.ID)
+		err = s.DB.DeleteStandup(standup.ID)
+		if err != nil {
+			logrus.Errorf("DeleteStandup failed: %v", err)
+			return
+		}
 		logrus.Infof("Standup deleted #id:%v\n", standup.ID)
 	}
 }
