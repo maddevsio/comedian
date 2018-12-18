@@ -198,19 +198,9 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 
 func (s *Slack) analizeStandup(message string) (bool, string) {
 	message = strings.ToLower(message)
-	mentionsProblem := false
-	problemKeys := []string{"problem", "difficult", "stuck", "question", "issue", "block", "проблем", "трудност", "затрдуднени", "вопрос"}
-	for _, problem := range problemKeys {
-		if strings.Contains(message, problem) {
-			mentionsProblem = true
-		}
-	}
-	if !mentionsProblem {
-		return false, s.Conf.Translate.StandupHandleNoProblemsMentioned
-	}
 
 	mentionsYesterdayWork := false
-	yesterdayWorkKeys := []string{"yesterday", "friday", "completed", "вчера", "пятниц", "делал", "сделано"}
+	yesterdayWorkKeys := []string{"yesterday", "friday", "monday", "tuesday", "wednesday", "thursday", "saturday", "sunday", "completed", "вчера", "пятниц", "делал", "сделано", "понедельник", "вторник", "сред", "четверг", "суббот", "воскресенье"}
 	for _, work := range yesterdayWorkKeys {
 		if strings.Contains(message, work) {
 			mentionsYesterdayWork = true
@@ -230,6 +220,18 @@ func (s *Slack) analizeStandup(message string) (bool, string) {
 	if !mentionsTodayPlans {
 		return false, s.Conf.Translate.StandupHandleNoTodayPlansMentioned
 	}
+
+	mentionsProblem := false
+	problemKeys := []string{"problem", "difficult", "stuck", "question", "issue", "block", "проблем", "трудност", "затрдуднени", "вопрос"}
+	for _, problem := range problemKeys {
+		if strings.Contains(message, problem) {
+			mentionsProblem = true
+		}
+	}
+	if !mentionsProblem {
+		return false, s.Conf.Translate.StandupHandleNoProblemsMentioned
+	}
+
 	return true, ""
 }
 
