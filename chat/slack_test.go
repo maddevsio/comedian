@@ -25,6 +25,148 @@ type imOpenResp struct {
 	channel Channel
 }
 
+func TestHandleLeft(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := NewSlack(c)
+	assert.NoError(t, err)
+
+	//create channel
+	channel, err := s.DB.CreateChannel(model.Channel{
+		ChannelName: "channel1",
+		ChannelID:   "chanid1",
+	})
+	assert.NoError(t, err)
+	//channel members
+	ChannelMember1, err := s.DB.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid1",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	//create timetable for ChannelMember1
+	TimeTable1, err := s.DB.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: ChannelMember1.ID,
+		Monday:          12345,
+		Tuesday:         0,
+		Thursday:        0,
+		Friday:          12345,
+		Saturday:        12345,
+		Sunday:          0,
+	})
+	assert.NoError(t, err)
+	_, err = s.DB.UpdateTimeTable(TimeTable1)
+	assert.NoError(t, err)
+
+	testCase := []struct {
+		ChannelID string
+		UserID    string
+	}{
+		{channel.ChannelID, ChannelMember1.UserID},
+	}
+	for _, test := range testCase {
+		s.handleLeft(test.ChannelID, test.UserID)
+	}
+	//check that ChannelMember1 doesn't exist
+	_, err = s.DB.SelectChannelMember(ChannelMember1.ID)
+	if err == nil {
+		t.Error()
+	}
+	//check that timetable doesn't exist
+	_, err = s.DB.SelectTimeTable(ChannelMember1.ID)
+	if err == nil {
+		t.Error()
+	}
+	//delete channel
+	err = s.DB.DeleteChannel(channel.ID)
+	assert.NoError(t, err)
+}
+
+func TestHandleBotRemovedFromChannel(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	s, err := NewSlack(c)
+	assert.NoError(t, err)
+
+	//create channel
+	channel, err := s.DB.CreateChannel(model.Channel{
+		ChannelName: "channel1",
+		ChannelID:   "chanid1",
+	})
+	assert.NoError(t, err)
+	//channel members
+	ChannelMember1, err := s.DB.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid1",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	//create timetable for ChannelMember1
+	TimeTable1, err := s.DB.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: ChannelMember1.ID,
+		Monday:          12345,
+		Tuesday:         0,
+		Thursday:        0,
+		Friday:          12345,
+		Saturday:        12345,
+		Sunday:          0,
+	})
+	assert.NoError(t, err)
+	_, err = s.DB.UpdateTimeTable(TimeTable1)
+	assert.NoError(t, err)
+	ChannelMember2, err := s.DB.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid2",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	//create timetable for ChannelMember2
+	TimeTable2, err := s.DB.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: ChannelMember2.ID,
+		Monday:          12345,
+		Tuesday:         0,
+		Thursday:        0,
+		Friday:          12345,
+		Saturday:        12345,
+		Sunday:          0,
+	})
+	assert.NoError(t, err)
+	_, err = s.DB.UpdateTimeTable(TimeTable2)
+	assert.NoError(t, err)
+
+	testCase := []struct {
+		ChannelID string
+	}{
+		{channel.ChannelID},
+	}
+	for _, test := range testCase {
+		s.handleBotRemovedFromChannel(test.ChannelID)
+	}
+	//check that ChannelMember1 doesn't exist
+	_, err = s.DB.SelectChannelMember(ChannelMember1.ID)
+	if err == nil {
+		t.Error()
+	}
+	//check that timetable doesn't exist
+	_, err = s.DB.SelectTimeTable(ChannelMember1.ID)
+	if err == nil {
+		t.Error()
+	}
+	//check that ChannelMember2 doesn't exist
+	_, err = s.DB.SelectChannelMember(ChannelMember2.ID)
+	if err == nil {
+		t.Error()
+	}
+	//check that timetable doesn't exist
+	_, err = s.DB.SelectTimeTable(ChannelMember2.ID)
+	if err == nil {
+		t.Error()
+	}
+	//delete channel
+	err = s.DB.DeleteChannel(channel.ID)
+	assert.NoError(t, err)
+}
+
 func TestIsStandup(t *testing.T) {
 	testCases := []struct {
 		title   string
