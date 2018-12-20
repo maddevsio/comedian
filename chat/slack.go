@@ -68,11 +68,63 @@ func (s *Slack) Run() {
 			s.handleMessage(ev, botUserID)
 		case *slack.MemberJoinedChannelEvent:
 			s.handleJoin(ev.Channel)
+		case *slack.MemberLeftChannelEvent:
+			s.handleLeft(ev.Channel, ev.User)
+		case *slack.ChannelLeftEvent:
+			s.handleBotRemovedFromChannel(ev.Channel)
 		case *slack.InvalidAuthEvent:
 			return
 		case *slack.ConnectedEvent:
 			logrus.Info("Reconnected!")
 		}
+	}
+}
+
+func (s *Slack) handleLeft(ChannelID, UserID string) {
+	logrus.Infof("Member %v left channel %v", UserID, ChannelID)
+	channelMember, err := s.DB.FindChannelMemberByUserID(UserID, ChannelID)
+	if err != nil {
+		logrus.Error("slack:handleLeft FindChannelMemberByUserID failed: ", err)
+		return
+	}
+	timetable, err := s.DB.SelectTimeTable(channelMember.ID)
+	if err != nil {
+		logrus.Error("slack:handleLeft SelectTimeTable failed: ", err)
+	}
+	err = s.DB.DeleteTimeTable(timetable.ID)
+	if err != nil {
+		logrus.Error("slack:handleLeft DeleteTimeTable failed: ", err)
+	}
+	err = s.DB.DeleteChannelMember(UserID, ChannelID)
+	if err != nil {
+		logrus.Error("slack:handleLeft DeleteChannelMember failed: ", err)
+	}
+}
+
+func (s *Slack) handleBotRemovedFromChannel(ChannelID string) {
+	logrus.Infof("Bot removed from %v channel", ChannelID)
+	channelMembers, err := s.DB.ListChannelMembers(ChannelID)
+	if err != nil {
+		logrus.Error("slack: ListChannelMembers failed: ", err)
+		return
+	}
+	for _, chanMemb := range channelMembers {
+		timetable, err := s.DB.SelectTimeTable(chanMemb.ID)
+		if err != nil {
+			logrus.Error("slack: SelectTimeTable failed: ", err)
+		}
+		err = s.DB.DeleteTimeTable(timetable.ID)
+		if err != nil {
+			logrus.Error("slack: DeleteTimeTable failed: ", err)
+		}
+		err = s.DB.DeleteChannelMember(chanMemb.UserID, chanMemb.ChannelID)
+		if err != nil {
+			logrus.Error("slack: DeleteChannelMember failed: ", err)
+		}
+	}
+	err = s.DB.DeleteStandupTime(ChannelID)
+	if err != nil {
+		logrus.Error("slack: DeleteStandupTime failed: ", err)
 	}
 }
 
