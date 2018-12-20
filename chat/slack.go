@@ -85,6 +85,7 @@ func (s *Slack) handleLeft(ChannelID, UserID string) {
 	channelMember, err := s.DB.FindChannelMemberByUserID(UserID, ChannelID)
 	if err != nil {
 		logrus.Error("slack:handleLeft FindChannelMemberByUserID failed: ", err)
+		return
 	}
 	timetable, err := s.DB.SelectTimeTable(channelMember.ID)
 	if err != nil {
@@ -105,6 +106,7 @@ func (s *Slack) handleBotRemovedFromChannel(ChannelID string) {
 	channelMembers, err := s.DB.ListChannelMembers(ChannelID)
 	if err != nil {
 		logrus.Error("slack: ListChannelMembers failed: ", err)
+		return
 	}
 	for _, chanMemb := range channelMembers {
 		timetable, err := s.DB.SelectTimeTable(chanMemb.ID)
