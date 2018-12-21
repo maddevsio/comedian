@@ -3,6 +3,8 @@ package model
 import (
 	"errors"
 	"time"
+
+	"github.com/nlopes/slack"
 )
 
 type (
@@ -80,6 +82,24 @@ type (
 		CollectorEnabled   bool   `db:"collector_enabled" json:"collector_enabled" schema:"collector_enabled"`
 	}
 )
+
+//Report used to generate report structure
+type Report struct {
+	ReportHead string
+	ReportBody []ReportBodyContent
+}
+
+//ReportBodyContent used to generate report body content
+type ReportBodyContent struct {
+	Date time.Time
+	Text string
+}
+
+//AttachmentItem is needed to sort attachments
+type AttachmentItem struct {
+	SlackAttachment slack.Attachment
+	Points          int
+}
 
 // Validate validates Standup struct
 func (c Standup) Validate() error {

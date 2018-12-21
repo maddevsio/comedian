@@ -10,21 +10,17 @@ import (
 	"gitlab.com/team-monitoring/comedian/model"
 
 	"github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/chat"
-	"gitlab.com/team-monitoring/comedian/config"
-	"gitlab.com/team-monitoring/comedian/storage"
+	"gitlab.com/team-monitoring/comedian/bot"
 )
 
 // Notifier struct is used to notify users about upcoming or skipped standups
 type Notifier struct {
-	s    *chat.Slack
-	db   storage.Storage
-	conf config.Config
+	bot *bot.Bot
 }
 
 // NewNotifier creates a new notifier
-func NewNotifier(slack *chat.Slack) (*Notifier, error) {
-	notifier := &Notifier{s: slack, db: slack.DB, conf: slack.Conf}
+func NewNotifier(bot *bot.Bot) (*Notifier, error) {
+	notifier := &Notifier{bot: bot}
 	return notifier, nil
 }
 
@@ -47,7 +43,7 @@ func (n *Notifier) NotifyChannels() {
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
 		return
 	}
-	channels, err := n.db.GetChannels()
+	channels, err := n.bot.DB.GetChannels()
 	if err != nil {
 		logrus.Errorf("notifier: ListAllStandupTime failed: %v\n", err)
 		return
@@ -58,7 +54,7 @@ func (n *Notifier) NotifyChannels() {
 			continue
 		}
 		standupTime := time.Unix(channel.StandupTime, 0)
-		warningTime := time.Unix(channel.StandupTime-n.s.CP.ReminderTime*60, 0)
+		warningTime := time.Unix(channel.StandupTime-n.bot.CP.ReminderTime*60, 0)
 		if time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute() {
 			n.SendWarning(channel.ChannelID)
 		}
@@ -71,7 +67,7 @@ func (n *Notifier) NotifyChannels() {
 // NotifyIndividuals reminds users of channels about upcoming or missing standups
 func (n *Notifier) NotifyIndividuals() {
 	day := strings.ToLower(time.Now().Weekday().String())
-	tts, err := n.db.ListTimeTablesForDay(day)
+	tts, err := n.bot.DB.ListTimeTablesForDay(day)
 	if err != nil {
 		logrus.Errorf("ListTimeTablesForToday failed: %v", err)
 		return
@@ -79,7 +75,7 @@ func (n *Notifier) NotifyIndividuals() {
 
 	for _, tt := range tts {
 		standupTime := time.Unix(tt.ShowDeadlineOn(day), 0)
-		warningTime := time.Unix(tt.ShowDeadlineOn(day)-n.s.CP.ReminderTime*60, 0)
+		warningTime := time.Unix(tt.ShowDeadlineOn(day)-n.bot.CP.ReminderTime*60, 0)
 
 		if time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute() {
 			n.SendIndividualWarning(tt.ChannelMemberID)
@@ -99,7 +95,7 @@ func (n *Notifier) SendWarning(channelID string) {
 	}
 	nonReporters := []model.ChannelMember{}
 	for _, u := range allNonReporters {
-		if !n.db.MemberHasTimeTable(u.ID) {
+		if !n.bot.DB.MemberHasTimeTable(u.ID) {
 			nonReporters = append(nonReporters, u)
 		}
 	}
@@ -110,25 +106,25 @@ func (n *Notifier) SendWarning(channelID string) {
 	for _, user := range nonReporters {
 		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
 	}
-	err = n.s.SendMessage(channelID, fmt.Sprintf(n.s.Translate.NotifyUsersWarning, strings.Join(nonReportersIDs, ", "), n.s.CP.ReminderTime), nil)
+	err = n.bot.SendMessage(channelID, fmt.Sprintf(n.bot.Translate.NotifyUsersWarning, strings.Join(nonReportersIDs, ", "), n.bot.CP.ReminderTime), nil)
 	if err != nil {
-		logrus.Errorf("notifier: n.s.SendMessage failed: %v\n", err)
+		logrus.Errorf("notifier: n.bot.SendMessage failed: %v\n", err)
 		return
 	}
 }
 
 // SendIndividualWarning reminds users in chat about upcoming standups
 func (n *Notifier) SendIndividualWarning(channelMemberID int64) {
-	chm, err := n.db.SelectChannelMember(channelMemberID)
+	chm, err := n.bot.DB.SelectChannelMember(channelMemberID)
 	if err != nil {
 		logrus.Errorf("SelectChannelMember failed: %v", err)
 		return
 	}
-	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
+	submittedStandup := n.bot.DB.SubmittedStandupToday(chm.UserID, chm.ChannelID)
 	if !submittedStandup {
-		err = n.s.SendMessage(chm.ChannelID, fmt.Sprintf(n.s.Translate.IndividualStandupersWarning, chm.UserID, n.s.CP.ReminderTime), nil)
+		err = n.bot.SendMessage(chm.ChannelID, fmt.Sprintf(n.bot.Translate.IndividualStandupersWarning, chm.UserID, n.bot.CP.ReminderTime), nil)
 		if err != nil {
-			logrus.Errorf("notifier: n.s.SendMessage failed: %v\n", err)
+			logrus.Errorf("notifier: n.bot.SendMessage failed: %v\n", err)
 			return
 		}
 		return
@@ -138,9 +134,9 @@ func (n *Notifier) SendIndividualWarning(channelMemberID int64) {
 
 //SendChannelNotification starts standup reminders and direct reminders to users
 func (n *Notifier) SendChannelNotification(channelID string) {
-	members, err := n.db.ListChannelMembers(channelID)
+	members, err := n.bot.DB.ListChannelMembers(channelID)
 	if err != nil {
-		logrus.Errorf("notifier: n.db.ListChannelMembers failed: %v\n", err)
+		logrus.Errorf("notifier: n.bot.DB.ListChannelMembers failed: %v\n", err)
 		return
 	}
 	if len(members) == 0 {
@@ -155,7 +151,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 	nonReporters := []model.ChannelMember{}
 
 	for _, u := range allNonReporters {
-		if !n.db.MemberHasTimeTable(u.ID) {
+		if !n.bot.DB.MemberHasTimeTable(u.ID) {
 			nonReporters = append(nonReporters, u)
 		}
 	}
@@ -163,7 +159,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		return
 	}
 
-	channel, err := n.db.SelectChannel(channelID)
+	channel, err := n.bot.DB.SelectChannel(channelID)
 	if err != nil {
 		logrus.Errorf("notifier: SelectChannel failed: %v\n", err)
 		return
@@ -180,7 +176,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		nonReporters := []model.ChannelMember{}
 
 		for _, u := range allNonReporters {
-			if !n.db.MemberHasTimeTable(u.ID) {
+			if !n.bot.DB.MemberHasTimeTable(u.ID) {
 				nonReporters = append(nonReporters, u)
 			}
 		}
@@ -191,15 +187,15 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		}
 		logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
-		if repeats < n.s.CP.ReminderRepeatsMax && len(nonReporters) > 0 {
-			n.s.SendMessage(channelID, fmt.Sprintf(n.s.Translate.NotifyNotAll, strings.Join(nonReportersSlackIDs, ", ")), nil)
+		if repeats < n.bot.CP.ReminderRepeatsMax && len(nonReporters) > 0 {
+			n.bot.SendMessage(channelID, fmt.Sprintf(n.bot.Translate.NotifyNotAll, strings.Join(nonReportersSlackIDs, ", ")), nil)
 			repeats++
 			err := errors.New("Continue backoff")
 			return err
 		}
 		// othervise Direct Message non reporters
 		for _, nonReporter := range nonReporters {
-			err := n.s.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.s.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
+			err := n.bot.SendUserMessage(nonReporter.UserID, fmt.Sprintf(n.bot.Translate.NotifyDirectMessage, nonReporter.UserID, channel.ChannelID, channel.ChannelName))
 			if err != nil {
 				logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
 			}
@@ -208,7 +204,7 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 		return nil
 	}
 
-	b := backoff.NewConstantBackOff(time.Duration(n.s.CP.NotifierInterval) * time.Minute)
+	b := backoff.NewConstantBackOff(time.Duration(n.bot.CP.NotifierInterval) * time.Minute)
 	err = backoff.Retry(notifyNotAll, b)
 	if err != nil {
 		logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
@@ -217,31 +213,31 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 
 //SendIndividualNotification starts standup reminders and direct reminders to users
 func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
-	chm, err := n.db.SelectChannelMember(channelMemberID)
+	chm, err := n.bot.DB.SelectChannelMember(channelMemberID)
 	if err != nil {
 		logrus.Errorf("SelectChannelMember failed: %v", err)
 		return
 	}
-	channel, err := n.db.SelectChannel(chm.ChannelID)
+	channel, err := n.bot.DB.SelectChannel(chm.ChannelID)
 	if err != nil {
 		logrus.Errorf("notifier: SelectChannel failed: %v\n", err)
 		return
 	}
-	submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
+	submittedStandup := n.bot.DB.SubmittedStandupToday(chm.UserID, chm.ChannelID)
 	if submittedStandup {
 		return
 	}
 	repeats := 0
 	notify := func() error {
-		submittedStandup := n.db.SubmittedStandupToday(chm.UserID, chm.ChannelID)
-		if repeats < n.s.CP.ReminderRepeatsMax && !submittedStandup {
-			n.s.SendMessage(channel.ChannelID, fmt.Sprintf(n.s.Translate.IndividualStandupersLate, chm.UserID), nil)
+		submittedStandup := n.bot.DB.SubmittedStandupToday(chm.UserID, chm.ChannelID)
+		if repeats < n.bot.CP.ReminderRepeatsMax && !submittedStandup {
+			n.bot.SendMessage(channel.ChannelID, fmt.Sprintf(n.bot.Translate.IndividualStandupersLate, chm.UserID), nil)
 			repeats++
 			err := errors.New("Continue backoff")
 			return err
 		}
 		if !submittedStandup {
-			err := n.s.SendUserMessage(chm.UserID, fmt.Sprintf(n.s.Translate.NotifyDirectMessage, chm.UserID, channel.ChannelID, channel.ChannelName))
+			err := n.bot.SendUserMessage(chm.UserID, fmt.Sprintf(n.bot.Translate.NotifyDirectMessage, chm.UserID, channel.ChannelID, channel.ChannelName))
 			if err != nil {
 				logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
 			}
@@ -249,7 +245,7 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 		logrus.Infof("User %v submitted standup!", chm.UserID)
 		return nil
 	}
-	b := backoff.NewConstantBackOff(time.Duration(n.s.CP.NotifierInterval) * time.Minute)
+	b := backoff.NewConstantBackOff(time.Duration(n.bot.CP.NotifierInterval) * time.Minute)
 	err = backoff.Retry(notify, b)
 	if err != nil {
 		logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
@@ -259,7 +255,7 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 // getNonReporters returns a list of standupers that did not write standups
 func (n *Notifier) getCurrentDayNonReporters(channelID string) ([]model.ChannelMember, error) {
 	timeFrom := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
-	nonReporters, err := n.db.GetNonReporters(channelID, timeFrom, time.Now())
+	nonReporters, err := n.bot.DB.GetNonReporters(channelID, timeFrom, time.Now())
 	if err != nil && err != errors.New("no rows in result set") {
 		logrus.Errorf("notifier: GetNonReporters failed: %v\n", err)
 		return nil, err

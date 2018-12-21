@@ -18,7 +18,7 @@ type HelpText struct {
 	ReportOnUserInProject string
 }
 
-func (r *REST) displayHelpText(command string) string {
+func DisplayHelpText(command string) string {
 
 	ht := generateHelpText()
 

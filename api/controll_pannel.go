@@ -8,7 +8,6 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/chat"
 )
 
 type Template struct {
@@ -19,37 +18,33 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-func (r *REST) renderControllPannel(c echo.Context) error {
+func (ba *BotAPI) renderControllPannel(c echo.Context) error {
 
-	logrus.Info(r.slack.CP)
+	logrus.Info(ba.Bot.CP)
 
 	data := map[string]interface{}{
-		"manager_slack_user_id": r.slack.CP.ManagerSlackUserID,
-		"reporting_channel":     r.slack.CP.ReportingChannel,
-		"report_time":           r.slack.CP.ReportTime,
-		"notifier_interval":     r.slack.CP.NotifierInterval,
-		"reminder_time":         r.slack.CP.ReminderTime,
-		"reminder_repeats_max":  r.slack.CP.ReminderRepeatsMax,
-		"language":              r.slack.CP.Language,
-		"collector_enabled":     r.slack.CP.CollectorEnabled,
+		"manager_slack_user_id": ba.Bot.CP.ManagerSlackUserID,
+		"reporting_channel":     ba.Bot.CP.ReportingChannel,
+		"report_time":           ba.Bot.CP.ReportTime,
+		"notifier_interval":     ba.Bot.CP.NotifierInterval,
+		"reminder_time":         ba.Bot.CP.ReminderTime,
+		"reminder_repeats_max":  ba.Bot.CP.ReminderRepeatsMax,
+		"language":              ba.Bot.CP.Language,
+		"collector_enabled":     ba.Bot.CP.CollectorEnabled,
 	}
 	return c.Render(http.StatusOK, "admin", data)
 }
 
-func (r *REST) updateConfig(c echo.Context) error {
+func (ba *BotAPI) updateConfig(c echo.Context) error {
 	form, err := c.FormParams()
 	if err != nil {
-		logrus.Errorf("rest: c.FormParams failed: %v\n", err)
+		logrus.Errorf("BotAPI: c.FormParams failed: %v\n", err)
 		return err
 	}
 
 	logrus.Info(form)
 
-	cp, err := r.db.GetControllPannel()
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
+	cp := ba.Bot.CP
 
 	ni, err := strconv.Atoi(form.Get("notifier_interval"))
 	if err != nil {
@@ -80,19 +75,13 @@ func (r *REST) updateConfig(c echo.Context) error {
 	cp.ReminderTime = rt
 	cp.CollectorEnabled = ce
 
-	_, err = r.db.UpdateControllPannel(cp)
+	_, err = ba.Bot.DB.UpdateControllPannel(*cp)
 	if err != nil {
 		logrus.Error(err)
 		return err
 	}
 
-	s, err := chat.NewSlack(r.conf)
-	if err != nil {
-		return err
-	}
-	r.slack = s
-
 	logrus.Info("UpdateControllPannel success")
 
-	return r.renderControllPannel(c)
+	return ba.renderControllPannel(c)
 }

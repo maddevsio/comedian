@@ -7,51 +7,51 @@ import (
 	"gitlab.com/team-monitoring/comedian/utils"
 )
 
-func (r *REST) addTime(accessLevel int, channelID, params string) string {
+func (ba *BotAPI) addTime(accessLevel int, channelID, params string) string {
 	if accessLevel > 3 {
-		return r.slack.Translate.AccessAtLeastPM
+		return ba.Bot.Translate.AccessAtLeastPM
 	}
 
 	timeInt, err := utils.ParseTimeTextToInt(params)
 	if err != nil {
 		return err.Error()
 	}
-	err = r.db.CreateStandupTime(timeInt, channelID)
+	err = ba.Bot.DB.CreateStandupTime(timeInt, channelID)
 	if err != nil {
-		logrus.Errorf("rest: CreateStandupTime failed: %v\n", err)
-		return r.slack.Translate.SomethingWentWrong
+		logrus.Errorf("BotAPI: CreateStandupTime failed: %v\n", err)
+		return ba.Bot.Translate.SomethingWentWrong
 	}
-	channelMembers, err := r.db.ListChannelMembers(channelID)
+	channelMembers, err := ba.Bot.DB.ListChannelMembers(channelID)
 	if err != nil {
-		logrus.Errorf("rest: ListChannelMembers failed: %v\n", err)
+		logrus.Errorf("BotAPI: ListChannelMembers failed: %v\n", err)
 	}
 	if len(channelMembers) == 0 {
-		return fmt.Sprintf(r.slack.Translate.AddStandupTimeNoUsers, timeInt)
+		return fmt.Sprintf(ba.Bot.Translate.AddStandupTimeNoUsers, timeInt)
 	}
-	return fmt.Sprintf(r.slack.Translate.AddStandupTime, timeInt)
+	return fmt.Sprintf(ba.Bot.Translate.AddStandupTime, timeInt)
 }
 
-func (r *REST) removeTime(accessLevel int, channelID string) string {
+func (ba *BotAPI) removeTime(accessLevel int, channelID string) string {
 	if accessLevel > 3 {
-		return r.slack.Translate.AccessAtLeastPM
+		return ba.Bot.Translate.AccessAtLeastPM
 	}
-	err := r.db.DeleteStandupTime(channelID)
+	err := ba.Bot.DB.DeleteStandupTime(channelID)
 	if err != nil {
-		logrus.Errorf("rest: DeleteStandupTime failed: %v\n", err)
-		return r.slack.Translate.SomethingWentWrong
+		logrus.Errorf("BotAPI: DeleteStandupTime failed: %v\n", err)
+		return ba.Bot.Translate.SomethingWentWrong
 	}
-	st, err := r.db.ListChannelMembers(channelID)
+	st, err := ba.Bot.DB.ListChannelMembers(channelID)
 	if len(st) != 0 {
-		return r.slack.Translate.RemoveStandupTimeWithUsers
+		return ba.Bot.Translate.RemoveStandupTimeWithUsers
 	}
-	return fmt.Sprintf(r.slack.Translate.RemoveStandupTime)
+	return fmt.Sprintf(ba.Bot.Translate.RemoveStandupTime)
 }
 
-func (r *REST) showTime(channelID string) string {
-	standupTime, err := r.db.GetChannelStandupTime(channelID)
+func (ba *BotAPI) showTime(channelID string) string {
+	standupTime, err := ba.Bot.DB.GetChannelStandupTime(channelID)
 	if err != nil || standupTime == int64(0) {
 		logrus.Errorf("GetChannelStandupTime failed: %v", err)
-		return r.slack.Translate.ShowNoStandupTime
+		return ba.Bot.Translate.ShowNoStandupTime
 	}
-	return fmt.Sprintf(r.slack.Translate.ShowStandupTime, standupTime)
+	return fmt.Sprintf(ba.Bot.Translate.ShowStandupTime, standupTime)
 }

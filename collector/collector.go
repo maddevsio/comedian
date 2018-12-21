@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/chat"
+	"gitlab.com/team-monitoring/comedian/bot"
 )
 
 //Data used to parse data on user from Collector
@@ -18,18 +18,18 @@ type Data struct {
 }
 
 //GetCollectorData sends api request to collector servise and returns collector object
-func GetCollectorData(slack chat.Slack, getDataOn, data, dateFrom, dateTo string) (Data, error) {
+func GetCollectorData(bot *bot.Bot, getDataOn, data, dateFrom, dateTo string) (Data, error) {
 	var collectorData Data
-	if slack.CP.CollectorEnabled == false {
+	if bot.CP.CollectorEnabled == false {
 		return collectorData, nil
 	}
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", slack.Conf.CollectorURL, slack.TeamDomain, getDataOn, data, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", bot.Conf.CollectorURL, bot.TeamDomain, getDataOn, data, dateFrom, dateTo)
 	logrus.Infof("teammonitoring: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		return collectorData, err
 	}
-	token := slack.Conf.CollectorToken
+	token := bot.Conf.CollectorToken
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

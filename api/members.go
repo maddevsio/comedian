@@ -10,7 +10,7 @@ import (
 	"gitlab.com/team-monitoring/comedian/utils"
 )
 
-func (r *REST) addCommand(accessLevel int, channelID, params string) string {
+func (ba *BotAPI) addCommand(accessLevel int, channelID, params string) string {
 	var role string
 	var members []string
 	if strings.Contains(params, "/") {
@@ -25,38 +25,38 @@ func (r *REST) addCommand(accessLevel int, channelID, params string) string {
 	switch role {
 	case "admin", "админ":
 		if accessLevel > 2 {
-			return r.slack.Translate.AccessAtLeastAdmin
+			return ba.Bot.Translate.AccessAtLeastAdmin
 		}
-		return r.addAdmins(members)
+		return ba.addAdmins(members)
 	case "developer", "разработчик", "":
 		if accessLevel > 3 {
-			return r.slack.Translate.AccessAtLeastPM
+			return ba.Bot.Translate.AccessAtLeastPM
 		}
-		return r.addMembers(members, "developer", channelID)
+		return ba.addMembers(members, "developer", channelID)
 	case "pm", "пм":
 		if accessLevel > 2 {
-			return r.slack.Translate.AccessAtLeastAdmin
+			return ba.Bot.Translate.AccessAtLeastAdmin
 		}
-		return r.addMembers(members, "pm", channelID)
+		return ba.addMembers(members, "pm", channelID)
 	default:
-		return r.displayHelpText("add")
+		return DisplayHelpText("add")
 	}
 }
 
-func (r *REST) listCommand(channelID, params string) string {
+func (ba *BotAPI) showCommand(channelID, params string) string {
 	switch params {
 	case "admin", "админ":
-		return r.listAdmins()
+		return ba.listAdmins()
 	case "developer", "разработчик", "":
-		return r.listMembers(channelID, "developer")
+		return ba.listMembers(channelID, "developer")
 	case "pm", "пм":
-		return r.listMembers(channelID, "pm")
+		return ba.listMembers(channelID, "pm")
 	default:
-		return r.displayHelpText("show")
+		return DisplayHelpText("show")
 	}
 }
 
-func (r *REST) deleteCommand(accessLevel int, channelID, params string) string {
+func (ba *BotAPI) deleteCommand(accessLevel int, channelID, params string) string {
 	var role string
 	var members []string
 	if strings.Contains(params, "/") {
@@ -71,20 +71,20 @@ func (r *REST) deleteCommand(accessLevel int, channelID, params string) string {
 	switch role {
 	case "admin", "админ":
 		if accessLevel > 2 {
-			return r.slack.Translate.AccessAtLeastAdmin
+			return ba.Bot.Translate.AccessAtLeastAdmin
 		}
-		return r.deleteAdmins(members)
+		return ba.deleteAdmins(members)
 	case "developer", "разработчик", "pm", "пм", "":
 		if accessLevel > 3 {
-			return r.slack.Translate.AccessAtLeastPM
+			return ba.Bot.Translate.AccessAtLeastPM
 		}
-		return r.deleteMembers(members, channelID)
+		return ba.deleteMembers(members, channelID)
 	default:
-		return r.displayHelpText("remove")
+		return DisplayHelpText("remove")
 	}
 }
 
-func (r *REST) addMembers(users []string, role, channel string) string {
+func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 	var failed, exist, added, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -95,10 +95,10 @@ func (r *REST) addMembers(users []string, role, channel string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, channel)
+		user, err := ba.Bot.DB.FindChannelMemberByUserID(userID, channel)
 		if err != nil {
 			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
-			chanMember, _ := r.db.CreateChannelMember(model.ChannelMember{
+			chanMember, _ := ba.Bot.DB.CreateChannelMember(model.ChannelMember{
 				UserID:        userID,
 				ChannelID:     channel,
 				RoleInChannel: role,
@@ -114,32 +114,32 @@ func (r *REST) addMembers(users []string, role, channel string) string {
 
 	if len(failed) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(r.slack.Translate.AddPMsFailed, failed)
+			text += fmt.Sprintf(ba.Bot.Translate.AddPMsFailed, failed)
 		} else {
-			text += fmt.Sprintf(r.slack.Translate.AddMembersFailed, failed)
+			text += fmt.Sprintf(ba.Bot.Translate.AddMembersFailed, failed)
 		}
 
 	}
 	if len(exist) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(r.slack.Translate.AddPMsExist, exist)
+			text += fmt.Sprintf(ba.Bot.Translate.AddPMsExist, exist)
 		} else {
-			text += fmt.Sprintf(r.slack.Translate.AddMembersExist, exist)
+			text += fmt.Sprintf(ba.Bot.Translate.AddMembersExist, exist)
 		}
 
 	}
 	if len(added) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(r.slack.Translate.AddPMsAdded, added)
+			text += fmt.Sprintf(ba.Bot.Translate.AddPMsAdded, added)
 		} else {
-			text += fmt.Sprintf(r.slack.Translate.AddMembersAdded, added)
+			text += fmt.Sprintf(ba.Bot.Translate.AddMembersAdded, added)
 		}
 
 	}
 	return text
 }
 
-func (r *REST) addAdmins(users []string) string {
+func (ba *BotAPI) addAdmins(users []string) string {
 	var failed, exist, added, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -150,7 +150,7 @@ func (r *REST) addAdmins(users []string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := r.db.SelectUser(userID)
+		user, err := ba.Bot.DB.SelectUser(userID)
 		if err != nil {
 			failed += u
 			continue
@@ -160,9 +160,9 @@ func (r *REST) addAdmins(users []string) string {
 			continue
 		}
 		user.Role = "admin"
-		r.db.UpdateUser(user)
-		message := r.slack.Translate.PMAssigned
-		err = r.slack.SendUserMessage(userID, message)
+		ba.Bot.DB.UpdateUser(user)
+		message := ba.Bot.Translate.PMAssigned
+		err = ba.Bot.SendUserMessage(userID, message)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
@@ -170,20 +170,20 @@ func (r *REST) addAdmins(users []string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(r.slack.Translate.AddAdminsFailed, failed)
+		text += fmt.Sprintf(ba.Bot.Translate.AddAdminsFailed, failed)
 	}
 	if len(exist) != 0 {
-		text += fmt.Sprintf(r.slack.Translate.AddAdminsExist, exist)
+		text += fmt.Sprintf(ba.Bot.Translate.AddAdminsExist, exist)
 	}
 	if len(added) != 0 {
-		text += fmt.Sprintf(r.slack.Translate.AddAdminsAdded, added)
+		text += fmt.Sprintf(ba.Bot.Translate.AddAdminsAdded, added)
 	}
 
 	return text
 }
 
-func (r *REST) listMembers(channelID, role string) string {
-	members, err := r.db.ListChannelMembersByRole(channelID, role)
+func (ba *BotAPI) listMembers(channelID, role string) string {
+	members, err := ba.Bot.DB.ListChannelMembersByRole(channelID, role)
 	if err != nil {
 		return fmt.Sprintf("failed to list members :%v\n", err)
 	}
@@ -193,18 +193,18 @@ func (r *REST) listMembers(channelID, role string) string {
 	}
 	if role == "pm" {
 		if len(userIDs) < 1 {
-			return r.slack.Translate.ListNoPMs
+			return ba.Bot.Translate.ListNoPMs
 		}
-		return fmt.Sprintf(r.slack.Translate.ListPMs, strings.Join(userIDs, ", "))
+		return fmt.Sprintf(ba.Bot.Translate.ListPMs, strings.Join(userIDs, ", "))
 	}
 	if len(userIDs) < 1 {
-		return r.slack.Translate.ListNoStandupers
+		return ba.Bot.Translate.ListNoStandupers
 	}
-	return fmt.Sprintf(r.slack.Translate.ListStandupers, strings.Join(userIDs, ", "))
+	return fmt.Sprintf(ba.Bot.Translate.ListStandupers, strings.Join(userIDs, ", "))
 }
 
-func (r *REST) listAdmins() string {
-	admins, err := r.db.ListAdmins()
+func (ba *BotAPI) listAdmins() string {
+	admins, err := ba.Bot.DB.ListAdmins()
 	if err != nil {
 		return fmt.Sprintf("failed to list users :%v\n", err)
 	}
@@ -213,12 +213,12 @@ func (r *REST) listAdmins() string {
 		userNames = append(userNames, "<@"+admin.UserName+">")
 	}
 	if len(userNames) < 1 {
-		return r.slack.Translate.ListNoAdmins
+		return ba.Bot.Translate.ListNoAdmins
 	}
-	return fmt.Sprintf(r.slack.Translate.ListAdmins, strings.Join(userNames, ", "))
+	return fmt.Sprintf(ba.Bot.Translate.ListAdmins, strings.Join(userNames, ", "))
 }
 
-func (r *REST) deleteMembers(members []string, channelID string) string {
+func (ba *BotAPI) deleteMembers(members []string, channelID string) string {
 	var failed, deleted, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -229,13 +229,13 @@ func (r *REST) deleteMembers(members []string, channelID string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, channelID)
+		user, err := ba.Bot.DB.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
 			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
 			failed += u
 			continue
 		}
-		r.db.DeleteChannelMember(user.UserID, channelID)
+		ba.Bot.DB.DeleteChannelMember(user.UserID, channelID)
 		deleted += u
 	}
 
@@ -249,7 +249,7 @@ func (r *REST) deleteMembers(members []string, channelID string) string {
 	return text
 }
 
-func (r *REST) deleteAdmins(users []string) string {
+func (ba *BotAPI) deleteAdmins(users []string) string {
 	var failed, deleted, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -260,7 +260,7 @@ func (r *REST) deleteAdmins(users []string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := r.db.SelectUser(userID)
+		user, err := ba.Bot.DB.SelectUser(userID)
 		if err != nil {
 			failed += u
 			continue
@@ -270,9 +270,9 @@ func (r *REST) deleteAdmins(users []string) string {
 			continue
 		}
 		user.Role = ""
-		r.db.UpdateUser(user)
-		message := fmt.Sprintf(r.slack.Translate.PMRemoved)
-		err = r.slack.SendUserMessage(userID, message)
+		ba.Bot.DB.UpdateUser(user)
+		message := fmt.Sprintf(ba.Bot.Translate.PMRemoved)
+		err = ba.Bot.SendUserMessage(userID, message)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
@@ -280,10 +280,10 @@ func (r *REST) deleteAdmins(users []string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(r.slack.Translate.DeleteAdminsFailed, failed)
+		text += fmt.Sprintf(ba.Bot.Translate.DeleteAdminsFailed, failed)
 	}
 	if len(deleted) != 0 {
-		text += fmt.Sprintf(r.slack.Translate.DeleteAdminsSucceed, deleted)
+		text += fmt.Sprintf(ba.Bot.Translate.DeleteAdminsSucceed, deleted)
 	}
 
 	return text

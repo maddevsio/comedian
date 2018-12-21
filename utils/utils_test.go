@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/bouk/monkey"
-	"gitlab.com/team-monitoring/comedian/chat"
+	"gitlab.com/team-monitoring/comedian/bot"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 
