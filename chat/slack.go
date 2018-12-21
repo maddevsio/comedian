@@ -73,6 +73,7 @@ func (s *Slack) Run() {
 		case *slack.ChannelLeftEvent:
 			s.handleBotRemovedFromChannel(ev.Channel)
 		case *slack.InvalidAuthEvent:
+			logrus.Error("Invalid Auth!")
 			return
 		case *slack.ConnectedEvent:
 			logrus.Info("Reconnected!")
@@ -152,9 +153,15 @@ func (s *Slack) handleJoin(channelID string) {
 func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 	switch msg.SubType {
 	case typeMessage:
+
+		if strings.Contains(msg.Msg.Text, "#bug") {
+			s.recordBug(msg.Channel, msg.Msg.User, msg.Msg.Text)
+		}
+
 		if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") {
 			return
 		}
+
 		messageIsStandup, problem := s.analizeStandup(msg.Msg.Text)
 		if problem != "" {
 			s.SendEphemeralMessage(msg.Channel, msg.User, problem)
@@ -184,6 +191,10 @@ func (s *Slack) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			return
 		}
 	case typeEditMessage:
+		if strings.Contains(msg.SubMessage.Text, "#bug") {
+			s.recordBug(msg.Channel, msg.SubMessage.User, msg.SubMessage.Text)
+		}
+
 		if !strings.Contains(msg.SubMessage.Text, botUserID) && !strings.Contains(msg.SubMessage.Text, "#standup") {
 			return
 		}
@@ -344,21 +355,45 @@ func (s *Slack) UpdateUsersList() {
 		}
 
 		u, err := s.DB.SelectUser(user.ID)
-		if err != nil {
+		if err != nil && !user.Deleted {
+			logrus.Errorf("SelectUser with ID [%v] failed %v", user.ID, err)
 			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
-				s.DB.CreateUser(model.User{
+				u, err = s.DB.CreateUser(model.User{
 					UserName: user.Name,
 					UserID:   user.ID,
 					Role:     "admin",
+					RealName: user.RealName,
 				})
+				if err != nil {
+					logrus.Errorf("CreateUser failed %v", err)
+					continue
+				}
 				continue
 			}
-			s.DB.CreateUser(model.User{
+			u, err = s.DB.CreateUser(model.User{
 				UserName: user.Name,
 				UserID:   user.ID,
 				Role:     "",
+				RealName: user.RealName,
 			})
+			if err != nil {
+				logrus.Errorf("CreateUser with no role failed %v", err)
+				continue
+			}
 		}
+		if !user.Deleted {
+			u.UserName = user.Name
+			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
+				u.Role = "admin"
+			}
+			u.RealName = user.RealName
+			_, err = s.DB.UpdateUser(u)
+			if err != nil {
+				logrus.Errorf("Update User failed %v", err)
+				continue
+			}
+		}
+
 		if user.Deleted {
 			s.DB.DeleteUser(u.ID)
 			cm, err := s.DB.FindMembersByUserID(u.UserID)
@@ -409,4 +444,26 @@ func (s *Slack) FillStandupsForNonReporters() {
 			logrus.Infof("Empty standup created for user [%v] in [%v]", user.UserID, user.ChannelID)
 		}
 	}
+}
+
+func (s *Slack) recordBug(channelID, userID, bug string) {
+	var text string
+	s.SendEphemeralMessage(channelID, userID, "Thank you! Bug Recorded!")
+	user, err := s.DB.SelectUser(userID)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	channel, err := s.API.GetChannelInfo(channelID)
+
+	if err != nil {
+		logrus.Error(err)
+		text = fmt.Sprintf("%v in %v reported a bug! \n %v", user, channel, bug)
+		s.SendUserMessage(s.Conf.ManagerSlackUserID, text)
+		return
+	}
+
+	text = fmt.Sprintf("%v in %v reported a bug! \n %v", user.RealName, channel.Name, bug)
+	s.SendUserMessage(s.Conf.ManagerSlackUserID, text)
+
 }
