@@ -356,8 +356,8 @@ func (m *MySQL) DeleteChannel(id int64) error {
 // CreateUser creates standup entry in database
 func (m *MySQL) CreateUser(c model.User) (model.User, error) {
 	res, err := m.conn.Exec(
-		"INSERT INTO `users` (user_name, user_id, role) VALUES (?, ?, ?)",
-		c.UserName, c.UserID, c.Role,
+		"INSERT INTO `users` (user_name, user_id, role, real_name) VALUES (?, ?, ?, ?)",
+		c.UserName, c.UserID, c.Role, c.RealName,
 	)
 	if err != nil {
 		return c, err
@@ -374,8 +374,8 @@ func (m *MySQL) CreateUser(c model.User) (model.User, error) {
 // UpdateUser updates User entry in database
 func (m *MySQL) UpdateUser(c model.User) (model.User, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `users` SET role=? WHERE id=?",
-		c.Role, c.ID,
+		"UPDATE `users` SET role=?, real_name=? WHERE id=?",
+		c.Role, c.RealName, c.ID,
 	)
 	if err != nil {
 		return c, err

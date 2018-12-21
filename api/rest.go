@@ -7,12 +7,12 @@ import (
 
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
-	"github.com/maddevsio/comedian/utils"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/chat"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/reporting"
 	"gitlab.com/team-monitoring/comedian/storage"
+	"gitlab.com/team-monitoring/comedian/utils"
 )
 
 // REST struct used to handle slack requests (slash commands)

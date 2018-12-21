@@ -23,6 +23,7 @@ type (
 		UserName string `db:"user_name" json:"user_name"`
 		UserID   string `db:"user_id" json:"user_id"`
 		Role     string `db:"role" json:"role"`
+		RealName string `db:"real_name" json:"real_name"`
 	}
 
 	// Channel model used for serialization/deserialization stored Channels
