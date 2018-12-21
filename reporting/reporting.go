@@ -144,7 +144,7 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 
 			//attachment text will be depend on worklogsPoints,commitsPoints and standupPoints
 			if points >= 3 {
-				attachment.Text = fmt.Sprintf(r.conf.Translate.NotTagStanduper, UserInfo.UserName, channel.ChannelName)
+				attachment.Text = fmt.Sprintf(r.conf.Translate.NotTagStanduper, UserInfo.RealName, channel.ChannelName)
 			} else {
 				attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
 			}
@@ -264,7 +264,7 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 
 			//attachment text will be depend on worklogsPoints and commitsPoints
 			if points >= 2 {
-				attachment.Text = fmt.Sprintf(r.conf.Translate.NotTagStanduper, UserInfo.UserName, channel.ChannelName)
+				attachment.Text = fmt.Sprintf(r.conf.Translate.NotTagStanduper, UserInfo.RealName, channel.ChannelName)
 			} else {
 				attachment.Text = fmt.Sprintf(r.conf.Translate.IsRook, member.UserID, channel.ChannelName)
 			}
