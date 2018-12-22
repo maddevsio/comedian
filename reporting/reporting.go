@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jasonlvhit/gocron"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
@@ -23,14 +22,6 @@ type Reporter struct {
 	weeklyReportFired    bool
 }
 
-func (r *Reporter) resetYesterdayReportStatus() {
-	r.yesterdayReportFired = false
-}
-
-func (r *Reporter) resetWeeklyReportStatus() {
-	r.weeklyReportFired = false
-}
-
 // NewReporter creates a new reporter instance
 func NewReporter(bot *bot.Bot) (*Reporter, error) {
 	reporter := &Reporter{bot: bot}
@@ -39,9 +30,6 @@ func NewReporter(bot *bot.Bot) (*Reporter, error) {
 
 // Start starts all team monitoring treads
 func (r *Reporter) Start() {
-
-	gocron.Every(1).Day().At("23:59").Do(r.resetYesterdayReportStatus)
-	gocron.Every(1).Sunday().At("23:59").Do(r.resetWeeklyReportStatus)
 
 	dailyReporting := time.NewTicker(time.Second * 60).C
 	weeklyReporting := time.NewTicker(time.Second * 60).C
@@ -62,14 +50,13 @@ func (r *Reporter) CallDisplayYesterdayTeamReport() {
 		logrus.Error(err)
 		return
 	}
-	if !r.yesterdayReportFired && time.Now().Hour() > hour && time.Now().Minute() > minute {
+	if time.Now().Hour() == hour && time.Now().Minute() == minute {
 		_, err := r.displayYesterdayTeamReport()
 		if err != nil {
 			logrus.Error("Error in displayYesterdayTeamReport: ", err)
 			r.bot.SendUserMessage(r.bot.CP.ManagerSlackUserID, fmt.Sprintf("Error sending yesterday report: %v", err))
 			return
 		}
-		r.yesterdayReportFired = true
 	}
 }
 
@@ -84,7 +71,7 @@ func (r *Reporter) CallDisplayWeeklyTeamReport() {
 		return
 	}
 
-	if !r.weeklyReportFired && time.Now().Hour() > hour && time.Now().Minute() > minute {
+	if time.Now().Hour() == hour && time.Now().Minute() == minute {
 		_, err = r.displayWeeklyTeamReport()
 		if err != nil {
 			logrus.Error("Error in displayWeeklyTeamReport: ", err)
