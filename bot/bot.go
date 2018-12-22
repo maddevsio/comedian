@@ -351,16 +351,7 @@ func (b *Bot) analizeStandup(message string) (bool, string) {
 		if strings.Contains(message, work) {
 			mentionsYesterdayWork = true
 		}
-	}errorReportToManager := localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:    "ErrorReportToManager",
-			Other: "I could not save standup for user {{.user}} in channel {{.channel}} because of the following reasons: %v",
-		},
-		TemplateData: map[string]string{
-			"user":    msg.User,
-			"channel": msg.Channel,
-		},
-	})
+	}
 	if !mentionsYesterdayWork {
 		standupHandleNoYesterdayWorkMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -546,17 +537,8 @@ func (b *Bot) FillStandupsForNonReporters() {
 				MessageTS: strconv.Itoa(int(time.Now().Unix())),
 			})
 			if err != nil {
-				localizer := i18n.NewLocalizer(b.Bundle, b.CP.Language)
-				errorReportToManager := localizer.MustLocalize(&i18n.LocalizeConfig{
-					DefaultMessage: &i18n.Message{
-						ID:    "ErrorReportToManager",
-					},
-					TemplateData: map[string]string{
-						"user":    msg.User,
-						"channel": msg.Channel,
-					},
-				})
-				b.SendUserMessage(b.CP.ManagerSlackUserID, errorReportToManager)
+				logrus.Errorf("Could not create empty standup for user [%v] in [%v]", user.UserID, user.ChannelID)
+				continue
 			}
 			logrus.Infof("Empty standup created for user [%v] in [%v]", user.UserID, user.ChannelID)
 		}
