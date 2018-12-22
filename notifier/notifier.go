@@ -19,8 +19,8 @@ type Notifier struct {
 }
 
 // NewNotifier creates a new notifier
-func NewNotifier(bot *bot.Bot) (*Notifier, error) {
-	notifier := &Notifier{bot: bot}
+func NewNotifier(bot *bot.Bot) (Notifier, error) {
+	notifier := Notifier{bot: bot}
 	return notifier, nil
 }
 

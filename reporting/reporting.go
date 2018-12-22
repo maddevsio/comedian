@@ -1,7 +1,10 @@
 package reporting
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jasonlvhit/gocron"
@@ -15,7 +18,17 @@ import (
 
 //Reporter provides db and translation to functions
 type Reporter struct {
-	bot *bot.Bot
+	bot                  *bot.Bot
+	yesterdayReportFired bool
+	weeklyReportFired    bool
+}
+
+func (r *Reporter) resetYesterdayReportStatus() {
+	r.yesterdayReportFired = false
+}
+
+func (r *Reporter) resetWeeklyReportStatus() {
+	r.weeklyReportFired = false
 }
 
 // NewReporter creates a new reporter instance
@@ -26,26 +39,58 @@ func NewReporter(bot *bot.Bot) (*Reporter, error) {
 
 // Start starts all team monitoring treads
 func (r *Reporter) Start() {
-	gocron.Every(1).Day().At(r.bot.CP.ReportTime).Do(r.CallDisplayYesterdayTeamReport)
-	gocron.Every(1).Sunday().At(r.bot.CP.ReportTime).Do(r.CallDisplayWeeklyTeamReport)
 
+	gocron.Every(1).Day().At("23:59").Do(r.resetYesterdayReportStatus)
+	gocron.Every(1).Sunday().At("23:59").Do(r.resetWeeklyReportStatus)
+
+	dailyReporting := time.NewTicker(time.Second * 60).C
+	weeklyReporting := time.NewTicker(time.Second * 60).C
+	for {
+		select {
+		case <-dailyReporting:
+			r.CallDisplayYesterdayTeamReport()
+		case <-weeklyReporting:
+			r.CallDisplayWeeklyTeamReport()
+		}
+	}
 }
 
 // CallDisplayYesterdayTeamReport calls displayYesterdayTeamReport
 func (r *Reporter) CallDisplayYesterdayTeamReport() {
-	_, err := r.displayYesterdayTeamReport()
+	hour, minute, err := formatTime(r.bot.CP.ReportTime)
 	if err != nil {
-		logrus.Error("Error in displayYesterdayTeamReport: ", err)
-		r.bot.SendUserMessage(r.bot.CP.ManagerSlackUserID, fmt.Sprintf("Error sending yesterday report: %v", err))
+		logrus.Error(err)
+		return
+	}
+	if !r.yesterdayReportFired && time.Now().Hour() > hour && time.Now().Minute() > minute {
+		_, err := r.displayYesterdayTeamReport()
+		if err != nil {
+			logrus.Error("Error in displayYesterdayTeamReport: ", err)
+			r.bot.SendUserMessage(r.bot.CP.ManagerSlackUserID, fmt.Sprintf("Error sending yesterday report: %v", err))
+			return
+		}
+		r.yesterdayReportFired = true
 	}
 }
 
 // CallDisplayWeeklyTeamReport calls displayWeeklyTeamReport
 func (r *Reporter) CallDisplayWeeklyTeamReport() {
-	_, err := r.displayWeeklyTeamReport()
+	if int(time.Now().Weekday()) != 0 {
+		return
+	}
+	hour, minute, err := formatTime(r.bot.CP.ReportTime)
 	if err != nil {
-		logrus.Error("Error in displayWeeklyTeamReport: ", err)
-		r.bot.SendUserMessage(r.bot.CP.ManagerSlackUserID, fmt.Sprintf("Error sending weekly report: %v", err))
+		logrus.Error(err)
+		return
+	}
+
+	if !r.weeklyReportFired && time.Now().Hour() > hour && time.Now().Minute() > minute {
+		_, err = r.displayWeeklyTeamReport()
+		if err != nil {
+			logrus.Error("Error in displayWeeklyTeamReport: ", err)
+			r.bot.SendUserMessage(r.bot.CP.ManagerSlackUserID, fmt.Sprintf("Error sending weekly report: %v", err))
+		}
+		r.weeklyReportFired = true
 	}
 }
 
@@ -460,4 +505,28 @@ func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, startDat
 	}
 
 	return dataOnUser, dataOnUserInProject, err
+}
+
+func formatTime(t string) (hour, min int, err error) {
+	var er = errors.New("time format error")
+	ts := strings.Split(t, ":")
+	if len(ts) != 2 {
+		err = er
+		return
+	}
+
+	hour, err = strconv.Atoi(ts[0])
+	if err != nil {
+		return
+	}
+	min, err = strconv.Atoi(ts[1])
+	if err != nil {
+		return
+	}
+
+	if hour < 0 || hour > 23 || min < 0 || min > 59 {
+		err = er
+		return
+	}
+	return hour, min, nil
 }
