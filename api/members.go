@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/utils"
@@ -198,7 +199,14 @@ func (ba *BotAPI) listMembers(channelID, role string) string {
 		return fmt.Sprintf(ba.Bot.Translate.ListPMs, strings.Join(userIDs, ", "))
 	}
 	if len(userIDs) < 1 {
-		return ba.Bot.Translate.ListNoStandupers
+		localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+		listNoStandupers := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID: "ListNoStandupers",
+			},
+		})
+
+		return listNoStandupers
 	}
 	return fmt.Sprintf(ba.Bot.Translate.ListStandupers, strings.Join(userIDs, ", "))
 }

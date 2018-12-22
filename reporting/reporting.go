@@ -23,8 +23,8 @@ type Reporter struct {
 }
 
 // NewReporter creates a new reporter instance
-func NewReporter(bot *bot.Bot) (*Reporter, error) {
-	reporter := &Reporter{bot: bot}
+func NewReporter(bot *bot.Bot) (Reporter, error) {
+	reporter := Reporter{bot: bot}
 	return reporter, nil
 }
 

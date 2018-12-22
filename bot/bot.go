@@ -6,12 +6,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/jasonlvhit/gocron"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
+	"golang.org/x/text/language"
 
 	"strings"
 )
@@ -31,6 +34,7 @@ type Bot struct {
 	CP         *model.ControllPannel
 	Translate  config.Translate
 	TeamDomain string
+	Bundle     *i18n.Bundle
 }
 
 // NewBot creates a new copy of bot handler
@@ -59,6 +63,12 @@ func NewBot(conf config.Config) (*Bot, error) {
 	if err != nil {
 		return nil, err
 	}
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	bundle.MustLoadMessageFile("bot/active.en.toml")
+	bundle.MustLoadMessageFile("bot/active.ru.toml")
+
+	b.Bundle = bundle
 
 	return b, nil
 }
@@ -75,7 +85,17 @@ func (b *Bot) Run() {
 		b.TeamDomain = team.Domain
 	}
 
-	b.SendUserMessage(b.CP.ManagerSlackUserID, b.Translate.HelloManager)
+	localizer := i18n.NewLocalizer(b.Bundle, b.CP.Language)
+	helloManager := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID: "HelloManager",
+		},
+		TemplateData: map[string]string{
+			"ID": b.CP.ManagerSlackUserID,
+		},
+	})
+
+	b.SendUserMessage(b.CP.ManagerSlackUserID, helloManager)
 
 	gocron.Every(1).Day().At("23:59").Do(b.FillStandupsForNonReporters)
 	gocron.Every(1).Day().At("23:55").Do(b.UpdateUsersList)
@@ -177,6 +197,39 @@ func (b *Bot) handleJoin(channelID string) {
 }
 
 func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
+	localizer := i18n.NewLocalizer(b.Bundle, b.CP.Language)
+	oneStandupPerDay := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "OneStandupPerDay",
+			Description: "Warning that only one standup per day is allowed",
+			Other:       "<@{{.ID}}>, you can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!",
+		},
+		TemplateData: map[string]string{
+			"ID": msg.User,
+		},
+	})
+
+	couldNotSaveStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "CouldNotSaveStandup",
+			Other: "<@{{.ID}}>, something went wrong and I could not save your standup in database. Please, report this to your PM.",
+		},
+		TemplateData: map[string]string{
+			"ID": msg.User,
+		},
+	})
+
+	errorReportToManager := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "ErrorReportToManager",
+			Other: "I could not save standup for user {{.user}} in channel {{.channel}} because of the following reasons: %v",
+		},
+		TemplateData: map[string]string{
+			"user":    msg.User,
+			"channel": msg.Channel,
+		},
+	})
+
 	switch msg.SubType {
 	case typeMessage:
 
@@ -195,7 +248,7 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 		}
 		if messageIsStandup {
 			if b.DB.SubmittedStandupToday(msg.User, msg.Channel) {
-				b.SendEphemeralMessage(msg.Channel, msg.User, b.Translate.StandupHandleOneDayOneStandup)
+				b.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 				return
 			}
 			standup, err := b.DB.CreateStandup(model.Standup{
@@ -206,9 +259,8 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			})
 			if err != nil {
 				logrus.Errorf("CreateStandup failed: %v", err)
-				errorReportToManager := fmt.Sprintf("I could not save standup for user %s in channel %s because of the following reasons: %v", msg.User, msg.Channel, err)
 				b.SendUserMessage(b.CP.ManagerSlackUserID, errorReportToManager)
-				b.SendEphemeralMessage(msg.Channel, msg.User, b.Translate.StandupHandleCouldNotSaveStandup)
+				b.SendEphemeralMessage(msg.Channel, msg.User, couldNotSaveStandup)
 				return
 			}
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
@@ -233,7 +285,7 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			}
 			if messageIsStandup {
 				if b.DB.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
-					b.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, b.Translate.StandupHandleOneDayOneStandup)
+					b.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
 					return
 				}
 				logrus.Infof("CreateStandup while updating text ChannelID (%v), UserID (%v), Comment (%v), TimeStamp (%v)", msg.Channel, msg.SubMessage.User, msg.SubMessage.Text, msg.SubMessage.Timestamp)
@@ -245,9 +297,8 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 				})
 				if err != nil {
 					logrus.Errorf("CreateStandup while updating text failed: %v", err)
-					errorReportToManager := fmt.Sprintf("I could not create standup while updating msg for user %s in channel %s because of the following reasons: %v", msg.SubMessage.User, msg.Channel, err)
 					b.SendUserMessage(b.CP.ManagerSlackUserID, errorReportToManager)
-					b.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, b.Translate.StandupHandleCouldNotSaveStandup)
+					b.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, couldNotSaveStandup)
 					return
 				}
 				logrus.Infof("Standup created #id:%v\n", standup.ID)
@@ -268,7 +319,7 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			st, err := b.DB.UpdateStandup(standup)
 			if err != nil {
 				logrus.Errorf("UpdateStandup failed: %v", err)
-				b.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, b.Translate.StandupHandleCouldNotSaveStandup)
+				b.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, couldNotSaveStandup)
 				return
 			}
 			logrus.Infof("Standup updated #id:%v\n", st.ID)
@@ -291,6 +342,7 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 }
 
 func (b *Bot) analizeStandup(message string) (bool, string) {
+	localizer := i18n.NewLocalizer(b.Bundle, b.CP.Language)
 	message = strings.ToLower(message)
 
 	mentionsYesterdayWork := false
@@ -299,9 +351,25 @@ func (b *Bot) analizeStandup(message string) (bool, string) {
 		if strings.Contains(message, work) {
 			mentionsYesterdayWork = true
 		}
-	}
+	}errorReportToManager := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "ErrorReportToManager",
+			Other: "I could not save standup for user {{.user}} in channel {{.channel}} because of the following reasons: %v",
+		},
+		TemplateData: map[string]string{
+			"user":    msg.User,
+			"channel": msg.Channel,
+		},
+	})
 	if !mentionsYesterdayWork {
-		return false, b.Translate.StandupHandleNoYesterdayWorkMentioned
+		standupHandleNoYesterdayWorkMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "StandupHandleNoYesterdayWorkMentioned",
+				Description: "No 'yesterday' keywords in standup",
+				Other:       ":warning: No 'yesterday' related keywords detected! Please, use one of the following: 'yesterday' or weekdays such as 'friday' etc.",
+			},
+		})
+		return false, standupHandleNoYesterdayWorkMentioned
 	}
 
 	mentionsTodayPlans := false
@@ -312,7 +380,14 @@ func (b *Bot) analizeStandup(message string) (bool, string) {
 		}
 	}
 	if !mentionsTodayPlans {
-		return false, b.Translate.StandupHandleNoTodayPlansMentioned
+		standupHandleNoTodayPlansMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "StandupHandleNoTodayPlansMentioned",
+				Description: "No 'today' keywords in standup",
+				Other:       ":warning: No 'today' related keywords detected! Please, use one of the following: 'today', 'going', 'plan'",
+			},
+		})
+		return false, standupHandleNoTodayPlansMentioned
 	}
 
 	mentionsProblem := false
@@ -323,7 +398,14 @@ func (b *Bot) analizeStandup(message string) (bool, string) {
 		}
 	}
 	if !mentionsProblem {
-		return false, b.Translate.StandupHandleNoProblemsMentioned
+		standupHandleNoProblemsMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "StandupHandleNoProblemsMentioned",
+				Description: "No 'problems' key in standup",
+				Other:       ":warning: No 'problems' related keywords detected! Please, use one of the following: 'problem', 'difficult', 'stuck', 'question', 'issue'",
+			},
+		})
+		return false, standupHandleNoProblemsMentioned
 	}
 
 	return true, ""
@@ -464,7 +546,16 @@ func (b *Bot) FillStandupsForNonReporters() {
 				MessageTS: strconv.Itoa(int(time.Now().Unix())),
 			})
 			if err != nil {
-				errorReportToManager := fmt.Sprintf("I could not create empty standup for user %s in channel %s because of the following reasons: %v", user.UserID, user.ChannelID, err)
+				localizer := i18n.NewLocalizer(b.Bundle, b.CP.Language)
+				errorReportToManager := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "ErrorReportToManager",
+					},
+					TemplateData: map[string]string{
+						"user":    msg.User,
+						"channel": msg.Channel,
+					},
+				})
 				b.SendUserMessage(b.CP.ManagerSlackUserID, errorReportToManager)
 			}
 			logrus.Infof("Empty standup created for user [%v] in [%v]", user.UserID, user.ChannelID)

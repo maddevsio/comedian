@@ -1,0 +1,8 @@
+[HelloManager]
+description = "Greeting message once bot starts working"
+other = "Hello <@{{.ID}}>"
+
+[ListNoStandupers]
+description = "Displays message when there are no standupers in the channel"
+other = "No standupers in this channel! To add one, please, use `/add` slash command"
+		
