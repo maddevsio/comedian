@@ -61,8 +61,8 @@ func NewBot(conf config.Config) (*Bot, error) {
 
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	bundle.MustLoadMessageFile("bot/active.en.toml")
-	bundle.MustLoadMessageFile("bot/active.ru.toml")
+	bundle.LoadMessageFile("bot/active.en.toml")
+	bundle.LoadMessageFile("bot/active.ru.toml")
 
 	b.Bundle = bundle
 
