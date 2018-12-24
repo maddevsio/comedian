@@ -5,17 +5,38 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/utils"
 )
 
 func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
 	//add parsing of params
 	var totalString string
 	if accessLevel > 3 {
-		return ba.Bot.Translate.AccessAtLeastPM
+		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: "AccessAtLeastPM",
+		})
+		return accessAtLeastPM
 	}
+
+	daysDivider := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "DaysDivider",
+			Description: "Days divider",
+			Other:       " on ",
+		},
+	})
+	timeDivider := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "TimeDivider",
+			Description: "Time divider",
+			Other:       " at ",
+		},
+	})
 
 	usersText, weekdays, time, err := utils.SplitTimeTalbeCommand(params, ba.Bot.Translate.DaysDivider, ba.Bot.Translate.TimeDivider)
 	if err != nil {
@@ -25,8 +46,16 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			totalString += ba.Bot.Translate.WrongUsernameError
+			wrongUsernameError := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "WrongUsernameError",
+					Description: "Displays message when username is misspelled",
+					Other:       "Seems like you misspelled username. Please, check and try command again!",
+				},
+			})
+			totalString += wrongUsernameError
 			continue
+
 		}
 		userID, userName := utils.SplitUser(u)
 
@@ -50,11 +79,34 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 			ttNew = utils.PrepareTimeTable(ttNew, weekdays, time)
 			ttNew, err = ba.Bot.DB.UpdateTimeTable(ttNew)
 			if err != nil {
-				totalString += fmt.Sprintf(ba.Bot.Translate.CanNotUpdateTimetable, userName, err)
+				canNotUpdateTimetable := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "CanNotUpdateTimetable",
+						Description: "",
+						Other:       "Could not update timetable for user {{.user}}: {{.error}}\n",
+					},
+					TemplateData: map[string]interface{}{
+						"user":  userName,
+						"error": err,
+					},
+				})
+				totalString += canNotUpdateTimetable
 				continue
+
 			}
 			logrus.Infof("Timetable created id:%v", ttNew.ID)
-			totalString += fmt.Sprintf(ba.Bot.Translate.TimetableCreated, userID, ttNew.Show())
+			timetableCreated := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "TimetableCreated",
+					Description: "Show message that timetable for user created",
+					Other:       "Timetable for <@{{.user}}> created: {{.timetable}} \n",
+				},
+				TemplateData: map[string]interface{}{
+					"user":      userID,
+					"timetable": ttNew.Show(),
+				},
+			})
+			totalString += timetableCreated
 			continue
 		}
 		tt = utils.PrepareTimeTable(tt, weekdays, time)
@@ -70,26 +122,57 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 }
 
 func (ba *BotAPI) showTimeTable(accessLevel int, channelID, params string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
 	var totalString string
 	//add parsing of params
 	users := strings.Split(params, " ")
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			totalString += ba.Bot.Translate.WrongUsernameError
+			wrongUsernameError := r.Localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "WrongUsernameError",
+					Description: "Displays message when username is misspelled",
+					Other:       "Seems like you misspelled username. Please, check and try command again!",
+				},
+			})
+			totalString += wrongUsernameError
 			continue
 		}
 		userID, userName := utils.SplitUser(u)
 
 		m, err := ba.Bot.DB.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
-			totalString += fmt.Sprintf(ba.Bot.Translate.NotAStanduper, userName)
+			notAStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "NotAStanduper",
+					Description: "Display message when user not a standuper",
+					Other:       "Seems like <@{{.user}}> is not even assigned as standuper in this channel!\n",
+				},
+				TemplateData: map[string]interface{}{
+					"user": userName,
+				},
+			})
+			totalString += notAStanduper
 			continue
+
 		}
 		tt, err := ba.Bot.DB.SelectTimeTable(m.ID)
 		if err != nil {
-			totalString += fmt.Sprintf(ba.Bot.Translate.NoTimetableSet, userName)
+			noTimetableSet := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "NoTimetableSet",
+					Description: "Display message when user doesn't have a timetable",
+					Other:       "<@{{.user}}> does not have a timetable!\n",
+				},
+				TemplateData: map[string]interface{}{
+					"user": userName,
+				},
+			})
+			totalString += noTimetableSet
 			continue
+
 		}
 		totalString += fmt.Sprintf(ba.Bot.Translate.TimetableShow, userName, tt.Show())
 	}
@@ -97,37 +180,95 @@ func (ba *BotAPI) showTimeTable(accessLevel int, channelID, params string) strin
 }
 
 func (ba *BotAPI) removeTimeTable(accessLevel int, channelID, params string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
 	//add parsing of params
 	var totalString string
 	if accessLevel > 3 {
-		return ba.Bot.Translate.AccessAtLeastPM
+		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "AccessAtLeastPM",
+				Description: "Display warning that role must be at least pm",
+				Other:       "Access Denied! You need to be at least PM in this project to use this command!",
+			},
+		})
+		return accessAtLeastPM
 	}
 
 	users := strings.Split(params, " ")
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			totalString += ba.Bot.Translate.WrongUsernameError
+			wrongUsernameError := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "WrongUsernameError",
+					Description: "Displays message when username is misspelled",
+					Other:       "Seems like you misspelled username. Please, check and try command again!",
+				},
+			})
+			totalString += wrongUsernameError
 			continue
 		}
 		userID, userName := utils.SplitUser(u)
 
 		m, err := ba.Bot.DB.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
-			totalString += fmt.Sprintf(ba.Bot.Translate.NotAStanduper, userName)
+			notAStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "NotAStanduper",
+					Description: "Display message when user not a standuper",
+					Other:       "Seems like <@{{.user}}> is not even assigned as standuper in this channel!\n",
+				},
+				TemplateData: map[string]interface{}{
+					"user": userName,
+				},
+			})
+			totalString += notAStanduper
 			continue
+
 		}
 		tt, err := ba.Bot.DB.SelectTimeTable(m.ID)
 		if err != nil {
-			totalString += fmt.Sprintf(ba.Bot.Translate.NoTimetableSet, userName)
+			noTimetableSet := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "NoTimetableSet",
+					Description: "Display message when user doesn't have a timetable",
+					Other:       "<@{{.user}}> does not have a timetable!\n",
+				},
+				TemplateData: map[string]interface{}{
+					"user": userName,
+				},
+			})
+			totalString += noTimetableSet
 			continue
 		}
 		err = ba.Bot.DB.DeleteTimeTable(tt.ID)
 		if err != nil {
-			totalString += fmt.Sprintf(ba.Bot.Translate.CanNotDeleteTimetable, userName)
+			canNotDeleteTimetable := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "CanNotDeleteTimetable",
+					Description: "Displays a message when a timetable deletion error occurs.",
+					Other:       "Could not delete timetable for user <@{{.user}}>\n",
+				},
+				TemplateData: map[string]interface{}{
+					"user": userName,
+				},
+			})
+			totalString += canNotDeleteTimetable
 			continue
+
 		}
-		totalString += fmt.Sprintf(ba.Bot.Translate.TimetableDeleted, userName)
+		timetableDeleted := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableDeleted",
+				Description: "Displays message when timetable removed",
+				Other:       "Timetable removed for <@{{.user}}>\n",
+			},
+			TemplateData: map[string]interface{}{
+				"user": userName,
+			},
+		})
+		totalString += timetableDeleted
 	}
 	return totalString
 }

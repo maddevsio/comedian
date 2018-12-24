@@ -32,9 +32,8 @@ type Bot struct {
 	DB         *storage.MySQL
 	Conf       config.Config
 	CP         *model.ControllPannel
-	Translate  config.Translate
-	TeamDomain string
 	Bundle     *i18n.Bundle
+	TeamDomain string
 }
 
 // NewBot creates a new copy of bot handler
@@ -59,10 +58,7 @@ func NewBot(conf config.Config) (*Bot, error) {
 	b.API = slack.New(conf.SlackToken)
 	b.DB = db
 	b.CP = &cp
-	b.Translate, err = config.GetTranslation(cp.Language)
-	if err != nil {
-		return nil, err
-	}
+
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 	bundle.MustLoadMessageFile("bot/active.en.toml")
@@ -264,7 +260,12 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 				return
 			}
 			logrus.Infof("Standup created #id:%v\n", standup.ID)
-			item := slack.ItemRef{msg.Channel, msg.Msg.Timestamp, "", ""}
+			item := slack.ItemRef{
+				Channel:   msg.Channel,
+				Timestamp: msg.Msg.Timestamp,
+				File:      "",
+				Comment:   "",
+			}
 			b.API.AddReaction("heavy_check_mark", item)
 			return
 		}
@@ -302,8 +303,12 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 					return
 				}
 				logrus.Infof("Standup created #id:%v\n", standup.ID)
-				item := slack.ItemRef{msg.Channel, msg.SubMessage.Timestamp, "", ""}
-
+				item := slack.ItemRef{
+					Channel:   msg.Channel,
+					Timestamp: msg.SubMessage.Timestamp,
+					File:      "",
+					Comment:   "",
+				}
 				b.API.AddReaction("heavy_check_mark", item)
 				return
 			}

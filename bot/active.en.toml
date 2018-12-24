@@ -1,8 +1,18 @@
-[HelloManager]
-description = "Greeting message once bot starts working"
-other = "Hello <@{{.ID}}>"
+CouldNotSaveStandup = "<@{{.ID}}>, something went wrong and I could not save your standup in database. Please, report this to your PM."
+ErrorReportToManager = "I could not save standup for user {{.user}} in channel {{.channel}} because of the following reasons: %v"
 
-[ListNoStandupers]
-description = "Displays message when there are no standupers in the channel"
-other = "No standupers in this channel! To add one, please, use `/add` slash command"
-		
+[OneStandupPerDay]
+description = "Warning that only one standup per day is allowed"
+other = "<@{{.ID}}>, you can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!"
+
+[StandupHandleNoProblemsMentioned]
+description = "No 'problems' key in standup"
+other = ":warning: No 'problems' related keywords detected! Please, use one of the following: 'problem', 'difficult', 'stuck', 'question', 'issue'"
+
+[StandupHandleNoTodayPlansMentioned]
+description = "No 'today' keywords in standup"
+other = ":warning: No 'today' related keywords detected! Please, use one of the following: 'today', 'going', 'plan'"
+
+[StandupHandleNoYesterdayWorkMentioned]
+description = "No 'yesterday' keywords in standup"
+other = ":warning: No 'yesterday' related keywords detected! Please, use one of the following: 'yesterday' or weekdays such as 'friday' etc."
