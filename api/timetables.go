@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
@@ -102,7 +104,7 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 				},
 				TemplateData: map[string]interface{}{
 					"user":      userID,
-					"timetable": ttNew.Show(),
+					"timetable": ba.returnTimeTable(ttNew),
 				},
 			})
 			totalString += timetableCreated
@@ -134,7 +136,7 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 			},
 			TemplateData: map[string]interface{}{
 				"user":      userID,
-				"timetable": tt.Show(),
+				"timetable": ba.returnTimeTable(tt),
 			},
 		})
 		totalString += timetableUpdated
@@ -203,7 +205,7 @@ func (ba *BotAPI) showTimeTable(accessLevel int, channelID, params string) strin
 			},
 			TemplateData: map[string]interface{}{
 				"user":      userName,
-				"timetable": tt.Show(),
+				"timetable": ba.returnTimeTable(tt),
 			},
 		})
 		totalString += timetableShow
@@ -303,4 +305,132 @@ func (ba *BotAPI) removeTimeTable(accessLevel int, channelID, params string) str
 		totalString += timetableDeleted
 	}
 	return totalString
+}
+
+//returnTimeTable return timetable
+func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
+	timeTableString := ""
+	if tt.Monday != 0 {
+		monday := time.Unix(tt.Monday, 0)
+		timetableShowMonday := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableShowMonday",
+				Description: "",
+				Other:       "| Monday {{.hour}}:{{.minutes}} ",
+			},
+			TemplateData: map[string]interface{}{
+				"hour":    fmt.Sprintf("%02d", monday.Hour()),
+				"minutes": fmt.Sprintf("%02d", monday.Minute()),
+			},
+		})
+		timeTableString += timetableShowMonday
+	}
+	if tt.Tuesday != 0 {
+		tuesday := time.Unix(tt.Tuesday, 0)
+		timetableShowTuesday := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableShowTuesday",
+				Description: "",
+				Other:       "| Tuesday {{.hour}}:{{.minutes}} ",
+			},
+			TemplateData: map[string]interface{}{
+				"hour":    fmt.Sprintf("%02d", tuesday.Hour()),
+				"minutes": fmt.Sprintf("%02d", tuesday.Minute()),
+			},
+		})
+		timeTableString += timetableShowTuesday
+	}
+	if tt.Wednesday != 0 {
+		wednesday := time.Unix(tt.Wednesday, 0)
+		timetableShowWednesday := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableShowWednesday",
+				Description: "",
+				Other:       "| Wednesday {{.hour}}:{{.minutes}} ",
+			},
+			TemplateData: map[string]interface{}{
+				"hour":    fmt.Sprintf("%02d", wednesday.Hour()),
+				"minutes": fmt.Sprintf("%02d", wednesday.Minute()),
+			},
+		})
+		timeTableString += timetableShowWednesday
+	}
+	if tt.Thursday != 0 {
+		thursday := time.Unix(tt.Thursday, 0)
+		timetableShowThursday := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableShowThursday",
+				Description: "",
+				Other:       "| Thursday {{.hour}}:{{.minutes}} ",
+			},
+			TemplateData: map[string]interface{}{
+				"hour":    fmt.Sprintf("%02d", thursday.Hour()),
+				"minutes": fmt.Sprintf("%02d", thursday.Minute()),
+			},
+		})
+		timeTableString += timetableShowThursday
+	}
+	if tt.Friday != 0 {
+		friday := time.Unix(tt.Friday, 0)
+		timetableShowFriday := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableShowFriday",
+				Description: "",
+				Other:       "| Friday {{.hour}}:{{.minutes}} ",
+			},
+			TemplateData: map[string]interface{}{
+				"hour":    fmt.Sprintf("%02d", friday.Hour()),
+				"minutes": fmt.Sprintf("%02d", friday.Minute()),
+			},
+		})
+		timeTableString += timetableShowFriday
+	}
+	if tt.Saturday != 0 {
+		saturday := time.Unix(tt.Saturday, 0)
+		timetableShowSaturday := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableShowSaturday",
+				Description: "",
+				Other:       "| Saturday {{.hour}}:{{.minutes}} ",
+			},
+			TemplateData: map[string]interface{}{
+				"hour":    fmt.Sprintf("%02d", saturday.Hour()),
+				"minutes": fmt.Sprintf("%02d", saturday.Minute()),
+			},
+		})
+		timeTableString += timetableShowSaturday
+	}
+	if tt.Sunday != 0 {
+		sunday := time.Unix(tt.Sunday, 0)
+		timetableShowSunday := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableShowSunday",
+				Description: "",
+				Other:       "| Sunday {{.hour}}:{{.minutes}} ",
+			},
+			TemplateData: map[string]interface{}{
+				"hour":    fmt.Sprintf("%02d", sunday.Hour()),
+				"minutes": fmt.Sprintf("%02d", sunday.Minute()),
+			},
+		})
+		timeTableString += timetableShowSunday
+	}
+
+	if timeTableString == "" {
+		emptyTimetable := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "EmptyTimetable",
+				Description: "",
+				Other:       "Timetable is empty",
+			},
+		})
+		return emptyTimetable
+	} else {
+		timeTableString += "|"
+	}
+
+	return timeTableString
+
 }
