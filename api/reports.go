@@ -112,7 +112,7 @@ func (ba *BotAPI) generateReportOnUser(accessLevel int, params string) string {
 	}
 	user, err := ba.Bot.DB.SelectUserByUserName(username)
 	if err != nil {
-		userDoesNotExist := r.Localizer.MustLocalize(&i18n.LocalizeConfig{
+		userDoesNotExist := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "userDoesNotExist",
 				Description: "Display message if user doesn't exist",
@@ -187,7 +187,14 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 	channelID, err := ba.Bot.DB.GetChannelID(channelName)
 	if err != nil {
 		logrus.Errorf("rest: GetChannelID failed: %v\n", err)
-		return ba.Bot.Translate.WrongProjectName
+		wrongProjectName := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "WrongProjectName",
+				Description: "",
+				Other:       "Wrong project title!",
+			},
+		})
+		return wrongProjectName
 	}
 
 	channel, err := ba.Bot.DB.SelectChannel(channelID)
@@ -199,7 +206,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 				Other:       "Could not select channel! \n {{.helpText}}",
 			},
 			TemplateData: map[string]interface{}{
-				"helpText": r.displayHelpText("report_on_user_in_project"),
+				"helpText": DisplayHelpText("report_on_user_in_project"),
 			},
 		})
 		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
@@ -215,7 +222,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 				Other:       "Could not get user! \n {{.helpText}}",
 			},
 			TemplateData: map[string]interface{}{
-				"helpText": r.displayHelpText("report_on_user_in_project"),
+				"helpText": DisplayHelpText("report_on_user_in_project"),
 			},
 		})
 		return wrongName
@@ -256,7 +263,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 				Other:       "Could not parse date from! \n {{.helpText}}",
 			},
 			TemplateData: map[string]interface{}{
-				"helpText": r.displayHelpText("report_on_user_in_project"),
+				"helpText": DisplayHelpText("report_on_user_in_project"),
 			},
 		})
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -272,7 +279,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 				Other:       "Could not parse date from! \n {{.helpText}}",
 			},
 			TemplateData: map[string]interface{}{
-				"helpText": r.displayHelpText("report_on_user_in_project"),
+				"helpText": DisplayHelpText("report_on_user_in_project"),
 			},
 		})
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
@@ -290,7 +297,11 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 	text += report.ReportHead
 	if len(report.ReportBody) == 0 {
 		reportNoData := localizer.MustLocalize(&i18n.LocalizeConfig{
-			MessageID: "ReportNoData",
+			DefaultMessage: &i18n.Message{
+				ID:          "ReportNoData",
+				Description: "Displays message when there is no standup data for this period",
+				Other:       "No standup data for this period\n",
+			},
 		})
 		text += reportNoData
 		return text
@@ -359,7 +370,19 @@ func (ba *BotAPI) StandupReportByProject(channel model.Channel, dateFrom, dateTo
 	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
 
 	report := model.Report{}
-	report.ReportHead = fmt.Sprintf(ba.Bot.Translate.ReportOnProjectHead, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+	reportOnProjectHead := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "ReportOnProjectHead",
+			Description: "",
+			Other:       "Full Report on project #{{.channel}} from {{.dateFrom}} to {{.dateTo}}:\n\n",
+		},
+		TemplateData: map[string]interface{}{
+			"channel":  channel.ChannelName,
+			"dateFrom": dateFrom.Format("2006-01-02"),
+			"dateTo":   dateTo.Format("2006-01-02"),
+		},
+	})
+	report.ReportHead = reportOnProjectHead
 	dateFromBegin, numberOfDays, err := utils.SetupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("SetupDays failed: %v", err)
@@ -384,20 +407,50 @@ func (ba *BotAPI) StandupReportByProject(channel model.Channel, dateFrom, dateTo
 				continue
 			}
 			if userIsNonReporter {
-				dayInfo += fmt.Sprintf(ba.Bot.Translate.UserDidNotStandup, member.UserID)
+				userDidNotStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "UserDidNotStandup",
+						Description: "",
+						Other:       "<@{{.user}}> did not submit standup!\n",
+					},
+					TemplateData: map[string]interface{}{
+						"user": member.UserID,
+					},
+				})
+				dayInfo += userDidNotStandup
 			} else {
 				standup, err := ba.Bot.DB.SelectStandupsFiltered(member.UserID, channel.ChannelID, dateFrom, dateTo)
 				if err != nil {
 					logrus.Errorf("reporting:SelectStandupsFiltered failed: %v", err)
 					continue
 				}
-				dayInfo += fmt.Sprintf(ba.Bot.Translate.UserDidStandup, member.UserID)
+				userDidStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "UserDidStandup",
+						Description: "",
+						Other:       "<@{{.user}}> submitted standup: ",
+					},
+					TemplateData: map[string]interface{}{
+						"user": member.UserID,
+					},
+				})
+				dayInfo += userDidStandup
 				dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 			}
 			dayInfo += "================================================\n"
 		}
 		if dayInfo != "" {
-			text := fmt.Sprintf(ba.Bot.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			reportDate := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "ReportDate",
+					Description: "",
+					Other:       "Report for: {{.dateFrom}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"dateFrom": dateFrom.Format("2006-01-02"),
+				},
+			})
+			text := reportDate
 			text += dayInfo
 			rbc := model.ReportBodyContent{dateFrom, text}
 			report.ReportBody = append(report.ReportBody, rbc)
@@ -412,7 +465,19 @@ func (ba *BotAPI) StandupReportByUser(slackUserID string, dateFrom, dateTo time.
 	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
 
 	report := model.Report{}
-	report.ReportHead = fmt.Sprintf(ba.Bot.Translate.ReportOnUserHead, slackUserID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+	reportOnUserHead := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "ReportOnUserHead",
+			Description: "",
+			Other:       "Full Report on user <@{{.user}}> from {{.dateFrom}} to {{.dateTo}}:\n\n",
+		},
+		TemplateData: map[string]interface{}{
+			"user":     slackUserID,
+			"dateFrom": dateFrom.Format("2006-01-02"),
+			"dateTo":   dateTo.Format("2006-01-02"),
+		},
+	})
+	report.ReportHead = reportOnUserHead
 	dateFromBegin, numberOfDays, err := utils.SetupDays(dateFrom, dateTo)
 	if err != nil {
 		return report, err
@@ -446,19 +511,51 @@ func (ba *BotAPI) StandupReportByUser(slackUserID string, dateFrom, dateTo time.
 				continue
 			}
 			if userIsNonReporter {
-				dayInfo += fmt.Sprintf(ba.Bot.Translate.UserDidNotStandupInChannel, channelName, slackUserID)
+				userDidNotStandupInChannel := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "UserDidNotStandupInChannel",
+						Description: "",
+						Other:       "In #{{.channel}} <@{{.user}}> did not submit standup!",
+					},
+					TemplateData: map[string]interface{}{
+						"channel": channelName,
+						"user":    slackUserID,
+					},
+				})
+				dayInfo += userDidNotStandupInChannel
 			} else {
 				standup, err := ba.Bot.DB.SelectStandupsFiltered(slackUserID, channel, dateFrom, dateTo)
 				if err != nil {
 					logrus.Errorf("reporting.go reportByUser SelectStandupsFiltered failed: %v", err)
 				}
-				dayInfo += fmt.Sprintf(ba.Bot.Translate.UserDidStandupInChannel, channelName, slackUserID)
+				userDidStandupInChannel := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "UserDidStandupInChannel",
+						Description: "",
+						Other:       "In #{{.channel}} <@{{.user}}> submitted standup: ",
+					},
+					TemplateData: map[string]interface{}{
+						"channel": channelName,
+						"user":    slackUserID,
+					},
+				})
+				dayInfo += userDidStandupInChannel
 				dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 			}
 			dayInfo += "================================================\n"
 		}
 		if dayInfo != "" {
-			text := fmt.Sprintf(ba.Bot.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			reportDate := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "ReportDate",
+					Description: "",
+					Other:       "Report for: {{.dateFrom}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"dateFrom": dateFrom.Format("2006-01-02"),
+				},
+			})
+			text := reportDate
 			text += dayInfo
 			rbc := model.ReportBodyContent{dateFrom, text}
 			report.ReportBody = append(report.ReportBody, rbc)
@@ -472,7 +569,20 @@ func (ba *BotAPI) StandupReportByProjectAndUser(channel model.Channel, slackUser
 	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
 
 	report := model.Report{}
-	report.ReportHead = fmt.Sprintf(ba.Bot.Translate.ReportOnProjectAndUserHead, slackUserID, channel.ChannelName, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02"))
+	reportOnProjectAndUserHead := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "ReportOnProjectAndUserHead",
+			Description: "",
+			Other:       "Report on user <@{{.user}}> in project #{{.channel}} from {{.dateFrom}} to {{.dateTo}}\n\n",
+		},
+		TemplateData: map[string]interface{}{
+			"user":     slackUserID,
+			"channel":  channel.ChannelName,
+			"dateFrom": dateFrom.Format("2006-01-02"),
+			"dateTo":   dateTo.Format("2006-01-02"),
+		},
+	})
+	report.ReportHead = reportOnProjectAndUserHead
 	dateFromBegin, numberOfDays, err := utils.SetupDays(dateFrom, dateTo)
 	if err != nil {
 		return report, err
@@ -497,7 +607,17 @@ func (ba *BotAPI) StandupReportByProjectAndUser(channel model.Channel, slackUser
 			continue
 		}
 		if userIsNonReporter {
-			dayInfo += fmt.Sprintf(ba.Bot.Translate.UserDidNotStandup, slackUserID)
+			userDidNotStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "UserDidNotStandup",
+					Description: "",
+					Other:       "<@{{.user}}> did not submit standup!\n",
+				},
+				TemplateData: map[string]interface{}{
+					"user": slackUserID,
+				},
+			})
+			dayInfo += userDidNotStandup
 			dayInfo += "\n"
 		} else {
 			standup, err := ba.Bot.DB.SelectStandupsFiltered(slackUserID, channel.ChannelID, dateFrom, dateTo)
@@ -505,11 +625,31 @@ func (ba *BotAPI) StandupReportByProjectAndUser(channel model.Channel, slackUser
 				logrus.Errorf("reporting.go reportByProjectAndUser SelectStandupsFiltered failed: %v", err)
 				continue
 			}
-			dayInfo += fmt.Sprintf(ba.Bot.Translate.UserDidStandup, slackUserID)
+			userDidStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "UserDidStandup",
+					Description: "",
+					Other:       "<@{{.user}}> submitted standup: ",
+				},
+				TemplateData: map[string]interface{}{
+					"user": slackUserID,
+				},
+			})
+			dayInfo += userDidStandup
 			dayInfo += fmt.Sprintf("%v \n", standup.Comment)
 		}
 		if dayInfo != "" {
-			text := fmt.Sprintf(ba.Bot.Translate.ReportDate, dateFrom.Format("2006-01-02"))
+			reportDate := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "ReportDate",
+					Description: "",
+					Other:       "Report for: {{.dateFrom}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"dateFrom": dateFrom.Format("2006-01-02"),
+				},
+			})
+			text := reportDate
 			text += dayInfo
 			rbc := model.ReportBodyContent{dateFrom, text}
 			report.ReportBody = append(report.ReportBody, rbc)

@@ -151,25 +151,85 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 
 	if len(failed) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(ba.Bot.Translate.AddPMsFailed, failed)
+			addPMsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddPMsFailed",
+					Description: "",
+					Other:       "Could not assign users as PMs: {{.PMs}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"PMs": failed,
+				},
+			})
+			text += addPMsFailed
 		} else {
-			text += fmt.Sprintf(ba.Bot.Translate.AddMembersFailed, failed)
+			addMembersFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddMembersFailed",
+					Description: "",
+					Other:       "Could not assign members: {{.users}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"users": failed,
+				},
+			})
+			text += addMembersFailed
 		}
 
 	}
 	if len(exist) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(ba.Bot.Translate.AddPMsExist, exist)
+			addPMsExist := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddPMsExist",
+					Description: "",
+					Other:       "Users already have roles: {{.PMs}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"PMs": exist,
+				},
+			})
+			text += addPMsExist
 		} else {
-			text += fmt.Sprintf(ba.Bot.Translate.AddMembersExist, exist)
+			addMembersExist := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddMembersExist",
+					Description: "",
+					Other:       "Members already have roles: {{.users}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"users": exist,
+				},
+			})
+			text += addMembersExist
 		}
 
 	}
 	if len(added) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(ba.Bot.Translate.AddPMsAdded, added)
+			addPMsAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddPMsAdded",
+					Description: "",
+					Other:       "Users are assigned as PMs: {{.PMs}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"PMs": added,
+				},
+			})
+			text += addPMsAdded
 		} else {
-			text += fmt.Sprintf(ba.Bot.Translate.AddMembersAdded, added)
+			addMembersAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddMembersAdded",
+					Description: "",
+					Other:       "Members are assigned: {{.users}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"users": added,
+				},
+			})
+			text += addMembersAdded
 		}
 
 	}
@@ -216,13 +276,43 @@ func (ba *BotAPI) addAdmins(users []string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(ba.Bot.Translate.AddAdminsFailed, failed)
+		addAdminsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "AddAdminsFailed",
+				Description: "",
+				Other:       "Could not assign users as admins: {{.admins}}\n",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": failed,
+			},
+		})
+		text += addAdminsFailed
 	}
 	if len(exist) != 0 {
-		text += fmt.Sprintf(ba.Bot.Translate.AddAdminsExist, exist)
+		addAdminsExist := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "AddAdminsExist",
+				Description: "",
+				Other:       "Users were already assigned as admins: {{.admins}}\n",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": exist,
+			},
+		})
+		text += addAdminsExist
 	}
 	if len(added) != 0 {
-		text += fmt.Sprintf(ba.Bot.Translate.AddAdminsAdded, added)
+		addAdminsAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "AddAdminsAdded",
+				Description: "",
+				Other:       "Users are assigned as admins: {{.admins}}\n",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": added,
+			},
+		})
+		text += addAdminsAdded
 	}
 
 	return text
@@ -357,10 +447,30 @@ func (ba *BotAPI) deleteMembers(members []string, channelID string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not remove the following members: %v\n", failed)
+		deleteMembersFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DeleteMembersFailed",
+				Description: "",
+				Other:       "Could not remove the following members: {{.users}}\n",
+			},
+			TemplateData: map[string]interface{}{
+				"users": failed,
+			},
+		})
+		text += deleteMembersFailed
 	}
 	if len(deleted) != 0 {
-		text += fmt.Sprintf("The following members were removed: %v\n", deleted)
+		deleteMembersSucceed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DeleteMembersSucceed",
+				Description: "",
+				Other:       "The following members were removed: {{.users}}\n",
+			},
+			TemplateData: map[string]interface{}{
+				"users": deleted,
+			},
+		})
+		text += deleteMembersSucceed
 	}
 
 	return text
@@ -406,10 +516,30 @@ func (ba *BotAPI) deleteAdmins(users []string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(ba.Bot.Translate.DeleteAdminsFailed, failed)
+		deleteAdminsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DeleteAdminsFailed",
+				Description: "",
+				Other:       "Could not remove users as admins: {{.admins}}\n",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": failed,
+			},
+		})
+		text += deleteAdminsFailed
 	}
 	if len(deleted) != 0 {
-		text += fmt.Sprintf(ba.Bot.Translate.DeleteAdminsSucceed, deleted)
+		deleteAdminsSucceed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DeleteAdminsSucceed",
+				Description: "",
+				Other:       "Users were removed as admins: {{.admins}}\n",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": deleted,
+			},
+		})
+		text += deleteAdminsSucceed
 	}
 
 	return text
