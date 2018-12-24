@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
@@ -45,6 +46,8 @@ func (r *Reporter) Start() {
 
 // CallDisplayYesterdayTeamReport calls displayYesterdayTeamReport
 func (r *Reporter) CallDisplayYesterdayTeamReport() {
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
+
 	hour, minute, err := formatTime(r.bot.CP.ReportTime)
 	if err != nil {
 		logrus.Error(err)
@@ -54,7 +57,17 @@ func (r *Reporter) CallDisplayYesterdayTeamReport() {
 		_, err := r.displayYesterdayTeamReport()
 		if err != nil {
 			logrus.Error("Error in displayYesterdayTeamReport: ", err)
-			r.bot.SendUserMessage(r.bot.CP.ManagerSlackUserID, fmt.Sprintf("Error sending yesterday report: %v", err))
+			yesterdayReportError := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "YesterdayReportError",
+					Description: "",
+					Other:       "Error sending yesterday report: {{.error}}",
+				},
+				TemplateData: map[string]interface{}{
+					"error": err,
+				},
+			})
+			r.bot.SendUserMessage(r.bot.CP.ManagerSlackUserID, yesterdayReportError)
 			return
 		}
 	}
@@ -62,6 +75,8 @@ func (r *Reporter) CallDisplayYesterdayTeamReport() {
 
 // CallDisplayWeeklyTeamReport calls displayWeeklyTeamReport
 func (r *Reporter) CallDisplayWeeklyTeamReport() {
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
+
 	if int(time.Now().Weekday()) != 0 {
 		return
 	}
@@ -75,7 +90,17 @@ func (r *Reporter) CallDisplayWeeklyTeamReport() {
 		_, err = r.displayWeeklyTeamReport()
 		if err != nil {
 			logrus.Error("Error in displayWeeklyTeamReport: ", err)
-			r.bot.SendUserMessage(r.bot.CP.ManagerSlackUserID, fmt.Sprintf("Error sending weekly report: %v", err))
+			weeklyReportError := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "WeeklyReportError",
+					Description: "",
+					Other:       "Error sending weekly report: {{.error}}",
+				},
+				TemplateData: map[string]interface{}{
+					"error": err,
+				},
+			})
+			r.bot.SendUserMessage(r.bot.CP.ManagerSlackUserID, weeklyReportError)
 		}
 		r.weeklyReportFired = true
 	}
@@ -83,6 +108,8 @@ func (r *Reporter) CallDisplayWeeklyTeamReport() {
 
 // displayYesterdayTeamReport generates report on users who submit standups
 func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) {
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
+
 	var allReports []slack.Attachment
 
 	channels, err := r.bot.DB.GetAllChannels()
@@ -90,6 +117,14 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 		logrus.Errorf("GetAllChannels failed: %v", err)
 		return FinalReport, err
 	}
+
+	reportHeader := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "ReportHeader",
+			Description: "",
+			Other:       "Yesterday report",
+		},
+	})
 
 	for _, channel := range channels {
 		var attachments []slack.Attachment
@@ -154,9 +189,31 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 
 			//attachment text will be depend on worklogsPoints,commitsPoints and standupPoints
 			if points >= 3 {
-				attachment.Text = fmt.Sprintf(r.bot.Translate.NotTagStanduper, UserInfo.RealName, channel.ChannelName)
+				notTagStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "NotTagStanduper",
+						Description: "",
+						Other:       "{{.user}} in #{{.channel}}",
+					},
+					TemplateData: map[string]interface{}{
+						"user":    UserInfo.RealName,
+						"channel": channel.ChannelName,
+					},
+				})
+				attachment.Text = notTagStanduper
 			} else {
-				attachment.Text = fmt.Sprintf(r.bot.Translate.IsRook, member.UserID, channel.ChannelName)
+				tagStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "TagStanduper",
+						Description: "",
+						Other:       "{{.user}} in #{{.channel}}",
+					},
+					TemplateData: map[string]interface{}{
+						"user":    member.UserID,
+						"channel": channel.ChannelName,
+					},
+				})
+				attachment.Text = tagStanduper
 			}
 
 			switch points {
@@ -188,7 +245,7 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 
 		attachments = r.sortReportEntries(attachmentsPull)
 
-		r.bot.SendMessage(channel.ChannelID, r.bot.Translate.ReportHeader, attachments)
+		r.bot.SendMessage(channel.ChannelID, reportHeader, attachments)
 
 		allReports = append(allReports, attachments...)
 	}
@@ -197,13 +254,15 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 		return
 	}
 
-	r.bot.SendMessage(r.bot.CP.ReportingChannel, r.bot.Translate.ReportHeader, allReports)
-	FinalReport = fmt.Sprintf(r.bot.Translate.ReportHeader, allReports)
+	r.bot.SendMessage(r.bot.CP.ReportingChannel, reportHeader, allReports)
+	FinalReport = fmt.Sprintf(reportHeader, allReports)
 	return FinalReport, nil
 }
 
 // displayWeeklyTeamReport generates report on users who submit standups
 func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
+
 	var allReports []slack.Attachment
 
 	channels, err := r.bot.DB.GetAllChannels()
@@ -211,6 +270,14 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 		logrus.Errorf("GetAllChannels failed: %v", err)
 		return FinalReport, err
 	}
+
+	reportHeaderWeekly := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "ReportHeaderWeekly",
+			Description: "",
+			Other:       "Weekly report",
+		},
+	})
 
 	for _, channel := range channels {
 		var attachmentsPull []model.AttachmentItem
@@ -274,9 +341,31 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 
 			//attachment text will be depend on worklogsPoints and commitsPoints
 			if points >= 2 {
-				attachment.Text = fmt.Sprintf(r.bot.Translate.NotTagStanduper, UserInfo.RealName, channel.ChannelName)
+				notTagStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "NotTagStanduper",
+						Description: "",
+						Other:       "{{.user}} in #{{.channel}}",
+					},
+					TemplateData: map[string]interface{}{
+						"user":    UserInfo.RealName,
+						"channel": channel.ChannelName,
+					},
+				})
+				attachment.Text = notTagStanduper
 			} else {
-				attachment.Text = fmt.Sprintf(r.bot.Translate.IsRook, member.UserID, channel.ChannelName)
+				tagStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "TagStanduper",
+						Description: "",
+						Other:       "{{.user}} in #{{.channel}}",
+					},
+					TemplateData: map[string]interface{}{
+						"user":    member.UserID,
+						"channel": channel.ChannelName,
+					},
+				})
+				attachment.Text = tagStanduper
 			}
 
 			switch points {
@@ -304,7 +393,7 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 
 		attachments = r.sortReportEntries(attachmentsPull)
 
-		r.bot.SendMessage(channel.ChannelID, r.bot.Translate.ReportHeaderWeekly, attachments)
+		r.bot.SendMessage(channel.ChannelID, reportHeaderWeekly, attachments)
 
 		allReports = append(allReports, attachments...)
 	}
@@ -313,12 +402,14 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 		return
 	}
 
-	r.bot.SendMessage(r.bot.CP.ReportingChannel, r.bot.Translate.ReportHeaderWeekly, allReports)
-	FinalReport = fmt.Sprintf(r.bot.Translate.ReportHeaderWeekly, allReports)
+	r.bot.SendMessage(r.bot.CP.ReportingChannel, reportHeaderWeekly, allReports)
+	FinalReport = fmt.Sprintf(reportHeaderWeekly, allReports)
 	return FinalReport, nil
 }
 
 func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
+
 	points := 0
 	worklogsEmoji := ""
 
@@ -338,7 +429,18 @@ func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, 
 	worklogsTime := utils.SecondsToHuman(totalWorklogs)
 
 	if totalWorklogs != projectWorklogs {
-		worklogsTime = fmt.Sprintf(r.bot.Translate.WorklogsTime, utils.SecondsToHuman(projectWorklogs), utils.SecondsToHuman(totalWorklogs))
+		worklogsTimeTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "WorklogsTimeTranslation",
+				Description: "",
+				Other:       "{{.projectWorklogs}} out of {{.totalWorklogs}}",
+			},
+			TemplateData: map[string]interface{}{
+				"projectWorklogs": utils.SecondsToHuman(projectWorklogs),
+				"totalWorklogs":   utils.SecondsToHuman(totalWorklogs),
+			},
+		})
+		worklogsTime = worklogsTimeTranslation
 	}
 
 	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
@@ -348,11 +450,24 @@ func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, 
 		}
 	}
 
-	worklogs := fmt.Sprintf(r.bot.Translate.Worklogs, worklogsTime, worklogsEmoji)
+	worklogsTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "WorklogsTranslation",
+			Description: "",
+			Other:       " worklogs: {{.worklogsTime}} {{.worklogsEmoji}} |",
+		},
+		TemplateData: map[string]interface{}{
+			"worklogsTime":  worklogsTime,
+			"worklogsEmoji": worklogsEmoji,
+		},
+	})
+	worklogs := worklogsTranslation
 	return worklogs, points
 }
 
 func (r *Reporter) processWeeklyWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
+
 	points := 0
 	worklogsEmoji := ""
 
@@ -370,14 +485,38 @@ func (r *Reporter) processWeeklyWorklogs(totalWorklogs, projectWorklogs int) (st
 	worklogsTime := utils.SecondsToHuman(totalWorklogs)
 
 	if totalWorklogs != projectWorklogs {
-		worklogsTime = fmt.Sprintf(r.bot.Translate.WorklogsTime, utils.SecondsToHuman(projectWorklogs), utils.SecondsToHuman(totalWorklogs))
+		worklogsTimeTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "WorklogsTimeTranslation",
+				Description: "",
+				Other:       "{{.projectWorklogs}} out of {{.totalWorklogs}}",
+			},
+			TemplateData: map[string]interface{}{
+				"projectWorklogs": utils.SecondsToHuman(projectWorklogs),
+				"totalWorklogs":   utils.SecondsToHuman(totalWorklogs),
+			},
+		})
+		worklogsTime = worklogsTimeTranslation
 	}
 
-	worklogs := fmt.Sprintf(r.bot.Translate.Worklogs, worklogsTime, worklogsEmoji)
+	worklogsTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "WorklogsTranslation",
+			Description: "",
+			Other:       " worklogs: {{.worklogsTime}} {{.worklogsEmoji}} |",
+		},
+		TemplateData: map[string]interface{}{
+			"worklogsTime":  worklogsTime,
+			"worklogsEmoji": worklogsEmoji,
+		},
+	})
+	worklogs := worklogsTranslation
 	return worklogs, points
 }
 
 func (r *Reporter) processCommits(totalCommits, projectCommits int) (string, int) {
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
+
 	points := 0
 	commitsEmoji := ""
 
@@ -397,11 +536,25 @@ func (r *Reporter) processCommits(totalCommits, projectCommits int) (string, int
 		}
 	}
 
-	commits := fmt.Sprintf(r.bot.Translate.Commits, projectCommits, commitsEmoji)
+	commitsTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "CommitscommitsTranslation",
+			Description: "",
+			Other:       " commits: {{.projectCommits}} {{.commitsEmoji}} |",
+		},
+		TemplateData: map[string]interface{}{
+			"projectCommits": projectCommits,
+			"commitsEmoji":   commitsEmoji,
+		},
+	})
+
+	commits := commitsTranslation
 	return commits, points
 }
 
 func (r *Reporter) processStandup(member model.ChannelMember) (string, int) {
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
+
 	points := 0
 	standup := ""
 	t := time.Now().AddDate(0, 0, -1)
@@ -423,9 +576,23 @@ func (r *Reporter) processStandup(member model.ChannelMember) (string, int) {
 	}
 
 	if isNonReporter == true {
-		standup = r.bot.Translate.NoStandup
+		noStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "NoStandup",
+				Description: "",
+				Other:       " standup :x: ",
+			},
+		})
+		standup = noStandup
 	} else {
-		standup = r.bot.Translate.HasStandup
+		hasStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "HasStandup",
+				Description: "",
+				Other:       " standup :heavy_check_mark: ",
+			},
+		})
+		standup = hasStandup
 		points++
 	}
 

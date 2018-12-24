@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -38,7 +37,7 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 		},
 	})
 
-	usersText, weekdays, time, err := utils.SplitTimeTalbeCommand(params, ba.Bot.Translate.DaysDivider, ba.Bot.Translate.TimeDivider)
+	usersText, weekdays, time, err := utils.SplitTimeTalbeCommand(params, daysDivider, timeDivider)
 	if err != nil {
 		return DisplayHelpText("add_timetable")
 	}
@@ -112,11 +111,33 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 		tt = utils.PrepareTimeTable(tt, weekdays, time)
 		tt, err = ba.Bot.DB.UpdateTimeTable(tt)
 		if err != nil {
-			totalString += fmt.Sprintf(ba.Bot.Translate.CanNotUpdateTimetable, userName, err)
+			canNotUpdateTimetable := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "CanNotUpdateTimetable",
+					Description: "",
+					Other:       "Could not update timetable for user <@{{.user}}>: {{.error}}\n",
+				},
+				TemplateData: map[string]interface{}{
+					"user":  userName,
+					"error": err,
+				},
+			})
+			totalString += canNotUpdateTimetable
 			continue
 		}
 		logrus.Infof("Timetable updated id:%v", tt.ID)
-		totalString += fmt.Sprintf(ba.Bot.Translate.TimetableUpdated, userID, tt.Show())
+		timetableUpdated := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableUpdated",
+				Description: "",
+				Other:       "Timetable for <@{{.user}}> updated: {{.timetable}} \n",
+			},
+			TemplateData: map[string]interface{}{
+				"user":      userID,
+				"timetable": tt.Show(),
+			},
+		})
+		totalString += timetableUpdated
 	}
 	return totalString
 }
@@ -130,7 +151,7 @@ func (ba *BotAPI) showTimeTable(accessLevel int, channelID, params string) strin
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			wrongUsernameError := r.Localizer.MustLocalize(&i18n.LocalizeConfig{
+			wrongUsernameError := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "WrongUsernameError",
 					Description: "Displays message when username is misspelled",
@@ -174,7 +195,18 @@ func (ba *BotAPI) showTimeTable(accessLevel int, channelID, params string) strin
 			continue
 
 		}
-		totalString += fmt.Sprintf(ba.Bot.Translate.TimetableShow, userName, tt.Show())
+		timetableShow := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimetableShow",
+				Description: "",
+				Other:       "Timetable for <@{{.user}}> is: {{.timetable}}\n",
+			},
+			TemplateData: map[string]interface{}{
+				"user":      userName,
+				"timetable": tt.Show(),
+			},
+		})
+		totalString += timetableShow
 	}
 	return totalString
 }

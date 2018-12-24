@@ -84,10 +84,9 @@ func (b *Bot) Run() {
 	localizer := i18n.NewLocalizer(b.Bundle, b.CP.Language)
 	helloManager := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
-			ID: "HelloManager",
-		},
-		TemplateData: map[string]string{
-			"ID": b.CP.ManagerSlackUserID,
+			ID:          "HelloManager",
+			Description: "",
+			Other:       "Hello, Manager!",
 		},
 	})
 
