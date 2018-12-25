@@ -154,8 +154,8 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			addPMsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsFailed",
-					Description: "",
-					Other:       "Could not assign users as PMs: {{.PMs}}\n",
+					Description: "Displays a message when errors occur when assigning users as PM",
+					Other:       "Could not assign users as PMs: {{.PMs}}",
 				},
 				TemplateData: map[string]interface{}{
 					"PMs": failed,
@@ -166,8 +166,8 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			addMembersFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersFailed",
-					Description: "",
-					Other:       "Could not assign members: {{.users}}\n",
+					Description: "Displays a message when errors occur when assigning users",
+					Other:       "Could not assign members: {{.users}}",
 				},
 				TemplateData: map[string]interface{}{
 					"users": failed,
@@ -182,7 +182,7 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			addPMsExist := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsExist",
-					Description: "",
+					Description: "Displays a message when errors occur when assigning users, which has already PM-role",
 					Other:       "Users already have roles: {{.PMs}}\n",
 				},
 				TemplateData: map[string]interface{}{
@@ -194,7 +194,7 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			addMembersExist := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersExist",
-					Description: "",
+					Description: "Displays a message when errors occur when assigning users, which already has role",
 					Other:       "Members already have roles: {{.users}}\n",
 				},
 				TemplateData: map[string]interface{}{
@@ -210,7 +210,7 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			addPMsAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsAdded",
-					Description: "",
+					Description: "Display a message when users successfully assigning as PMs",
 					Other:       "Users are assigned as PMs: {{.PMs}}\n",
 				},
 				TemplateData: map[string]interface{}{
@@ -222,7 +222,7 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			addMembersAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersAdded",
-					Description: "",
+					Description: "Display a message when users are successfully assigned",
 					Other:       "Members are assigned: {{.users}}\n",
 				},
 				TemplateData: map[string]interface{}{
@@ -279,8 +279,8 @@ func (ba *BotAPI) addAdmins(users []string) string {
 		addAdminsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AddAdminsFailed",
-				Description: "",
-				Other:       "Could not assign users as admins: {{.admins}}\n",
+				Description: "Display message when user added as admin for Comedian",
+				Other:       "Could not assign users as admins: {{.admins}}",
 			},
 			TemplateData: map[string]interface{}{
 				"admins": failed,
