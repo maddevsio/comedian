@@ -60,7 +60,7 @@ func (r *Reporter) CallDisplayYesterdayTeamReport() {
 			yesterdayReportError := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "YesterdayReportError",
-					Description: "",
+					Description: "Displays a message if sending yesterday report failed",
 					Other:       "Error sending yesterday report: {{.error}}",
 				},
 				TemplateData: map[string]interface{}{
@@ -93,7 +93,7 @@ func (r *Reporter) CallDisplayWeeklyTeamReport() {
 			weeklyReportError := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "WeeklyReportError",
-					Description: "",
+					Description: "Displays a message if sending weekly report failed",
 					Other:       "Error sending weekly report: {{.error}}",
 				},
 				TemplateData: map[string]interface{}{
@@ -121,7 +121,7 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 	reportHeader := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "ReportHeader",
-			Description: "",
+			Description: "Displays a header of yesterday report",
 			Other:       "Yesterday report",
 		},
 	})
@@ -192,7 +192,7 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 				notTagStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:          "NotTagStanduper",
-						Description: "",
+						Description: "Displays a message without a user tag",
 						Other:       "{{.user}} in #{{.channel}}",
 					},
 					TemplateData: map[string]interface{}{
@@ -205,8 +205,8 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 				tagStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:          "TagStanduper",
-						Description: "",
-						Other:       "{{.user}} in #{{.channel}}",
+						Description: "Displays a message with a user tag",
+						Other:       "<@{{.user}}> in #{{.channel}}",
 					},
 					TemplateData: map[string]interface{}{
 						"user":    member.UserID,
@@ -274,7 +274,7 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 	reportHeaderWeekly := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "ReportHeaderWeekly",
-			Description: "",
+			Description: "Displays a header of weekly report",
 			Other:       "Weekly report",
 		},
 	})
@@ -344,7 +344,7 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 				notTagStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:          "NotTagStanduper",
-						Description: "",
+						Description: "Displays a message without a user tag",
 						Other:       "{{.user}} in #{{.channel}}",
 					},
 					TemplateData: map[string]interface{}{
@@ -357,8 +357,8 @@ func (r *Reporter) displayWeeklyTeamReport() (FinalReport string, e error) {
 				tagStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:          "TagStanduper",
-						Description: "",
-						Other:       "{{.user}} in #{{.channel}}",
+						Description: "Displays a message with a user tag",
+						Other:       "<@{{.user}}> in #{{.channel}}",
 					},
 					TemplateData: map[string]interface{}{
 						"user":    member.UserID,
@@ -432,7 +432,7 @@ func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, 
 		worklogsTimeTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "WorklogsTimeTranslation",
-				Description: "",
+				Description: "Displays message about worklogs time",
 				Other:       "{{.projectWorklogs}} out of {{.totalWorklogs}}",
 			},
 			TemplateData: map[string]interface{}{
@@ -453,7 +453,7 @@ func (r *Reporter) processWorklogs(totalWorklogs, projectWorklogs int) (string, 
 	worklogsTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "WorklogsTranslation",
-			Description: "",
+			Description: "Displays message about worklogs",
 			Other:       " worklogs: {{.worklogsTime}} {{.worklogsEmoji}} |",
 		},
 		TemplateData: map[string]interface{}{
@@ -488,7 +488,7 @@ func (r *Reporter) processWeeklyWorklogs(totalWorklogs, projectWorklogs int) (st
 		worklogsTimeTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "WorklogsTimeTranslation",
-				Description: "",
+				Description: "Displays message about worklogs time",
 				Other:       "{{.projectWorklogs}} out of {{.totalWorklogs}}",
 			},
 			TemplateData: map[string]interface{}{
@@ -502,7 +502,7 @@ func (r *Reporter) processWeeklyWorklogs(totalWorklogs, projectWorklogs int) (st
 	worklogsTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "WorklogsTranslation",
-			Description: "",
+			Description: "Displays message about worklogs",
 			Other:       " worklogs: {{.worklogsTime}} {{.worklogsEmoji}} |",
 		},
 		TemplateData: map[string]interface{}{
@@ -538,8 +538,8 @@ func (r *Reporter) processCommits(totalCommits, projectCommits int) (string, int
 
 	commitsTranslation := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
-			ID:          "CommitscommitsTranslation",
-			Description: "",
+			ID:          "CommitsTranslation",
+			Description: "Displays message about commits",
 			Other:       " commits: {{.projectCommits}} {{.commitsEmoji}} |",
 		},
 		TemplateData: map[string]interface{}{
@@ -579,7 +579,7 @@ func (r *Reporter) processStandup(member model.ChannelMember) (string, int) {
 		noStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "NoStandup",
-				Description: "",
+				Description: "Displays message if standuper hasn't standup",
 				Other:       " standup :x: ",
 			},
 		})
@@ -588,7 +588,7 @@ func (r *Reporter) processStandup(member model.ChannelMember) (string, int) {
 		hasStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "HasStandup",
-				Description: "",
+				Description: "Displays message if standuper has standup",
 				Other:       " standup :heavy_check_mark: ",
 			},
 		})
