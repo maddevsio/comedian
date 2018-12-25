@@ -69,23 +69,8 @@ Create "app" in slack workspace: https://api.slack.com/apps
 In the drop-down list at the top select the created "app"
 
 ### **Step 5**: Configure slash commands
-In the menu, select "Slash Commands". Create the following commands (Request URL for all commands: ```http://<ngrok https URL>/commands(here you can paste COMEDIAN_SECRET_TOKEN if it is not empty) ``` )
-
-| Name | Hint | Description | Escape option |
-| --- | --- | --- | --- |
-| /helper | | displays helpful info about slash commands | - |
-| /add | @user @user1 / (admin, pm, developer) | Adds a new user with selected role | V |
-| /delete | @user @user1 / (admin, pm, developer) | Removes user with selected role  | V |
-| /list | (admin, pm, developer) | Lists users with selected role | - |
-| /standup_time_set | hh:mm | Set standup time | - |
-| /standup_time | - | Show standup time in current channel | - |
-| /standup_time_remove | - | Delete standup time in current channel | - |
-| /timetable_set | @user1 @user2 on mon tue at 14:02 | Set individual standup time | V |
-| /timetable_show | @user1 @user2 | Show individual standup time for users | V |
-| /timetable_remove | @user1 @user2  | Delete individual standup time for users | V |
-| /report_by_project | #channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period | - |
-| /report_by_user | @user 2017-01-01 2017-01-31 | gets all standups for specified user for time period | - |
-| /report_by_user_in_project | #project @user 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period | - |
+In the menu, select "Slash Commands". Create the slash command: ```/comedian```
+(Request URL for command: ```http://<ngrok https URL>/commands(here you can paste COMEDIAN_SECRET_TOKEN if it is not empty) ``` )
 
 ### **Step 6**: Create bot user
 Select "Bot users" in the menu.
@@ -141,6 +126,25 @@ In case something does not work correctly double check the configuration and mak
 
 ## Usage
 
+You can use following commands:
+***
+| Name | Hint | Description |
+| --- | --- | --- | 
+| /comedian | | displays helpful info about all commands |
+| /comedian add | @user @user1 / (admin, pm, developer) | Adds a new user with selected role |
+| /comedian remove | @user @user1 / (admin, pm, developer) | Removes user with selected role |
+| /comedian show | (admin, pm, developer) | Shows users with selected role |
+| /comedian add_deadline | hh:mm | Set standup time |
+| /comedian show_deadline | - | Show standup time in current channel |
+| /comedian remove_deadline | - | Delete standup time in current channel |
+| /comedian add_timetable | @user1 @user2 on mon tue at 14:02 | Set individual standup time |
+| /comedian show_timetable | @user1 @user2 | Show individual standup time for users |
+| /comedian remove_timetable | @user1 @user2  | Delete individual standup time for users |
+| /comedian report_on_project | #channelID 2017-01-01 2017-01-31 | gets all standups for specified project for time period |
+| /comedian report_on_user | @user 2017-01-01 2017-01-31 | gets all standups for specified user for time period |
+| /comedian report_on_user_in_project |@user #project 2017-01-01 2017-01-31 | gets all standups for specified user in project for time period |
+
+***
 First, you need to start remote standups meetings in Slack. 
 
 Create a channel for it. Then add Comedian in the channel and ask your team to write messages with answers to the following questions tagging bot in the message:
