@@ -19,7 +19,11 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 	var totalString string
 	if accessLevel > 3 {
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
-			MessageID: "AccessAtLeastPM",
+			DefaultMessage: &i18n.Message{
+				ID:          "AccessAtLeastPM",
+				Description: "Display warning that role must be at least pm",
+				Other:       "Access Denied! You need to be at least PM in this project to use this command!",
+			},
 		})
 		return accessAtLeastPM
 	}
@@ -54,6 +58,7 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 					Other:       "Seems like you misspelled username. Please, check and try command again!",
 				},
 			})
+			wrongUsernameError += "\n"
 			totalString += wrongUsernameError
 			continue
 
@@ -83,15 +88,15 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 				canNotUpdateTimetable := localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:          "CanNotUpdateTimetable",
-						Description: "",
-						Other:       "Could not update timetable for user {{.user}}: {{.error}}\n",
+						Description: "Displays message when updating timetable has failed",
+						Other:       "Could not update timetable for user <@{{.user}}>: {{.error}}",
 					},
 					TemplateData: map[string]interface{}{
 						"user":  userName,
 						"error": err,
 					},
 				})
-				totalString += canNotUpdateTimetable
+				totalString += canNotUpdateTimetable + "\n"
 				continue
 
 			}
@@ -99,15 +104,15 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 			timetableCreated := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "TimetableCreated",
-					Description: "Show message that timetable for user created",
-					Other:       "Timetable for <@{{.user}}> created: {{.timetable}} \n",
+					Description: "Shows message when user's timetable successfully created",
+					Other:       "Timetable for <@{{.user}}> created: {{.timetable}}",
 				},
 				TemplateData: map[string]interface{}{
 					"user":      userID,
 					"timetable": ba.returnTimeTable(ttNew),
 				},
 			})
-			totalString += timetableCreated
+			totalString += timetableCreated + "\n "
 			continue
 		}
 		tt = utils.PrepareTimeTable(tt, weekdays, time)
@@ -116,30 +121,30 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 			canNotUpdateTimetable := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "CanNotUpdateTimetable",
-					Description: "",
-					Other:       "Could not update timetable for user <@{{.user}}>: {{.error}}\n",
+					Description: "Displays message when occur updating errors",
+					Other:       "Could not update timetable for user <@{{.user}}>: {{.error}}",
 				},
 				TemplateData: map[string]interface{}{
 					"user":  userName,
 					"error": err,
 				},
 			})
-			totalString += canNotUpdateTimetable
+			totalString += canNotUpdateTimetable + "\n"
 			continue
 		}
 		logrus.Infof("Timetable updated id:%v", tt.ID)
 		timetableUpdated := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableUpdated",
-				Description: "",
-				Other:       "Timetable for <@{{.user}}> updated: {{.timetable}} \n",
+				Description: "Displays message when user's timetable successfully updated",
+				Other:       "Timetable for <@{{.user}}> updated: {{.timetable}}",
 			},
 			TemplateData: map[string]interface{}{
 				"user":      userID,
 				"timetable": ba.returnTimeTable(tt),
 			},
 		})
-		totalString += timetableUpdated
+		totalString += timetableUpdated + "\n"
 	}
 	return totalString
 }
@@ -160,7 +165,7 @@ func (ba *BotAPI) showTimeTable(accessLevel int, channelID, params string) strin
 					Other:       "Seems like you misspelled username. Please, check and try command again!",
 				},
 			})
-			totalString += wrongUsernameError
+			totalString += wrongUsernameError + "\n"
 			continue
 		}
 		userID, userName := utils.SplitUser(u)
@@ -170,14 +175,14 @@ func (ba *BotAPI) showTimeTable(accessLevel int, channelID, params string) strin
 			notAStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "NotAStanduper",
-					Description: "Display message when user not a standuper",
-					Other:       "Seems like <@{{.user}}> is not even assigned as standuper in this channel!\n",
+					Description: "Displays message when user not a standuper",
+					Other:       "Seems like <@{{.user}}> is not even assigned as standuper in this channel!",
 				},
 				TemplateData: map[string]interface{}{
 					"user": userName,
 				},
 			})
-			totalString += notAStanduper
+			totalString += notAStanduper + "\n"
 			continue
 
 		}
@@ -186,29 +191,29 @@ func (ba *BotAPI) showTimeTable(accessLevel int, channelID, params string) strin
 			noTimetableSet := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "NoTimetableSet",
-					Description: "Display message when user doesn't have a timetable",
-					Other:       "<@{{.user}}> does not have a timetable!\n",
+					Description: "Displays message when user doesn't have a timetable",
+					Other:       "<@{{.user}}> does not have a timetable!",
 				},
 				TemplateData: map[string]interface{}{
 					"user": userName,
 				},
 			})
-			totalString += noTimetableSet
+			totalString += noTimetableSet + "\n"
 			continue
 
 		}
 		timetableShow := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableShow",
-				Description: "",
-				Other:       "Timetable for <@{{.user}}> is: {{.timetable}}\n",
+				Description: "Shows timetable of user",
+				Other:       "Timetable for <@{{.user}}> is: {{.timetable}}",
 			},
 			TemplateData: map[string]interface{}{
 				"user":      userName,
 				"timetable": ba.returnTimeTable(tt),
 			},
 		})
-		totalString += timetableShow
+		totalString += timetableShow + "\n"
 	}
 	return totalString
 }
@@ -222,7 +227,7 @@ func (ba *BotAPI) removeTimeTable(accessLevel int, channelID, params string) str
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AccessAtLeastPM",
-				Description: "Display warning that role must be at least pm",
+				Description: "Displays warning that role must be at least pm",
 				Other:       "Access Denied! You need to be at least PM in this project to use this command!",
 			},
 		})
@@ -240,7 +245,7 @@ func (ba *BotAPI) removeTimeTable(accessLevel int, channelID, params string) str
 					Other:       "Seems like you misspelled username. Please, check and try command again!",
 				},
 			})
-			totalString += wrongUsernameError
+			totalString += wrongUsernameError + "\n"
 			continue
 		}
 		userID, userName := utils.SplitUser(u)
@@ -250,14 +255,14 @@ func (ba *BotAPI) removeTimeTable(accessLevel int, channelID, params string) str
 			notAStanduper := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "NotAStanduper",
-					Description: "Display message when user not a standuper",
-					Other:       "Seems like <@{{.user}}> is not even assigned as standuper in this channel!\n",
+					Description: "Displays message if user not a standuper",
+					Other:       "Seems like <@{{.user}}> is not even assigned as standuper in this channel!",
 				},
 				TemplateData: map[string]interface{}{
 					"user": userName,
 				},
 			})
-			totalString += notAStanduper
+			totalString += notAStanduper + "\n"
 			continue
 
 		}
@@ -266,29 +271,30 @@ func (ba *BotAPI) removeTimeTable(accessLevel int, channelID, params string) str
 			noTimetableSet := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "NoTimetableSet",
-					Description: "Display message when user doesn't have a timetable",
-					Other:       "<@{{.user}}> does not have a timetable!\n",
+					Description: "Displays message when user doesn't have a timetable",
+					Other:       "<@{{.user}}> does not have a timetable!",
 				},
 				TemplateData: map[string]interface{}{
 					"user": userName,
 				},
 			})
-			totalString += noTimetableSet
+			totalString += noTimetableSet + "\n"
 			continue
 		}
 		err = ba.Bot.DB.DeleteTimeTable(tt.ID)
 		if err != nil {
+			logrus.Errorf("Could not delete timetable for user %v : %v", userName, err)
 			canNotDeleteTimetable := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "CanNotDeleteTimetable",
 					Description: "Displays a message when a timetable deletion error occurs.",
-					Other:       "Could not delete timetable for user <@{{.user}}>\n",
+					Other:       "Could not delete timetable for user <@{{.user}}>",
 				},
 				TemplateData: map[string]interface{}{
 					"user": userName,
 				},
 			})
-			totalString += canNotDeleteTimetable
+			totalString += canNotDeleteTimetable + "\n"
 			continue
 
 		}
@@ -296,13 +302,13 @@ func (ba *BotAPI) removeTimeTable(accessLevel int, channelID, params string) str
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableDeleted",
 				Description: "Displays message when timetable removed",
-				Other:       "Timetable removed for <@{{.user}}>\n",
+				Other:       "Timetable removed for <@{{.user}}>",
 			},
 			TemplateData: map[string]interface{}{
 				"user": userName,
 			},
 		})
-		totalString += timetableDeleted
+		totalString += timetableDeleted + "\n"
 	}
 	return totalString
 }
@@ -317,7 +323,7 @@ func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
 		timetableShowMonday := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableShowMonday",
-				Description: "",
+				Description: "Shows timetable for monday",
 				Other:       "| Monday {{.hour}}:{{.minutes}} ",
 			},
 			TemplateData: map[string]interface{}{
@@ -332,7 +338,7 @@ func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
 		timetableShowTuesday := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableShowTuesday",
-				Description: "",
+				Description: "Shows timetable for tuesday",
 				Other:       "| Tuesday {{.hour}}:{{.minutes}} ",
 			},
 			TemplateData: map[string]interface{}{
@@ -347,7 +353,7 @@ func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
 		timetableShowWednesday := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableShowWednesday",
-				Description: "",
+				Description: "Shows timetable for wednesday",
 				Other:       "| Wednesday {{.hour}}:{{.minutes}} ",
 			},
 			TemplateData: map[string]interface{}{
@@ -362,7 +368,7 @@ func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
 		timetableShowThursday := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableShowThursday",
-				Description: "",
+				Description: "Shows timetable for thursday",
 				Other:       "| Thursday {{.hour}}:{{.minutes}} ",
 			},
 			TemplateData: map[string]interface{}{
@@ -377,7 +383,7 @@ func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
 		timetableShowFriday := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableShowFriday",
-				Description: "",
+				Description: "Shows timetable for friday",
 				Other:       "| Friday {{.hour}}:{{.minutes}} ",
 			},
 			TemplateData: map[string]interface{}{
@@ -392,7 +398,7 @@ func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
 		timetableShowSaturday := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableShowSaturday",
-				Description: "",
+				Description: "Shows timetable for saturday",
 				Other:       "| Saturday {{.hour}}:{{.minutes}} ",
 			},
 			TemplateData: map[string]interface{}{
@@ -407,7 +413,7 @@ func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
 		timetableShowSunday := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "TimetableShowSunday",
-				Description: "",
+				Description: "Shows timetable for sunday",
 				Other:       "| Sunday {{.hour}}:{{.minutes}} ",
 			},
 			TemplateData: map[string]interface{}{
@@ -422,7 +428,7 @@ func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
 		emptyTimetable := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "EmptyTimetable",
-				Description: "",
+				Description: "Displays message if timetable is empty",
 				Other:       "Timetable is empty",
 			},
 		})

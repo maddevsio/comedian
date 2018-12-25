@@ -12,7 +12,7 @@ func (ba *BotAPI) addTime(accessLevel int, channelID, params string) string {
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AccessAtLeastPM",
-				Description: "Display warning that role must be at least pm",
+				Description: "Displays warning that role must be at least pm",
 				Other:       "Access Denied! You need to be at least PM in this project to use this command!",
 			},
 		})
@@ -74,7 +74,7 @@ func (ba *BotAPI) removeTime(accessLevel int, channelID string) string {
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AccessAtLeastPM",
-				Description: "Display warning that role must be at least pm",
+				Description: "Displays warning that role must be at least pm",
 				Other:       "Access Denied! You need to be at least PM in this project to use this command!",
 			},
 		})
