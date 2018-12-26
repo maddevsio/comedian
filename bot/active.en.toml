@@ -224,10 +224,6 @@ other = "No standup data for this period"
 description = "Displays report on user in project"
 other = "Report on user <@{{.user}}> in project #{{.channel}} from {{.dateFrom}} to {{.dateTo}}"
 
-[ReportOnProjectCollectorData]
-description = "Displays total commits and worklogs report on project"
-other = "Total commits for period: {{.commits}}\\nTotal worklogs for period: {{.worklogs}}"
-
 [ReportOnProjectHead]
 description = "Displays report on project in date"
 other = "Full Report on project #{{.channel}} from {{.dateFrom}} to {{.dateTo}}:"
@@ -385,6 +381,10 @@ other = "Error sending yesterday report: {{.error}}"
 [cantSelectChannelInReport]
 description = "Displays message if you cannot find a channel for a report."
 other = "Could not select channel!"
+
+[totalWorklogs]
+description = "Shows a total worklogs"
+other = "Total worklogs for period: {{.worklogs}}"
 
 [userDoesNotExist]
 description = "Displays message if user doesn't exist"
