@@ -211,7 +211,7 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsAdded",
 					Description: "Displays a message when users successfully assigning as PMs",
-					Other:       "Users are assigned as PMs: {{.PMs}}\n",
+					Other:       "Users are assigned as PMs: {{.PMs}}",
 				},
 				TemplateData: map[string]interface{}{
 					"PMs": added,
@@ -223,7 +223,7 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersAdded",
 					Description: "Displays a message when users are successfully assigned",
-					Other:       "Members are assigned: {{.users}}\n",
+					Other:       "Members are assigned: {{.users}}",
 				},
 				TemplateData: map[string]interface{}{
 					"users": added,
@@ -335,7 +335,7 @@ func (ba *BotAPI) listMembers(channelID, role string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "ListNoPMs",
 					Description: "Displays message about there are no PMs in channel",
-					Other:       "No PMs in this channel! To add one, please, use `/add` slash command",
+					Other:       "No PMs in this channel! To add one, please, use `/comedian add` slash command",
 				},
 			})
 			return listNoPMs
@@ -361,7 +361,7 @@ func (ba *BotAPI) listMembers(channelID, role string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "ListNoStandupers",
 				Description: "Displays message when there are no standupers in the channel",
-				Other:       "No standupers in this channel! To add one, please, use `/add` slash command",
+				Other:       "No standupers in this channel! To add one, please, use `/comedian add` slash command",
 			},
 		})
 		return listNoStandupers
@@ -400,7 +400,7 @@ func (ba *BotAPI) listAdmins() string {
 			DefaultMessage: &i18n.Message{
 				ID:          "ListNoAdmins",
 				Description: "Displays message when there are no admins in the channel",
-				Other:       "No admins in this workspace! To add one, please, use `/add` slash command",
+				Other:       "No admins in this workspace! To add one, please, use `/comedian add` slash command",
 			},
 		})
 		return listNoAdmins

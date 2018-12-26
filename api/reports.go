@@ -82,18 +82,32 @@ func (ba *BotAPI) generateReportOnProject(accessLevel int, params string) string
 			if err != nil {
 				continue
 			}
-			reportOnProjectCollectorData := localizer.MustLocalize(&i18n.LocalizeConfig{
+
+			totalCommits := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
-					ID:          "ReportOnProjectCollectorData",
-					Description: "Displays total commits and worklogs report on project",
-					Other:       "Total commits for period: {{.commits}}\nTotal worklogs for period: {{.worklogs}}",
+					ID:          "TotalCommits",
+					Description: "Shows a total commits",
+					Other:       "Total commits for period: {{.commits}}",
 				},
 				TemplateData: map[string]interface{}{
-					"commits":  cd.Commits,
+					"commits": cd.Commits,
+				},
+			})
+			totalCommits += "\n"
+			totalWorklogs := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "totalWorklogs",
+					Description: "Shows a total worklogs",
+					Other:       "Total worklogs for period: {{.worklogs}}",
+				},
+				TemplateData: map[string]interface{}{
 					"worklogs": utils.SecondsToHuman(cd.Worklogs),
 				},
 			})
-			text += "\n" + reportOnProjectCollectorData
+			totalWorklogs += "\n"
+			//"\nTotal commits for period: {{.commits}}\nTotal worklogs for period: {{.worklogs}}"
+			reportOnProjectCollectorData := "\n" + totalCommits + totalWorklogs
+			text += reportOnProjectCollectorData
 
 		}
 	}

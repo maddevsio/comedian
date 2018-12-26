@@ -22,7 +22,7 @@ other = "Could not assign users as admins: {{.admins}}"
 
 [AddMembersAdded]
 description = "Displays a message when users are successfully assigned"
-other = "Members are assigned: {{.users}}\\n"
+other = "Members are assigned: {{.users}}"
 
 [AddMembersExist]
 description = "Displays a message when errors occur when assigning users, which already has role"
@@ -34,7 +34,7 @@ other = "Could not assign members: {{.users}}"
 
 [AddPMsAdded]
 description = "Displays a message when users successfully assigning as PMs"
-other = "Users are assigned as PMs: {{.PMs}}\\n"
+other = "Users are assigned as PMs: {{.PMs}}"
 
 [AddPMsExist]
 description = "Displays a message when errors occur when assigning users, which has already PM-role"

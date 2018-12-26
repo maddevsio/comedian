@@ -126,7 +126,7 @@ func (ba *BotAPI) showTime(channelID string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "ShowNoStandupTime",
 				Description: "Displays message when a standup time doesn't set for channel",
-				Other:       "No standup time set for this channel yet! Please, add a standup time using `/standup_time_set` command!",
+				Other:       "No standup time set for this channel yet! Please, add a standup time using `/comedian add_deadline` command!",
 			},
 		})
 		logrus.Errorf("GetChannelStandupTime failed: %v", err)

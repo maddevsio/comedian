@@ -22,7 +22,7 @@ other = "Could not assign users as admins: {{.admins}}"
 
 [AddMembersAdded]
 description = "Displays a message when users are successfully assigned"
-other = "Members are assigned: {{.users}}\\n"
+other = "Members are assigned: {{.users}}"
 
 [AddMembersExist]
 description = "Displays a message when errors occur when assigning users, which already has role"
@@ -34,7 +34,7 @@ other = "Could not assign members: {{.users}}"
 
 [AddPMsAdded]
 description = "Displays a message when users successfully assigning as PMs"
-other = "Users are assigned as PMs: {{.PMs}}\\n"
+other = "Users are assigned as PMs: {{.PMs}}"
 
 [AddPMsExist]
 description = "Displays a message when errors occur when assigning users, which has already PM-role"
@@ -135,15 +135,15 @@ other = "Admins in this workspace: {{.admins}}"
 
 [ListNoAdmins]
 description = "Displays message when there are no admins in the channel"
-other = "No admins in this workspace! To add one, please, use `/add` slash command"
+other = "No admins in this workspace! To add one, please, use `/comedian add` slash command"
 
 [ListNoPMs]
 description = "Displays message about there are no PMs in channel"
-other = "No PMs in this channel! To add one, please, use `/add` slash command"
+other = "No PMs in this channel! To add one, please, use `/comedian add` slash command"
 
 [ListNoStandupers]
 description = "Displays message when there are no standupers in the channel"
-other = "No standupers in this channel! To add one, please, use `/add` slash command"
+other = "No standupers in this channel! To add one, please, use `/comedian add` slash command"
 
 [ListPMs]
 description = "Displays list of pms"
@@ -238,7 +238,7 @@ other = "Full Report on user <@{{.user}}> from {{.dateFrom}} to {{.dateTo}}:"
 
 [ShowNoStandupTime]
 description = "Displays message when a standup time doesn't set for channel"
-other = "No standup time set for this channel yet! Please, add a standup time using `/standup_time_set` command!"
+other = "No standup time set for this channel yet! Please, add a standup time using `/comedian add_deadline` command!"
 
 [ShowStandupTime]
 description = "Shows a standup time of channel"
