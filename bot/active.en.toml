@@ -343,7 +343,7 @@ other = "Hey, <@{{.user}}>! {{.minutes}} to deadline and you still did not submi
 
 [WarnNonReporters]
 description = "Warning message to those who did not submit standup"
-one = "Hey, {{.user}}! {{.minutes}} to deadline and you are the only one who still did not submit standup! Brace yourselve!"
+one = "Hey, {{.user}}! {{.minutes}} to deadline and you are the only one who still did not submit standup! Brace yourself!"
 other = "Hey, {{.users}}! {{.minutes}} to deadline and you people still did not submit standups! Go ahead!"
 
 [WeeklyReportError]
