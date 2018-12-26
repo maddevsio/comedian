@@ -16,7 +16,7 @@ func (ba *BotAPI) addCommand(accessLevel int, channelID, params string) string {
 	accessAtLeastAdmin := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "AccessAtLeastAdmin",
-			Description: "Display warning that role must be at least admin",
+			Description: "Displays warning that role must be at least admin",
 			Other:       "Access Denied! You need to be at least admin in this slack to use this command!",
 		},
 	})
@@ -24,7 +24,7 @@ func (ba *BotAPI) addCommand(accessLevel int, channelID, params string) string {
 	accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "AccessAtLeastPM",
-			Description: "Display warning that role must be at least pm",
+			Description: "Displays warning that role must be at least pm",
 			Other:       "Access Denied! You need to be at least PM in this project to use this command!",
 		},
 	})
@@ -79,7 +79,7 @@ func (ba *BotAPI) deleteCommand(accessLevel int, channelID, params string) strin
 	accessAtLeastAdmin := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "AccessAtLeastAdmin",
-			Description: "Display warning that role must be at least admin",
+			Description: "Displays warning that role must be at least admin",
 			Other:       "Access Denied! You need to be at least admin in this slack to use this command!",
 		},
 	})
@@ -87,7 +87,7 @@ func (ba *BotAPI) deleteCommand(accessLevel int, channelID, params string) strin
 	accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "AccessAtLeastPM",
-			Description: "Display warning that role must be at least pm",
+			Description: "Displays warning that role must be at least pm",
 			Other:       "Access Denied! You need to be at least PM in this project to use this command!",
 		},
 	})
@@ -154,26 +154,26 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			addPMsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsFailed",
-					Description: "",
-					Other:       "Could not assign users as PMs: {{.PMs}}\n",
+					Description: "Displays a message when errors occur when assigning users as PM",
+					Other:       "Could not assign users as PMs: {{.PMs}}",
 				},
 				TemplateData: map[string]interface{}{
 					"PMs": failed,
 				},
 			})
-			text += addPMsFailed
+			text += addPMsFailed + "\n"
 		} else {
 			addMembersFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersFailed",
-					Description: "",
-					Other:       "Could not assign members: {{.users}}\n",
+					Description: "Displays a message when errors occur when assigning users",
+					Other:       "Could not assign members: {{.users}}",
 				},
 				TemplateData: map[string]interface{}{
 					"users": failed,
 				},
 			})
-			text += addMembersFailed
+			text += addMembersFailed + "\n"
 		}
 
 	}
@@ -182,26 +182,26 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			addPMsExist := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsExist",
-					Description: "",
-					Other:       "Users already have roles: {{.PMs}}\n",
+					Description: "Displays a message when errors occur when assigning users, which has already PM-role",
+					Other:       "Users already have roles: {{.PMs}}",
 				},
 				TemplateData: map[string]interface{}{
 					"PMs": exist,
 				},
 			})
-			text += addPMsExist
+			text += addPMsExist + "\n"
 		} else {
 			addMembersExist := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersExist",
-					Description: "",
-					Other:       "Members already have roles: {{.users}}\n",
+					Description: "Displays a message when errors occur when assigning users, which already has role",
+					Other:       "Members already have roles: {{.users}}",
 				},
 				TemplateData: map[string]interface{}{
 					"users": exist,
 				},
 			})
-			text += addMembersExist
+			text += addMembersExist + "\n"
 		}
 
 	}
@@ -210,26 +210,26 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			addPMsAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsAdded",
-					Description: "",
-					Other:       "Users are assigned as PMs: {{.PMs}}\n",
+					Description: "Displays a message when users successfully assigning as PMs",
+					Other:       "Users are assigned as PMs: {{.PMs}}",
 				},
 				TemplateData: map[string]interface{}{
 					"PMs": added,
 				},
 			})
-			text += addPMsAdded
+			text += addPMsAdded + "\n"
 		} else {
 			addMembersAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersAdded",
-					Description: "",
-					Other:       "Members are assigned: {{.users}}\n",
+					Description: "Displays a message when users are successfully assigned",
+					Other:       "Members are assigned: {{.users}}",
 				},
 				TemplateData: map[string]interface{}{
 					"users": added,
 				},
 			})
-			text += addMembersAdded
+			text += addMembersAdded + "\n"
 		}
 
 	}
@@ -263,7 +263,7 @@ func (ba *BotAPI) addAdmins(users []string) string {
 		adminAssigned := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "PMAssigned",
-				Description: "Display message when user added as admin for Comedian",
+				Description: "Displays message when user added as admin for Comedian",
 				Other:       "You have been added as Admin for Comedian",
 			},
 		})
@@ -279,40 +279,40 @@ func (ba *BotAPI) addAdmins(users []string) string {
 		addAdminsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AddAdminsFailed",
-				Description: "",
-				Other:       "Could not assign users as admins: {{.admins}}\n",
+				Description: "Displays message when user added as admin for Comedian",
+				Other:       "Could not assign users as admins: {{.admins}}",
 			},
 			TemplateData: map[string]interface{}{
 				"admins": failed,
 			},
 		})
-		text += addAdminsFailed
+		text += addAdminsFailed + "\n"
 	}
 	if len(exist) != 0 {
 		addAdminsExist := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AddAdminsExist",
-				Description: "",
-				Other:       "Users were already assigned as admins: {{.admins}}\n",
+				Description: "Displays message when users were already assigned as admins",
+				Other:       "Users were already assigned as admins: {{.admins}}",
 			},
 			TemplateData: map[string]interface{}{
 				"admins": exist,
 			},
 		})
-		text += addAdminsExist
+		text += addAdminsExist + "\n"
 	}
 	if len(added) != 0 {
 		addAdminsAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AddAdminsAdded",
-				Description: "",
-				Other:       "Users are assigned as admins: {{.admins}}\n",
+				Description: "Displays message when users successfully assigned as admins",
+				Other:       "Users are assigned as admins: {{.admins}}",
 			},
 			TemplateData: map[string]interface{}{
 				"admins": added,
 			},
 		})
-		text += addAdminsAdded
+		text += addAdminsAdded + "\n"
 	}
 
 	return text
@@ -334,8 +334,8 @@ func (ba *BotAPI) listMembers(channelID, role string) string {
 			listNoPMs := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "ListNoPMs",
-					Description: "Displays message about there are no pms in channel",
-					Other:       "No PMs in this channel! To add one, please, use `/add` slash command",
+					Description: "Displays message about there are no PMs in channel",
+					Other:       "No PMs in this channel! To add one, please, use `/comedian add` slash command",
 				},
 			})
 			return listNoPMs
@@ -343,7 +343,7 @@ func (ba *BotAPI) listMembers(channelID, role string) string {
 		listPMs := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "ListPMs",
-				Description: "Display list of pms",
+				Description: "Displays list of pms",
 				One:         "PM in this channel: {{.pm}}",
 				Other:       "PMs in this channel: {{.pms}}",
 			},
@@ -361,7 +361,7 @@ func (ba *BotAPI) listMembers(channelID, role string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "ListNoStandupers",
 				Description: "Displays message when there are no standupers in the channel",
-				Other:       "No standupers in this channel! To add one, please, use `/add` slash command",
+				Other:       "No standupers in this channel! To add one, please, use `/comedian add` slash command",
 			},
 		})
 		return listNoStandupers
@@ -400,7 +400,7 @@ func (ba *BotAPI) listAdmins() string {
 			DefaultMessage: &i18n.Message{
 				ID:          "ListNoAdmins",
 				Description: "Displays message when there are no admins in the channel",
-				Other:       "No admins in this workspace! To add one, please, use `/add` slash command",
+				Other:       "No admins in this workspace! To add one, please, use `/comedian add` slash command",
 			},
 		})
 		return listNoAdmins
@@ -450,27 +450,27 @@ func (ba *BotAPI) deleteMembers(members []string, channelID string) string {
 		deleteMembersFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteMembersFailed",
-				Description: "",
-				Other:       "Could not remove the following members: {{.users}}\n",
+				Description: "Displays a message when user deletion errors occur",
+				Other:       "Could not remove the following members: {{.users}}",
 			},
 			TemplateData: map[string]interface{}{
 				"users": failed,
 			},
 		})
-		text += deleteMembersFailed
+		text += deleteMembersFailed + "\n"
 	}
 	if len(deleted) != 0 {
 		deleteMembersSucceed := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteMembersSucceed",
-				Description: "",
-				Other:       "The following members were removed: {{.users}}\n",
+				Description: "Displays a message when users have been successfully deleted",
+				Other:       "The following members were removed: {{.users}}",
 			},
 			TemplateData: map[string]interface{}{
 				"users": deleted,
 			},
 		})
-		text += deleteMembersSucceed
+		text += deleteMembersSucceed + "\n"
 	}
 
 	return text
@@ -503,7 +503,7 @@ func (ba *BotAPI) deleteAdmins(users []string) string {
 		adminRemoved := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "PMRemoved",
-				Description: "Display message when user removed as admin from Comedian",
+				Description: "Displays message when user removed as admin from Comedian",
 				Other:       "You have been removed as Admin from Comedian",
 			},
 		})
@@ -519,27 +519,27 @@ func (ba *BotAPI) deleteAdmins(users []string) string {
 		deleteAdminsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteAdminsFailed",
-				Description: "",
-				Other:       "Could not remove users as admins: {{.admins}}\n",
+				Description: "Diplays message when admin deletion errors occur",
+				Other:       "Could not remove users as admins: {{.admins}}",
 			},
 			TemplateData: map[string]interface{}{
 				"admins": failed,
 			},
 		})
-		text += deleteAdminsFailed
+		text += deleteAdminsFailed + "\n"
 	}
 	if len(deleted) != 0 {
 		deleteAdminsSucceed := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteAdminsSucceed",
-				Description: "",
-				Other:       "Users were removed as admins: {{.admins}}\n",
+				Description: "Diplays message when admins have been successfully deleted",
+				Other:       "Users were removed as admins: {{.admins}}",
 			},
 			TemplateData: map[string]interface{}{
 				"admins": deleted,
 			},
 		})
-		text += deleteAdminsSucceed
+		text += deleteAdminsSucceed + "\n"
 	}
 
 	return text

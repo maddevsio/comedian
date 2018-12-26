@@ -162,7 +162,3 @@ func (tt TimeTable) ShowDeadlineOn(day string) int64 {
 func (tt TimeTable) IsEmpty() bool {
 	return tt.Monday == 0 && tt.Tuesday == 0 && tt.Wednesday == 0 && tt.Thursday == 0 && tt.Friday == 0 && tt.Saturday == 0 && tt.Sunday == 0
 }
-
-func (tt TimeTable) Show() string {
-	return ""
-}

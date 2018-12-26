@@ -85,7 +85,7 @@ func (b *Bot) Run() {
 	helloManager := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "HelloManager",
-			Description: "",
+			Description: "Displays greeting for the Manager",
 			Other:       "Hello, Manager!",
 		},
 	})
@@ -206,8 +206,9 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 
 	couldNotSaveStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
-			ID:    "CouldNotSaveStandup",
-			Other: "<@{{.ID}}>, something went wrong and I could not save your standup in database. Please, report this to your PM.",
+			ID:          "CouldNotSaveStandup",
+			Description: "Displays a message when unexpected errors occur",
+			Other:       "<@{{.ID}}>, something went wrong and I could not save your standup in database. Please, report this to your PM.",
 		},
 		TemplateData: map[string]string{
 			"ID": msg.User,
@@ -217,7 +218,7 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 	errorReportToManager := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "ErrorReportToManager",
-			Other: "I could not save standup for user {{.user}} in channel {{.channel}} because of the following reasons: %v",
+			Other: "I could not save standup for user <@{{.user}}> in channel <#{{.channel}}> because of the following reasons: %v",
 		},
 		TemplateData: map[string]string{
 			"user":    msg.User,
@@ -550,8 +551,16 @@ func (b *Bot) FillStandupsForNonReporters() {
 }
 
 func (b *Bot) recordBug(channelID, userID, bug string) {
-	var text string
-	b.SendEphemeralMessage(channelID, userID, "Thank you! Bug Recorded!")
+	localizer := i18n.NewLocalizer(b.Bundle, b.CP.Language)
+
+	gratitudeForSendingBug := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "GratitudeForSendingBug",
+			Description: "Displays gratitude for sending bug",
+			Other:       "Thank you! Bug Recorded!",
+		},
+	})
+	b.SendEphemeralMessage(channelID, userID, gratitudeForSendingBug)
 	user, err := b.DB.SelectUser(userID)
 	if err != nil {
 		logrus.Error(err)
@@ -561,12 +570,37 @@ func (b *Bot) recordBug(channelID, userID, bug string) {
 
 	if err != nil {
 		logrus.Error(err)
-		text = fmt.Sprintf("%v in %v reported a bug! \n %v", user, channel, bug)
-		b.SendUserMessage(b.CP.ManagerSlackUserID, text)
+		bugRecordedWithError := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "BugRecorded",
+				Description: "Displays a message when user send a bug (with error in API.GetChannelInfo)",
+				Other:       "{{.user}} in {{.channel}} reported a bug!",
+			},
+			TemplateData: map[string]interface{}{
+				"user":    user,
+				"channel": channel,
+			},
+		})
+		bugRecordedWithError += "\n"
+		bugRecordedWithError += bug
+		b.SendUserMessage(b.CP.ManagerSlackUserID, bugRecordedWithError)
 		return
 	}
 
-	text = fmt.Sprintf("%v in %v reported a bug! \n %v", user.RealName, channel.Name, bug)
-	b.SendUserMessage(b.CP.ManagerSlackUserID, text)
+	bugRecorded := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "BugRecorded",
+			Description: "Displays a message when user send a bug",
+			Other:       "{{.user}} in {{.channel}} reported a bug!",
+		},
+		TemplateData: map[string]interface{}{
+			"user":    user.RealName,
+			"channel": channel.Name,
+		},
+	})
+	bugRecorded += "\n"
+	bugRecorded += bug
+
+	b.SendUserMessage(b.CP.ManagerSlackUserID, bugRecorded)
 
 }

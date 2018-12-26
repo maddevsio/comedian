@@ -171,7 +171,7 @@ func (n *Notifier) SendIndividualWarning(channelMemberID int64) {
 			DefaultMessage: &i18n.Message{
 				ID:          "WarnIndividualNonReporters",
 				Description: "Warning message to those who did not submit standup",
-				Other:       "Hey, {{.users}}! {{.minutes}} to deadline and you still did not submit standup! Hurry up!",
+				Other:       "Hey, <@{{.user}}>! {{.minutes}} to deadline and you still did not submit standup! Hurry up!",
 			},
 			TemplateData: map[string]interface{}{
 				"user":    chm.UserID,
@@ -325,7 +325,7 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 				DefaultMessage: &i18n.Message{
 					ID:          "IndividualStandupersLate",
 					Description: "Display message about those who missed submit standup",
-					Other:       "{{.user}}, you missed standup deadline! Submit standup ASAP!",
+					Other:       "<@{{.user}}>, you missed standup deadline! Submit standup ASAP!",
 				},
 				TemplateData: map[string]interface{}{
 					"user": chm.UserID,
@@ -342,7 +342,7 @@ func (n *Notifier) SendIndividualNotification(channelMemberID int64) {
 				DefaultMessage: &i18n.Message{
 					ID:          "TagIndividualNonReporters",
 					Description: "Display message about those who did not submit standup with individual schedules",
-					Other:       "Hey, {{.user}}! You failed to submit standup in time! Get it done ASAP!",
+					Other:       "Hey, <@{{.user}}>! You failed to submit standup in time! Get it done ASAP!",
 				},
 				TemplateData: map[string]interface{}{
 					"user": chm.UserID,

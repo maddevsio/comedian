@@ -12,7 +12,7 @@ func (ba *BotAPI) addTime(accessLevel int, channelID, params string) string {
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AccessAtLeastPM",
-				Description: "Display warning that role must be at least pm",
+				Description: "Displays warning that role must be at least pm",
 				Other:       "Access Denied! You need to be at least PM in this project to use this command!",
 			},
 		})
@@ -74,7 +74,7 @@ func (ba *BotAPI) removeTime(accessLevel int, channelID string) string {
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AccessAtLeastPM",
-				Description: "Display warning that role must be at least pm",
+				Description: "Displays warning that role must be at least pm",
 				Other:       "Access Denied! You need to be at least PM in this project to use this command!",
 			},
 		})
@@ -126,7 +126,7 @@ func (ba *BotAPI) showTime(channelID string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "ShowNoStandupTime",
 				Description: "Displays message when a standup time doesn't set for channel",
-				Other:       "No standup time set for this channel yet! Please, add a standup time using `/standup_time_set` command!",
+				Other:       "No standup time set for this channel yet! Please, add a standup time using `/comedian add_deadline` command!",
 			},
 		})
 		logrus.Errorf("GetChannelStandupTime failed: %v", err)
