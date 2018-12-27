@@ -437,3 +437,55 @@ Other = "Извините, это ошибка выбора канала, обр
 [TimeParseError]
 Description = "Displays error if time parse error occure"
 Other = "Возникла ошибка обработки даты. Кажется, вы ввели неверный формат даты. Пожалуйста, проверьте и попробуйте снова!"
+
+[TextHead]
+Description = "Displays help text head"
+Other = "Привет! Здесь собраны все команды Комедиана и примеры использования: "
+
+[AddMembers]
+Description = "Displays usage of add command"
+Other = "Для добавления нового пользователя используйте команду `add`. Вот пример: `add @user @user1 / admin` Вы можете добавлять участников с ролями: _admin, pm, developer, designer_. Если роль не указана, то по умолчанию будет developer."
+
+[ShowMembers]
+Description = "Displays usage of show command"
+Other = "Чтобы посмотреть список пользователей используйте команду `show`. Если Вы укажете роль, Вы увидите список пользователей с этой ролью ( _admin, pm, developer, designer_ )"
+
+[RemoveMembers]
+Description = "Displays usage of remove command"
+Other = "Чтобы удалить пользователя используйте команду `remove`. Если Вы также укажете роль, то можете удалить всех пользователей с этой ролью ( _admin, pm, developer, designer_ ) "
+
+[AddDeadline]
+Description = "Displays usage of add_deadline command"
+Other = "Чтобы установить время сдачи стэндапов в канале используйте команду `add_deadline`. Вы должны указать время в 24-часовом формате. Например, 13:54 "
+
+[ShowDeadline]
+Description = "Displays usage of show_deadline command"
+Other = "Чтобы узнать установленное время сдачи стендапов в канале используйте команду `show_deadline`"
+
+[RemoveDeadline]
+Description = "Displays usage of show_deadline command"
+Other = "Чтобы удалить время сдачи стендапов в канале используйте команду `remove_deadline`"
+
+[AddTimetable]
+Description = "Displays usage of add_timetable command"
+Other = "Чтобы установить индивидуальное расписание для пользователей используйте команду `add_timetable`. Сначала тэгните пользователя, затем добавьте ключевое слово *по*, затем укажите дни недели (пн, вт, ср, чт, пт, сб, вс), чтобы установить индивидуальное расписание в эти дни, затем укажите время сдачи стендапа, после ключевого слова *в* (18:45). Пример: `add_timetable @user1 @user2 по пон вт в 14:02` "
+
+[ShowTimetable]
+Description = "Displays usage of add_timetable command"
+Other = "Чтобы узнать индивидуальное расписание пользователей используйте команду `show_timetable` и тэгните пользователей. Пример: `show_timetable @user1 @user2` "
+
+[RemoveTimetable]
+Description = "Displays usage of add_timetable command"
+Other = "Чтобы удалить индивидуальное расписание пользователей используйте команду `remove_timetable` и тэгните пользователей. Пример: `remove_timetable @user1 @user2`  "
+
+[ReportOnUser]
+Description = "Displays usage of add_timetable command"
+Other = "Чтобы посмотреть отчет по пользователю используйте команду `report_on_user`. Тэгните пользователя, затем введите две даты, дату начала периода и дату конца периода,по которому хотите получить отчет. Пример: `report_on_user @user 2017-01-01 2017-01-31` "
+
+[ReportOnProject]
+Description = "Displays usage of add_timetable command"
+Other = "Чтобы посмотреть отчет по проекту используйте команду `report_on_project`. Тэгните проект, затем введите две даты, дату начала периода и дату конца периода,по которому хотите получить отчет. Пример: `report_on_project #projectName 2017-01-01 2017-01-31` "
+
+[ReportOnUserInProject]
+Description = "Displays usage of add_timetable command"
+Other = "Чтобы посмотреть отчет по пользователю в проекте используйте команду `report_on_user_in_project`. Тэгните пользователя и проект,затем введите две даты, дату начала периода и дату конца периода,по которому хотите получить отчет. Пример: `report_on_user_in_project @user #projectName 2017-01-01 2017-01-31`"
