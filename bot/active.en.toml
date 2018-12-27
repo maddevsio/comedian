@@ -389,3 +389,40 @@ other = "Total worklogs for period: {{.worklogs}}"
 [userDoesNotExist]
 description = "Displays message if user doesn't exist"
 other = "User does not exist!"
+
+[wrongTimeFormat]
+Description = "Displays message if a time format is wrong"
+Other = "Wrong time! Please, check the time format and try again!"
+
+[shortTimeFormat]
+Description = "Displays message if a time format is short"
+Other = "Seems like you used short time format, please, use 24:00 hour format instead!"
+
+[unknownTimeFormat]
+Description = "Displays message if time format is unknown"
+Other = "Could not understand how you mention time. Please, use 24:00 hour format and try again!"
+
+[DateError1]
+Description = "Displays message if date format is wrong"
+Other = "date to is less than date from"
+
+[DateError2]
+Description = "Displays message if date format is wrong"
+Other = "Report end time was in the future, time range was truncated"
+
+[ErrorSplitStandupers]
+Description = "Displays message if error occure when split standupers from split timetable command"
+Other = "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"
+
+[ErrorSplitWeekdays]
+Description = "Displays message if error occure when split weekdays from split timetable command"
+Other = "Sorry, could not understand where are the weekdays and where is the time. Please, check the text for mistakes and try again"
+
+[SelectChannelError]
+Description = "Displays message if channel selection error occure"
+Other = "rest: SelectChannel failed: {{.error}}. Sorry, it's error. Show it to admin"
+
+[TimeParseError]
+Description = "Displays error if time parse error occure"
+Other = "I can not parse date. Seems like you entered wrong date format. Please check and try command again!"
+

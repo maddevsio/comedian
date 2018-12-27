@@ -152,7 +152,7 @@ other = "ПМы в проекте: {{.pms}}"
 
 [ListStandupers]
 description = "Displays list of standupers"
-one = "Standuper in this channel: {{.standuper}}"
+one = "Стендапер в канале: {{.standuper}}"
 other = "Стендаперы в канале: {{.standupers}}"
 
 [LoggedHours]
@@ -389,3 +389,39 @@ other = "Часов ворклогов: {{.worklogs}}"
 [userDoesNotExist]
 description = "Displays message if user doesn't exist"
 other = "Пользователь не существует!"
+
+[wrongTimeFormat]
+Description = "Displays message if a time format is wrong"
+Other = "Неверный формат времени! Пожалуйста, проверьте формат времени и попытайтесь снова!"
+
+[shortTimeFormat]
+Description = "Displays message if a time format is short"
+Other = "Кажется, вы использовали 12-часовой формат времени, пожалуйста, используйте 24-часовой формат!"
+
+[unknownTimeFormat]
+Description = "Displays message if time format is unknown"
+Other = "Не смог обработать время. Пожалуйста, используйте 24-часовой формат и попытайтесь снова!"
+
+[DateError1]
+Description = "Displays message if date format is wrong"
+Other = "Дата начала больше чем дата конца периода"
+
+[DateError2]
+Description = "Displays message if date format is wrong"
+Other = "Дата конца отчёта указана в будущем времени"
+
+[ErrorSplitStandupers]
+Description = "Displays message if error occure when split standupers from split timetable command"
+Other = "Извините, не смог найти и выделить из текста стэндаперов и команду. Пожалуйста, проверьте текст на ошибки попробуйте снова!"
+
+[ErrorSplitWeekdays]
+Description = "Displays message if error occure when split weekdays from split timetable command"
+Other = "Извините, не смог найти и выделить из текста дни недели и время. Пожалуйста, проверьте текст на ошибки попробуйте снова!"
+
+[SelectChannelError]
+Description = "Displays message if channel selection error occure"
+Other = "Извините, это ошибка выбора канала, обратитесь к админу: {{.error}}"
+
+[TimeParseError]
+Description = "Displays error if time parse error occure"
+Other = "Возникла ошибка обработки даты. Кажется, вы ввели неверный формат даты. Пожалуйста, проверьте и попробуйте снова!"
