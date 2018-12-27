@@ -57,7 +57,7 @@ func (ba *BotAPI) addCommand(accessLevel int, channelID, params string) string {
 		}
 		return ba.addMembers(members, "pm", channelID)
 	default:
-		return DisplayHelpText("add")
+		return ba.DisplayHelpText("add")
 	}
 }
 
@@ -70,7 +70,7 @@ func (ba *BotAPI) showCommand(channelID, params string) string {
 	case "pm", "пм":
 		return ba.listMembers(channelID, "pm")
 	default:
-		return DisplayHelpText("show")
+		return ba.DisplayHelpText("show")
 	}
 }
 
@@ -115,7 +115,7 @@ func (ba *BotAPI) deleteCommand(accessLevel int, channelID, params string) strin
 		}
 		return ba.deleteMembers(members, channelID)
 	default:
-		return DisplayHelpText("remove")
+		return ba.DisplayHelpText("remove")
 	}
 }
 

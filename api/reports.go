@@ -19,11 +19,11 @@ func (ba *BotAPI) generateReportOnProject(accessLevel int, params string) string
 
 	commandParams := strings.Fields(params)
 	if len(commandParams) != 3 {
-		return DisplayHelpText("report_on_project")
+		return ba.DisplayHelpText("report_on_project")
 	}
 	channelName, err := GetChannelNameFromString(commandParams[0])
 	if err != nil {
-		DisplayHelpText("report_on_project")
+		ba.DisplayHelpText("report_on_project")
 	}
 	channelID, err := ba.Bot.DB.GetChannelID(channelName)
 	if err != nil {
@@ -152,11 +152,11 @@ func (ba *BotAPI) generateReportOnUser(accessLevel int, params string) string {
 
 	commandParams := strings.Fields(params)
 	if len(commandParams) != 3 {
-		return DisplayHelpText("report_on_user")
+		return ba.DisplayHelpText("report_on_user")
 	}
 	username, err := GetUserNameFromString(commandParams[0])
 	if err != nil {
-		DisplayHelpText("report_on_user")
+		ba.DisplayHelpText("report_on_user")
 	}
 	user, err := ba.Bot.DB.SelectUserByUserName(username)
 	if err != nil {
@@ -264,11 +264,11 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 
 	commandParams := strings.Fields(params)
 	if len(commandParams) != 4 {
-		return DisplayHelpText("report_on_user_in_project")
+		return ba.DisplayHelpText("report_on_user_in_project")
 	}
 	channelName, err := GetChannelNameFromString(commandParams[1])
 	if err != nil {
-		DisplayHelpText("report_on_user_in_project")
+		ba.DisplayHelpText("report_on_user_in_project")
 	}
 	channelID, err := ba.Bot.DB.GetChannelID(channelName)
 	if err != nil {
@@ -293,7 +293,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 			},
 		})
 		cantSelectChannelInReport += "\n"
-		cantSelectChannelInReport += DisplayHelpText("report_on_user_in_project")
+		cantSelectChannelInReport += ba.DisplayHelpText("report_on_user_in_project")
 		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
 		return cantSelectChannelInReport
 
@@ -308,7 +308,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 			},
 		})
 		wrongName += "\n"
-		wrongName += DisplayHelpText("report_on_user_in_project")
+		wrongName += ba.DisplayHelpText("report_on_user_in_project")
 		return wrongName
 	}
 
@@ -349,7 +349,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 			},
 		})
 		errorParsingFromDate += "\n"
-		errorParsingFromDate += DisplayHelpText("report_on_user_in_project")
+		errorParsingFromDate += ba.DisplayHelpText("report_on_user_in_project")
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return errorParsingFromDate
 
@@ -364,7 +364,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 			},
 		})
 		errorParsingToDate += "\n"
-		errorParsingToDate += DisplayHelpText("report_on_user_in_project")
+		errorParsingToDate += ba.DisplayHelpText("report_on_user_in_project")
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return errorParsingToDate
 

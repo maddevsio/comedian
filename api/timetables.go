@@ -46,7 +46,7 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 
 	usersText, weekdays, time, err := ba.SplitTimeTableCommand(params, daysDivider, timeDivider)
 	if err != nil {
-		return DisplayHelpText("add_timetable")
+		return ba.DisplayHelpText("add_timetable")
 	}
 	users := strings.Split(usersText, " ")
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
