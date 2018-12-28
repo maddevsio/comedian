@@ -74,7 +74,7 @@ other = " коммиты: {{.projectCommits}} {{.commitsEmoji}} |"
 
 [CouldNotSaveStandup]
 description = "Выводит сообщение при неожиданных ошибках"
-other = "<@{{.ID}}>, по какой-то непонятной причине я не смог сохранить твой стендап в базе!"
+other = "По какой-то непонятной причине я не смог сохранить твой стендап в базе!"
 
 [DaysDivider]
 description = "Разделить дней"
@@ -194,7 +194,7 @@ other = "{{.user}} в #{{.channel}}"
 
 [OneStandupPerDay]
 description = "Warning that only one standup per day is allowed"
-other = "<@{{.ID}}>, один день - один стендап. Если хочешь поменять свой стендап, лучше отредактируй старый!"
+other = "Один день - один стендап. Если хочешь поменять свой стендап, лучше отредактируй старый!"
 
 [PMAssigned]
 description = "Displays message when user added as admin for Comedian"
@@ -262,7 +262,7 @@ other = ":warning: Не распознал ключевых слов блока 
 
 [StandupHandleNoYesterdayWorkMentioned]
 description = "No 'yesterday' keywords in standup"
-other = ":warning: Не распознал ключевых слов блока 'вчера'. Используйте следующие слова в стэндапе: 'вчера', 'пятниц', 'делал', 'сделано', 'понедельник','вторник','сред','четверг','суббот','воскресенье'"
+other = ":warning: Не распознал ключевых слов блока 'вчера'. Используйте следующие слова в стэндапе: 'вчера', 'пятниц', 'делал', 'сделано', 'понедельник', 'вторник', 'сред', 'четверг', 'суббот', 'воскресенье'"
 
 [TagIndividualNonReporters]
 description = "Display message about those who did not submit standup with individual schedules"

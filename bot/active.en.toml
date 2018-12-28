@@ -74,7 +74,7 @@ other = " commits: {{.projectCommits}} {{.commitsEmoji}} |"
 
 [CouldNotSaveStandup]
 description = "Displays a message when unexpected errors occur"
-other = "<@{{.ID}}>, something went wrong and I could not save your standup in database. Please, report this to your PM."
+other = "Something went wrong and I could not save your standup in database. Please, report this to your PM."
 
 [DaysDivider]
 description = "Days divider"
@@ -186,7 +186,7 @@ other = "{{.user}} in #{{.channel}}"
 
 [OneStandupPerDay]
 description = "Warning that only one standup per day is allowed"
-other = "<@{{.ID}}>, you can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!"
+other = "You can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!"
 
 [PMAssigned]
 description = "Displays message when user added as admin for Comedian"
