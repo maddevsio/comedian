@@ -667,25 +667,3 @@ func TestSortReportEntries(t *testing.T) {
 	sorted := r.sortReportEntries(entries)
 	fmt.Println(sorted)
 }
-
-func TestFormatTime(t *testing.T) {
-	testCase := []struct {
-		time   string
-		e_hour int
-		e_min  int
-		err    error
-	}{
-		{"10:00", 10, 0, nil},
-		{"10", 0, 0, errors.New("time format error")},
-		{"-10:00", -10, 0, errors.New("time format error")},
-		{"24:00", 24, 0, errors.New("time format error")},
-		{"10:-01", 10, -1, errors.New("time format error")},
-		{"10:69", 10, 69, errors.New("time format error")},
-	}
-	for _, test := range testCase {
-		a_hour, a_min, err := formatTime(test.time)
-		assert.Equal(t, test.e_hour, a_hour)
-		assert.Equal(t, test.e_min, a_min)
-		assert.Equal(t, test.err, err)
-	}
-}

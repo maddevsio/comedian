@@ -263,3 +263,52 @@ package api
 // 	err = r.db.DeleteChannelMember(chanMemb2.UserID, chanMemb2.ChannelID)
 // 	assert.NoError(t, err)
 // }
+
+// func TestSplitTimeTalbeCommand(t *testing.T) {
+// 	d := time.Date(2018, 1, 2, 10, 0, 0, 0, time.UTC)
+// 	monkey.Patch(time.Now, func() time.Time { return d })
+
+// 	testCases := []struct {
+// 		command  string
+// 		users    string
+// 		weekdays string
+// 		time     int64
+// 		err      string
+// 	}{
+// 		{"@anatoliy on friday at 01:00", "@anatoliy", "friday", int64(1514833200), ""},
+// 		{"@anatoliy n friday ft 01:00", "", "", int64(0), "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"},
+// 		{"@anatoliy on Friday at 01:00", "@anatoliy", "friday", int64(1514833200), ""},
+// 		{"<@UB9AE7CL9|fedorenko.tolik> on monday at 01:00", "<@UB9AE7CL9|fedorenko.tolik>", "monday", int64(1514833200), ""},
+// 		{"@anatoliy @erik @alex on friday tuesday monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1514833200), ""},
+// 		{"@anatoliy @erik @alex on friday, tuesday, monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1514833200), ""},
+// 	}
+// 	for _, tt := range testCases {
+// 		users, weekdays, _, err := SplitTimeTalbeCommand(tt.command, " on ", " at ")
+// 		assert.Equal(t, tt.users, users)
+// 		assert.Equal(t, tt.weekdays, weekdays)
+// 		//assert.Equal(t, tt.time, deadline)
+// 		if err != nil {
+// 			assert.Equal(t, errors.New(tt.err), err)
+// 		}
+// 	}
+
+// 	testCasesRus := []struct {
+// 		command  string
+// 		users    string
+// 		weekdays string
+// 		time     int64
+// 		err      string
+// 	}{
+// 		{"@anatoliy по пятницам в 02:04", "@anatoliy", "пятницам", int64(1514837040), ""},
+// 		{"@anatoliy @erik @alex по понедельникам пятницам вторникам в 23:04", "@anatoliy @erik @alex", "понедельникам пятницам вторникам", int64(1514912640), ""},
+// 	}
+// 	for _, tt := range testCasesRus {
+// 		users, weekdays, _, err := SplitTimeTalbeCommand(tt.command, " по ", " в ")
+// 		assert.Equal(t, tt.users, users)
+// 		assert.Equal(t, tt.weekdays, weekdays)
+// 		//assert.Equal(t, tt.time, deadline)
+// 		if err != nil {
+// 			assert.Equal(t, errors.New(tt.err), err)
+// 		}
+// 	}
+// }
