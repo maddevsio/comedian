@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -18,11 +19,11 @@ func (ba *BotAPI) generateReportOnProject(accessLevel int, params string) string
 
 	commandParams := strings.Fields(params)
 	if len(commandParams) != 3 {
-		return DisplayHelpText("report_on_project")
+		return ba.DisplayHelpText("report_on_project")
 	}
 	channelName, err := GetChannelNameFromString(commandParams[0])
 	if err != nil {
-		DisplayHelpText("report_on_project")
+		ba.DisplayHelpText("report_on_project")
 	}
 	channelID, err := ba.Bot.DB.GetChannelID(channelName)
 	if err != nil {
@@ -39,19 +40,51 @@ func (ba *BotAPI) generateReportOnProject(accessLevel int, params string) string
 
 	channel, err := ba.Bot.DB.SelectChannel(channelID)
 	if err != nil {
+		selectChannelError := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "SelectChannelError",
+				Description: "Displays message if channel selection error occure",
+				Other:       "rest: SelectChannel failed: {{.error}}. Sorry, it's error. Show it to admin",
+			},
+			TemplateData: map[string]interface{}{
+				"error": err.Error(),
+			},
+		})
+		selectChannelError += "\n"
 		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
-		return err.Error()
+		return selectChannelError
 	}
 
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
+		timeParseError := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimeParseError",
+				Description: "Displays error if time parse error occure",
+				Other:       "I can not parse date. Seems like you entered wrong date format. Please check and try command again!",
+			},
+			TemplateData: map[string]interface{}{
+				"error": err.Error(),
+			},
+		})
+		timeParseError += "\n"
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return err.Error()
+		return timeParseError
 	}
 	dateTo, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
+		timeParseError := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimeParseError",
+				Description: "Displays error if time parse error occure",
+				Other:       "I can not parse date. Seems like you entered wrong date format. Please check and try command again!",
+			},
+			TemplateData: map[string]interface{}{
+				"error": err.Error(),
+			},
+		})
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return err.Error()
+		return timeParseError
 	}
 
 	report, err := ba.StandupReportByProject(channel, dateFrom, dateTo)
@@ -119,11 +152,11 @@ func (ba *BotAPI) generateReportOnUser(accessLevel int, params string) string {
 
 	commandParams := strings.Fields(params)
 	if len(commandParams) != 3 {
-		return DisplayHelpText("report_on_user")
+		return ba.DisplayHelpText("report_on_user")
 	}
 	username, err := GetUserNameFromString(commandParams[0])
 	if err != nil {
-		DisplayHelpText("report_on_user")
+		ba.DisplayHelpText("report_on_user")
 	}
 	user, err := ba.Bot.DB.SelectUserByUserName(username)
 	if err != nil {
@@ -140,13 +173,33 @@ func (ba *BotAPI) generateReportOnUser(accessLevel int, params string) string {
 
 	dateFrom, err := time.Parse("2006-01-02", commandParams[1])
 	if err != nil {
+		timeParseError := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimeParseError",
+				Description: "Displays error if time parse error occure",
+				Other:       "I can not parse date. Seems like you entered wrong date format. Please check and try command again!",
+			},
+			TemplateData: map[string]interface{}{
+				"error": err.Error(),
+			},
+		})
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return err.Error()
+		return timeParseError
 	}
 	dateTo, err := time.Parse("2006-01-02", commandParams[2])
 	if err != nil {
+		timeParseError := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TimeParseError",
+				Description: "Displays error if time parse error occure",
+				Other:       "I can not parse date. Seems like you entered wrong date format. Please check and try command again!",
+			},
+			TemplateData: map[string]interface{}{
+				"error": err.Error(),
+			},
+		})
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
-		return err.Error()
+		return timeParseError
 	}
 
 	report, err := ba.StandupReportByUser(user.UserID, dateFrom, dateTo)
@@ -211,11 +264,11 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 
 	commandParams := strings.Fields(params)
 	if len(commandParams) != 4 {
-		return DisplayHelpText("report_on_user_in_project")
+		return ba.DisplayHelpText("report_on_user_in_project")
 	}
 	channelName, err := GetChannelNameFromString(commandParams[1])
 	if err != nil {
-		DisplayHelpText("report_on_user_in_project")
+		ba.DisplayHelpText("report_on_user_in_project")
 	}
 	channelID, err := ba.Bot.DB.GetChannelID(channelName)
 	if err != nil {
@@ -240,7 +293,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 			},
 		})
 		cantSelectChannelInReport += "\n"
-		cantSelectChannelInReport += DisplayHelpText("report_on_user_in_project")
+		cantSelectChannelInReport += ba.DisplayHelpText("report_on_user_in_project")
 		logrus.Errorf("rest: SelectChannel failed: %v\n", err)
 		return cantSelectChannelInReport
 
@@ -255,7 +308,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 			},
 		})
 		wrongName += "\n"
-		wrongName += DisplayHelpText("report_on_user_in_project")
+		wrongName += ba.DisplayHelpText("report_on_user_in_project")
 		return wrongName
 	}
 
@@ -296,7 +349,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 			},
 		})
 		errorParsingFromDate += "\n"
-		errorParsingFromDate += DisplayHelpText("report_on_user_in_project")
+		errorParsingFromDate += ba.DisplayHelpText("report_on_user_in_project")
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return errorParsingFromDate
 
@@ -311,7 +364,7 @@ func (ba *BotAPI) generateReportOnUserInProject(accessLevel int, params string) 
 			},
 		})
 		errorParsingToDate += "\n"
-		errorParsingToDate += DisplayHelpText("report_on_user_in_project")
+		errorParsingToDate += ba.DisplayHelpText("report_on_user_in_project")
 		logrus.Errorf("rest: time.Parse failed: %v\n", err)
 		return errorParsingToDate
 
@@ -429,7 +482,7 @@ func (ba *BotAPI) StandupReportByProject(channel model.Channel, dateFrom, dateTo
 	})
 	reportOnProjectHead += "\n\n"
 	report.ReportHead = reportOnProjectHead
-	dateFromBegin, numberOfDays, err := utils.SetupDays(dateFrom, dateTo)
+	dateFromBegin, numberOfDays, err := ba.SetupDays(dateFrom, dateTo)
 	if err != nil {
 		logrus.Errorf("SetupDays failed: %v", err)
 		return report, err
@@ -527,7 +580,7 @@ func (ba *BotAPI) StandupReportByUser(slackUserID string, dateFrom, dateTo time.
 	})
 	reportOnUserHead += "\n\n"
 	report.ReportHead = reportOnUserHead
-	dateFromBegin, numberOfDays, err := utils.SetupDays(dateFrom, dateTo)
+	dateFromBegin, numberOfDays, err := ba.SetupDays(dateFrom, dateTo)
 	if err != nil {
 		return report, err
 	}
@@ -635,7 +688,7 @@ func (ba *BotAPI) StandupReportByProjectAndUser(channel model.Channel, slackUser
 	})
 	reportOnProjectAndUserHead += "\n\n"
 	report.ReportHead = reportOnProjectAndUserHead
-	dateFromBegin, numberOfDays, err := utils.SetupDays(dateFrom, dateTo)
+	dateFromBegin, numberOfDays, err := ba.SetupDays(dateFrom, dateTo)
 	if err != nil {
 		return report, err
 	}
@@ -710,4 +763,34 @@ func (ba *BotAPI) StandupReportByProjectAndUser(channel model.Channel, slackUser
 		}
 	}
 	return report, nil
+}
+
+//SetupDays gets dates and returns their differense in days
+func (ba *BotAPI) SetupDays(dateFrom, dateTo time.Time) (time.Time, int, error) {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
+	if dateTo.Before(dateFrom) {
+		dateError1 := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DateError1",
+				Description: "Displays message if date format is wrong",
+				Other:       "date to is less than date from",
+			},
+		})
+		return time.Now(), 0, errors.New(dateError1)
+	}
+	if dateTo.After(time.Now()) {
+		dateError2 := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DateError2",
+				Description: "Displays message if date format is wrong",
+				Other:       "Report end time was in the future, time range was truncated",
+			},
+		})
+		return time.Now(), 0, errors.New(dateError2)
+	}
+	dateFromRounded := time.Date(dateFrom.Year(), dateFrom.Month(), dateFrom.Day(), 0, 0, 0, 0, time.UTC)
+	dateToRounded := time.Date(dateTo.Year(), dateTo.Month(), dateTo.Day(), 0, 0, 0, 0, time.UTC)
+	numberOfDays := int(dateToRounded.Sub(dateFromRounded).Hours() / 24)
+	return dateFromRounded, numberOfDays, nil
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -43,9 +44,9 @@ func (ba *BotAPI) addTimeTable(accessLevel int, channelID, params string) string
 		},
 	})
 
-	usersText, weekdays, time, err := utils.SplitTimeTalbeCommand(params, daysDivider, timeDivider)
+	usersText, weekdays, time, err := ba.SplitTimeTableCommand(params, daysDivider, timeDivider)
 	if err != nil {
-		return DisplayHelpText("add_timetable")
+		return ba.DisplayHelpText("add_timetable")
 	}
 	users := strings.Split(usersText, " ")
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -439,4 +440,45 @@ func (ba *BotAPI) returnTimeTable(tt model.TimeTable) string {
 
 	return timeTableString
 
+}
+
+//SplitTimeTableCommand returns set of substrings
+func (ba *BotAPI) SplitTimeTableCommand(t, on, at string) (string, string, int64, error) {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
+	a := strings.Split(t, on)
+	if len(a) != 2 {
+		errorSplitStandupers := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "ErrorSplitStandupers",
+				Description: "Displays message if error occure when split standupers from split timetable command",
+				Other:       "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again",
+			},
+		})
+		return "", "", int64(0), errors.New(errorSplitStandupers)
+	}
+	users := strings.TrimSpace(a[0])
+	b := strings.Split(a[1], at)
+	if len(b) != 2 {
+		errorSplitWeekdays := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "ErrorSplitWeekdays",
+				Description: "Displays message if error occure when split weekdays from split timetable command",
+				Other:       "Sorry, could not understand where are the weekdays and where is the time. Please, check the text for mistakes and try again",
+			},
+		})
+		return "", "", int64(0), errors.New(errorSplitWeekdays)
+	}
+	weekdays := strings.ToLower(strings.TrimSpace(b[0]))
+	timeText := strings.ToLower(strings.TrimSpace(b[1]))
+	time, err := ba.ParseTimeTextToInt(timeText)
+	if err != nil {
+		return "", "", int64(0), err
+	}
+	reg, err := regexp.Compile("[^а-яА-Яa-zA-Z0-9]+")
+	if err != nil {
+		return "", "", int64(0), err
+	}
+	weekdays = reg.ReplaceAllString(weekdays, " ")
+	return users, weekdays, time, nil
 }

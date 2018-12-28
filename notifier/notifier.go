@@ -275,7 +275,6 @@ func (n *Notifier) SendChannelNotification(channelID string) {
 					Description: "DM Warning message to those who did not submit standup",
 					Other:       "Hey, <@{{.user}}>! you failed to submit standup in <#{{.channelID}}|{{.channelName}}> on time! Do it ASAP!",
 				},
-				PluralCount: len(nonReporters),
 				TemplateData: map[string]interface{}{
 					"user":        nonReporter.UserID,
 					"channelID":   channel.ChannelID,

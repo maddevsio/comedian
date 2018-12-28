@@ -197,7 +197,7 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 		DefaultMessage: &i18n.Message{
 			ID:          "OneStandupPerDay",
 			Description: "Warning that only one standup per day is allowed",
-			Other:       "<@{{.ID}}>, you can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!",
+			Other:       "You can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!",
 		},
 		TemplateData: map[string]string{
 			"ID": msg.User,
@@ -208,7 +208,7 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 		DefaultMessage: &i18n.Message{
 			ID:          "CouldNotSaveStandup",
 			Description: "Displays a message when unexpected errors occur",
-			Other:       "<@{{.ID}}>, something went wrong and I could not save your standup in database. Please, report this to your PM.",
+			Other:       "Something went wrong and I could not save your standup in database. Please, report this to your PM.",
 		},
 		TemplateData: map[string]string{
 			"ID": msg.User,

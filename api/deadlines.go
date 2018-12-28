@@ -1,9 +1,14 @@
 package api
 
 import (
+	"errors"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/utils"
 )
 
 func (ba *BotAPI) addTime(accessLevel int, channelID, params string) string {
@@ -19,7 +24,7 @@ func (ba *BotAPI) addTime(accessLevel int, channelID, params string) string {
 		return accessAtLeastPM
 	}
 
-	timeInt, err := utils.ParseTimeTextToInt(params)
+	timeInt, err := ba.ParseTimeTextToInt(params)
 	if err != nil {
 		return err.Error()
 	}
@@ -144,5 +149,55 @@ func (ba *BotAPI) showTime(channelID string) string {
 		},
 	})
 	return showStandupTime
+
+}
+
+//ParseTimeTextToInt parse time text to int
+func (ba *BotAPI) ParseTimeTextToInt(timeText string) (int64, error) {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
+	if timeText == "0" {
+		return int64(0), nil
+	}
+	matchHourMinuteFormat, _ := regexp.MatchString("[0-9][0-9]:[0-9][0-9]", timeText)
+	matchAMPMFormat, _ := regexp.MatchString("[0-9][0-9][a-z]", timeText)
+
+	if matchHourMinuteFormat {
+		t := strings.Split(timeText, ":")
+		hours, _ := strconv.Atoi(t[0])
+		munites, _ := strconv.Atoi(t[1])
+
+		if hours > 23 || munites > 59 {
+			wrongTimeFormat := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "WrongTimeFormat",
+					Description: "Displays message if a time format is wrong",
+					Other:       "Wrong time! Please, check the time format and try again!",
+				},
+			})
+			return int64(0), errors.New(wrongTimeFormat)
+		}
+		return time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), hours, munites, 0, 0, time.Local).Unix(), nil
+	}
+
+	if matchAMPMFormat {
+		shortTimeFormat := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "shortTimeFormat",
+				Description: "Displays message if a time format is short",
+				Other:       "Seems like you used short time format, please, use 24:00 hour format instead!",
+			},
+		})
+		return int64(0), errors.New(shortTimeFormat)
+	}
+
+	unknownTimeFormat := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "unknownTimeFormat",
+			Description: "Displays message if time format is unknown",
+			Other:       "Could not understand how you mention time. Please, use 24:00 hour format and try again!",
+		},
+	})
+	return int64(0), errors.New(unknownTimeFormat)
 
 }
