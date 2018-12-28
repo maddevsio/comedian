@@ -466,6 +466,10 @@ func TestAutomaticActions(t *testing.T) {
 	for _, u := range users {
 		assert.NoError(t, bot.DB.DeleteUser(u.ID))
 	}
+	//delete created channel `{"ok": true, "channel": {"id": "CBAPFA2J2", "name": "general"}}`
+	channel, err := bot.DB.SelectChannel("CBAPFA2J2")
+	assert.NoError(t, err)
+	err = bot.DB.DeleteChannel(channel.ID)
 }
 
 func TestRecordBug(t *testing.T) {
