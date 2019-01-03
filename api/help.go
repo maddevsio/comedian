@@ -72,7 +72,7 @@ func (ba *BotAPI) generateHelpText() HelpText {
 		DefaultMessage: &i18n.Message{
 			ID:          "AddMembers",
 			Description: "Displays usage of add command",
-			Other:       "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, defaulting to developer if no role selected! ",
+			Other:       "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, default is a developer role, if the role is not selected! ",
 		},
 	})
 	showMembers := localizer.MustLocalize(&i18n.LocalizeConfig{
