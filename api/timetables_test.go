@@ -333,6 +333,26 @@ func TestReturnTimeTable(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = bot.DB.UpdateTimeTable(timetable2)
 	assert.NoError(t, err)
+	//empty timetable
+	chm3, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid3",
+		ChannelID:     "chan1",
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	timetable3, err := bot.DB.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: chm3.ID,
+		Monday:          0,
+		Tuesday:         0,
+		Wednesday:       0,
+		Thursday:        0,
+		Friday:          0,
+		Saturday:        0,
+		Sunday:          0,
+	})
+	assert.NoError(t, err)
+	_, err = bot.DB.UpdateTimeTable(timetable3)
+	assert.NoError(t, err)
 
 	//calculate hours and minutes from timestamp
 	//there may be different values on different computers
@@ -348,6 +368,7 @@ func TestReturnTimeTable(t *testing.T) {
 	}{
 		{timetable1, "| Monday 08:25 | Tuesday 08:25 | Wednesday 08:25 | Thursday 08:25 | Friday 08:25 | Saturday 08:25 | Sunday 08:25 |"},
 		{timetable2, "| Monday 08:25 | Wednesday 08:25 | Friday 08:25 | Saturday 08:25 |"},
+		{timetable3, "Timetable is empty"},
 	}
 	for _, test := range testCase {
 		actual := botAPI.returnTimeTable(test.timetable)
@@ -368,6 +389,10 @@ func TestReturnTimeTable(t *testing.T) {
 	err = bot.DB.DeleteChannelMember(chm2.UserID, chm2.ChannelID)
 	assert.NoError(t, err)
 	err = bot.DB.DeleteTimeTable(timetable2.ID)
+	assert.NoError(t, err)
+	err = bot.DB.DeleteChannelMember(chm3.UserID, chm3.ChannelID)
+	assert.NoError(t, err)
+	err = bot.DB.DeleteTimeTable(timetable3.ID)
 	assert.NoError(t, err)
 }
 
