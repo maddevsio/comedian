@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
@@ -38,7 +39,7 @@ func NewBotAPI(bot *bot.Bot) (*BotAPI, error) {
 	}
 
 	t := &Template{
-		templates: template.Must(template.ParseGlob("controll_pannel/*.html")),
+		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/controll_pannel/index.html")),
 	}
 
 	endPoint := fmt.Sprintf("/commands%s", ba.Bot.Conf.SecretToken)
