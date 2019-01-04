@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"log"
 	"testing"
 	"time"
 
@@ -500,5 +501,79 @@ func TestRecordBug(t *testing.T) {
 	}
 	//deletes user
 	err = bot.DB.DeleteUser(user1.ID)
+	assert.NoError(t, err)
+}
+
+func TestInList(t *testing.T) {
+	testCase := []struct {
+		element  string
+		list     []string
+		expected bool
+	}{
+		{"foo", []string{"foo", "bar", "random", "fool"}, true},
+		{"foo", []string{"foo7", "bar", "random", "fool"}, false},
+		{"", []string{"foo", "bar", "random", "fool"}, false},
+	}
+	for _, test := range testCase {
+		actual := InList(test.element, test.list)
+		assert.Equal(t, test.expected, actual)
+	}
+}
+
+func TestClear(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := NewBot(c)
+	assert.NoError(t, err)
+
+	channel, err := bot.DB.CreateChannel(model.Channel{
+		ChannelID:   "cid1",
+		ChannelName: "channel1",
+	})
+	assert.NoError(t, err)
+	//this channel members will not be deleted
+	chm1, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		UserID:    "userid1",
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+	chm2, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		UserID:    "userid2",
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+	//this channel member is existed in db, but not in list of users
+	channelmember, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		UserID:    "uid",
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	//chm1 and chm2 in db and in users list
+	//channelmember not in list, but in db
+	//Clear must clear channelmember from db
+	bot.Clear([]string{chm1.UserID, chm2.UserID})
+
+	//check that channel members deleted
+	_, err = bot.DB.SelectChannelMember(channelmember.ID)
+	if err == nil {
+		log.Println(err)
+		t.Error()
+	}
+
+	//check that the channel members from list are not deleted
+	_, err = bot.DB.SelectChannelMember(chm1.ID)
+	if err != nil {
+		t.Error()
+	}
+	_, err = bot.DB.SelectChannelMember(chm2.ID)
+	if err != nil {
+		t.Error()
+	}
+
+	//delete channel member
+	err = bot.DB.DeleteChannelMember(chm1.UserID, chm1.ChannelID)
+	assert.NoError(t, err)
+	err = bot.DB.DeleteChannelMember(chm2.UserID, chm2.ChannelID)
 	assert.NoError(t, err)
 }
