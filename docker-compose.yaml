@@ -1,0 +1,31 @@
+version: '2'
+
+services:
+
+  db:
+    image: percona/percona-server:5.7
+    restart: on-failure
+    command: --max_allowed_packet=32505856
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: comedian
+      MYSQL_USER: comedian
+      MYSQL_PASSWORD: comedian
+
+  comedian:
+    image: comedian:latest
+    restart: on-failure
+    links:
+      - db:db
+    expose:
+      - 8080
+    environment:
+      TZ: Asia/Bishkek
+      COMEDIAN_SLACK_TOKEN: ${COMEDIAN_SLACK_TOKEN}
+      COMEDIAN_DATABASE: comedian:comedian@tcp(db:3306)/comedian?parseTime=true
+      COMEDIAN_HTTP_BIND_ADDR: 0.0.0.0:8080
+      COMEDIAN_COLLECTOR_TOKEN: ${COMEDIAN_COLLECTOR_TOKEN}
+      COMEDIAN_COLLECTOR_URL: ${COMEDIAN_COLLECTOR_URL}
+      COMEDIAN_ENABLE_COLLECTOR: ${COMEDIAN_ENABLE_COLLECTOR}
+    depends_on:
+      - db
