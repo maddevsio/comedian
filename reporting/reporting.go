@@ -1,10 +1,7 @@
 package reporting
 
 import (
-	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -48,7 +45,7 @@ func (r *Reporter) Start() {
 func (r *Reporter) CallDisplayYesterdayTeamReport() {
 	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
 
-	hour, minute, err := formatTime(r.bot.CP.ReportTime)
+	hour, minute, err := utils.FormatTime(r.bot.CP.ReportTime)
 	if err != nil {
 		logrus.Error(err)
 		return
@@ -80,7 +77,7 @@ func (r *Reporter) CallDisplayWeeklyTeamReport() {
 	if int(time.Now().Weekday()) != 0 {
 		return
 	}
-	hour, minute, err := formatTime(r.bot.CP.ReportTime)
+	hour, minute, err := utils.FormatTime(r.bot.CP.ReportTime)
 	if err != nil {
 		logrus.Error(err)
 		return
@@ -659,28 +656,4 @@ func (r *Reporter) GetCollectorDataOnMember(member model.ChannelMember, startDat
 	}
 
 	return dataOnUser, dataOnUserInProject, err
-}
-
-func formatTime(t string) (hour, min int, err error) {
-	var er = errors.New("time format error")
-	ts := strings.Split(t, ":")
-	if len(ts) != 2 {
-		err = er
-		return
-	}
-
-	hour, err = strconv.Atoi(ts[0])
-	if err != nil {
-		return
-	}
-	min, err = strconv.Atoi(ts[1])
-	if err != nil {
-		return
-	}
-
-	if hour < 0 || hour > 23 || min < 0 || min > 59 {
-		err = er
-		return
-	}
-	return hour, min, nil
 }

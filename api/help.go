@@ -72,7 +72,7 @@ func (ba *BotAPI) generateHelpText() HelpText {
 		DefaultMessage: &i18n.Message{
 			ID:          "AddMembers",
 			Description: "Displays usage of add command",
-			Other:       "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, defaulting to developer if no role selected! ",
+			Other:       "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, default is a developer role, if the role is not selected! ",
 		},
 	})
 	showMembers := localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -114,7 +114,7 @@ func (ba *BotAPI) generateHelpText() HelpText {
 		DefaultMessage: &i18n.Message{
 			ID:          "AddTimetable",
 			Description: "Displays usage of add_timetable command",
-			Other:       "To configure individual standup schedule for members use `add_timetable` command. First tag users then add keyworn *on(по)*, after it include weekdays you want to set individual schedule (mon tue, wed, thu, fri, sat, sun) or their Rus verstions (пн, вт, ср, чт, пт, сб, вс) and then select time with keywork at(в) (18:45). Example: `@user1 @user2 on mon tue at 14:02` ",
+			Other:       "To configure individual standup schedule for members use `add_timetable` command. First tag users then add keyworn *on*, after it include weekdays you want to set individual schedule (mon tue, wed, thu, fri, sat, sun) and then select time with keywork *at* (18:45). Example: `@user1 @user2 on mon tue at 14:02` ",
 		},
 	})
 	showTimetable := localizer.MustLocalize(&i18n.LocalizeConfig{
