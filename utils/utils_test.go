@@ -5,12 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bouk/monkey"
-	"gitlab.com/team-monitoring/comedian/chat"
+	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/bot"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSplitUser(t *testing.T) {
@@ -20,113 +18,59 @@ func TestSplitUser(t *testing.T) {
 	assert.Equal(t, "userName", name)
 }
 
-func TestSplitTimeTalbeCommand(t *testing.T) {
-	d := time.Date(2018, 1, 2, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
+func TestSplitChannel(t *testing.T) {
+	channel := "<#ChannelID|channelName"
+	id, name := SplitChannel(channel)
+	assert.Equal(t, "ChannelID", id)
+	assert.Equal(t, "channelName", name)
+}
 
-	testCases := []struct {
-		command  string
-		users    string
-		weekdays string
-		time     int64
-		err      string
+func TestSecondsToHuman(t *testing.T) {
+	testCase := []struct {
+		secondsInt int
+		secondsStr string
 	}{
-		{"@anatoliy on friday at 01:00", "@anatoliy", "friday", int64(1514833200), ""},
-		{"@anatoliy n friday ft 01:00", "", "", int64(0), "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"},
-		{"@anatoliy on Friday at 01:00", "@anatoliy", "friday", int64(1514833200), ""},
-		{"<@UB9AE7CL9|fedorenko.tolik> on monday at 01:00", "<@UB9AE7CL9|fedorenko.tolik>", "monday", int64(1514833200), ""},
-		{"@anatoliy @erik @alex on friday tuesday monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1514833200), ""},
-		{"@anatoliy @erik @alex on friday, tuesday, monday wednesday at 01:00", "@anatoliy @erik @alex", "friday tuesday monday wednesday", int64(1514833200), ""},
+		{3600, "1:00"},
 	}
-	for _, tt := range testCases {
-		users, weekdays, _, err := SplitTimeTalbeCommand(tt.command, " on ", " at ")
-		assert.Equal(t, tt.users, users)
-		assert.Equal(t, tt.weekdays, weekdays)
-		//assert.Equal(t, tt.time, deadline)
-		if err != nil {
-			assert.Equal(t, errors.New(tt.err), err)
-		}
-	}
-
-	testCasesRus := []struct {
-		command  string
-		users    string
-		weekdays string
-		time     int64
-		err      string
-	}{
-		{"@anatoliy по пятницам в 02:04", "@anatoliy", "пятницам", int64(1514837040), ""},
-		{"@anatoliy @erik @alex по понедельникам пятницам вторникам в 23:04", "@anatoliy @erik @alex", "понедельникам пятницам вторникам", int64(1514912640), ""},
-	}
-	for _, tt := range testCasesRus {
-		users, weekdays, _, err := SplitTimeTalbeCommand(tt.command, " по ", " в ")
-		assert.Equal(t, tt.users, users)
-		assert.Equal(t, tt.weekdays, weekdays)
-		//assert.Equal(t, tt.time, deadline)
-		if err != nil {
-			assert.Equal(t, errors.New(tt.err), err)
-		}
+	for _, test := range testCase {
+		actual := SecondsToHuman(test.secondsInt)
+		assert.Equal(t, test.secondsStr, actual)
 	}
 }
 
 func TestFormatTime(t *testing.T) {
-	testCases := []struct {
-		timeString string
-		hour       int
-		minute     int
-		err        error
+	testCase := []struct {
+		time  string
+		eHour int
+		eMin  int
+		err   error
 	}{
 		{"10:00", 10, 0, nil},
-		{"11:20", 11, 20, nil},
-		{"25:20", 0, 0, errors.New("time format error")},
-		{"25:20:30", 0, 0, errors.New("time format error")},
-		{"shit:fuck", 0, 0, errors.New("time format error")},
-		{"10:fuck", 0, 0, errors.New("time format error")},
+		{"10", 0, 0, errors.New("time format error")},
+		{"-10:00", -10, 0, errors.New("time format error")},
+		{"24:00", 24, 0, errors.New("time format error")},
+		{"10:-01", 10, -1, errors.New("time format error")},
+		{"10:69", 10, 69, errors.New("time format error")},
 	}
-	for _, tt := range testCases {
-		h, m, err := FormatTime(tt.timeString)
-		assert.Equal(t, tt.hour, h)
-		assert.Equal(t, tt.minute, m)
-		assert.Equal(t, tt.err, err)
-	}
-}
-
-func TestParseTimeTextToInt(t *testing.T) {
-
-	d := time.Date(2018, 10, 4, 10, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
-
-	testCases := []struct {
-		timeText string
-		time     int64
-		err      error
-	}{
-		{"0", 0, nil},
-		{"10:00", 1538625600, nil},
-		{"xx:00", 0, errors.New("Could not understand how you mention time. Please, use 24:00 hour format and try again!")},
-		{"00:xx", 0, errors.New("Could not understand how you mention time. Please, use 24:00 hour format and try again!")},
-		{"00:62", 0, errors.New("Wrong time! Please, check the time format and try again!")},
-		{"10am", 0, errors.New("Seems like you used short time format, please, use 24:00 hour format instead!")},
-		{"20", 0, errors.New("Could not understand how you mention time. Please, use 24:00 hour format and try again!")},
-	}
-	for _, tt := range testCases {
-		_, err := ParseTimeTextToInt(tt.timeText)
-		assert.Equal(t, tt.err, err)
-		//assert.Equal(t, tt.time, time)
+	for _, test := range testCase {
+		aHour, aMin, err := FormatTime(test.time)
+		assert.Equal(t, test.eHour, aHour)
+		assert.Equal(t, test.eMin, aMin)
+		assert.Equal(t, test.err, err)
 	}
 }
 
 func TestPrepareTimetable(t *testing.T) {
 	c, err := config.Get()
-	slack, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 
-	m, err := slack.DB.CreateChannelMember(model.ChannelMember{
+	m, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "testUser",
 		ChannelID: "testChannel",
 	})
 	assert.NoError(t, err)
 
-	tt, err := slack.DB.CreateTimeTable(model.TimeTable{
+	tt, err := bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: m.ID,
 	})
 	assert.NoError(t, err)
@@ -138,7 +82,7 @@ func TestPrepareTimetable(t *testing.T) {
 	tt.Thursday = timeNow.Unix()
 	tt.Friday = timeNow.Unix()
 
-	tt, err = slack.DB.UpdateTimeTable(tt)
+	tt, err = bot.DB.UpdateTimeTable(tt)
 
 	assert.NoError(t, err)
 	assert.Equal(t, timeNow.Unix(), tt.Monday)
@@ -147,7 +91,24 @@ func TestPrepareTimetable(t *testing.T) {
 
 	tt = PrepareTimeTable(tt, "mon tue wed thu fri sat sun", timeUpdate)
 	assert.Equal(t, timeUpdate, tt.Monday)
-	assert.NoError(t, slack.DB.DeleteChannelMember(m.UserID, m.ChannelID))
-	assert.NoError(t, slack.DB.DeleteTimeTable(tt.ID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(m.UserID, m.ChannelID))
+	assert.NoError(t, bot.DB.DeleteTimeTable(tt.ID))
 
+}
+
+func TestCommandParsing(t *testing.T) {
+	testCase := []struct {
+		text         string
+		commandTitle string
+		commandBody  string
+	}{
+		{"add user1", "add", "user1"},
+		{"add user1 user2", "add", "user1 user2"},
+		{"add user1 user2 user3", "add", "user1 user2 user3"},
+	}
+	for _, test := range testCase {
+		aTitle, aBody := CommandParsing(test.text)
+		assert.Equal(t, test.commandTitle, aTitle)
+		assert.Equal(t, test.commandBody, aBody)
+	}
 }

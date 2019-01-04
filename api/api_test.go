@@ -4,49 +4,58 @@ import (
 	"errors"
 	"testing"
 
+	"gitlab.com/team-monitoring/comedian/bot"
+	"gitlab.com/team-monitoring/comedian/config"
+
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/team-monitoring/comedian/model"
 )
 
 func TestGetAccessLevel(t *testing.T) {
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	bot.CP.ManagerSlackUserID = "SuperAdminID"
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
 
 	//create user with superadmin id
-	superadmin, err := r.db.CreateUser(model.User{
+	superadmin, err := bot.DB.CreateUser(model.User{
 		UserName: "sadmin",
 		UserID:   "SuperAdminID",
 		Role:     "",
 	})
 	assert.NoError(t, err)
 	//create user with admin role
-	admin, err := r.db.CreateUser(model.User{
+	admin, err := bot.DB.CreateUser(model.User{
 		UserName: "admin",
 		UserID:   "AdminID",
 		Role:     "admin",
 	})
 	assert.NoError(t, err)
 	//create user pm
-	UserPm, err := r.db.CreateUser(model.User{
+	UserPm, err := bot.DB.CreateUser(model.User{
 		UserName: "userpm",
 		UserID:   "idpm",
 		Role:     "pm",
 	})
 	assert.NoError(t, err)
 	//create channel
-	channel1, err := r.db.CreateChannel(model.Channel{
+	channel1, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "channel1",
 		ChannelID:   "chanid1",
 	})
 	assert.NoError(t, err)
 	//create channel member with role pm
-	PM, err := r.db.CreateChannelMember(model.ChannelMember{
+	PM, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        UserPm.UserID,
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "pm",
 	})
 	assert.NoError(t, err)
 	//create usual user
-	User, err := r.db.CreateUser(model.User{
+	User, err := bot.DB.CreateUser(model.User{
 		UserID:   "userid",
 		UserName: "username",
 		Role:     "",
@@ -66,23 +75,23 @@ func TestGetAccessLevel(t *testing.T) {
 		{User.UserID, "", 4, nil},
 	}
 	for _, test := range testCase {
-		actualLevel, err := r.getAccessLevel(test.UserID, test.ChannelID)
+		actualLevel, err := botAPI.getAccessLevel(test.UserID, test.ChannelID)
 		assert.Equal(t, test.ExceptedAccessLevel, actualLevel)
 		assert.Equal(t, test.ExceptedError, err)
 	}
 	//deletes users
-	err = r.db.DeleteUser(superadmin.ID)
+	err = bot.DB.DeleteUser(superadmin.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(admin.ID)
+	err = bot.DB.DeleteUser(admin.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(UserPm.ID)
+	err = bot.DB.DeleteUser(UserPm.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(User.ID)
+	err = bot.DB.DeleteUser(User.ID)
 	assert.NoError(t, err)
 	//delete channel members
-	err = r.db.DeleteChannelMember(PM.UserID, PM.ChannelID)
+	err = bot.DB.DeleteChannelMember(PM.UserID, PM.ChannelID)
 	assert.NoError(t, err)
 	//delete channel
-	err = r.db.DeleteChannel(channel1.ID)
+	err = bot.DB.DeleteChannel(channel1.ID)
 	assert.NoError(t, err)
 }

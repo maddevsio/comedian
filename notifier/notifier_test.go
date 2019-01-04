@@ -6,7 +6,7 @@ import (
 
 	"github.com/bouk/monkey"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/team-monitoring/comedian/chat"
+	"gitlab.com/team-monitoring/comedian/bot"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	httpmock "gopkg.in/jarcoal/httpmock.v1"
@@ -14,13 +14,16 @@ import (
 
 func TestNotifier(t *testing.T) {
 	c, err := config.Get()
-	c.ReminderRepeatsMax = 0
-	c.ReminderTime = 0
-	c.NotifierInterval = 0
 	assert.NoError(t, err)
-	slack, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	n, err := NewNotifier(slack)
+
+	bot.CP.ReminderRepeatsMax = 0
+	bot.CP.ReminderTime = 0
+	bot.CP.NotifierInterval = 0
+	assert.NoError(t, err)
+
+	n, err := NewNotifier(bot)
 	assert.NoError(t, err)
 
 	channelID := "QWERTY123"
@@ -37,12 +40,12 @@ func TestNotifier(t *testing.T) {
 	d := time.Date(2018, 1, 2, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	su, err := n.db.CreateChannelMember(model.ChannelMember{
+	su, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID1",
 		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
-	su2, err := n.db.CreateChannelMember(model.ChannelMember{
+	su2, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID2",
 		ChannelID: channelID,
 	})
@@ -61,7 +64,7 @@ func TestNotifier(t *testing.T) {
 	d = time.Date(2018, 1, 2, 9, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	s, err := n.db.CreateStandup(model.Standup{
+	s, err := bot.DB.CreateStandup(model.Standup{
 		Created:   time.Now(),
 		Modified:  time.Now(),
 		ChannelID: channelID,
@@ -72,7 +75,7 @@ func TestNotifier(t *testing.T) {
 	assert.NoError(t, err)
 
 	// add standup for user @user2
-	s2, err := n.db.CreateStandup(model.Standup{
+	s2, err := bot.DB.CreateStandup(model.Standup{
 		Created:   time.Now(),
 		Modified:  time.Now(),
 		ChannelID: channelID,
@@ -90,53 +93,51 @@ func TestNotifier(t *testing.T) {
 
 	n.SendChannelNotification(channelID)
 
-	assert.NoError(t, n.db.DeleteChannelMember(su.UserID, su.ChannelID))
-	assert.NoError(t, n.db.DeleteChannelMember(su2.UserID, su2.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(su.UserID, su.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(su2.UserID, su2.ChannelID))
 
-	assert.NoError(t, n.db.DeleteStandup(s.ID))
-	assert.NoError(t, n.db.DeleteStandup(s2.ID))
+	assert.NoError(t, bot.DB.DeleteStandup(s.ID))
+	assert.NoError(t, bot.DB.DeleteStandup(s2.ID))
 }
 
 func TestCheckUser(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	slack, err := chat.NewSlack(c)
-	assert.NoError(t, err)
-	n, err := NewNotifier(slack)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
 
-	users, err := n.db.ListAllChannelMembers()
+	users, err := bot.DB.ListAllChannelMembers()
 	assert.NoError(t, err)
 	for _, user := range users {
-		assert.NoError(t, n.db.DeleteChannelMember(user.UserID, user.ChannelID))
+		assert.NoError(t, bot.DB.DeleteChannelMember(user.UserID, user.ChannelID))
 	}
 
 	d := time.Date(2018, 6, 24, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
 	channelID := "QWERTY123"
-	err = n.db.CreateStandupTime(time.Now().Unix(), channelID)
+	err = bot.DB.CreateStandupTime(time.Now().Unix(), channelID)
 
 	d = time.Date(2018, 6, 25, 0, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	u1, err := n.db.CreateChannelMember(model.ChannelMember{
+	u1, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID1",
 		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
-	u2, err := n.db.CreateChannelMember(model.ChannelMember{
+	u2, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID2",
 		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
 
-	u3, err := n.db.CreateChannelMember(model.ChannelMember{
+	u3, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID3",
 		ChannelID: channelID,
 	})
 	assert.NoError(t, err)
-	u4, err := n.db.CreateChannelMember(model.ChannelMember{
+	u4, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID4",
 		ChannelID: channelID,
 	})
@@ -161,17 +162,17 @@ func TestCheckUser(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		isNonReporter, err := n.db.IsNonReporter(tt.user.UserID, tt.user.ChannelID, time.Now(), time.Now())
+		isNonReporter, err := bot.DB.IsNonReporter(tt.user.UserID, tt.user.ChannelID, time.Now(), time.Now())
 		assert.Error(t, err)
 		assert.Equal(t, tt.isNonReporter, isNonReporter)
 	}
 
-	assert.NoError(t, n.db.DeleteChannelMember(u1.UserID, u1.ChannelID))
-	assert.NoError(t, n.db.DeleteChannelMember(u2.UserID, u2.ChannelID))
-	assert.NoError(t, n.db.DeleteChannelMember(u3.UserID, u3.ChannelID))
-	assert.NoError(t, n.db.DeleteChannelMember(u4.UserID, u4.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(u1.UserID, u1.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(u2.UserID, u2.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(u3.UserID, u3.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(u4.UserID, u4.ChannelID))
 
-	assert.NoError(t, n.db.DeleteStandupTime(channelID))
+	assert.NoError(t, bot.DB.DeleteStandupTime(channelID))
 }
 
 func TestIndividualNotification(t *testing.T) {
@@ -183,35 +184,35 @@ func TestIndividualNotification(t *testing.T) {
 
 	c, err := config.Get()
 	assert.NoError(t, err)
-	slack, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	n, err := NewNotifier(slack)
+	n, err := NewNotifier(bot)
 	assert.NoError(t, err)
 
 	d := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	user, err := n.db.CreateUser(model.User{
+	user, err := bot.DB.CreateUser(model.User{
 		UserID:   "QWERTY123",
 		UserName: "chanName1",
 		Role:     "",
 	})
 	assert.NoError(t, err)
 
-	channel, err := n.db.CreateChannel(model.Channel{
+	channel, err := bot.DB.CreateChannel(model.Channel{
 		ChannelID:   "XYZ",
 		ChannelName: "chan",
 		StandupTime: int64(0),
 	})
 	assert.NoError(t, err)
 
-	m, err := n.db.CreateChannelMember(model.ChannelMember{
+	m, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    user.UserID,
 		ChannelID: channel.ChannelID,
 	})
 	assert.NoError(t, err)
 
-	tt, err := n.db.CreateTimeTable(model.TimeTable{
+	tt, err := bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: m.ID,
 	})
 	assert.NoError(t, err)
@@ -222,7 +223,7 @@ func TestIndividualNotification(t *testing.T) {
 	tt.Thursday = timeNow.Unix()
 	tt.Friday = timeNow.Unix()
 
-	tt, err = n.db.UpdateTimeTable(tt)
+	tt, err = bot.DB.UpdateTimeTable(tt)
 	assert.NoError(t, err)
 
 	d = time.Date(2018, 10, 9, 15, 58, 0, 0, time.UTC)
@@ -235,10 +236,10 @@ func TestIndividualNotification(t *testing.T) {
 	//send push
 	n.NotifyIndividuals()
 
-	assert.NoError(t, n.db.DeleteUser(user.ID))
-	assert.NoError(t, n.db.DeleteChannel(channel.ID))
-	assert.NoError(t, n.db.DeleteChannelMember(user.UserID, channel.ChannelID))
-	assert.NoError(t, n.db.DeleteTimeTable(tt.ID))
+	assert.NoError(t, bot.DB.DeleteUser(user.ID))
+	assert.NoError(t, bot.DB.DeleteChannel(channel.ID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(user.UserID, channel.ChannelID))
+	assert.NoError(t, bot.DB.DeleteTimeTable(tt.ID))
 
 }
 
@@ -251,15 +252,15 @@ func TestChannelsNotification(t *testing.T) {
 
 	c, err := config.Get()
 	assert.NoError(t, err)
-	slack, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	n, err := NewNotifier(slack)
+	n, err := NewNotifier(bot)
 	assert.NoError(t, err)
 
 	d := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	user, err := n.db.CreateUser(model.User{
+	user, err := bot.DB.CreateUser(model.User{
 		UserID:   "QWERTY123",
 		UserName: "chanName1",
 		Role:     "",
@@ -267,17 +268,17 @@ func TestChannelsNotification(t *testing.T) {
 	assert.NoError(t, err)
 
 	standupTime := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC).Unix()
-	channel, err := n.db.CreateChannel(model.Channel{
+	channel, err := bot.DB.CreateChannel(model.Channel{
 		ChannelID:   "XYZ",
 		ChannelName: "chan",
 		StandupTime: standupTime,
 	})
 	assert.NoError(t, err)
 
-	err = n.db.CreateStandupTime(standupTime, channel.ChannelID)
+	err = bot.DB.CreateStandupTime(standupTime, channel.ChannelID)
 	assert.NoError(t, err)
 
-	m, err := n.db.CreateChannelMember(model.ChannelMember{
+	m, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    user.UserID,
 		ChannelID: channel.ChannelID,
 	})
@@ -293,9 +294,40 @@ func TestChannelsNotification(t *testing.T) {
 	//send push
 	n.NotifyChannels()
 
-	assert.NoError(t, n.db.DeleteUser(user.ID))
-	assert.NoError(t, n.db.DeleteChannel(channel.ID))
-	assert.NoError(t, n.db.DeleteChannelMember(m.UserID, m.ChannelID))
-	assert.NoError(t, n.db.DeleteStandupTime(channel.ChannelID))
+	assert.NoError(t, bot.DB.DeleteUser(user.ID))
+	assert.NoError(t, bot.DB.DeleteChannel(channel.ID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(m.UserID, m.ChannelID))
+	assert.NoError(t, bot.DB.DeleteStandupTime(channel.ChannelID))
+
+}
+
+func TestSendIndividualWarning(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	n, err := NewNotifier(bot)
+	assert.NoError(t, err)
+
+	//creates channel member
+	cm1, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		ChannelID:     "cid1",
+		UserID:        "uid1",
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	testCase := []struct {
+		id int64
+	}{
+		//random id
+		{1},
+		{cm1.ID},
+	}
+	for _, test := range testCase {
+		n.SendIndividualWarning(test.id)
+	}
+	//delete channel member
+	err = bot.DB.DeleteChannelMember(cm1.UserID, cm1.ChannelID)
+	assert.NoError(t, err)
 
 }

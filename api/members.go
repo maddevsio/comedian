@@ -5,12 +5,30 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/utils"
 )
 
-func (r *REST) addCommand(accessLevel int, channelID, params string) string {
+func (ba *BotAPI) addCommand(accessLevel int, channelID, params string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+	accessAtLeastAdmin := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "AccessAtLeastAdmin",
+			Description: "Displays warning that role must be at least admin",
+			Other:       "Access Denied! You need to be at least admin in this slack to use this command!",
+		},
+	})
+
+	accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "AccessAtLeastPM",
+			Description: "Displays warning that role must be at least pm",
+			Other:       "Access Denied! You need to be at least PM in this project to use this command!",
+		},
+	})
+
 	var role string
 	var members []string
 	if strings.Contains(params, "/") {
@@ -25,38 +43,55 @@ func (r *REST) addCommand(accessLevel int, channelID, params string) string {
 	switch role {
 	case "admin", "админ":
 		if accessLevel > 2 {
-			return r.conf.Translate.AccessAtLeastAdmin
+			return accessAtLeastAdmin
 		}
-		return r.addAdmins(members)
+		return ba.addAdmins(members)
 	case "developer", "разработчик", "":
 		if accessLevel > 3 {
-			return r.conf.Translate.AccessAtLeastPM
+			return accessAtLeastPM
 		}
-		return r.addMembers(members, "developer", channelID)
+		return ba.addMembers(members, "developer", channelID)
 	case "pm", "пм":
 		if accessLevel > 2 {
-			return r.conf.Translate.AccessAtLeastAdmin
+			return accessAtLeastAdmin
 		}
-		return r.addMembers(members, "pm", channelID)
+		return ba.addMembers(members, "pm", channelID)
 	default:
-		return r.displayHelpText("add")
+		return ba.DisplayHelpText("add")
 	}
 }
 
-func (r *REST) listCommand(channelID, params string) string {
+func (ba *BotAPI) showCommand(channelID, params string) string {
 	switch params {
 	case "admin", "админ":
-		return r.listAdmins()
+		return ba.listAdmins()
 	case "developer", "разработчик", "":
-		return r.listMembers(channelID, "developer")
+		return ba.listMembers(channelID, "developer")
 	case "pm", "пм":
-		return r.listMembers(channelID, "pm")
+		return ba.listMembers(channelID, "pm")
 	default:
-		return r.displayHelpText("show")
+		return ba.DisplayHelpText("show")
 	}
 }
 
-func (r *REST) deleteCommand(accessLevel int, channelID, params string) string {
+func (ba *BotAPI) deleteCommand(accessLevel int, channelID, params string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+	accessAtLeastAdmin := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "AccessAtLeastAdmin",
+			Description: "Displays warning that role must be at least admin",
+			Other:       "Access Denied! You need to be at least admin in this slack to use this command!",
+		},
+	})
+
+	accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "AccessAtLeastPM",
+			Description: "Displays warning that role must be at least pm",
+			Other:       "Access Denied! You need to be at least PM in this project to use this command!",
+		},
+	})
+
 	var role string
 	var members []string
 	if strings.Contains(params, "/") {
@@ -71,20 +106,22 @@ func (r *REST) deleteCommand(accessLevel int, channelID, params string) string {
 	switch role {
 	case "admin", "админ":
 		if accessLevel > 2 {
-			return r.conf.Translate.AccessAtLeastAdmin
+			return accessAtLeastAdmin
 		}
-		return r.deleteAdmins(members)
+		return ba.deleteAdmins(members)
 	case "developer", "разработчик", "pm", "пм", "":
 		if accessLevel > 3 {
-			return r.conf.Translate.AccessAtLeastPM
+			return accessAtLeastPM
 		}
-		return r.deleteMembers(members, channelID)
+		return ba.deleteMembers(members, channelID)
 	default:
-		return r.displayHelpText("remove")
+		return ba.DisplayHelpText("remove")
 	}
 }
 
-func (r *REST) addMembers(users []string, role, channel string) string {
+func (ba *BotAPI) addMembers(users []string, role, channel string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
 	var failed, exist, added, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -95,10 +132,10 @@ func (r *REST) addMembers(users []string, role, channel string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, channel)
+		user, err := ba.Bot.DB.FindChannelMemberByUserID(userID, channel)
 		if err != nil {
 			logrus.Errorf("Rest FindChannelMemberByUserID failed: %v", err)
-			chanMember, _ := r.db.CreateChannelMember(model.ChannelMember{
+			chanMember, _ := ba.Bot.DB.CreateChannelMember(model.ChannelMember{
 				UserID:        userID,
 				ChannelID:     channel,
 				RoleInChannel: role,
@@ -114,32 +151,94 @@ func (r *REST) addMembers(users []string, role, channel string) string {
 
 	if len(failed) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(r.conf.Translate.AddPMsFailed, failed)
+			addPMsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddPMsFailed",
+					Description: "Displays a message when errors occur when assigning users as PM",
+					Other:       "Could not assign users as PMs: {{.PMs}}",
+				},
+				TemplateData: map[string]interface{}{
+					"PMs": failed,
+				},
+			})
+			text += addPMsFailed + "\n"
 		} else {
-			text += fmt.Sprintf(r.conf.Translate.AddMembersFailed, failed)
+			addMembersFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddMembersFailed",
+					Description: "Displays a message when errors occur when assigning users",
+					Other:       "Could not assign members: {{.users}}",
+				},
+				TemplateData: map[string]interface{}{
+					"users": failed,
+				},
+			})
+			text += addMembersFailed + "\n"
 		}
 
 	}
 	if len(exist) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(r.conf.Translate.AddPMsExist, exist)
+			addPMsExist := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddPMsExist",
+					Description: "Displays a message when errors occur when assigning users, which has already PM-role",
+					Other:       "Users already have roles: {{.PMs}}",
+				},
+				TemplateData: map[string]interface{}{
+					"PMs": exist,
+				},
+			})
+			text += addPMsExist + "\n"
 		} else {
-			text += fmt.Sprintf(r.conf.Translate.AddMembersExist, exist)
+			addMembersExist := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddMembersExist",
+					Description: "Displays a message when errors occur when assigning users, which already has role",
+					Other:       "Members already have roles: {{.users}}",
+				},
+				TemplateData: map[string]interface{}{
+					"users": exist,
+				},
+			})
+			text += addMembersExist + "\n"
 		}
 
 	}
 	if len(added) != 0 {
 		if role == "pm" {
-			text += fmt.Sprintf(r.conf.Translate.AddPMsAdded, added)
+			addPMsAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddPMsAdded",
+					Description: "Displays a message when users successfully assigning as PMs",
+					Other:       "Users are assigned as PMs: {{.PMs}}",
+				},
+				TemplateData: map[string]interface{}{
+					"PMs": added,
+				},
+			})
+			text += addPMsAdded + "\n"
 		} else {
-			text += fmt.Sprintf(r.conf.Translate.AddMembersAdded, added)
+			addMembersAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "AddMembersAdded",
+					Description: "Displays a message when users are successfully assigned",
+					Other:       "Members are assigned: {{.users}}",
+				},
+				TemplateData: map[string]interface{}{
+					"users": added,
+				},
+			})
+			text += addMembersAdded + "\n"
 		}
 
 	}
 	return text
 }
 
-func (r *REST) addAdmins(users []string) string {
+func (ba *BotAPI) addAdmins(users []string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
 	var failed, exist, added, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -150,7 +249,7 @@ func (r *REST) addAdmins(users []string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := r.db.SelectUser(userID)
+		user, err := ba.Bot.DB.SelectUser(userID)
 		if err != nil {
 			failed += u
 			continue
@@ -160,9 +259,16 @@ func (r *REST) addAdmins(users []string) string {
 			continue
 		}
 		user.Role = "admin"
-		r.db.UpdateUser(user)
-		message := r.conf.Translate.PMAssigned
-		err = r.slack.SendUserMessage(userID, message)
+		ba.Bot.DB.UpdateUser(user)
+		adminAssigned := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "PMAssigned",
+				Description: "Displays message when user added as admin for Comedian",
+				Other:       "You have been added as Admin for Comedian",
+			},
+		})
+
+		err = ba.Bot.SendUserMessage(userID, adminAssigned)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
@@ -170,20 +276,52 @@ func (r *REST) addAdmins(users []string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddAdminsFailed, failed)
+		addAdminsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "AddAdminsFailed",
+				Description: "Displays message when user added as admin for Comedian",
+				Other:       "Could not assign users as admins: {{.admins}}",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": failed,
+			},
+		})
+		text += addAdminsFailed + "\n"
 	}
 	if len(exist) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddAdminsExist, exist)
+		addAdminsExist := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "AddAdminsExist",
+				Description: "Displays message when users were already assigned as admins",
+				Other:       "Users were already assigned as admins: {{.admins}}",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": exist,
+			},
+		})
+		text += addAdminsExist + "\n"
 	}
 	if len(added) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.AddAdminsAdded, added)
+		addAdminsAdded := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "AddAdminsAdded",
+				Description: "Displays message when users successfully assigned as admins",
+				Other:       "Users are assigned as admins: {{.admins}}",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": added,
+			},
+		})
+		text += addAdminsAdded + "\n"
 	}
 
 	return text
 }
 
-func (r *REST) listMembers(channelID, role string) string {
-	members, err := r.db.ListChannelMembersByRole(channelID, role)
+func (ba *BotAPI) listMembers(channelID, role string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
+	members, err := ba.Bot.DB.ListChannelMembersByRole(channelID, role)
 	if err != nil {
 		return fmt.Sprintf("failed to list members :%v\n", err)
 	}
@@ -193,18 +331,63 @@ func (r *REST) listMembers(channelID, role string) string {
 	}
 	if role == "pm" {
 		if len(userIDs) < 1 {
-			return r.conf.Translate.ListNoPMs
+			listNoPMs := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "ListNoPMs",
+					Description: "Displays message about there are no PMs in channel",
+					Other:       "No PMs in this channel! To add one, please, use `/comedian add` slash command",
+				},
+			})
+			return listNoPMs
 		}
-		return fmt.Sprintf(r.conf.Translate.ListPMs, strings.Join(userIDs, ", "))
+		listPMs := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "ListPMs",
+				Description: "Displays list of pms",
+				One:         "PM in this channel: {{.pm}}",
+				Other:       "PMs in this channel: {{.pms}}",
+			},
+			PluralCount: len(userIDs),
+			TemplateData: map[string]interface{}{
+				"pm":  userIDs[0],
+				"pms": strings.Join(userIDs, ", "),
+			},
+		})
+		return listPMs
+
 	}
 	if len(userIDs) < 1 {
-		return r.conf.Translate.ListNoStandupers
+		listNoStandupers := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "ListNoStandupers",
+				Description: "Displays message when there are no standupers in the channel",
+				Other:       "No standupers in this channel! To add one, please, use `/comedian add` slash command",
+			},
+		})
+		return listNoStandupers
+
 	}
-	return fmt.Sprintf(r.conf.Translate.ListStandupers, strings.Join(userIDs, ", "))
+	listStandupers := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "ListStandupers",
+			Description: "Displays list of standupers",
+			One:         "Standuper in this channel: {{.standuper}}",
+			Other:       "Standupers in this channel: {{.standupers}}",
+		},
+		PluralCount: len(userIDs),
+		TemplateData: map[string]interface{}{
+			"standuper":  userIDs[0],
+			"standupers": strings.Join(userIDs, ", "),
+		},
+	})
+	return listStandupers
+
 }
 
-func (r *REST) listAdmins() string {
-	admins, err := r.db.ListAdmins()
+func (ba *BotAPI) listAdmins() string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
+	admins, err := ba.Bot.DB.ListAdmins()
 	if err != nil {
 		return fmt.Sprintf("failed to list users :%v\n", err)
 	}
@@ -213,12 +396,36 @@ func (r *REST) listAdmins() string {
 		userNames = append(userNames, "<@"+admin.UserName+">")
 	}
 	if len(userNames) < 1 {
-		return r.conf.Translate.ListNoAdmins
+		listNoAdmins := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "ListNoAdmins",
+				Description: "Displays message when there are no admins in the channel",
+				Other:       "No admins in this workspace! To add one, please, use `/comedian add` slash command",
+			},
+		})
+		return listNoAdmins
+
 	}
-	return fmt.Sprintf(r.conf.Translate.ListAdmins, strings.Join(userNames, ", "))
+	listAdmins := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "ListAdmins",
+			Description: "Displays list of admins",
+			One:         "Admin in this workspace: {{.admin}}",
+			Other:       "Admins in this workspace: {{.admins}}",
+		},
+		PluralCount: len(userNames),
+		TemplateData: map[string]interface{}{
+			"admin":  userNames[0],
+			"admins": strings.Join(userNames, ", "),
+		},
+	})
+	return listAdmins
+
 }
 
-func (r *REST) deleteMembers(members []string, channelID string) string {
+func (ba *BotAPI) deleteMembers(members []string, channelID string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
 	var failed, deleted, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -229,27 +436,49 @@ func (r *REST) deleteMembers(members []string, channelID string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := r.db.FindChannelMemberByUserID(userID, channelID)
+		user, err := ba.Bot.DB.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
 			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
 			failed += u
 			continue
 		}
-		r.db.DeleteChannelMember(user.UserID, channelID)
+		ba.Bot.DB.DeleteChannelMember(user.UserID, channelID)
 		deleted += u
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf("Could not remove the following members: %v\n", failed)
+		deleteMembersFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DeleteMembersFailed",
+				Description: "Displays a message when user deletion errors occur",
+				Other:       "Could not remove the following members: {{.users}}",
+			},
+			TemplateData: map[string]interface{}{
+				"users": failed,
+			},
+		})
+		text += deleteMembersFailed + "\n"
 	}
 	if len(deleted) != 0 {
-		text += fmt.Sprintf("The following members were removed: %v\n", deleted)
+		deleteMembersSucceed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DeleteMembersSucceed",
+				Description: "Displays a message when users have been successfully deleted",
+				Other:       "The following members were removed: {{.users}}",
+			},
+			TemplateData: map[string]interface{}{
+				"users": deleted,
+			},
+		})
+		text += deleteMembersSucceed + "\n"
 	}
 
 	return text
 }
 
-func (r *REST) deleteAdmins(users []string) string {
+func (ba *BotAPI) deleteAdmins(users []string) string {
+	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
+
 	var failed, deleted, text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
@@ -260,7 +489,7 @@ func (r *REST) deleteAdmins(users []string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := r.db.SelectUser(userID)
+		user, err := ba.Bot.DB.SelectUser(userID)
 		if err != nil {
 			failed += u
 			continue
@@ -270,9 +499,16 @@ func (r *REST) deleteAdmins(users []string) string {
 			continue
 		}
 		user.Role = ""
-		r.db.UpdateUser(user)
-		message := fmt.Sprintf(r.conf.Translate.PMRemoved)
-		err = r.slack.SendUserMessage(userID, message)
+		ba.Bot.DB.UpdateUser(user)
+		adminRemoved := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "PMRemoved",
+				Description: "Displays message when user removed as admin from Comedian",
+				Other:       "You have been removed as Admin from Comedian",
+			},
+		})
+
+		err = ba.Bot.SendUserMessage(userID, adminRemoved)
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
@@ -280,10 +516,30 @@ func (r *REST) deleteAdmins(users []string) string {
 	}
 
 	if len(failed) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.DeleteAdminsFailed, failed)
+		deleteAdminsFailed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DeleteAdminsFailed",
+				Description: "Diplays message when admin deletion errors occur",
+				Other:       "Could not remove users as admins: {{.admins}}",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": failed,
+			},
+		})
+		text += deleteAdminsFailed + "\n"
 	}
 	if len(deleted) != 0 {
-		text += fmt.Sprintf(r.conf.Translate.DeleteAdminsSucceed, deleted)
+		deleteAdminsSucceed := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DeleteAdminsSucceed",
+				Description: "Diplays message when admins have been successfully deleted",
+				Other:       "Users were removed as admins: {{.admins}}",
+			},
+			TemplateData: map[string]interface{}{
+				"admins": deleted,
+			},
+		})
+		text += deleteAdminsSucceed + "\n"
 	}
 
 	return text

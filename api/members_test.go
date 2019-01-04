@@ -5,21 +5,29 @@ import (
 	"testing"
 	"time"
 
+	"gitlab.com/team-monitoring/comedian/bot"
+	"gitlab.com/team-monitoring/comedian/config"
+
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/team-monitoring/comedian/model"
 )
 
 func TestAddCommand(t *testing.T) {
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
 
-	user, err := r.db.CreateUser(model.User{
+	user, err := bot.DB.CreateUser(model.User{
 		UserName: "testUser",
 		UserID:   "userID",
 		Role:     "",
 	})
 	assert.NoError(t, err)
 
-	channel, err := r.db.CreateChannel(model.Channel{
+	channel, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "TestChannel",
 		ChannelID:   "TestChannelID",
 		StandupTime: int64(0),
@@ -38,56 +46,61 @@ func TestAddCommand(t *testing.T) {
 		{3, channel.ChannelID, "<@userID|testUser> / admin", "Access Denied! You need to be at least admin in this slack to use this command!"},
 		{2, channel.ChannelID, "<@userID|testUser> / pm", "Users are assigned as PMs: <@userID|testUser>\n"},
 		{3, channel.ChannelID, "<@userID|testUser> / pm", "Access Denied! You need to be at least admin in this slack to use this command!"},
-		{2, channel.ChannelID, "<@userID|testUser> / wrongRole", "Please, check correct role name (admin, developer, pm)"},
+		{2, channel.ChannelID, "<@userID|testUser> / wrongRole", "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, default is a developer role, if the role is not selected! \n"},
 	}
 
 	for _, tt := range testCases {
-		result := r.addCommand(tt.accessLevel, tt.channelID, tt.params)
+		result := botAPI.addCommand(tt.accessLevel, tt.channelID, tt.params)
 		assert.Equal(t, tt.output, result)
 
-		members, err := r.db.ListAllChannelMembers()
+		members, err := bot.DB.ListAllChannelMembers()
 		assert.NoError(t, err)
 		for _, m := range members {
-			assert.NoError(t, r.db.DeleteChannelMember(m.UserID, m.ChannelID))
+			assert.NoError(t, bot.DB.DeleteChannelMember(m.UserID, m.ChannelID))
 		}
 	}
 
-	assert.NoError(t, r.db.DeleteChannel(channel.ID))
-	assert.NoError(t, r.db.DeleteUser(user.ID))
+	assert.NoError(t, bot.DB.DeleteChannel(channel.ID))
+	assert.NoError(t, bot.DB.DeleteUser(user.ID))
 }
 
-func TestListCommand(t *testing.T) {
+func TestShowCommand(t *testing.T) {
 	//modify test to cover more cases: no users, etc.
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
 
-	channel, err := r.db.CreateChannel(model.Channel{
+	channel, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "TestChannel",
 		ChannelID:   "TestChannelID",
 		StandupTime: int64(0),
 	})
 	assert.NoError(t, err)
 
-	user, err := r.db.CreateUser(model.User{
+	user, err := bot.DB.CreateUser(model.User{
 		UserName: "testUser",
 		UserID:   "userID",
 		Role:     "",
 	})
 	assert.NoError(t, err)
 
-	admin, err := r.db.CreateUser(model.User{
+	admin, err := bot.DB.CreateUser(model.User{
 		UserName: "testUser",
 		UserID:   "userID",
 		Role:     "admin",
 	})
 	assert.NoError(t, err)
 
-	memberPM, err := r.db.CreateChannelMember(model.ChannelMember{
+	memberPM, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        user.UserID,
 		ChannelID:     channel.ChannelID,
 		RoleInChannel: "pm",
 	})
 
-	memberDeveloper, err := r.db.CreateChannelMember(model.ChannelMember{
+	memberDeveloper, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        user.UserID,
 		ChannelID:     channel.ChannelID,
 		RoleInChannel: "developer",
@@ -97,27 +110,32 @@ func TestListCommand(t *testing.T) {
 		params string
 		output string
 	}{
-		{"", "Standupers in this channel: <@userID>"},
-		{"admin", "Admins in this workspace: <@testUser>"},
-		{"developer", "Standupers in this channel: <@userID>"},
-		{"pm", "PMs in this channel: <@userID>"},
-		{"randomRole", "Please, check correct role name (admin, developer, pm)"},
+		{"", "Standuper in this channel: <@userID>"},
+		{"admin", "Admin in this workspace: <@testUser>"},
+		{"developer", "Standuper in this channel: <@userID>"},
+		{"pm", "PM in this channel: <@userID>"},
+		{"randomRole", "To view members use `show` command. If you provide a role name, you will see members with this role. _admin, pm, developer, designer_ \n"},
 	}
 
 	for _, tt := range testCases {
-		result := r.listCommand(channel.ChannelID, tt.params)
+		result := botAPI.showCommand(channel.ChannelID, tt.params)
 		assert.Equal(t, tt.output, result)
 	}
 
-	assert.NoError(t, r.db.DeleteChannel(channel.ID))
-	assert.NoError(t, r.db.DeleteUser(user.ID))
-	assert.NoError(t, r.db.DeleteUser(admin.ID))
-	assert.NoError(t, r.db.DeleteChannelMember(memberPM.UserID, memberPM.ChannelID))
-	assert.NoError(t, r.db.DeleteChannelMember(memberDeveloper.UserID, memberDeveloper.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannel(channel.ID))
+	assert.NoError(t, bot.DB.DeleteUser(user.ID))
+	assert.NoError(t, bot.DB.DeleteUser(admin.ID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(memberPM.UserID, memberPM.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(memberDeveloper.UserID, memberDeveloper.ChannelID))
 }
 
 func TestDeleteCommand(t *testing.T) {
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
 
 	testCase := []struct {
 		accessLevel int
@@ -127,20 +145,25 @@ func TestDeleteCommand(t *testing.T) {
 	}{
 		{4, "chan1", "<@id|name> / admin", "Access Denied! You need to be at least admin in this slack to use this command!"},
 		{4, "chan1", "<@id|name> / pm", "Access Denied! You need to be at least PM in this project to use this command!"},
-		{4, "chan1", "<@id|name> / random", "Please, check correct role name (admin, developer, pm)"},
+		{4, "chan1", "<@id|name> / random", "To remove members use `remove` command. If you provide a role name, you will remove members with this role. _admin, pm, developer, designer_ \n"},
 		{4, "chan1", "<@id|name>", "Access Denied! You need to be at least PM in this project to use this command!"},
 	}
 	for _, test := range testCase {
-		actual := r.deleteCommand(test.accessLevel, test.channelID, test.params)
+		actual := botAPI.deleteCommand(test.accessLevel, test.channelID, test.params)
 		assert.Equal(t, test.expected, actual)
 	}
 }
 
 func TestAddMembers(t *testing.T) {
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
 
 	//creates channel member with role pm
-	_, err := r.db.CreateChannelMember(model.ChannelMember{
+	_, err = bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "testUserId1",
 		ChannelID:     "chan1",
 		RoleInChannel: "pm",
@@ -148,7 +171,7 @@ func TestAddMembers(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	//creates channel member with role developer
-	_, err = r.db.CreateChannelMember(model.ChannelMember{
+	_, err = bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "testUserId2",
 		ChannelID:     "chan1",
 		RoleInChannel: "dev",
@@ -177,28 +200,34 @@ func TestAddMembers(t *testing.T) {
 		{[]string{"user1", "<>"}, "", "Could not assign members: user1<>\n"},
 	}
 	for _, test := range testCase {
-		actual := r.addMembers(test.Users, test.RoleInChannel, "chan1")
+		actual := botAPI.addMembers(test.Users, test.RoleInChannel, "chan1")
 		assert.Equal(t, test.Expected, actual)
 	}
 	//deletes channelMembers
 	//6 members will be created
 	for i := 1; i <= 6; i++ {
-		err = r.db.DeleteChannelMember(fmt.Sprintf("testUserId%v", i), "chan1")
+		err = bot.DB.DeleteChannelMember(fmt.Sprintf("testUserId%v", i), "chan1")
 		assert.NoError(t, err)
 	}
 }
 
 func TestAddAdmins(t *testing.T) {
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
+
 	//not admin user
-	User1, err := r.db.CreateUser(model.User{
+	User1, err := bot.DB.CreateUser(model.User{
 		UserName: "UserName1",
 		UserID:   "uid1",
 		Role:     "",
 	})
 	assert.NoError(t, err)
 	//admin user
-	UserAdmin, err := r.db.CreateUser(model.User{
+	UserAdmin, err := bot.DB.CreateUser(model.User{
 		UserName: "Admin1",
 		UserID:   "uid2",
 		Role:     "admin",
@@ -218,33 +247,38 @@ func TestAddAdmins(t *testing.T) {
 		{[]string{"<@" + UserAdmin.UserID + "|" + UserAdmin.UserName + ">"}, "Users were already assigned as admins: <@uid2|Admin1>\n"},
 	}
 	for _, test := range testCase {
-		actual := r.addAdmins(test.Users)
+		actual := botAPI.addAdmins(test.Users)
 		assert.Equal(t, test.Expected, actual)
 	}
 	//delete users
-	err = r.db.DeleteUser(User1.ID)
+	err = bot.DB.DeleteUser(User1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(UserAdmin.ID)
+	err = bot.DB.DeleteUser(UserAdmin.ID)
 	assert.NoError(t, err)
 }
 
 func TestListMembers(t *testing.T) {
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
 
 	//creates channel with pm members
-	Channel1, err := r.db.CreateChannel(model.Channel{
+	Channel1, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "chanName1",
 		ChannelID:   "cid1",
 	})
 	assert.NoError(t, err)
 	//creates channel Channel1 members PMs
-	ChanMember1, err := r.db.CreateChannelMember(model.ChannelMember{
+	ChanMember1, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid1",
 		ChannelID:     Channel1.ChannelID,
 		RoleInChannel: "pm",
 	})
 	assert.NoError(t, err)
-	ChanMember2, err := r.db.CreateChannelMember(model.ChannelMember{
+	ChanMember2, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid2",
 		ChannelID:     Channel1.ChannelID,
 		RoleInChannel: "pm",
@@ -252,19 +286,19 @@ func TestListMembers(t *testing.T) {
 	assert.NoError(t, err)
 
 	//creates channel with members
-	Channel2, err := r.db.CreateChannel(model.Channel{
+	Channel2, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "chanName2",
 		ChannelID:   "cid2",
 	})
 	assert.NoError(t, err)
 	//creates channel members
-	ChanMember3, err := r.db.CreateChannelMember(model.ChannelMember{
+	ChanMember3, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid3",
 		ChannelID:     Channel2.ChannelID,
 		RoleInChannel: "",
 	})
 	assert.NoError(t, err)
-	ChanMember4, err := r.db.CreateChannelMember(model.ChannelMember{
+	ChanMember4, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid4",
 		ChannelID:     Channel2.ChannelID,
 		RoleInChannel: "",
@@ -276,73 +310,83 @@ func TestListMembers(t *testing.T) {
 		Role     string
 		Expected string
 	}{
-		{"channel", "pm", "No PMs in this channel! To add one, please, use `/add` slash command"},
+		{"channel", "pm", "No PMs in this channel! To add one, please, use `/comedian add` slash command"},
 		{Channel1.ChannelID, "pm", "PMs in this channel: <@uid1>, <@uid2>"},
-		{"channel", "", "No standupers in this channel! To add one, please, use `/add` slash command"},
+		{"channel", "", "No standupers in this channel! To add one, please, use `/comedian add` slash command"},
 		{Channel2.ChannelID, "", "Standupers in this channel: <@uid3>, <@uid4>"},
 	}
 	for _, test := range testCase {
-		actual := r.listMembers(test.Channel, test.Role)
+		actual := botAPI.listMembers(test.Channel, test.Role)
 		assert.Equal(t, test.Expected, actual)
 	}
 	//delete channel members
-	err = r.db.DeleteChannelMember(ChanMember1.UserID, ChanMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(ChanMember1.UserID, ChanMember1.ChannelID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannelMember(ChanMember2.UserID, ChanMember2.ChannelID)
+	err = bot.DB.DeleteChannelMember(ChanMember2.UserID, ChanMember2.ChannelID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannelMember(ChanMember3.UserID, ChanMember3.ChannelID)
+	err = bot.DB.DeleteChannelMember(ChanMember3.UserID, ChanMember3.ChannelID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannelMember(ChanMember4.UserID, ChanMember4.ChannelID)
+	err = bot.DB.DeleteChannelMember(ChanMember4.UserID, ChanMember4.ChannelID)
 	assert.NoError(t, err)
 	//delete channels
-	err = r.db.DeleteChannel(Channel1.ID)
+	err = bot.DB.DeleteChannel(Channel1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannel(Channel2.ID)
+	err = bot.DB.DeleteChannel(Channel2.ID)
 	assert.NoError(t, err)
 }
 
 func TestListAdmins(t *testing.T) {
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
 
 	//no admins in db
-	actual := r.listAdmins()
-	assert.Equal(t, "No admins in this workspace! To add one, please, use `/add` slash command", actual)
+	actual := botAPI.listAdmins()
+	assert.Equal(t, "No admins in this workspace! To add one, please, use `/comedian add` slash command", actual)
 
 	//creates users admins
-	Admin1, err := r.db.CreateUser(model.User{
+	Admin1, err := bot.DB.CreateUser(model.User{
 		UserName: "Username1",
 		UserID:   "uid1",
 		Role:     "admin",
 	})
 	assert.NoError(t, err)
-	Admin2, err := r.db.CreateUser(model.User{
+	Admin2, err := bot.DB.CreateUser(model.User{
 		UserName: "Username2",
 		UserID:   "uid2",
 		Role:     "admin",
 	})
 	assert.NoError(t, err)
 
-	actual = r.listAdmins()
+	actual = botAPI.listAdmins()
 	assert.Equal(t, "Admins in this workspace: <@Username1>, <@Username2>", actual)
 
 	//delete users
-	err = r.db.DeleteUser(Admin1.ID)
+	err = bot.DB.DeleteUser(Admin1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(Admin2.ID)
+	err = bot.DB.DeleteUser(Admin2.ID)
 	assert.NoError(t, err)
 }
 
 func TestDeleteMembers(t *testing.T) {
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
 
 	//create channel
-	channel1, err := r.db.CreateChannel(model.Channel{
+	channel1, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "channel1",
 		ChannelID:   "cid1",
 	})
 	assert.NoError(t, err)
 	//creates channel members
-	channelMember1, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember1, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid1",
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "",
@@ -358,31 +402,36 @@ func TestDeleteMembers(t *testing.T) {
 		{[]string{"user"}, "", "Could not remove the following members: user\n"},
 		//doesn't existed channel members
 		{[]string{"<@userid1|username1>", "<@userid2|username2>"}, channel1.ChannelID, "Could not remove the following members: <@userid1|username1><@userid2|username2>\n"},
-		{[]string{"<@" + channelMember1.UserID + "|username"}, channel1.ChannelID, "The following members were removed: <@uid1|username\n"},
+		{[]string{"<@" + channelMember1.UserID + "|username>"}, channel1.ChannelID, "The following members were removed: <@uid1|username>\n"},
 	}
 	for _, test := range testCase {
-		actual := r.deleteMembers(test.members, test.channelID)
+		actual := botAPI.deleteMembers(test.members, test.channelID)
 		assert.Equal(t, test.expected, actual)
 	}
 	//delete channel members
-	err = r.db.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
 	assert.NoError(t, err)
 	//delete channel
-	err = r.db.DeleteChannel(channel1.ID)
+	err = bot.DB.DeleteChannel(channel1.ID)
 	assert.NoError(t, err)
 }
 
 func TestDeleteAdmins(t *testing.T) {
-	r := SetUp()
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	botAPI, err := NewBotAPI(bot)
+	assert.NoError(t, err)
 
 	//create users
-	User1, err := r.db.CreateUser(model.User{
+	User1, err := bot.DB.CreateUser(model.User{
 		UserName: "username1",
 		UserID:   "uid1",
 		Role:     "",
 	})
 	assert.NoError(t, err)
-	Admin, err := r.db.CreateUser(model.User{
+	Admin, err := bot.DB.CreateUser(model.User{
 		UserName: "username2",
 		UserID:   "uid2",
 		Role:     "admin",
@@ -402,12 +451,12 @@ func TestDeleteAdmins(t *testing.T) {
 		{[]string{"<@" + Admin.UserID + "|" + Admin.UserName + ">"}, "Users were removed as admins: <@uid2|username2>\n"},
 	}
 	for _, test := range testCase {
-		actual := r.deleteAdmins(test.users)
+		actual := botAPI.deleteAdmins(test.users)
 		assert.Equal(t, test.expected, actual)
 	}
 	//delete users
-	err = r.db.DeleteUser(User1.ID)
+	err = bot.DB.DeleteUser(User1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(Admin.ID)
+	err = bot.DB.DeleteUser(Admin.ID)
 	assert.NoError(t, err)
 }

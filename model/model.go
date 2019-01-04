@@ -2,10 +2,9 @@ package model
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
-	"gitlab.com/team-monitoring/comedian/config"
+	"github.com/nlopes/slack"
 )
 
 type (
@@ -69,7 +68,38 @@ type (
 		StandupID   int64     `db:"standup_id" json:"standupId"`
 		StandupText string    `db:"standuptext" json:"standuptext"`
 	}
+
+	// ControllPannel used for updating and storing different configuration parameters
+	ControllPannel struct {
+		ID                 int64  `db:"id"`
+		NotifierInterval   int    `db:"notifier_interval" json:"notifier_interval" schema:"notifier_interval"`
+		ManagerSlackUserID string `db:"manager_slack_user_id" json:"manager_slack_user_id" schema:"manager_slack_user_id"`
+		ReportingChannel   string `db:"reporting_channel" json:"reporting_channel" schema:"reporting_channel"`
+		ReportTime         string `db:"report_time" json:"report_time" schema:"report_time"`
+		Language           string `db:"language" json:"language" schema:"language"`
+		ReminderRepeatsMax int    `db:"reminder_repeats_max" json:"reminder_repeats_max" schema:"reminder_repeats_max"`
+		ReminderTime       int64  `db:"reminder_time" json:"reminder_time" schema:"reminder_time"`
+		CollectorEnabled   bool   `db:"collector_enabled" json:"collector_enabled" schema:"collector_enabled"`
+	}
 )
+
+//Report used to generate report structure
+type Report struct {
+	ReportHead string
+	ReportBody []ReportBodyContent
+}
+
+//ReportBodyContent used to generate report body content
+type ReportBodyContent struct {
+	Date time.Time
+	Text string
+}
+
+//AttachmentItem is needed to sort attachments
+type AttachmentItem struct {
+	SlackAttachment slack.Attachment
+	Points          int
+}
 
 // Validate validates Standup struct
 func (c Standup) Validate() error {
@@ -104,52 +134,7 @@ func (c StandupEditHistory) Validate() error {
 
 //IsAdmin returns user status
 func (u User) IsAdmin() bool {
-	if u.Role == "admin" {
-		return true
-	}
-	return false
-}
-
-//Show shows timetable
-func (tt TimeTable) Show() string {
-	c, _ := config.Get()
-	timeTableString := ""
-	if tt.Monday != 0 {
-		monday := time.Unix(tt.Monday, 0)
-		timeTableString += fmt.Sprintf(c.Translate.TimetableShowMonday, monday.Hour(), monday.Minute())
-	}
-	if tt.Tuesday != 0 {
-		tuesday := time.Unix(tt.Tuesday, 0)
-		timeTableString += fmt.Sprintf(c.Translate.TimetableShowTuesday, tuesday.Hour(), tuesday.Minute())
-	}
-	if tt.Wednesday != 0 {
-		wednesday := time.Unix(tt.Wednesday, 0)
-		timeTableString += fmt.Sprintf(c.Translate.TimetableShowWednesday, wednesday.Hour(), wednesday.Minute())
-	}
-	if tt.Thursday != 0 {
-		thursday := time.Unix(tt.Thursday, 0)
-		timeTableString += fmt.Sprintf(c.Translate.TimetableShowThursday, thursday.Hour(), thursday.Minute())
-	}
-	if tt.Friday != 0 {
-		friday := time.Unix(tt.Friday, 0)
-		timeTableString += fmt.Sprintf(c.Translate.TimetableShowFriday, friday.Hour(), friday.Minute())
-	}
-	if tt.Saturday != 0 {
-		saturday := time.Unix(tt.Saturday, 0)
-		timeTableString += fmt.Sprintf(c.Translate.TimetableShowSaturday, saturday.Hour(), saturday.Minute())
-	}
-	if tt.Sunday != 0 {
-		sunday := time.Unix(tt.Sunday, 0)
-		timeTableString += fmt.Sprintf(c.Translate.TimetableShowSunday, sunday.Hour(), sunday.Minute())
-	}
-
-	if timeTableString == "" {
-		return c.Translate.EmptyTimetable
-	} else {
-		timeTableString += "|"
-	}
-
-	return timeTableString
+	return u.Role == "admin"
 }
 
 func (tt TimeTable) ShowDeadlineOn(day string) int64 {
@@ -175,8 +160,5 @@ func (tt TimeTable) ShowDeadlineOn(day string) int64 {
 
 //IsEmpty shows if timetable is empty
 func (tt TimeTable) IsEmpty() bool {
-	if tt.Monday == 0 && tt.Tuesday == 0 && tt.Wednesday == 0 && tt.Thursday == 0 && tt.Friday == 0 && tt.Saturday == 0 && tt.Sunday == 0 {
-		return true
-	}
-	return false
+	return tt.Monday == 0 && tt.Tuesday == 0 && tt.Wednesday == 0 && tt.Thursday == 0 && tt.Friday == 0 && tt.Saturday == 0 && tt.Sunday == 0
 }

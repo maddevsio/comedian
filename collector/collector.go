@@ -8,28 +8,28 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/bot"
 )
 
-// CollectorData used to parse data on user from Collector
-type CollectorData struct {
+//Data used to parse data on user from Collector
+type Data struct {
 	Commits  int `json:"total_commits"`
 	Worklogs int `json:"worklogs"`
 }
 
 //GetCollectorData sends api request to collector servise and returns collector object
-func GetCollectorData(conf config.Config, getDataOn, data, dateFrom, dateTo string) (CollectorData, error) {
-	var collectorData CollectorData
-	if conf.CollectorEnabled == false {
+func GetCollectorData(bot *bot.Bot, getDataOn, data, dateFrom, dateTo string) (Data, error) {
+	var collectorData Data
+	if bot.CP.CollectorEnabled == false {
 		return collectorData, nil
 	}
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", conf.CollectorURL, conf.TeamDomain, getDataOn, data, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", bot.Conf.CollectorURL, bot.TeamDomain, getDataOn, data, dateFrom, dateTo)
 	logrus.Infof("teammonitoring: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		return collectorData, err
 	}
-	token := conf.CollectorToken
+	token := bot.Conf.CollectorToken
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

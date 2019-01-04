@@ -1,0 +1,475 @@
+ErrorReportToManager = "I could not save standup for user <@{{.user}}> in channel <#{{.channel}}> because of the following reasons: %v"
+
+[AccessAtLeastAdmin]
+description = "Displays warning that role must be at least admin"
+other = "Access Denied! You need to be at least admin in this slack to use this command!"
+
+[AccessAtLeastPM]
+description = "Displays warning that role must be at least pm"
+other = "Access Denied! You need to be at least PM in this project to use this command!"
+
+[AddAdminsAdded]
+description = "Displays message when users successfully assigned as admins"
+other = "Users are assigned as admins: {{.admins}}"
+
+[AddAdminsExist]
+description = "Displays message when users were already assigned as admins"
+other = "Users were already assigned as admins: {{.admins}}"
+
+[AddAdminsFailed]
+description = "Displays message when user added as admin for Comedian"
+other = "Could not assign users as admins: {{.admins}}"
+
+[AddMembersAdded]
+description = "Displays a message when users are successfully assigned"
+other = "Members are assigned: {{.users}}"
+
+[AddMembersExist]
+description = "Displays a message when errors occur when assigning users, which already has role"
+other = "Members already have roles: {{.users}}"
+
+[AddMembersFailed]
+description = "Displays a message when errors occur when assigning users"
+other = "Could not assign members: {{.users}}"
+
+[AddPMsAdded]
+description = "Displays a message when users successfully assigning as PMs"
+other = "Users are assigned as PMs: {{.PMs}}"
+
+[AddPMsExist]
+description = "Displays a message when errors occur when assigning users, which has already PM-role"
+other = "Users already have roles: {{.PMs}}"
+
+[AddPMsFailed]
+description = "Displays a message when errors occur when assigning users as PM"
+other = "Could not assign users as PMs: {{.PMs}}"
+
+[AddStandupTime]
+description = "Displays a message when a standup time is successfully added for a channel"
+other = "<!date^{{.timeInt}}^Standup time set at {time}|Standup time set at 12:00>"
+
+[AddStandupTimeNoUsers]
+description = "Displays a message when a standup time is added for a channel, but there are no standupers in the channel."
+other = "<!date^{{.timeInt}}^Standup time at {time} added, but there is no standup users for this channel|Standup time at 12:00 added, but there is no standup users for this channel>"
+
+[BugRecorded]
+description = "Displays a message when user send a bug"
+other = "{{.user}} in {{.channel}} reported a bug!"
+
+[CanNotDeleteTimetable]
+description = "Displays a message when a timetable deletion error occurs."
+other = "Could not delete timetable for user <@{{.user}}>"
+
+[CanNotFindMember]
+description = "Displays message if user doesn't have any role in the channel"
+other = "<@{{.user}}> does not have any role in this channel"
+
+[CanNotUpdateTimetable]
+description = "Displays message when occur updating errors"
+other = "Could not update timetable for user <@{{.user}}>: {{.error}}"
+
+[CommitsTranslation]
+description = "Displays message about commits"
+other = " commits: {{.projectCommits}} {{.commitsEmoji}} |"
+
+[CouldNotSaveStandup]
+description = "Displays a message when unexpected errors occur"
+other = "Something went wrong and I could not save your standup in database. Please, report this to your PM."
+
+[DaysDivider]
+description = "Days divider"
+other = " on "
+
+[DeleteAdminsFailed]
+description = "Diplays message when admin deletion errors occur"
+other = "Could not remove users as admins: {{.admins}}"
+
+[DeleteAdminsSucceed]
+description = "Diplays message when admins have been successfully deleted"
+other = "Users were removed as admins: {{.admins}}"
+
+[DeleteMembersFailed]
+description = "Displays a message when user deletion errors occur"
+other = "Could not remove the following members: {{.users}}"
+
+[DeleteMembersSucceed]
+description = "Displays a message when users have been successfully deleted"
+other = "The following members were removed: {{.users}}"
+
+[DirectMessage]
+description = "DM Warning message to those who did not submit standup"
+other = "Hey, <@{{.user}}>! you failed to submit standup in <#{{.channelID}}|{{.channelName}}> on time! Do it ASAP!"
+
+[EmptyTimetable]
+description = "Displays message if timetable is empty"
+other = "Timetable is empty"
+
+[ErrorParsingFromDate]
+description = "Displays message when occurs error parsing date for report"
+other = "Could not parse date from!"
+
+[ErrorParsingToDate]
+description = "Displays message when occurs error parsing date for report"
+other = "Could not parse date from!"
+
+[GratitudeForSendingBug]
+description = "Displays gratitude for sending bug"
+other = "Thank you! Bug Recorded!"
+
+[HasStandup]
+description = "Displays message if standuper has standup"
+other = " standup :heavy_check_mark: "
+
+[HelloManager]
+description = "Displays greeting for the Manager"
+other = "Hello, Manager!"
+
+[IndividualStandupersLate]
+description = "Display message about those who missed submit standup"
+other = "<@{{.user}}>, you missed standup deadline! Submit standup ASAP!"
+
+[ListAdmins]
+description = "Displays list of admins"
+one = "Admin in this workspace: {{.admin}}"
+other = "Admins in this workspace: {{.admins}}"
+
+[ListNoAdmins]
+description = "Displays message when there are no admins in the channel"
+other = "No admins in this workspace! To add one, please, use `/comedian add` slash command"
+
+[ListNoPMs]
+description = "Displays message about there are no PMs in channel"
+other = "No PMs in this channel! To add one, please, use `/comedian add` slash command"
+
+[ListNoStandupers]
+description = "Displays message when there are no standupers in the channel"
+other = "No standupers in this channel! To add one, please, use `/comedian add` slash command"
+
+[ListPMs]
+description = "Displays list of pms"
+one = "PM in this channel: {{.pm}}"
+other = "PMs in this channel: {{.pms}}"
+
+[ListStandupers]
+description = "Displays list of standupers"
+one = "Standuper in this channel: {{.standuper}}"
+other = "Standupers in this channel: {{.standupers}}"
+
+[LoggedHours]
+description = "Shows a logged hours"
+other = "Logged Hours: {{.worklogs}}"
+
+[Minutes]
+description = "Translate minutes differently"
+one = "{{.time}} minute"
+other = "{{.time}} minutes"
+
+[NoStandup]
+description = "Displays message if standuper hasn't standup"
+other = " standup :x: "
+
+[NoSuchUserInWorkspace]
+description = "Displays message if user is not in slack workspace"
+other = "No such user in your slack!"
+
+[NoTimetableSet]
+description = "Displays message when user doesn't have a timetable"
+other = "<@{{.user}}> does not have a timetable!"
+
+[NotAStanduper]
+description = "Displays message if user not a standuper"
+other = "Seems like <@{{.user}}> is not even assigned as standuper in this channel!"
+
+[NotTagStanduper]
+description = "Displays a message without a user tag"
+other = "{{.user}} in #{{.channel}}"
+
+[OneStandupPerDay]
+description = "Warning that only one standup per day is allowed"
+other = "You can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!"
+
+[PMAssigned]
+description = "Displays message when user added as admin for Comedian"
+other = "You have been added as Admin for Comedian"
+
+[PMRemoved]
+description = "Displays message when user removed as admin from Comedian"
+other = "You have been removed as Admin from Comedian"
+
+[RemoveStandupTime]
+description = "Displays message when a standuptime for a channel successfully removed"
+other = "standup time for channel deleted"
+
+[RemoveStandupTimeWithUsers]
+description = "Displays message when a channels's standup time removed, but there are standupers in the channel"
+other = "standup time for this channel removed, but there are people marked as a standuper."
+
+[ReportDate]
+description = "Displays report for date"
+other = "Report for: {{.dateFrom}}"
+
+[ReportHeader]
+description = "Displays a header of yesterday report"
+other = "Yesterday report"
+
+[ReportHeaderWeekly]
+description = "Displays a header of weekly report"
+other = "Weekly report"
+
+[ReportNoData]
+description = "Displays message when there is no standup data for this period"
+other = "No standup data for this period"
+
+[ReportOnProjectAndUserHead]
+description = "Displays report on user in project"
+other = "Report on user <@{{.user}}> in project #{{.channel}} from {{.dateFrom}} to {{.dateTo}}"
+
+[ReportOnProjectHead]
+description = "Displays report on project in date"
+other = "Full Report on project #{{.channel}} from {{.dateFrom}} to {{.dateTo}}:"
+
+[ReportOnUserHead]
+description = "Displays head of report on user"
+other = "Full Report on user <@{{.user}}> from {{.dateFrom}} to {{.dateTo}}:"
+
+[ShowNoStandupTime]
+description = "Displays message when a standup time doesn't set for channel"
+other = "No standup time set for this channel yet! Please, add a standup time using `/comedian add_deadline` command!"
+
+[ShowStandupTime]
+description = "Shows a standup time of channel"
+other = "<!date^{{.standuptime}}^Standup time is {time}|Standup time set at 12:00>"
+
+[SomethingWentWrong]
+description = "Displays message when occure unexpected errors"
+other = "Something went wrong. Please, try again later or report the problem to chatbot support!"
+
+[StandupHandleNoProblemsMentioned]
+description = "No 'problems' key in standup"
+other = ":warning: No 'problems' related keywords detected! Please, use one of the following: 'problem', 'difficult', 'stuck', 'question', 'issue'"
+
+[StandupHandleNoTodayPlansMentioned]
+description = "No 'today' keywords in standup"
+other = ":warning: No 'today' related keywords detected! Please, use one of the following: 'today', 'going', 'plan'"
+
+[StandupHandleNoYesterdayWorkMentioned]
+description = "No 'yesterday' keywords in standup"
+other = ":warning: No 'yesterday' related keywords detected! Please, use one of the following: 'yesterday' or weekdays such as 'friday' etc."
+
+[TagIndividualNonReporters]
+description = "Display message about those who did not submit standup with individual schedules"
+other = "Hey, <@{{.user}}>! You failed to submit standup in time! Get it done ASAP!"
+
+[TagNonReporters]
+description = "Display message about those who did not submit standup"
+one = "Hey, {{.user}}! You missed deadline and you are the only one who still did not submit standup! Get it done!"
+other = "Hey, {{.users}}! You all missed deadline and still did not submit standups! Time management problems detected!"
+
+[TagStanduper]
+description = "Displays a message with a user tag"
+other = "<@{{.user}}> in #{{.channel}}"
+
+[TimeDivider]
+description = "Time divider"
+other = " at "
+
+[TimetableCreated]
+description = "Shows message when user's timetable successfully created"
+other = "Timetable for <@{{.user}}> created: {{.timetable}}"
+
+[TimetableDeleted]
+description = "Displays message when timetable removed"
+other = "Timetable removed for <@{{.user}}>"
+
+[TimetableShow]
+description = "Shows timetable of user"
+other = "Timetable for <@{{.user}}> is: {{.timetable}}"
+
+[TimetableShowFriday]
+description = "Shows timetable for friday"
+other = "| Friday {{.hour}}:{{.minutes}} "
+
+[TimetableShowMonday]
+description = "Shows timetable for monday"
+other = "| Monday {{.hour}}:{{.minutes}} "
+
+[TimetableShowSaturday]
+description = "Shows timetable for saturday"
+other = "| Saturday {{.hour}}:{{.minutes}} "
+
+[TimetableShowSunday]
+description = "Shows timetable for sunday"
+other = "| Sunday {{.hour}}:{{.minutes}} "
+
+[TimetableShowThursday]
+description = "Shows timetable for thursday"
+other = "| Thursday {{.hour}}:{{.minutes}} "
+
+[TimetableShowTuesday]
+description = "Shows timetable for tuesday"
+other = "| Tuesday {{.hour}}:{{.minutes}} "
+
+[TimetableShowWednesday]
+description = "Shows timetable for wednesday"
+other = "| Wednesday {{.hour}}:{{.minutes}} "
+
+[TimetableUpdated]
+description = "Displays message when user's timetable successfully updated"
+other = "Timetable for <@{{.user}}> updated: {{.timetable}}"
+
+[TotalCommits]
+description = "Shows a total commits"
+other = "Total commits for period: {{.commits}}"
+
+[UserDidNotStandup]
+description = "Displays message when user didn't submit standup"
+other = "<@{{.user}}> did not submit standup!"
+
+[UserDidNotStandupInChannel]
+description = "Displays message when user didn't submit standup in the channel"
+other = "In #{{.channel}} <@{{.user}}> did not submit standup!"
+
+[UserDidStandup]
+description = "Displays message if user successfully submitted standup"
+other = "<@{{.user}}> submitted standup: "
+
+[UserDidStandupInChannel]
+description = "Displays message when user submitted standup in the channel"
+other = "In #{{.channel}} <@{{.user}}> submitted standup: "
+
+[WarnIndividualNonReporters]
+description = "Warning message to those who did not submit standup"
+other = "Hey, <@{{.user}}>! {{.minutes}} to deadline and you still did not submit standup! Hurry up!"
+
+[WarnNonReporters]
+description = "Warning message to those who did not submit standup"
+one = "Hey, {{.user}}! {{.minutes}} to deadline and you are the only one who still did not submit standup! Brace yourself!"
+other = "Hey, {{.users}}! {{.minutes}} to deadline and you people still did not submit standups! Go ahead!"
+
+[WeeklyReportError]
+description = "Displays a message if sending weekly report failed"
+other = "Error sending weekly report: {{.error}}"
+
+[WorklogsTimeTranslation]
+description = "Displays message about worklogs time"
+other = "{{.projectWorklogs}} out of {{.totalWorklogs}}"
+
+[WorklogsTranslation]
+description = "Displays message about worklogs"
+other = " worklogs: {{.worklogsTime}} {{.worklogsEmoji}} |"
+
+[WrongName]
+description = "Displays if the username cannot be obtained from the parameters"
+other = "Could not get user!"
+
+[WrongProject]
+description = "Displays message when project name is not found"
+other = "Invalid project name!"
+
+[WrongProjectName]
+description = "Displays message if project doesn't exist"
+other = "Wrong project title!"
+
+[WrongUsernameError]
+description = "Displays message when username is misspelled"
+other = "Seems like you misspelled username. Please, check and try command again!"
+
+[YesterdayReportError]
+description = "Displays a message if sending yesterday report failed"
+other = "Error sending yesterday report: {{.error}}"
+
+[cantSelectChannelInReport]
+description = "Displays message if you cannot find a channel for a report."
+other = "Could not select channel!"
+
+[totalWorklogs]
+description = "Shows a total worklogs"
+other = "Total worklogs for period: {{.worklogs}}"
+
+[userDoesNotExist]
+description = "Displays message if user doesn't exist"
+other = "User does not exist!"
+
+[wrongTimeFormat]
+Description = "Displays message if a time format is wrong"
+Other = "Wrong time! Please, check the time format and try again!"
+
+[shortTimeFormat]
+Description = "Displays message if a time format is short"
+Other = "Seems like you used short time format, please, use 24:00 hour format instead!"
+
+[unknownTimeFormat]
+Description = "Displays message if time format is unknown"
+Other = "Could not understand how you mention time. Please, use 24:00 hour format and try again!"
+
+[DateError1]
+Description = "Displays message if date format is wrong"
+Other = "date to is less than date from"
+
+[DateError2]
+Description = "Displays message if date format is wrong"
+Other = "Report end time was in the future, time range was truncated"
+
+[ErrorSplitStandupers]
+Description = "Displays message if error occure when split standupers from split timetable command"
+Other = "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"
+
+[ErrorSplitWeekdays]
+Description = "Displays message if error occure when split weekdays from split timetable command"
+Other = "Sorry, could not understand where are the weekdays and where is the time. Please, check the text for mistakes and try again"
+
+[SelectChannelError]
+Description = "Displays message if channel selection error occure"
+Other = "rest: SelectChannel failed: {{.error}}. Sorry, it's error. Show it to admin"
+
+[TimeParseError]
+Description = "Displays error if time parse error occure"
+Other = "I can not parse date. Seems like you entered wrong date format. Please check and try command again!"
+
+[TextHead]
+Description = "Displays help text head"
+Other = "Below you will see examples of how to use Comedian slash commands: "
+
+[AddMembers]
+Description = "Displays usage of add command"
+Other = "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, default is a developer role, if the role is not selected! "
+
+[ShowMembers]
+Description = "Displays usage of show command"
+Other = "To view members use `show` command. If you provide a role name, you will see members with this role. _admin, pm, developer, designer_ "
+
+[RemoveMembers]
+Description = "Displays usage of remove command"
+Other = "To remove members use `remove` command. If you provide a role name, you will remove members with this role. _admin, pm, developer, designer_ "
+
+[AddDeadline]
+Description = "Displays usage of add_deadline command"
+Other = "To set standup deadline use `add_deadline` command. You need to provide it with hours and minutes in the 24hour format like 13:54 "
+
+[ShowDeadline]
+Description = "Displays usage of show_deadline command"
+Other = "To view standup deadline in the channel use `show_deadline` command "
+
+[RemoveDeadline]
+Description = "Displays usage of show_deadline command"
+Other = "To remove standup deadline in the channel use `remove_deadline` command "
+
+[AddTimetable]
+Description = "Displays usage of add_timetable command"
+Other = "To configure individual standup schedule for members use `add_timetable` command. First tag users then add keyworn *on*, after it include weekdays you want to set individual schedule (mon tue, wed, thu, fri, sat, sun) and then select time with keywork *at* (18:45). Example: `@user1 @user2 on mon tue at 14:02` "
+
+[ShowTimetable]
+Description = "Displays usage of add_timetable command"
+Other = "To view individual standup schedule for members use `show_timetable` command and tag members. Example: `show_timetable @user1 @user2` "
+
+[ReportOnUser]
+Description = "Displays usage of add_timetable command"
+Other = "To view standup report on user use `report_on_user` command. Tag user, then insert date from and date to you want to view your report. Example: `report_on_user @user 2017-01-01 2017-01-31` "
+
+[ReportOnProject]
+Description = "Displays usage of add_timetable command"
+Other = "To view standup for project use `report_on_project` command. Tag project, then insert date from and date to you want to view your report. Example: `report_on_project #projectName 2017-01-01 2017-01-31` "
+
+[ReportOnUserInProject]
+Description = "Displays usage of add_timetable command"
+Other = "To view standup for user in project use `report_on_user_in_project` command. Tag user and then project, then insert date from and date to you want to view your report. Example: `report_on_user_in_project @user #projectName 2017-01-01 2017-01-31`"

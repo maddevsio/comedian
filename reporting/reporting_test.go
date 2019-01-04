@@ -10,10 +10,58 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/team-monitoring/comedian/chat"
+	"gitlab.com/team-monitoring/comedian/bot"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 )
+
+func TestCallDisplayYesterdayTeamReport(t *testing.T) {
+	d := time.Date(2018, 11, 10, 10, 0, 0, 0, time.Local)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
+	bot.CP.CollectorEnabled = true
+
+	testCase := []struct {
+		reportTime string
+	}{
+		{""},
+		{"10:00"},
+	}
+	for _, test := range testCase {
+		bot.CP.ReportTime = test.reportTime
+		r.CallDisplayYesterdayTeamReport()
+	}
+}
+
+func TestCallDisplayWeeklyTeamReport(t *testing.T) {
+	d := time.Date(2018, 12, 30, 10, 0, 0, 0, time.Local)
+	monkey.Patch(time.Now, func() time.Time { return d })
+
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
+	bot.CP.CollectorEnabled = true
+
+	testCase := []struct {
+		reportTime string
+	}{
+		{""},
+		{"10:00"},
+	}
+	for _, test := range testCase {
+		bot.CP.ReportTime = test.reportTime
+		r.CallDisplayWeeklyTeamReport()
+	}
+}
 
 func TestDisplayYesterdayTeamReport(t *testing.T) {
 	d := time.Date(2018, 11, 10, 10, 0, 0, 0, time.Local)
@@ -21,9 +69,12 @@ func TestDisplayYesterdayTeamReport(t *testing.T) {
 
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	r := NewReporter(s)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
+	bot.CP.Language = "en_US"
+	bot.CP.CollectorEnabled = true
 
 	httpmock.Activate()
 	//user1's worklogs, commits
@@ -43,13 +94,13 @@ func TestDisplayYesterdayTeamReport(t *testing.T) {
 	httpmock.RegisterResponder("GET", url4_2, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":28000}`))
 
 	//creates channel with channel members
-	channel1, err := r.db.CreateChannel(model.Channel{
+	channel1, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "testChannel1",
 		ChannelID:   "chanId1",
 	})
 	assert.NoError(t, err)
 	//creates channel without channel members
-	channel2, err := r.db.CreateChannel(model.Channel{
+	channel2, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "testChannel2",
 		ChannelID:   "chanId2",
 	})
@@ -58,20 +109,21 @@ func TestDisplayYesterdayTeamReport(t *testing.T) {
 	//creates channel members of channel1
 	//with timetable where Monday=0,Tuesday=0...Sunday=0
 	//channelMember1 doesn't obey send standup
-	channelMember1, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember1, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid1",
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "",
 		Created:       time.Now(),
 	})
 	assert.NoError(t, err)
-	user1, err := r.db.CreateUser(model.User{
+	user1, err := bot.DB.CreateUser(model.User{
 		UserName: "username1",
+		RealName: "realname1",
 		UserID:   channelMember1.UserID,
 		Role:     "",
 	})
 	assert.NoError(t, err)
-	timeTable1, err := r.db.CreateTimeTable(model.TimeTable{
+	timeTable1, err := bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: channelMember1.ID,
 		Created:         time.Now(),
 		Modified:        time.Now(),
@@ -84,27 +136,28 @@ func TestDisplayYesterdayTeamReport(t *testing.T) {
 		Sunday:          0,
 	})
 	assert.NoError(t, err)
-	_, err = r.db.UpdateTimeTable(timeTable1)
+	_, err = bot.DB.UpdateTimeTable(timeTable1)
 	assert.NoError(t, err)
 
 	//creates channel members channel1
 	//channelMember2 hasn't timetable and must sends standup
-	channelMember2, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember2, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid2",
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "",
 		Created:       time.Now(),
 	})
 	assert.NoError(t, err)
-	user2, err := r.db.CreateUser(model.User{
+	user2, err := bot.DB.CreateUser(model.User{
 		UserName: "username2",
+		RealName: "realname2",
 		UserID:   channelMember2.UserID,
 		Role:     "",
 	})
 	assert.NoError(t, err)
 
 	//create channel member channel1 without raw in users table
-	channelMember3, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember3, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid3",
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "",
@@ -115,20 +168,21 @@ func TestDisplayYesterdayTeamReport(t *testing.T) {
 	//creates channel members of channel1
 	//with timetable where Monday=0,Tuesday=0...Sunday=0
 	//channelMember4 doesn't obey send standup
-	channelMember4, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember4, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid4",
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "",
 		Created:       time.Now(),
 	})
 	assert.NoError(t, err)
-	user4, err := r.db.CreateUser(model.User{
+	user4, err := bot.DB.CreateUser(model.User{
 		UserName: "username4",
+		RealName: "realname4",
 		UserID:   channelMember4.UserID,
 		Role:     "",
 	})
 	assert.NoError(t, err)
-	timeTable2, err := r.db.CreateTimeTable(model.TimeTable{
+	timeTable2, err := bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: channelMember4.ID,
 		Created:         time.Now(),
 		Modified:        time.Now(),
@@ -141,18 +195,18 @@ func TestDisplayYesterdayTeamReport(t *testing.T) {
 		Sunday:          0,
 	})
 	assert.NoError(t, err)
-	_, err = r.db.UpdateTimeTable(timeTable1)
+	_, err = bot.DB.UpdateTimeTable(timeTable1)
 	assert.NoError(t, err)
 
 	testCase := []struct {
 		ExpectedReport string
 	}{
-		{"Yesterday report%!(EXTRA []slack.Attachment=[{good   0         username2 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   } {good   0         username4 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   } {warning   0         <@uid1> in #testChannel1   [{  worklogs: 5:33 :disappointed: | commits: 1 :wink: | false}] [] []   }])"},
-		//{good   0         username2 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   }
+		{"Yesterday report%!(EXTRA []slack.Attachment=[{good   0         realname2 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   } {good   0         realname4 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   } {warning   0         <@uid1> in #testChannel1   [{  worklogs: 5:33 :disappointed: | commits: 1 :wink: | false}] [] []   }])"},
+		//{good   0         realname2 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   }
 		//channelMember2 must sends standup but IsNonReporter() return error
 		//{warning   0         <@uid1> in #testChannel1   [{  worklogs: 5:33 :disappointed: | commits: 1 :wink: | false}] [] []   }]
 		//channelMember1 doesn't obey sends standup but he has not enough worklogs
-		//{good   0         username4 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   }
+		//{good   0         realname4 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   }
 		//channelMember4 doen't obey send standup and he has enough worklogs
 	}
 	for _, test := range testCase {
@@ -161,42 +215,43 @@ func TestDisplayYesterdayTeamReport(t *testing.T) {
 	}
 	httpmock.DeactivateAndReset()
 	//delete user
-	err = r.db.DeleteUser(user1.ID)
+	err = bot.DB.DeleteUser(user1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(user2.ID)
+	err = bot.DB.DeleteUser(user2.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(user4.ID)
+	err = bot.DB.DeleteUser(user4.ID)
 	assert.NoError(t, err)
 	//delete timetables
-	err = r.db.DeleteTimeTable(timeTable1.ID)
+	err = bot.DB.DeleteTimeTable(timeTable1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteTimeTable(timeTable2.ID)
+	err = bot.DB.DeleteTimeTable(timeTable2.ID)
 	assert.NoError(t, err)
 	//delete channel members
-	err = r.db.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannelMember(channelMember2.UserID, channelMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(channelMember2.UserID, channelMember1.ChannelID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannelMember(channelMember3.UserID, channelMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(channelMember3.UserID, channelMember1.ChannelID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannelMember(channelMember4.UserID, channelMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(channelMember4.UserID, channelMember1.ChannelID)
 	assert.NoError(t, err)
 	//delete channels
-	err = r.db.DeleteChannel(channel1.ID)
+	err = bot.DB.DeleteChannel(channel1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannel(channel2.ID)
+	err = bot.DB.DeleteChannel(channel2.ID)
 	assert.NoError(t, err)
 }
-
 func TestDisplayWeeklyTeamReport(t *testing.T) {
 	d := time.Date(2018, 11, 10, 10, 0, 0, 0, time.Local)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	r := NewReporter(s)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
+	bot.CP.CollectorEnabled = true
 
 	httpmock.Activate()
 	//user1's worklogs, commits
@@ -216,13 +271,13 @@ func TestDisplayWeeklyTeamReport(t *testing.T) {
 	httpmock.RegisterResponder("GET", url4_2, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":144000}`))
 
 	//creates channel with channel members
-	channel1, err := r.db.CreateChannel(model.Channel{
+	channel1, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "testChannel1",
 		ChannelID:   "chanId1",
 	})
 	assert.NoError(t, err)
 	//creates channel without channel members
-	channel2, err := r.db.CreateChannel(model.Channel{
+	channel2, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "testChannel2",
 		ChannelID:   "chanId2",
 	})
@@ -231,20 +286,21 @@ func TestDisplayWeeklyTeamReport(t *testing.T) {
 	//creates channel members of channel1
 	//with timetable where Monday=0,Tuesday=0...Sunday=0
 	//channelMember1 doesn't obey send standup
-	channelMember1, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember1, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid1",
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "",
 		Created:       time.Now(),
 	})
 	assert.NoError(t, err)
-	user1, err := r.db.CreateUser(model.User{
+	user1, err := bot.DB.CreateUser(model.User{
 		UserName: "username1",
+		RealName: "realname1",
 		UserID:   channelMember1.UserID,
 		Role:     "",
 	})
 	assert.NoError(t, err)
-	timeTable1, err := r.db.CreateTimeTable(model.TimeTable{
+	timeTable1, err := bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: channelMember1.ID,
 		Created:         time.Now(),
 		Modified:        time.Now(),
@@ -257,27 +313,28 @@ func TestDisplayWeeklyTeamReport(t *testing.T) {
 		Sunday:          0,
 	})
 	assert.NoError(t, err)
-	_, err = r.db.UpdateTimeTable(timeTable1)
+	_, err = bot.DB.UpdateTimeTable(timeTable1)
 	assert.NoError(t, err)
 
 	//creates channel members channel1
 	//channelMember2 hasn't timetable and must sends standup
-	channelMember2, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember2, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid2",
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "",
 		Created:       time.Now(),
 	})
 	assert.NoError(t, err)
-	user2, err := r.db.CreateUser(model.User{
+	user2, err := bot.DB.CreateUser(model.User{
 		UserName: "username2",
+		RealName: "realname2",
 		UserID:   channelMember2.UserID,
 		Role:     "",
 	})
 	assert.NoError(t, err)
 
 	//create channel member channel1 without raw in users table
-	channelMember3, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember3, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid3",
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "",
@@ -288,20 +345,21 @@ func TestDisplayWeeklyTeamReport(t *testing.T) {
 	//creates channel members of channel1
 	//with timetable where Monday=0,Tuesday=0...Sunday=0
 	//channelMember4 doesn't obey send standup
-	channelMember4, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember4, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid4",
 		ChannelID:     channel1.ChannelID,
 		RoleInChannel: "",
 		Created:       time.Now(),
 	})
 	assert.NoError(t, err)
-	user4, err := r.db.CreateUser(model.User{
+	user4, err := bot.DB.CreateUser(model.User{
 		UserName: "username4",
+		RealName: "realname4",
 		UserID:   channelMember4.UserID,
 		Role:     "",
 	})
 	assert.NoError(t, err)
-	timeTable2, err := r.db.CreateTimeTable(model.TimeTable{
+	timeTable2, err := bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: channelMember4.ID,
 		Created:         time.Now(),
 		Modified:        time.Now(),
@@ -314,13 +372,13 @@ func TestDisplayWeeklyTeamReport(t *testing.T) {
 		Sunday:          0,
 	})
 	assert.NoError(t, err)
-	_, err = r.db.UpdateTimeTable(timeTable1)
+	_, err = bot.DB.UpdateTimeTable(timeTable1)
 	assert.NoError(t, err)
 
 	testCase := []struct {
 		ExpectedReport string
 	}{
-		{"Weekly report%!(EXTRA []slack.Attachment=[{good   0         username2 in #testChannel1   [{  worklogs: 40:00 :sunglasses: | commits: 1 :wink: | false}] [] []   } {good   0         username4 in #testChannel1   [{  worklogs: 40:00 :sunglasses: | commits: 1 :wink: | false}] [] []   } {warning   0         <@uid1> in #testChannel1   [{  worklogs: 5:33 :disappointed: | commits: 1 :wink: | false}] [] []   }])"},
+		{"Weekly report%!(EXTRA []slack.Attachment=[{good   0         realname2 in #testChannel1   [{  worklogs: 40:00 :sunglasses: | commits: 1 :wink: | false}] [] []   } {good   0         realname4 in #testChannel1   [{  worklogs: 40:00 :sunglasses: | commits: 1 :wink: | false}] [] []   } {warning   0         <@uid1> in #testChannel1   [{  worklogs: 5:33 :disappointed: | commits: 1 :wink: | false}] [] []   }])"},
 	}
 	for _, test := range testCase {
 		actualReport, _ := r.displayWeeklyTeamReport()
@@ -328,253 +386,41 @@ func TestDisplayWeeklyTeamReport(t *testing.T) {
 	}
 	httpmock.DeactivateAndReset()
 	//delete user
-	err = r.db.DeleteUser(user1.ID)
+	err = bot.DB.DeleteUser(user1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(user2.ID)
+	err = bot.DB.DeleteUser(user2.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteUser(user4.ID)
+	err = bot.DB.DeleteUser(user4.ID)
 	assert.NoError(t, err)
 	//delete timetables
-	err = r.db.DeleteTimeTable(timeTable1.ID)
+	err = bot.DB.DeleteTimeTable(timeTable1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteTimeTable(timeTable2.ID)
+	err = bot.DB.DeleteTimeTable(timeTable2.ID)
 	assert.NoError(t, err)
 	//delete channel members
-	err = r.db.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannelMember(channelMember2.UserID, channelMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(channelMember2.UserID, channelMember1.ChannelID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannelMember(channelMember3.UserID, channelMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(channelMember3.UserID, channelMember1.ChannelID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannelMember(channelMember4.UserID, channelMember1.ChannelID)
+	err = bot.DB.DeleteChannelMember(channelMember4.UserID, channelMember1.ChannelID)
 	assert.NoError(t, err)
 	//delete channels
-	err = r.db.DeleteChannel(channel1.ID)
+	err = bot.DB.DeleteChannel(channel1.ID)
 	assert.NoError(t, err)
-	err = r.db.DeleteChannel(channel2.ID)
+	err = bot.DB.DeleteChannel(channel2.ID)
 	assert.NoError(t, err)
-}
-
-func TestStandupReportByProject(t *testing.T) {
-	d := time.Date(2018, 6, 5, 0, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
-
-	c, err := config.Get()
-	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
-	assert.NoError(t, err)
-	r := NewReporter(s)
-
-	channel, err := r.db.CreateChannel(model.Channel{
-		ChannelName: "channame",
-		ChannelID:   "chanid",
-		StandupTime: int64(0),
-	})
-	assert.NoError(t, err)
-
-	dateTo := time.Now()
-	dateFrom := time.Now().AddDate(0, 0, -2)
-
-	//First test when no data
-	report, err := r.StandupReportByProject(channel, dateFrom, dateTo)
-	assert.NoError(t, err)
-	expected := "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\n"
-	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, 0, len(report.ReportBody))
-
-	d = time.Date(2018, 6, 4, 12, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
-
-	//create user who did not write standup
-	user1, err := r.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID1",
-		ChannelID: channel.ChannelID,
-	})
-	assert.NoError(t, err)
-
-	standup0, err := r.db.CreateStandup(model.Standup{
-		ChannelID: channel.ChannelID,
-		UserID:    user1.UserID,
-		Comment:   "",
-		MessageTS: "1234",
-	})
-	assert.NoError(t, err)
-
-	d = time.Date(2018, 6, 5, 0, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
-
-	//test for no standup submitted
-	report, err = r.StandupReportByProject(channel, dateFrom, dateTo)
-	assert.NoError(t, err)
-	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\n"
-	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n================================================\n", report.ReportBody[0].Text)
-
-	//create standup for user
-	standup1, err := r.db.CreateStandup(model.Standup{
-		ChannelID: channel.ChannelID,
-		Comment:   "my standup",
-		UserID:    user1.UserID,
-		MessageTS: "123",
-	})
-	assert.NoError(t, err)
-
-	//test if user submitted standup success
-	report, err = r.StandupReportByProject(channel, dateFrom, dateTo)
-	assert.NoError(t, err)
-	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\n"
-	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n================================================\n", report.ReportBody[0].Text)
-	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n================================================\n", report.ReportBody[1].Text)
-
-	//create another user
-	user2, err := r.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID2",
-		ChannelID: channel.ChannelID,
-	})
-	assert.NoError(t, err)
-
-	//test if one user wrote standup and the other did not
-	report, err = r.StandupReportByProject(channel, dateFrom, dateTo)
-	assert.NoError(t, err)
-	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\n"
-	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n================================================\n", report.ReportBody[0].Text)
-	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n================================================\n", report.ReportBody[1].Text)
-
-	//create standup for user2
-	standup2, err := r.db.CreateStandup(model.Standup{
-		ChannelID: channel.ChannelID,
-		Comment:   "user2 standup",
-		UserID:    "userID2",
-		MessageTS: "1234",
-	})
-	assert.NoError(t, err)
-
-	//test if both users had written standups
-	report, err = r.StandupReportByProject(channel, dateFrom, dateTo)
-	assert.NoError(t, err)
-	expected = "Full Report on project #channame from 2018-06-03 to 2018-06-05:\n\n"
-	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-04\n<@userID1> did not submit standup!\n================================================\n<@userID2> submitted standup: user2 standup \n================================================\n", report.ReportBody[0].Text)
-	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n================================================\n<@userID2> submitted standup: user2 standup \n================================================\n", report.ReportBody[1].Text)
-
-	assert.NoError(t, r.db.DeleteStandup(standup0.ID))
-	assert.NoError(t, r.db.DeleteStandup(standup1.ID))
-	assert.NoError(t, r.db.DeleteStandup(standup2.ID))
-	assert.NoError(t, r.db.DeleteChannelMember(user1.UserID, user1.ChannelID))
-	assert.NoError(t, r.db.DeleteChannelMember(user2.UserID, user2.ChannelID))
-	assert.NoError(t, r.db.DeleteChannel(channel.ID))
-}
-
-func TestStandupReportByUser(t *testing.T) {
-	d := time.Date(2018, 6, 5, 12, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
-	c, err := config.Get()
-	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
-	assert.NoError(t, err)
-	r := NewReporter(s)
-
-	channel, err := r.db.CreateChannel(model.Channel{
-		ChannelName: "chanName",
-		ChannelID:   "chanid",
-		StandupTime: int64(0),
-	})
-	assert.NoError(t, err)
-
-	dateNext := time.Now().AddDate(0, 0, 1)
-	dateTo := time.Now()
-	dateFrom := time.Now().AddDate(0, 0, -2)
-
-	user, err := r.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID1",
-		ChannelID: channel.ChannelID,
-	})
-	assert.NoError(t, err)
-
-	_, err = r.StandupReportByUser(user.UserID, dateTo, dateFrom)
-	assert.Error(t, err)
-	_, err = r.StandupReportByUser(user.UserID, dateNext, dateTo)
-	assert.Error(t, err)
-	_, err = r.StandupReportByUser(user.UserID, dateFrom, dateNext)
-	assert.Error(t, err)
-
-	expected := "Full Report on user <@userID1> from 2018-06-03 to 2018-06-05:\n\n"
-	report, err := r.StandupReportByUser(user.UserID, dateFrom, dateTo)
-	assert.NoError(t, err)
-	assert.Equal(t, expected, report.ReportHead)
-
-	standup1, err := r.db.CreateStandup(model.Standup{
-		ChannelID: channel.ChannelID,
-		Comment:   "my standup",
-		UserID:    user.UserID,
-		MessageTS: "123",
-	})
-	expected = "Full Report on user <@userID1> from 2018-06-03 to 2018-06-05:\n\n"
-	report, err = r.StandupReportByUser(user.UserID, dateFrom, dateTo)
-	assert.NoError(t, err)
-	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-05\nIn #chanName <@userID1> submitted standup: my standup \n================================================\n", report.ReportBody[0].Text)
-
-	assert.NoError(t, r.db.DeleteStandup(standup1.ID))
-	assert.NoError(t, r.db.DeleteChannelMember(user.UserID, user.ChannelID))
-	assert.NoError(t, r.db.DeleteChannel(channel.ID))
-}
-
-func TestStandupReportByProjectAndUser(t *testing.T) {
-	d := time.Date(2018, 6, 5, 12, 0, 0, 0, time.UTC)
-	monkey.Patch(time.Now, func() time.Time { return d })
-	c, err := config.Get()
-	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
-	assert.NoError(t, err)
-	r := NewReporter(s)
-
-	channel, err := r.db.CreateChannel(model.Channel{
-		ChannelName: "chanName",
-		ChannelID:   "chanid",
-		StandupTime: int64(0),
-	})
-
-	dateTo := time.Now()
-	dateFrom := time.Now().AddDate(0, 0, -2)
-
-	user1, err := r.db.CreateChannelMember(model.ChannelMember{
-		UserID:    "userID1",
-		ChannelID: channel.ChannelID,
-	})
-
-	report, err := r.StandupReportByProjectAndUser(channel, user1.UserID, dateFrom, dateTo)
-	assert.NoError(t, err)
-	expected := "Report on user <@userID1> in project #chanName from 2018-06-03 to 2018-06-05\n\n"
-	assert.Equal(t, expected, report.ReportHead)
-
-	standup1, err := r.db.CreateStandup(model.Standup{
-		ChannelID: channel.ChannelID,
-		Comment:   "my standup",
-		UserID:    "userID1",
-		MessageTS: "123",
-	})
-	assert.NoError(t, err)
-
-	report, err = r.StandupReportByProjectAndUser(channel, user1.UserID, dateFrom, dateTo)
-	assert.NoError(t, err)
-	expected = "Report on user <@userID1> in project #chanName from 2018-06-03 to 2018-06-05\n\n"
-	assert.Equal(t, expected, report.ReportHead)
-	assert.Equal(t, "Report for: 2018-06-05\n<@userID1> submitted standup: my standup \n", report.ReportBody[0].Text)
-
-	assert.NoError(t, r.db.DeleteStandup(standup1.ID))
-	assert.NoError(t, r.db.DeleteChannelMember(user1.UserID, user1.ChannelID))
-	assert.NoError(t, r.db.DeleteChannel(channel.ID))
 }
 
 func TestGetCollectorDataOnMember(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	r := NewReporter(s)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
+	bot.CP.CollectorEnabled = true
 
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
@@ -582,14 +428,14 @@ func TestGetCollectorDataOnMember(t *testing.T) {
 	d := time.Date(2018, 9, 18, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	channel, err := r.db.CreateChannel(model.Channel{
+	channel, err := bot.DB.CreateChannel(model.Channel{
 		ChannelID:   "testChannelID",
 		ChannelName: "testChannel",
 		StandupTime: int64(0),
 	})
 	assert.NoError(t, err)
 
-	channelMember, err := r.db.CreateChannelMember(model.ChannelMember{
+	channelMember, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "testUserID",
 		ChannelID: channel.ChannelID,
 	})
@@ -613,8 +459,8 @@ func TestGetCollectorDataOnMember(t *testing.T) {
 
 	dateOfRequest := fmt.Sprintf("%d-%02d-%02d", time.Now().AddDate(0, 0, -1).Year(), time.Now().AddDate(0, 0, -1).Month(), time.Now().AddDate(0, 0, -1).Day())
 
-	linkURLUsers := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "users", channelMember.UserID, dateOfRequest, dateOfRequest)
-	linkURLUserInProject := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, c.TeamDomain, "user-in-project", fmt.Sprintf("%v/%v", channelMember.UserID, channel.ChannelName), dateOfRequest, dateOfRequest)
+	linkURLUsers := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, bot.TeamDomain, "users", channelMember.UserID, dateOfRequest, dateOfRequest)
+	linkURLUserInProject := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", c.CollectorURL, bot.TeamDomain, "user-in-project", fmt.Sprintf("%v/%v", channelMember.UserID, channel.ChannelName), dateOfRequest, dateOfRequest)
 
 	for _, tt := range testCases {
 		httpmock.RegisterResponder("GET", linkURLUsers, httpmock.NewStringResponder(tt.userRespStatusCode, fmt.Sprintf(`{"worklogs": %v, "total_commits": %v}`, tt.totalWorklogs, tt.commits)))
@@ -628,15 +474,18 @@ func TestGetCollectorDataOnMember(t *testing.T) {
 		assert.Equal(t, tt.collectorErr, err)
 	}
 
-	assert.NoError(t, r.db.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID))
-	assert.NoError(t, r.db.DeleteChannel(channel.ID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannel(channel.ID))
 }
+
 func TestProcessWorklogs(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	r := NewReporter(s)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
+	bot.CP.CollectorEnabled = true
 
 	testCases := []struct {
 		totalWorklogs   int
@@ -680,9 +529,11 @@ func TestProcessWorklogs(t *testing.T) {
 func TestProcessWeeklyWorklogs(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	r := NewReporter(s)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
+	bot.CP.CollectorEnabled = true
 
 	testCases := []struct {
 		totalWorklogs   int
@@ -708,9 +559,10 @@ func TestProcessWeeklyWorklogs(t *testing.T) {
 func TestProcessCommits(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	r := NewReporter(s)
+	r, err := NewReporter(bot)
+	bot.CP.CollectorEnabled = true
 
 	testCases := []struct {
 		totalCommits   int
@@ -753,11 +605,13 @@ func TestProcessCommits(t *testing.T) {
 func TestProcessStandup(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	r := NewReporter(s)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
+	bot.CP.CollectorEnabled = true
 
-	member, err := r.db.CreateChannelMember(model.ChannelMember{
+	member, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "testUserID",
 		ChannelID:     "testChannelID",
 		RoleInChannel: "developer",
@@ -768,13 +622,13 @@ func TestProcessStandup(t *testing.T) {
 	assert.Equal(t, "", text)
 	assert.Equal(t, 1, points)
 
-	r.db.DeleteChannelMember(member.UserID, member.ChannelID)
+	bot.DB.DeleteChannelMember(member.UserID, member.ChannelID)
 
 }
 
 func TestSweep(t *testing.T) {
 	attachment := slack.Attachment{}
-	entries := []AttachmentItem{
+	entries := []model.AttachmentItem{
 		{attachment, 0},
 		{attachment, 3},
 		{attachment, 1},
@@ -795,12 +649,13 @@ func TestSortReportEntries(t *testing.T) {
 
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := chat.NewSlack(c)
+	bot, err := bot.NewBot(c)
 	assert.NoError(t, err)
-	r := NewReporter(s)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
 
 	attachment := slack.Attachment{}
-	entries := []AttachmentItem{
+	entries := []model.AttachmentItem{
 		{attachment, 0},
 		{attachment, 3},
 		{attachment, 1},

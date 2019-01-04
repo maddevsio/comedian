@@ -1,51 +1,39 @@
-package chat
+package bot
 
 import (
+	"log"
 	"testing"
 	"time"
 
 	"github.com/bouk/monkey"
-
+	"github.com/jarcoal/httpmock"
 	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
-	httpmock "gopkg.in/jarcoal/httpmock.v1"
 )
-
-type MessageEvent struct {
-}
-
-type Channel struct {
-	id string
-}
-
-type imOpenResp struct {
-	ok      bool
-	channel Channel
-}
 
 func TestHandleLeft(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := NewSlack(c)
+	bot, err := NewBot(c)
 	assert.NoError(t, err)
 
 	//create channel
-	channel, err := s.DB.CreateChannel(model.Channel{
+	channel, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "channel1",
 		ChannelID:   "chanid1",
 	})
 	assert.NoError(t, err)
 	//channel members
-	ChannelMember1, err := s.DB.CreateChannelMember(model.ChannelMember{
+	ChannelMember1, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid1",
 		ChannelID:     channel.ChannelID,
 		RoleInChannel: "",
 	})
 	assert.NoError(t, err)
 	//create timetable for ChannelMember1
-	TimeTable1, err := s.DB.CreateTimeTable(model.TimeTable{
+	TimeTable1, err := bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: ChannelMember1.ID,
 		Monday:          12345,
 		Tuesday:         0,
@@ -55,7 +43,7 @@ func TestHandleLeft(t *testing.T) {
 		Sunday:          0,
 	})
 	assert.NoError(t, err)
-	_, err = s.DB.UpdateTimeTable(TimeTable1)
+	_, err = bot.DB.UpdateTimeTable(TimeTable1)
 	assert.NoError(t, err)
 
 	testCase := []struct {
@@ -65,44 +53,44 @@ func TestHandleLeft(t *testing.T) {
 		{channel.ChannelID, ChannelMember1.UserID},
 	}
 	for _, test := range testCase {
-		s.handleLeft(test.ChannelID, test.UserID)
+		bot.handleLeft(test.ChannelID, test.UserID)
 	}
 	//check that ChannelMember1 doesn't exist
-	_, err = s.DB.SelectChannelMember(ChannelMember1.ID)
+	_, err = bot.DB.SelectChannelMember(ChannelMember1.ID)
 	if err == nil {
 		t.Error()
 	}
 	//check that timetable doesn't exist
-	_, err = s.DB.SelectTimeTable(ChannelMember1.ID)
+	_, err = bot.DB.SelectTimeTable(ChannelMember1.ID)
 	if err == nil {
 		t.Error()
 	}
 	//delete channel
-	err = s.DB.DeleteChannel(channel.ID)
+	err = bot.DB.DeleteChannel(channel.ID)
 	assert.NoError(t, err)
 }
 
 func TestHandleBotRemovedFromChannel(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := NewSlack(c)
+	bot, err := NewBot(c)
 	assert.NoError(t, err)
 
 	//create channel
-	channel, err := s.DB.CreateChannel(model.Channel{
+	channel, err := bot.DB.CreateChannel(model.Channel{
 		ChannelName: "channel1",
 		ChannelID:   "chanid1",
 	})
 	assert.NoError(t, err)
 	//channel members
-	ChannelMember1, err := s.DB.CreateChannelMember(model.ChannelMember{
+	ChannelMember1, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid1",
 		ChannelID:     channel.ChannelID,
 		RoleInChannel: "",
 	})
 	assert.NoError(t, err)
 	//create timetable for ChannelMember1
-	TimeTable1, err := s.DB.CreateTimeTable(model.TimeTable{
+	TimeTable1, err := bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: ChannelMember1.ID,
 		Monday:          12345,
 		Tuesday:         0,
@@ -112,16 +100,16 @@ func TestHandleBotRemovedFromChannel(t *testing.T) {
 		Sunday:          0,
 	})
 	assert.NoError(t, err)
-	_, err = s.DB.UpdateTimeTable(TimeTable1)
+	_, err = bot.DB.UpdateTimeTable(TimeTable1)
 	assert.NoError(t, err)
-	ChannelMember2, err := s.DB.CreateChannelMember(model.ChannelMember{
+	ChannelMember2, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "uid2",
 		ChannelID:     channel.ChannelID,
 		RoleInChannel: "",
 	})
 	assert.NoError(t, err)
 	//create timetable for ChannelMember2
-	TimeTable2, err := s.DB.CreateTimeTable(model.TimeTable{
+	TimeTable2, err := bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: ChannelMember2.ID,
 		Monday:          12345,
 		Tuesday:         0,
@@ -131,7 +119,7 @@ func TestHandleBotRemovedFromChannel(t *testing.T) {
 		Sunday:          0,
 	})
 	assert.NoError(t, err)
-	_, err = s.DB.UpdateTimeTable(TimeTable2)
+	_, err = bot.DB.UpdateTimeTable(TimeTable2)
 	assert.NoError(t, err)
 
 	testCase := []struct {
@@ -140,30 +128,30 @@ func TestHandleBotRemovedFromChannel(t *testing.T) {
 		{channel.ChannelID},
 	}
 	for _, test := range testCase {
-		s.handleBotRemovedFromChannel(test.ChannelID)
+		bot.handleBotRemovedFromChannel(test.ChannelID)
 	}
 	//check that ChannelMember1 doesn't exist
-	_, err = s.DB.SelectChannelMember(ChannelMember1.ID)
+	_, err = bot.DB.SelectChannelMember(ChannelMember1.ID)
 	if err == nil {
 		t.Error()
 	}
 	//check that timetable doesn't exist
-	_, err = s.DB.SelectTimeTable(ChannelMember1.ID)
+	_, err = bot.DB.SelectTimeTable(ChannelMember1.ID)
 	if err == nil {
 		t.Error()
 	}
 	//check that ChannelMember2 doesn't exist
-	_, err = s.DB.SelectChannelMember(ChannelMember2.ID)
+	_, err = bot.DB.SelectChannelMember(ChannelMember2.ID)
 	if err == nil {
 		t.Error()
 	}
 	//check that timetable doesn't exist
-	_, err = s.DB.SelectTimeTable(ChannelMember2.ID)
+	_, err = bot.DB.SelectTimeTable(ChannelMember2.ID)
 	if err == nil {
 		t.Error()
 	}
 	//delete channel
-	err = s.DB.DeleteChannel(channel.ID)
+	err = bot.DB.DeleteChannel(channel.ID)
 	assert.NoError(t, err)
 }
 
@@ -185,10 +173,10 @@ func TestIsStandup(t *testing.T) {
 	}
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := NewSlack(c)
+	bot, err := NewBot(c)
 	assert.NoError(t, err)
 	for _, tt := range testCases {
-		ok, _ := s.analizeStandup(tt.input)
+		ok, _ := bot.analizeStandup(tt.input)
 		if ok != tt.confirm {
 			t.Errorf("Test %s: \n input: %s,\n expected confirm: %v\n actual confirm: %v \n", tt.title, tt.input, tt.confirm, ok)
 		}
@@ -204,7 +192,7 @@ func TestSendMessage(t *testing.T) {
 
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := NewSlack(c)
+	s, err := NewBot(c)
 	assert.NoError(t, err)
 	err = s.SendMessage("YYYZZZVVV", "Hey!", nil)
 	assert.NoError(t, err)
@@ -221,7 +209,7 @@ func TestSendUserMessage(t *testing.T) {
 
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := NewSlack(c)
+	s, err := NewBot(c)
 	assert.NoError(t, err)
 
 	su1, err := s.DB.CreateChannelMember(model.ChannelMember{
@@ -251,17 +239,17 @@ func TestHandleMessage(t *testing.T) {
 
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := NewSlack(c)
+	bot, err := NewBot(c)
 	assert.NoError(t, err)
 
 	botUserID := "BOTID"
 
-	su1, err := s.DB.CreateChannelMember(model.ChannelMember{
+	su1, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID1",
 		ChannelID: "123qwe",
 	})
 
-	su, err := s.DB.CreateChannelMember(model.ChannelMember{
+	su, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID2",
 		ChannelID: "123qwe",
 	})
@@ -308,54 +296,54 @@ func TestHandleMessage(t *testing.T) {
 			msg.SubType = tt.subType
 		}
 
-		s.handleMessage(msg, botUserID)
+		bot.handleMessage(msg, botUserID)
 	}
 
 	// clean up
-	standups, err := s.DB.ListStandups()
+	standups, err := bot.DB.ListStandups()
 	assert.NoError(t, err)
 	for _, standup := range standups {
-		s.DB.DeleteStandup(standup.ID)
+		bot.DB.DeleteStandup(standup.ID)
 	}
-	assert.NoError(t, s.DB.DeleteChannelMember(su1.UserID, su1.ChannelID))
-	assert.NoError(t, s.DB.DeleteChannelMember(su.UserID, su.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(su.UserID, su.ChannelID))
 
 }
 
 func TestFillStandupsForNonReporters(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := NewSlack(c)
+	bot, err := NewBot(c)
 	assert.NoError(t, err)
 
 	d := time.Date(2018, 9, 30, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	s.FillStandupsForNonReporters()
+	bot.FillStandupsForNonReporters()
 
 	d = time.Date(2018, 10, 2, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	s.FillStandupsForNonReporters()
+	bot.FillStandupsForNonReporters()
 
-	su1, err := s.DB.CreateChannelMember(model.ChannelMember{
+	su1, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID1",
 		ChannelID: "123qwe",
 	})
 	assert.NoError(t, err)
 
-	s.FillStandupsForNonReporters()
+	bot.FillStandupsForNonReporters()
 
 	d = time.Date(2018, 10, 8, 10, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	su2, err := s.DB.CreateChannelMember(model.ChannelMember{
+	su2, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "userID2",
 		ChannelID: "123qwe",
 	})
 	assert.NoError(t, err)
 
-	_, err = s.DB.CreateStandup(model.Standup{
+	_, err = bot.DB.CreateStandup(model.Standup{
 		ChannelID: su2.ChannelID,
 		Comment:   "test test test!",
 		UserID:    su2.UserID,
@@ -366,23 +354,23 @@ func TestFillStandupsForNonReporters(t *testing.T) {
 	d = time.Date(2018, 10, 8, 12, 0, 0, 0, time.UTC)
 	monkey.Patch(time.Now, func() time.Time { return d })
 
-	s.FillStandupsForNonReporters()
+	bot.FillStandupsForNonReporters()
 
 	// clean up
-	standups, err := s.DB.ListStandups()
+	standups, err := bot.DB.ListStandups()
 	assert.NoError(t, err)
 	for _, standup := range standups {
-		s.DB.DeleteStandup(standup.ID)
+		bot.DB.DeleteStandup(standup.ID)
 	}
 
-	assert.NoError(t, s.DB.DeleteChannelMember(su1.UserID, su1.ChannelID))
-	assert.NoError(t, s.DB.DeleteChannelMember(su2.UserID, su2.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(su1.UserID, su1.ChannelID))
+	assert.NoError(t, bot.DB.DeleteChannelMember(su2.UserID, su2.ChannelID))
 }
 
 func TestAutomaticActions(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	s, err := NewSlack(c)
+	bot, err := NewBot(c)
 	assert.NoError(t, err)
 
 	r := httpmock.NewStringResponder(200, `{
@@ -453,30 +441,139 @@ func TestAutomaticActions(t *testing.T) {
 	httpmock.RegisterResponder("POST", "https://slack.com/api/conversations.info", httpmock.NewStringResponder(200, `{"ok": true, "channel": {"id": "CBAPFA2J2", "name": "general"}}`))
 	httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", r)
 
-	_, err = s.DB.CreateUser(model.User{
+	_, err = bot.DB.CreateUser(model.User{
 		UserName: "deleted user",
 		UserID:   "xxx",
 	})
 	assert.NoError(t, err)
 
-	chanMember, err := s.DB.CreateChannelMember(model.ChannelMember{
+	chanMember, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:    "xxx",
 		ChannelID: "YYY",
 	})
 	assert.NoError(t, err)
 
-	_, err = s.DB.CreateTimeTable(model.TimeTable{
+	_, err = bot.DB.CreateTimeTable(model.TimeTable{
 		ChannelMemberID: chanMember.ID,
 	})
 	assert.NoError(t, err)
 
-	s.UpdateUsersList()
+	bot.UpdateUsersList()
 
-	s.handleJoin("TESTCHANNELID")
+	bot.handleJoin("TESTCHANNELID")
 
-	users, err := s.DB.ListUsers()
+	users, err := bot.DB.ListUsers()
 	assert.NoError(t, err)
 	for _, u := range users {
-		assert.NoError(t, s.DB.DeleteUser(u.ID))
+		assert.NoError(t, bot.DB.DeleteUser(u.ID))
 	}
+	//delete created channel `{"ok": true, "channel": {"id": "CBAPFA2J2", "name": "general"}}`
+	channel, err := bot.DB.SelectChannel("CBAPFA2J2")
+	assert.NoError(t, err)
+	err = bot.DB.DeleteChannel(channel.ID)
+}
+
+func TestRecordBug(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := NewBot(c)
+	assert.NoError(t, err)
+	bot.CP.Language = "en_US"
+
+	//creates user
+	user1, err := bot.DB.CreateUser(model.User{
+		UserID:   "uid1",
+		UserName: "user1",
+		Role:     "",
+	})
+	assert.NoError(t, err)
+
+	testCase := []struct {
+		ChannelID string
+		userID    string
+		Bug       string
+	}{
+		{"channel1", "user", "bug"},
+		{"channel1", user1.UserID, "bug"},
+	}
+	for _, test := range testCase {
+		bot.recordBug(test.ChannelID, test.userID, test.Bug)
+	}
+	//deletes user
+	err = bot.DB.DeleteUser(user1.ID)
+	assert.NoError(t, err)
+}
+
+func TestInList(t *testing.T) {
+	testCase := []struct {
+		element  string
+		list     []string
+		expected bool
+	}{
+		{"foo", []string{"foo", "bar", "random", "fool"}, true},
+		{"foo", []string{"foo7", "bar", "random", "fool"}, false},
+		{"", []string{"foo", "bar", "random", "fool"}, false},
+	}
+	for _, test := range testCase {
+		actual := InList(test.element, test.list)
+		assert.Equal(t, test.expected, actual)
+	}
+}
+
+func TestClear(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := NewBot(c)
+	assert.NoError(t, err)
+
+	channel, err := bot.DB.CreateChannel(model.Channel{
+		ChannelID:   "cid1",
+		ChannelName: "channel1",
+	})
+	assert.NoError(t, err)
+	//this channel members will not be deleted
+	chm1, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		UserID:    "userid1",
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+	chm2, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		UserID:    "userid2",
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+	//this channel member is existed in db, but not in list of users
+	channelmember, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		UserID:    "uid",
+		ChannelID: channel.ChannelID,
+	})
+	assert.NoError(t, err)
+
+	//chm1 and chm2 in db and in users list
+	//channelmember not in list, but in db
+	//Clear must clear channelmember from db
+	bot.Clear([]string{chm1.UserID, chm2.UserID})
+
+	//check that channel members deleted
+	_, err = bot.DB.SelectChannelMember(channelmember.ID)
+	if err == nil {
+		log.Println(err)
+		t.Error()
+	}
+
+	//check that the channel members from list are not deleted
+	_, err = bot.DB.SelectChannelMember(chm1.ID)
+	if err != nil {
+		t.Error()
+	}
+	_, err = bot.DB.SelectChannelMember(chm2.ID)
+	if err != nil {
+		t.Error()
+	}
+
+	//delete channel member
+	err = bot.DB.DeleteChannelMember(chm1.UserID, chm1.ChannelID)
+	assert.NoError(t, err)
+	err = bot.DB.DeleteChannelMember(chm2.UserID, chm2.ChannelID)
+	assert.NoError(t, err)
 }
