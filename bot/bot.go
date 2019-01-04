@@ -93,6 +93,7 @@ func (b *Bot) Run() {
 	b.SendUserMessage(b.CP.ManagerSlackUserID, helloManager)
 
 	gocron.Every(1).Day().At("23:59").Do(b.FillStandupsForNonReporters)
+	gocron.Every(1).Day().At("23:57").Do(b.CallClear)
 	gocron.Every(1).Day().At("23:55").Do(b.UpdateUsersList)
 	gocron.Start()
 
@@ -603,4 +604,63 @@ func (b *Bot) recordBug(channelID, userID, bug string) {
 
 	b.SendUserMessage(b.CP.ManagerSlackUserID, bugRecorded)
 
+}
+
+//GetUsersIDs returns the list of users
+func (b *Bot) GetUsersIDs() ([]string, error) {
+	var userIDs []string
+	users, err := b.API.GetUsers()
+	if err != nil {
+		logrus.Errorf("GetUsers failed: %v", err)
+		return userIDs, err
+	}
+	for _, user := range users {
+		if user.IsBot || user.Name == "slackbot" {
+			continue
+		}
+		userIDs = append(userIDs, user.ID)
+	}
+	return userIDs, nil
+}
+
+//InList return true if element in list
+func InList(element string, list []string) bool {
+	for _, l := range list {
+		if l == element {
+			return true
+		}
+	}
+	return false
+}
+
+//Clear clears database from deleted standupers
+func (b *Bot) Clear(userIDs []string) {
+	channelMembersList, err := b.DB.ListAllChannelMembers()
+	if err != nil {
+		logrus.Error("bot: ListAllChannelMembers failed: ", err)
+		return
+	}
+	for _, channelMember := range channelMembersList {
+		if !InList(channelMember.UserID, userIDs) {
+			err := b.DB.DeleteChannelMember(channelMember.UserID, channelMember.ChannelID)
+			if err != nil {
+				logrus.Error("bot: DeleteChannelMember failed: ", err)
+				continue
+			}
+		} else {
+			continue
+		}
+	}
+}
+
+//CallClear calls Crear function
+func (b *Bot) CallClear() {
+	usersIDs, err := b.GetUsersIDs()
+	if err != nil {
+		logrus.Info("Error getting users from slack: ", err)
+		return
+	}
+	if len(usersIDs) > 0 {
+		b.Clear(usersIDs)
+	}
 }
