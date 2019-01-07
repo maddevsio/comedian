@@ -12,6 +12,8 @@ type Config struct {
 	CollectorURL   string `envconfig:"COLLECTOR_URL" required:"false"`
 	CollectorToken string `envconfig:"COLLECTOR_TOKEN" required:"false"`
 	SecretToken    string `envconfig:"SECRET_TOKEN" required:"false"`
+	Login          string `envconfig:"LOGIN"`
+	Password       string `envconfig:"PASSWORD"`
 }
 
 // Get method processes env variables and fills Config struct
