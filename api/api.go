@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
 	"gitlab.com/team-monitoring/comedian/utils"
@@ -31,6 +32,9 @@ type FullSlackForm struct {
 
 // NewBotAPI creates API for Slack commands
 func NewBotAPI(bot *bot.Bot) (*BotAPI, error) {
+	username := os.Getenv("LOGIN")
+	password := os.Getenv("PASSWORD")
+
 	e := echo.New()
 
 	ba := &BotAPI{
@@ -43,6 +47,16 @@ func NewBotAPI(bot *bot.Bot) (*BotAPI, error) {
 	}
 
 	endPoint := fmt.Sprintf("/commands%s", ba.Bot.Conf.SecretToken)
+
+	e.Group("/auth")
+
+	ba.echo.Use(middleware.BasicAuth(func(Username, Password string, c echo.Context) (bool, error) {
+		if Username == username && Password == password {
+			return true, nil
+		}
+		return false, nil
+	}))
+
 	ba.echo.POST(endPoint, ba.handleCommands)
 	ba.echo.Renderer = t
 	ba.echo.GET("/admin", ba.renderControllPannel)
