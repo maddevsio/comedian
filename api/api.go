@@ -32,8 +32,6 @@ type FullSlackForm struct {
 
 // NewBotAPI creates API for Slack commands
 func NewBotAPI(bot *bot.Bot) (*BotAPI, error) {
-	username := os.Getenv("LOGIN")
-	password := os.Getenv("PASSWORD")
 
 	e := echo.New()
 
@@ -48,10 +46,10 @@ func NewBotAPI(bot *bot.Bot) (*BotAPI, error) {
 
 	endPoint := fmt.Sprintf("/commands%s", ba.Bot.Conf.SecretToken)
 
-	e.Group("/auth")
+	g := ba.echo.Group("/")
 
-	ba.echo.Use(middleware.BasicAuth(func(Username, Password string, c echo.Context) (bool, error) {
-		if Username == username && Password == password {
+	g.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+		if username == ba.Bot.Conf.Login && password == ba.Bot.Conf.Password {
 			return true, nil
 		}
 		return false, nil
@@ -59,8 +57,8 @@ func NewBotAPI(bot *bot.Bot) (*BotAPI, error) {
 
 	ba.echo.POST(endPoint, ba.handleCommands)
 	ba.echo.Renderer = t
-	ba.echo.GET("/admin", ba.renderControllPannel)
-	ba.echo.POST("/config", ba.updateConfig)
+	g.GET("admin", ba.renderControllPannel)
+	g.POST("config", ba.updateConfig)
 
 	return ba, nil
 }
