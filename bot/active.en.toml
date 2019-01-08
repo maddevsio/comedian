@@ -1,4 +1,4 @@
-ErrorReportToManager = "I could not save standup for user <@{{.user}}> in channel <#{{.channel}}> because of the following reasons: %v"
+ErrorReportToManager = "Could not save standup for user <@{{.user}}> in channel <#{{.channel}}> because of the following reasons: %v"
 
 [AccessAtLeastAdmin]
 description = "Displays warning that role must be at least admin"
@@ -10,39 +10,48 @@ other = "Access Denied! You need to be at least PM in this project to use this c
 
 [AddAdminsAdded]
 description = "Displays message when users successfully assigned as admins"
-other = "Users are assigned as admins: {{.admins}}"
+one = "User {{.admin}} is assigned as admin."
+other = "Users {{.admins}} are assigned as admins."
 
 [AddAdminsExist]
 description = "Displays message when users were already assigned as admins"
-other = "Users were already assigned as admins: {{.admins}}"
+one = "User {{.admin}} was already assigned as admin."
+other = "Users {{.admins}} were already assigned as admins."
 
 [AddAdminsFailed]
 description = "Displays message when user added as admin for Comedian"
-other = "Could not assign users as admins: {{.admins}}"
+one = "Could not assign user as admin: {{.admin}} !"
+other = "Could not assign users as admins: {{.admins}} !"
 
 [AddMembersAdded]
 description = "Displays a message when users are successfully assigned"
-other = "Members are assigned: {{.users}}"
+one = "Member {{.user}} is assigned."
+other = "Members {{.users}} are assigned."
 
 [AddMembersExist]
 description = "Displays a message when errors occur when assigning users, which already has role"
-other = "Members already have roles: {{.users}}"
+one = "Member {{.user}} already has role."
+other = "Members {{.users}} already have roles."
 
 [AddMembersFailed]
 description = "Displays a message when errors occur when assigning users"
-other = "Could not assign members: {{.users}}"
+one = "Could not assign member: {{.user}} ."
+other = "Could not assign members: {{.users}} ."
 
 [AddPMsAdded]
 description = "Displays a message when users successfully assigning as PMs"
-other = "Users are assigned as PMs: {{.PMs}}"
+one = "User {{.PM}} is assigned as PM."
+other = "Users {{.PMs}} are assigned as PMs."
 
 [AddPMsExist]
 description = "Displays a message when errors occur when assigning users, which has already PM-role"
-other = "Users already have roles: {{.PMs}}"
+one = "User {{.PM}} already has role."
+other = "Users {{.PMs}} already have roles."
 
 [AddPMsFailed]
 description = "Displays a message when errors occur when assigning users as PM"
-other = "Could not assign users as PMs: {{.PMs}}"
+one =  "Could not assign user as PM: {{.PM}}."
+other = "Could not assign users as PMs: {{.PMs}}."
 
 [AddStandupTime]
 description = "Displays a message when a standup time is successfully added for a channel"
@@ -62,7 +71,7 @@ other = "Could not delete timetable for user <@{{.user}}>"
 
 [CanNotFindMember]
 description = "Displays message if user doesn't have any role in the channel"
-other = "<@{{.user}}> does not have any role in this channel"
+other = "<@{{.user}}> does not have any role in this channel."
 
 [CanNotUpdateTimetable]
 description = "Displays message when occur updating errors"
@@ -74,7 +83,7 @@ other = " commits: {{.projectCommits}} {{.commitsEmoji}} |"
 
 [CouldNotSaveStandup]
 description = "Displays a message when unexpected errors occur"
-other = "Something went wrong and I could not save your standup in database. Please, report this to your PM."
+other = "Something went wrong and I could not save your standup. Please, report this to your PM."
 
 [DaysDivider]
 description = "Days divider"
@@ -82,23 +91,27 @@ other = " on "
 
 [DeleteAdminsFailed]
 description = "Diplays message when admin deletion errors occur"
-other = "Could not remove users as admins: {{.admins}}"
+one = "Could not remove user as admin: {{.admin}} !"
+other = "Could not remove users as admins: {{.admins}} !"
 
 [DeleteAdminsSucceed]
 description = "Diplays message when admins have been successfully deleted"
-other = "Users were removed as admins: {{.admins}}"
+one = "User {{.admin}} removed as admin."
+other = "Users were removed as admins: {{.admins}} ."
 
 [DeleteMembersFailed]
 description = "Displays a message when user deletion errors occur"
-other = "Could not remove the following members: {{.users}}"
+one = "Could not remove the member: {{.user}} !"
+other = "Could not remove the following members: {{.users}} !"
 
 [DeleteMembersSucceed]
 description = "Displays a message when users have been successfully deleted"
-other = "The following members were removed: {{.users}}"
+one = "The member {{.user}} removed."
+other = "The following members were removed: {{.users}}."
 
 [DirectMessage]
 description = "DM Warning message to those who did not submit standup"
-other = "Hey, <@{{.user}}>! you failed to submit standup in <#{{.channelID}}|{{.channelName}}> on time! Do it ASAP!"
+other = "<@{{.user}}> you failed to submit standup in <#{{.channelID}}|{{.channelName}}> on time! Do it ASAP!"
 
 [EmptyTimetable]
 description = "Displays message if timetable is empty"
@@ -178,7 +191,7 @@ other = "<@{{.user}}> does not have a timetable!"
 
 [NotAStanduper]
 description = "Displays message if user not a standuper"
-other = "Seems like <@{{.user}}> is not even assigned as standuper in this channel!"
+other = "<@{{.user}}> is not even assigned as standuper in this channel!"
 
 [NotTagStanduper]
 description = "Displays a message without a user tag"
@@ -190,19 +203,19 @@ other = "You can submit only one standup per day. Please, edit today's standup o
 
 [PMAssigned]
 description = "Displays message when user added as admin for Comedian"
-other = "You have been added as Admin for Comedian"
+other = "You have been added as Admin for Comedian!"
 
 [PMRemoved]
 description = "Displays message when user removed as admin from Comedian"
-other = "You have been removed as Admin from Comedian"
+other = "You have been removed as Admin from Comedian!"
 
 [RemoveStandupTime]
 description = "Displays message when a standuptime for a channel successfully removed"
-other = "standup time for channel deleted"
+other = "Standup time for channel deleted."
 
 [RemoveStandupTimeWithUsers]
 description = "Displays message when a channels's standup time removed, but there are standupers in the channel"
-other = "standup time for this channel removed, but there are people marked as a standuper."
+other = "Standup time for this channel removed, but there are people marked as a standuper."
 
 [ReportDate]
 description = "Displays report for date"
@@ -258,12 +271,12 @@ other = ":warning: No 'yesterday' related keywords detected! Please, use one of 
 
 [TagIndividualNonReporters]
 description = "Display message about those who did not submit standup with individual schedules"
-other = "Hey, <@{{.user}}>! You failed to submit standup in time! Get it done ASAP!"
+other = "<@{{.user}}>, you failed to submit standup in time! Get it done ASAP!"
 
 [TagNonReporters]
 description = "Display message about those who did not submit standup"
-one = "Hey, {{.user}}! You missed deadline and you are the only one who still did not submit standup! Get it done!"
-other = "Hey, {{.users}}! You all missed deadline and still did not submit standups! Time management problems detected!"
+one = "{{.user}}, you missed deadline and you are the only one who still did not submit standup! Get it done!"
+other = "{{.users}}, you all missed deadline and still did not submit standups!"
 
 [TagStanduper]
 description = "Displays a message with a user tag"
@@ -339,12 +352,12 @@ other = "In #{{.channel}} <@{{.user}}> submitted standup: "
 
 [WarnIndividualNonReporters]
 description = "Warning message to those who did not submit standup"
-other = "Hey, <@{{.user}}>! {{.minutes}} to deadline and you still did not submit standup! Hurry up!"
+other = "<@{{.user}}>, {{.minutes}} to deadline and you still did not submit standup! Hurry up!"
 
 [WarnNonReporters]
 description = "Warning message to those who did not submit standup"
-one = "Hey, {{.user}}! {{.minutes}} to deadline and you are the only one who still did not submit standup! Brace yourself!"
-other = "Hey, {{.users}}! {{.minutes}} to deadline and you people still did not submit standups! Go ahead!"
+one = "{{.user}}, {{.minutes}} to deadline and you are the only one who still did not submit standup! Brace yourself!"
+other = "{{.users}}, {{.minutes}} to deadline and you people still did not submit standups! Go ahead!"
 
 [WeeklyReportError]
 description = "Displays a message if sending weekly report failed"
@@ -396,7 +409,7 @@ Other = "Wrong time! Please, check the time format and try again!"
 
 [shortTimeFormat]
 Description = "Displays message if a time format is short"
-Other = "Seems like you used short time format, please, use 24:00 hour format instead!"
+Other = "You used short time format, please, use 24:00 hour format instead!"
 
 [unknownTimeFormat]
 Description = "Displays message if time format is unknown"
@@ -412,11 +425,11 @@ Other = "Report end time was in the future, time range was truncated"
 
 [ErrorSplitStandupers]
 Description = "Displays message if error occure when split standupers from split timetable command"
-Other = "Sorry, could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"
+Other = "Could not understand where are the standupers and where is the rest of the command. Please, check the text for mistakes and try again"
 
 [ErrorSplitWeekdays]
 Description = "Displays message if error occure when split weekdays from split timetable command"
-Other = "Sorry, could not understand where are the weekdays and where is the time. Please, check the text for mistakes and try again"
+Other = "Could not understand where are the weekdays and where is the time. Please, check the text for mistakes and try again"
 
 [SelectChannelError]
 Description = "Displays message if channel selection error occure"
@@ -424,7 +437,7 @@ Other = "rest: SelectChannel failed: {{.error}}. Sorry, it's error. Show it to a
 
 [TimeParseError]
 Description = "Displays error if time parse error occure"
-Other = "I can not parse date. Seems like you entered wrong date format. Please check and try command again!"
+Other = "Could not parse date. Please check and try command again!"
 
 [TextHead]
 Description = "Displays help text head"
