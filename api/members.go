@@ -335,6 +335,7 @@ func (ba *BotAPI) addAdmins(users []string) string {
 				One:         "User {{.admin}} is assigned as admin.",
 				Other:       "Users {{.admins}} are assigned as admins.",
 			},
+			PluralCount: len(added),
 			TemplateData: map[string]interface{}{
 				"admin":  added[0],
 				"admins": strings.Join(added, ", "),
