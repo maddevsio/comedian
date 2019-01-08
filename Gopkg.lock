@@ -34,6 +34,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   digest = "1:adea5a94903eb4384abef30f3d878dc9ff6b6b5b0722da25b82e5169216dfb61"
   name = "github.com/go-sql-driver/mysql"
   packages = ["."]
@@ -93,19 +101,24 @@
   version = "v1.3.0"
 
 [[projects]]
-  digest = "1:63801c64679bdeef1b63206f065d5a1f4c3a75ed66a3fbbd909bf98766542980"
+  digest = "1:9acadb9c8c15b8a9f635a7fa960c9a522b001a3919bc03df92ac26c372476aff"
   name = "github.com/labstack/echo"
-  packages = ["."]
+  packages = [
+    ".",
+    "middleware",
+  ]
   pruneopts = "UT"
   revision = "1abaa3049251d17932e4313c2d6165073fd07fd8"
   version = "v3.3.6"
 
 [[projects]]
-  digest = "1:faee5b9f53eb1ae4eb04708c040c8c4dd685ce46509671e57a08520a15c54368"
+  digest = "1:568171fc14a3d819b112c3e219d351ea7b05e8dad7935c4168c6b3373244a686"
   name = "github.com/labstack/gommon"
   packages = [
+    "bytes",
     "color",
     "log",
+    "random",
   ]
   pruneopts = "UT"
   revision = "2a618302b929cc20862dda3aa6f02f64dbe740dd"
@@ -261,6 +274,7 @@
     "github.com/jmoiron/sqlx",
     "github.com/kelseyhightower/envconfig",
     "github.com/labstack/echo",
+    "github.com/labstack/echo/middleware",
     "github.com/nicksnyder/go-i18n/v2/i18n",
     "github.com/nlopes/slack",
     "github.com/sirupsen/logrus",
