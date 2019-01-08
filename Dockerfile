@@ -1,3 +1,11 @@
+FROM golang:1.11.4
+COPY . /go/src/gitlab.com/team-monitoring/comedian
+# Install dependencies
+RUN go get github.com/labstack/echo/middleware
+WORKDIR /go/src/gitlab.com/team-monitoring/comedian
+# Compile comedian
+RUN make build_linux
+
 FROM debian:8.7
 LABEL maintainer="Anatoliy Fedorenko <fedorenko.tolik@gmail.com>"
 RUN  apt-get update \
@@ -12,7 +20,7 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
     && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 COPY bot/active.en.toml /bot/
 COPY bot/active.ru.toml /bot/  
-COPY comedian /
+COPY --from=0  /go/src/gitlab.com/team-monitoring/comedian/comedian /
 COPY controll_pannel/index.html /src/gitlab.com/team-monitoring/comedian/controll_pannel/
 COPY goose /
 COPY migrations /migrations

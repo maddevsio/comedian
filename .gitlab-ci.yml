@@ -1,0 +1,16 @@
+stages:
+  - build
+services:
+  - docker:dind
+
+build:
+  image: docker:latest
+  stage: build
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+  script:
+    - docker build --pull -t registry.gitlab.com/team-monitoring/comedian .
+    - docker push registry.gitlab.com/team-monitoring/comedian
+  only:
+    - master
+
