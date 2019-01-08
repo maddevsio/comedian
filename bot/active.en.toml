@@ -10,39 +10,48 @@ other = "Access Denied! You need to be at least PM in this project to use this c
 
 [AddAdminsAdded]
 description = "Displays message when users successfully assigned as admins"
-other = "Users are assigned as admins: {{.admins}}"
+one = "User {{.admin}} is assigned as admin."
+other = "Users {{.admins}} are assigned as admins."
 
 [AddAdminsExist]
 description = "Displays message when users were already assigned as admins"
-other = "Users were already assigned as admins: {{.admins}}"
+one = "User {{.admin}} was already assigned as admin."
+other = "Users {{.admins}} were already assigned as admins."
 
 [AddAdminsFailed]
 description = "Displays message when user added as admin for Comedian"
-other = "Could not assign users as admins: {{.admins}}"
+one = "Could not assign user as admin: {{.admin}} !"
+other = "Could not assign users as admins: {{.admins}} !"
 
 [AddMembersAdded]
 description = "Displays a message when users are successfully assigned"
-other = "Members are assigned: {{.users}}"
+one = "Member {{.user}} is assigned."
+other = "Members {{.users}} are assigned."
 
 [AddMembersExist]
 description = "Displays a message when errors occur when assigning users, which already has role"
-other = "Members already have roles: {{.users}}"
+one = "Member {{.user}} already has role."
+other = "Members {{.users}} already have roles."
 
 [AddMembersFailed]
 description = "Displays a message when errors occur when assigning users"
-other = "Could not assign members: {{.users}}"
+one = "Could not assign member: {{.user}} ."
+other = "Could not assign members: {{.users}} ."
 
 [AddPMsAdded]
 description = "Displays a message when users successfully assigning as PMs"
-other = "Users are assigned as PMs: {{.PMs}}"
+one = "User {{.PM}} is assigned as PM."
+other = "Users {{.PMs}} are assigned as PMs."
 
 [AddPMsExist]
 description = "Displays a message when errors occur when assigning users, which has already PM-role"
-other = "Users already have roles: {{.PMs}}"
+one = "User {{.PM}} already has role."
+other = "Users {{.PMs}} already have roles."
 
 [AddPMsFailed]
 description = "Displays a message when errors occur when assigning users as PM"
-other = "Could not assign users as PMs: {{.PMs}}"
+one =  "Could not assign user as PM: {{.PM}}."
+other = "Could not assign users as PMs: {{.PMs}}."
 
 [AddStandupTime]
 description = "Displays a message when a standup time is successfully added for a channel"
@@ -82,19 +91,23 @@ other = " on "
 
 [DeleteAdminsFailed]
 description = "Diplays message when admin deletion errors occur"
-other = "Could not remove users as admins: {{.admins}}"
+one = "Could not remove user as admin: {{.admin}} !"
+other = "Could not remove users as admins: {{.admins}} !"
 
 [DeleteAdminsSucceed]
 description = "Diplays message when admins have been successfully deleted"
-other = "Users were removed as admins: {{.admins}}"
+one = "User {{.admin}} removed as admin."
+other = "Users were removed as admins: {{.admins}} ."
 
 [DeleteMembersFailed]
 description = "Displays a message when user deletion errors occur"
-other = "Could not remove the following members: {{.users}}"
+one = "Could not remove the member: {{.user}} !"
+other = "Could not remove the following members: {{.users}} !"
 
 [DeleteMembersSucceed]
 description = "Displays a message when users have been successfully deleted"
-other = "The following members were removed: {{.users}}"
+one = "The member {{.user}} removed."
+other = "The following members were removed: {{.users}}."
 
 [DirectMessage]
 description = "DM Warning message to those who did not submit standup"
