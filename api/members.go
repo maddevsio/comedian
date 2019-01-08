@@ -122,13 +122,14 @@ func (ba *BotAPI) deleteCommand(accessLevel int, channelID, params string) strin
 func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
 
-	var failed, exist, added, text string
+	var failed, exist, added []string
+	var text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			failed += u
+			failed = append(failed, u)
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
@@ -143,10 +144,10 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			logrus.Infof("ChannelMember created! ID:%v", chanMember.ID)
 		}
 		if user.UserID == userID && user.ChannelID == channel {
-			exist += u
+			exist = append(exist, u)
 			continue
 		}
-		added += u
+		added = append(exist, u)
 	}
 
 	if len(failed) != 0 {
@@ -155,10 +156,13 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsFailed",
 					Description: "Displays a message when errors occur when assigning users as PM",
+					One:         "Could not assign user as PM: {{.PM}}",
 					Other:       "Could not assign users as PMs: {{.PMs}}",
 				},
+				PluralCount: len(failed),
 				TemplateData: map[string]interface{}{
-					"PMs": failed,
+					"PM":  failed[0],
+					"PMs": strings.Join(failed, ", "),
 				},
 			})
 			text += addPMsFailed + "\n"
@@ -167,10 +171,13 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersFailed",
 					Description: "Displays a message when errors occur when assigning users",
-					Other:       "Could not assign members: {{.users}}",
+					One:         "Could not assign member: {{.user}} .",
+					Other:       "Could not assign members: {{.users}} .",
 				},
+				PluralCount: len(failed),
 				TemplateData: map[string]interface{}{
-					"users": failed,
+					"user":  failed[0],
+					"users": strings.Join(failed, ", "),
 				},
 			})
 			text += addMembersFailed + "\n"
@@ -183,10 +190,13 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsExist",
 					Description: "Displays a message when errors occur when assigning users, which has already PM-role",
-					Other:       "Users already have roles: {{.PMs}}",
+					One:         "User {{.PM}} already has role.",
+					Other:       "Users {{.PMs}} already have roles.",
 				},
+				PluralCount: len(exist),
 				TemplateData: map[string]interface{}{
-					"PMs": exist,
+					"PM":  exist[0],
+					"PMs": strings.Join(exist, ", "),
 				},
 			})
 			text += addPMsExist + "\n"
@@ -195,10 +205,13 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersExist",
 					Description: "Displays a message when errors occur when assigning users, which already has role",
-					Other:       "Members already have roles: {{.users}}",
+					One:         "Member {{.user}} already has role.",
+					Other:       "Members {{.users}} already have roles.",
 				},
+				PluralCount: len(exist),
 				TemplateData: map[string]interface{}{
-					"users": exist,
+					"user":  exist[0],
+					"users": strings.Join(exist, ", "),
 				},
 			})
 			text += addMembersExist + "\n"
@@ -211,10 +224,13 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsAdded",
 					Description: "Displays a message when users successfully assigning as PMs",
-					Other:       "Users are assigned as PMs: {{.PMs}}",
+					One:         "User {{.PM}} is assigned as PM.",
+					Other:       "Users {{.PMs}} are assigned as PMs.",
 				},
+				PluralCount: len(added),
 				TemplateData: map[string]interface{}{
-					"PMs": added,
+					"PM":  added[0],
+					"PMs": strings.Join(added, ", "),
 				},
 			})
 			text += addPMsAdded + "\n"
@@ -223,10 +239,13 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersAdded",
 					Description: "Displays a message when users are successfully assigned",
-					Other:       "Members are assigned: {{.users}}",
+					One:         "Member {{.user}} is assigned.",
+					Other:       "Members {{.users}} are assigned",
 				},
+				PluralCount: len(added),
 				TemplateData: map[string]interface{}{
-					"users": added,
+					"user":  added[0],
+					"users": strings.Join(added, ", "),
 				},
 			})
 			text += addMembersAdded + "\n"
@@ -239,23 +258,24 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 func (ba *BotAPI) addAdmins(users []string) string {
 	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
 
-	var failed, exist, added, text string
+	var failed, exist, added []string
+	var text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			failed += u
+			failed = append(failed, u)
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
 		user, err := ba.Bot.DB.SelectUser(userID)
 		if err != nil {
-			failed += u
+			failed = append(failed, u)
 			continue
 		}
 		if user.Role == "admin" {
-			exist += u
+			exist = append(exist, u)
 			continue
 		}
 		user.Role = "admin"
@@ -272,7 +292,7 @@ func (ba *BotAPI) addAdmins(users []string) string {
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
-		added += u
+		added = append(added, u)
 	}
 
 	if len(failed) != 0 {
@@ -280,10 +300,13 @@ func (ba *BotAPI) addAdmins(users []string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "AddAdminsFailed",
 				Description: "Displays message when user added as admin for Comedian",
+				One:         "Could not assign user as admin: {{.admin}}",
 				Other:       "Could not assign users as admins: {{.admins}}",
 			},
+			PluralCount: len(failed),
 			TemplateData: map[string]interface{}{
-				"admins": failed,
+				"admin":  failed[0],
+				"admins": strings.Join(failed, ", "),
 			},
 		})
 		text += addAdminsFailed + "\n"
@@ -293,10 +316,13 @@ func (ba *BotAPI) addAdmins(users []string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "AddAdminsExist",
 				Description: "Displays message when users were already assigned as admins",
-				Other:       "Users were already assigned as admins: {{.admins}}",
+				One:         "User {{.admin}} was already assigned as admin.",
+				Other:       "Users {{.admins}} were already assigned as admins.",
 			},
+			PluralCount: len(exist),
 			TemplateData: map[string]interface{}{
-				"admins": exist,
+				"admin":  exist[0],
+				"admins": strings.Join(exist, ", "),
 			},
 		})
 		text += addAdminsExist + "\n"
@@ -306,10 +332,12 @@ func (ba *BotAPI) addAdmins(users []string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "AddAdminsAdded",
 				Description: "Displays message when users successfully assigned as admins",
-				Other:       "Users are assigned as admins: {{.admins}}",
+				One:         "User {{.admin}} is assigned as admin.",
+				Other:       "Users {{.admins}} are assigned as admins.",
 			},
 			TemplateData: map[string]interface{}{
-				"admins": added,
+				"admin":  added[0],
+				"admins": strings.Join(added, ", "),
 			},
 		})
 		text += addAdminsAdded + "\n"
@@ -426,24 +454,25 @@ func (ba *BotAPI) listAdmins() string {
 func (ba *BotAPI) deleteMembers(members []string, channelID string) string {
 	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
 
-	var failed, deleted, text string
+	var failed, deleted []string
+	var text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 
 	for _, u := range members {
 		if !rg.MatchString(u) {
-			failed += u
+			failed = append(failed, u)
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
 		user, err := ba.Bot.DB.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
 			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
-			failed += u
+			failed = append(failed, u)
 			continue
 		}
 		ba.Bot.DB.DeleteChannelMember(user.UserID, channelID)
-		deleted += u
+		deleted = append(deleted, u)
 	}
 
 	if len(failed) != 0 {
@@ -451,10 +480,13 @@ func (ba *BotAPI) deleteMembers(members []string, channelID string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteMembersFailed",
 				Description: "Displays a message when user deletion errors occur",
-				Other:       "Could not remove the following members: {{.users}}",
+				One:         "Could not remove the member: {{.user}} !",
+				Other:       "Could not remove the following members: {{.users}} !",
 			},
+			PluralCount: len(failed),
 			TemplateData: map[string]interface{}{
-				"users": failed,
+				"user":  failed[0],
+				"users": strings.Join(failed, ", "),
 			},
 		})
 		text += deleteMembersFailed + "\n"
@@ -464,10 +496,13 @@ func (ba *BotAPI) deleteMembers(members []string, channelID string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteMembersSucceed",
 				Description: "Displays a message when users have been successfully deleted",
-				Other:       "The following members were removed: {{.users}}",
+				One:         "The member {{.user}} removed.",
+				Other:       "The following members were removed: {{.users}}.",
 			},
+			PluralCount: len(deleted),
 			TemplateData: map[string]interface{}{
-				"users": deleted,
+				"user":  deleted[0],
+				"users": strings.Join(deleted, ", "),
 			},
 		})
 		text += deleteMembersSucceed + "\n"
@@ -479,23 +514,24 @@ func (ba *BotAPI) deleteMembers(members []string, channelID string) string {
 func (ba *BotAPI) deleteAdmins(users []string) string {
 	localizer := i18n.NewLocalizer(ba.Bot.Bundle, ba.Bot.CP.Language)
 
-	var failed, deleted, text string
+	var failed, deleted []string
+	var text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			failed += u
+			failed = append(failed, u)
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
 		user, err := ba.Bot.DB.SelectUser(userID)
 		if err != nil {
-			failed += u
+			failed = append(failed, u)
 			continue
 		}
 		if user.Role != "admin" {
-			failed += u
+			failed = append(failed, u)
 			continue
 		}
 		user.Role = ""
@@ -512,7 +548,7 @@ func (ba *BotAPI) deleteAdmins(users []string) string {
 		if err != nil {
 			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
-		deleted += u
+		deleted = append(deleted, u)
 	}
 
 	if len(failed) != 0 {
@@ -520,10 +556,13 @@ func (ba *BotAPI) deleteAdmins(users []string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteAdminsFailed",
 				Description: "Diplays message when admin deletion errors occur",
+				One:         "Could not remove user as admin: {{.admin}}",
 				Other:       "Could not remove users as admins: {{.admins}}",
 			},
+			PluralCount: len(failed),
 			TemplateData: map[string]interface{}{
-				"admins": failed,
+				"admin":  failed[0],
+				"admins": strings.Join(failed, ", "),
 			},
 		})
 		text += deleteAdminsFailed + "\n"
@@ -533,10 +572,13 @@ func (ba *BotAPI) deleteAdmins(users []string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteAdminsSucceed",
 				Description: "Diplays message when admins have been successfully deleted",
+				One:         "User {{.admin}} removed as admin.",
 				Other:       "Users were removed as admins: {{.admins}}",
 			},
+			PluralCount: len(deleted),
 			TemplateData: map[string]interface{}{
-				"admins": deleted,
+				"admin":  deleted[0],
+				"admins": strings.Join(deleted, ", "),
 			},
 		})
 		text += deleteAdminsSucceed + "\n"
