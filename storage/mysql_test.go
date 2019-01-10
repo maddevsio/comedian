@@ -465,3 +465,217 @@ func TestCRUDTimeTable(t *testing.T) {
 	assert.NoError(t, db.DeleteChannelMember(user.UserID, channel.ChannelID))
 	assert.NoError(t, db.DeleteTimeTable(tts.ID))
 }
+
+func TestReturnDayFromTimetable(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	db, err := NewMySQL(c)
+	assert.NoError(t, err)
+
+	//create timetables
+	timetable1, err := db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: 1,
+		Monday:          12345,
+		Tuesday:         0,
+		Wednesday:       0,
+		Thursday:        54321,
+		Friday:          0,
+		Saturday:        45678,
+		Sunday:          0,
+	})
+	assert.NoError(t, err)
+	_, err = db.UpdateTimeTable(timetable1)
+	assert.NoError(t, err)
+	timetable2, err := db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: 2,
+		Monday:          12345,
+		Tuesday:         12345,
+		Wednesday:       54321,
+		Thursday:        54321,
+		Friday:          12345,
+		Saturday:        45678,
+		Sunday:          12345,
+	})
+	assert.NoError(t, err)
+	_, err = db.UpdateTimeTable(timetable2)
+	assert.NoError(t, err)
+	//expected1
+	expected1 := make(map[string]int64)
+	expected1["Monday"] = 12345
+	expected1["Thursday"] = 54321
+	expected1["Saturday"] = 45678
+	//expected2
+	expected2 := make(map[string]int64)
+	expected2["Monday"] = 12345
+	expected2["Tuesday"] = 12345
+	expected2["Wednesday"] = 54321
+	expected2["Thursday"] = 54321
+	expected2["Friday"] = 12345
+	expected2["Saturday"] = 45678
+	expected2["Sunday"] = 12345
+
+	testCase := []struct {
+		tt       model.TimeTable
+		expected map[string]int64
+	}{
+		{timetable1, expected1},
+		{timetable2, expected2},
+	}
+	for _, test := range testCase {
+		actual := db.ReturnDayFromTimetable(test.tt)
+		assert.Equal(t, test.expected, actual)
+	}
+	//delete timetable
+	err = db.DeleteTimeTable(timetable1.ID)
+	assert.NoError(t, err)
+	err = db.DeleteTimeTable(timetable2.ID)
+	assert.NoError(t, err)
+}
+
+func TestMemberShouldBeTracked(t *testing.T) {
+	d := time.Date(2019, 01, 01, 17, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+	c, err := config.Get()
+	assert.NoError(t, err)
+	db, err := NewMySQL(c)
+	assert.NoError(t, err)
+
+	//create channel
+	channel, err := db.CreateChannel(model.Channel{
+		ChannelName: "channel",
+		ChannelID:   "cid",
+	})
+	assert.NoError(t, err)
+	//set channel standup time
+	timestamp := time.Date(2019, 01, 01, 10, 0, 0, 0, time.UTC).Unix()
+	//please note that
+	//in some PCs when calculate inverse value time.Unix(timestamp, 0) in MemberShouldBeTracked function
+	//the hour may be not 10
+	err = db.CreateStandupTime(timestamp, channel.ChannelID)
+	//create channel member
+	//channel member created time will be equal d (after standuptime)
+	//channel member hasn't timetable
+	channelMember1, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid1",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	//channel member hasn't timetable
+	//and channel member created date before channel standuptime
+	d2 := time.Date(2019, 01, 01, 6, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d2 })
+	channelMember2, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid2",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	//channel member has an empty timetable
+	channelMember3, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid3",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	timetable1, err := db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: channelMember3.ID,
+	})
+	assert.NoError(t, err)
+	//channel member has individual timetable and created date before standuptime
+	channelMember4, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid4",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	//create timetable on tuesday (2019, 01, 01)
+	//channelMember4 created at 6:00
+	timetable2, err := db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: channelMember4.ID,
+		Tuesday:         time.Date(2019, 01, 01, 10, 0, 0, 0, time.UTC).Unix(),
+	})
+	assert.NoError(t, err)
+	_, err = db.UpdateTimeTable(timetable2)
+	assert.NoError(t, err)
+	//channel member has individual timetable and created date after standuptime
+	d3 := time.Date(2019, 01, 01, 20, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d3 })
+	channelMember5, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid5",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	//create timetable on tuesday (2019, 01, 01)
+	//channelMember5 created at 20:00
+	timetable3, err := db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: channelMember5.ID,
+		Tuesday:         time.Date(2019, 01, 01, 10, 0, 0, 0, time.UTC).Unix(),
+	})
+	assert.NoError(t, err)
+	_, err = db.UpdateTimeTable(timetable3)
+	assert.NoError(t, err)
+	//channel member has a timetable but must not assign standup this day
+	channelMember6, err := db.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid6",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "",
+	})
+	assert.NoError(t, err)
+	timetable4, err := db.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: channelMember6.ID,
+		Friday:          time.Date(2019, 01, 01, 10, 0, 0, 0, time.UTC).Unix(),
+	})
+	assert.NoError(t, err)
+	_, err = db.UpdateTimeTable(timetable4)
+	assert.NoError(t, err)
+
+	testCase := []struct {
+		id       int64
+		date     time.Time
+		expected bool
+	}{
+		//channel member hasn't timetable and created date is after standuptime
+		{channelMember1.ID, time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC), false},
+		//channel member hasn't a timetable and created date is before standuptime
+		{channelMember2.ID, time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC), true},
+		//channel member has an empty timetable
+		{channelMember3.ID, time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC), false},
+		//channel member has a timetable and created date is before standuptime
+		{channelMember4.ID, time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC), true},
+		//channel member has a timetable and created date is after standuptime
+		{channelMember5.ID, time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC), false},
+		//channel member has a timetable but must not assign standup this day
+		{channelMember6.ID, time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC), false},
+	}
+	for _, test := range testCase {
+		actual := db.MemberShouldBeTracked(test.id, test.date)
+		assert.Equal(t, test.expected, actual)
+	}
+	//delete timetables
+	err = db.DeleteTimeTable(timetable1.ID)
+	assert.NoError(t, err)
+	err = db.DeleteTimeTable(timetable2.ID)
+	assert.NoError(t, err)
+	err = db.DeleteTimeTable(timetable3.ID)
+	assert.NoError(t, err)
+	err = db.DeleteTimeTable(timetable4.ID)
+	assert.NoError(t, err)
+	//delete channel members
+	err = db.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	err = db.DeleteChannelMember(channelMember2.UserID, channelMember2.ChannelID)
+	assert.NoError(t, err)
+	err = db.DeleteChannelMember(channelMember3.UserID, channelMember3.ChannelID)
+	assert.NoError(t, err)
+	err = db.DeleteChannelMember(channelMember4.UserID, channelMember4.ChannelID)
+	assert.NoError(t, err)
+	err = db.DeleteChannelMember(channelMember5.UserID, channelMember5.ChannelID)
+	assert.NoError(t, err)
+	err = db.DeleteChannelMember(channelMember6.UserID, channelMember6.ChannelID)
+	assert.NoError(t, err)
+	//delete channel
+	err = db.DeleteChannel(channel.ID)
+	assert.NoError(t, err)
+}
