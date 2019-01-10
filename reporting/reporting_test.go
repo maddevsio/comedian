@@ -10,6 +10,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/api"
 	"gitlab.com/team-monitoring/comedian/bot"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
@@ -241,6 +242,98 @@ func TestDisplayYesterdayTeamReport(t *testing.T) {
 	err = bot.DB.DeleteChannel(channel2.ID)
 	assert.NoError(t, err)
 }
+
+//Test checks if new channel member joined to channel after standup time
+//and must send standup
+//at next day in yesterday report Comedian don't mention member, as nonreporter
+func TestDisplayYesterdayTeamReportOfNewChannelMember(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	bot, err := bot.NewBot(c)
+	assert.NoError(t, err)
+	ba, err := api.NewBotAPI(bot)
+	assert.NoError(t, err)
+	r, err := NewReporter(bot)
+	assert.NoError(t, err)
+	bot.CP.Language = "en_US"
+	bot.CP.CollectorEnabled = true
+
+	httpmock.Activate()
+	//user1's worklogs, commits
+	url1_1 := "www.collector.some/rest/api/v1/logger//users/uid1/2019-01-01/2019-01-01/"
+	httpmock.RegisterResponder("GET", url1_1, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":28000}`))
+	url1_2 := "www.collector.some/rest/api/v1/logger//user-in-project/uid1/testChannel1/2019-01-01/2019-01-01/"
+	httpmock.RegisterResponder("GET", url1_2, httpmock.NewStringResponder(200, `{"total_commits":1,"worklogs":28000}`))
+
+	//creates channel with channel members
+	channel1, err := bot.DB.CreateChannel(model.Channel{
+		ChannelName: "testChannel1",
+		ChannelID:   "chanId1",
+	})
+	assert.NoError(t, err)
+
+	standuptime, err := ba.ParseTimeTextToInt("10:00")
+	assert.NoError(t, err)
+	bot.DB.CreateStandupTime(standuptime, channel1.ChannelID)
+
+	//creates channel members of channel1
+	//with timetable where Monday=0,Tuesday=0...Sunday=0
+	//channelMember1 obey send standup
+	//channel member created at 20:00
+	//channel standuptime at 10:00
+	d := time.Date(2019, 01, 01, 20, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+	channelMember1, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		UserID:        "uid1",
+		ChannelID:     channel1.ChannelID,
+		RoleInChannel: "",
+		Created:       time.Now(),
+	})
+	assert.NoError(t, err)
+	user1, err := bot.DB.CreateUser(model.User{
+		UserName: "username1",
+		RealName: "realname1",
+		UserID:   channelMember1.UserID,
+		Role:     "",
+	})
+	assert.NoError(t, err)
+	//channel member has individual timetable
+	//and everyday at 10:00
+	timeTable1, err := bot.DB.CreateTimeTable(model.TimeTable{
+		ChannelMemberID: channelMember1.ID,
+		Created:         time.Now(),
+		Modified:        time.Now(),
+		Monday:          standuptime,
+		Tuesday:         standuptime,
+		Wednesday:       standuptime,
+		Thursday:        standuptime,
+		Friday:          standuptime,
+		Saturday:        standuptime,
+		Sunday:          standuptime,
+	})
+	assert.NoError(t, err)
+	_, err = bot.DB.UpdateTimeTable(timeTable1)
+	assert.NoError(t, err)
+
+	//yesterday report
+	d2 := time.Date(2019, 01, 02, 20, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d2 })
+	expected := "Yesterday report%!(EXTRA []slack.Attachment=[{good   0         realname1 in #testChannel1   [{  worklogs: 7:46 :wink: | commits: 1 :wink: | false}] [] []   }])"
+	actual, err := r.displayYesterdayTeamReport()
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+
+	httpmock.DeactivateAndReset()
+	err = bot.DB.DeleteChannel(channel1.ID)
+	assert.NoError(t, err)
+	err = bot.DB.DeleteChannelMember(channelMember1.UserID, channelMember1.ChannelID)
+	assert.NoError(t, err)
+	err = bot.DB.DeleteUser(user1.ID)
+	assert.NoError(t, err)
+	err = bot.DB.DeleteTimeTable(timeTable1.ID)
+	assert.NoError(t, err)
+}
+
 func TestDisplayWeeklyTeamReport(t *testing.T) {
 	d := time.Date(2018, 11, 10, 10, 0, 0, 0, time.Local)
 	monkey.Patch(time.Now, func() time.Time { return d })
@@ -611,6 +704,38 @@ func TestProcessStandup(t *testing.T) {
 	assert.NoError(t, err)
 	bot.CP.CollectorEnabled = true
 
+	//new member in channel, created after channel standup time
+	//and shouldn't be tracked
+	channel, err := bot.DB.CreateChannel(model.Channel{
+		ChannelID:   "cid",
+		ChannelName: "channel",
+	})
+	//set channel standup time
+	timestamp := time.Date(2019, 01, 01, 10, 0, 0, 0, time.UTC).Unix()
+	//please note that
+	//in some PCs when calculate inverse value time.Unix(timestamp, 0) in MemberShouldBeTracked function
+	//the hour may be not 10
+	err = bot.DB.CreateStandupTime(timestamp, channel.ChannelID)
+	assert.NoError(t, err)
+	d := time.Date(2019, 01, 01, 20, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d })
+	//created 2019-01-01 20:00
+	//standup time at 10:00
+	member2, err := bot.DB.CreateChannelMember(model.ChannelMember{
+		UserID:        "testUserID2",
+		ChannelID:     channel.ChannelID,
+		RoleInChannel: "developer",
+	})
+	assert.NoError(t, err)
+	d2 := time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC)
+	monkey.Patch(time.Now, func() time.Time { return d2 })
+
+	text2, points2 := r.processStandup(member2)
+	assert.Equal(t, "", text2)
+	assert.Equal(t, 1, points2)
+
+	monkey.UnpatchAll()
+
 	member, err := bot.DB.CreateChannelMember(model.ChannelMember{
 		UserID:        "testUserID",
 		ChannelID:     "testChannelID",
@@ -622,8 +747,12 @@ func TestProcessStandup(t *testing.T) {
 	assert.Equal(t, "", text)
 	assert.Equal(t, 1, points)
 
-	bot.DB.DeleteChannelMember(member.UserID, member.ChannelID)
-
+	err = bot.DB.DeleteChannel(channel.ID)
+	assert.NoError(t, err)
+	err = bot.DB.DeleteChannelMember(member.UserID, member.ChannelID)
+	assert.NoError(t, err)
+	err = bot.DB.DeleteChannelMember(member2.UserID, member2.ChannelID)
+	assert.NoError(t, err)
 }
 
 func TestSweep(t *testing.T) {

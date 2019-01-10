@@ -513,13 +513,73 @@ func (m *MySQL) MemberHasTimeTable(id int64) bool {
 	return true
 }
 
+//ReturnDayFromTimetable return days from timetable where day is not 0
+func (m *MySQL) ReturnDayFromTimetable(tt model.TimeTable) (days map[string]int64) {
+	days = make(map[string]int64)
+	if tt.Monday != 0 {
+		days["Monday"] = tt.Monday
+	}
+	if tt.Tuesday != 0 {
+		days["Tuesday"] = tt.Tuesday
+	}
+	if tt.Wednesday != 0 {
+		days["Wednesday"] = tt.Wednesday
+	}
+	if tt.Thursday != 0 {
+		days["Thursday"] = tt.Thursday
+	}
+	if tt.Friday != 0 {
+		days["Friday"] = tt.Friday
+	}
+	if tt.Saturday != 0 {
+		days["Saturday"] = tt.Saturday
+	}
+	if tt.Sunday != 0 {
+		days["Sunday"] = tt.Sunday
+	}
+	return days
+}
+
 //MemberShouldBeTracked returns true if member should be tracked
 func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
-	//todo 428
+	logrus.Info("In MemberShouldBeTracked")
+	//if channel member joined after standup deadline, bot shouldn't tracked user, and shouldn't mentioned his standup next day in report
+	//channel member need to find channel members's created date
+	chMember, err := m.SelectChannelMember(id)
+	if err != nil {
+		logrus.Errorf("mysql.MemberShouldBeTracked: SelectChannelMember failed: %v", err)
+		return false
+	}
+	//channel need to find standup time of channel
+	channel, err := m.SelectChannel(chMember.ChannelID)
+	if err != nil {
+		logrus.Errorf("mysql.MemberShouldBeTracked: SelectChannel failed: %v", err)
+		return false
+	}
+	//channel member created date
+	createdYear, createdMon, createdDay := chMember.Created.Date()
+	createdHour := chMember.Created.Hour()
+	createdMin := chMember.Created.Minute()
+	//requested date
+	dateYear, dateMon, dateDay := date.Date()
+	//channel's standup time
+	//if channel members's created time after channel's standuptime then don't track
+	standupTime := time.Unix(channel.StandupTime, 0)
+	standupHour := standupTime.Hour()
+	standupMin := standupTime.Minute()
+
 	var tt model.TimeTable
-	err := m.conn.Get(&tt, "SELECT * FROM `timetables` WHERE channel_member_id=?", id)
+	err = m.conn.Get(&tt, "SELECT * FROM `timetables` WHERE channel_member_id=?", id)
 	if err != nil {
 		logrus.Infof("User does not have a timetable: %v", err)
+		//channel member doesn't has timetable and joined after channel standup time
+		if createdHour > standupHour {
+			return false
+		} else if createdHour == standupHour {
+			if createdMin > standupMin {
+				return false
+			}
+		}
 		return true
 	}
 	if tt.IsEmpty() {
@@ -527,6 +587,24 @@ func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
 		return false
 	}
 	logrus.Infof("MemberHasTimeTable ID:%v not empty", tt.ID)
+	//channel member has individual timetable
+	weekday := date.Weekday().String()
+	days := m.ReturnDayFromTimetable(tt)
+	if value, in := days[weekday]; in {
+		stTime := time.Unix(value, 0)
+		stTimeHours := stTime.Hour()
+		stTimeMin := stTime.Minute()
+		//channel member has timetable and joined after standup time
+		if createdYear == dateYear && createdMon == dateMon && createdDay == dateDay {
+			if createdHour > stTimeHours {
+				return false
+			} else if createdHour == stTimeHours {
+				if createdMin > stTimeMin {
+					return false
+				}
+			}
+		}
+	}
 
 	day := fmt.Sprintf("%v", date.Weekday())
 	if tt.ShowDeadlineOn(strings.ToLower(day)) != 0 {
