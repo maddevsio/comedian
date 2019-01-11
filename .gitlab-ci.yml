@@ -28,9 +28,10 @@ deploy:
     - ssh-keyscan -H $DEV_DEPLOY_SERVER_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
+    - scp docker-deploy/docker-compose.yml gitlab@$DEV_DEPLOY_SERVER_IP:/opt/docker/comedian/
     - ssh gitlab@$DEV_DEPLOY_SERVER_IP "$DEPLOY_COMMAND"
     - ssh-agent -k
   when:
     manual
   only:
-    - deploy
+    - master

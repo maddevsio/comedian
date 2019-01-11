@@ -24,7 +24,7 @@ services:
         tag: "docker/comedian-db"
 
   comedian:
-    image: anatoliyfedorenko/comedian:2.59
+    image: registry.gitlab.com/team-monitoring/comedian:latest
     restart: on-failure
     links:
       - db:db
@@ -51,7 +51,7 @@ services:
 
 
   comedian_nappy:
-    image: anatoliyfedorenko/comedian:2.59
+    image: registry.gitlab.com/team-monitoring/comedian:latest
     restart: on-failure
     links:
       - db:db
@@ -81,7 +81,7 @@ services:
         tag: "docker/comedian-nappy"
 
   comedian_busgovn:
-    image: anatoliyfedorenko/comedian:2.59
+    image: registry.gitlab.com/team-monitoring/comedian:latest
     restart: on-failure
     links:
       - db:db
@@ -111,7 +111,7 @@ services:
         tag: "docker/comedian-busgovn"
 
   comedian_lumici:
-    image: anatoliyfedorenko/comedian:2.59
+    image: registry.gitlab.com/team-monitoring/comedian:latest
     restart: on-failure
     links:
       - db:db
