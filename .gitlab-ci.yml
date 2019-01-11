@@ -29,7 +29,7 @@ deploy:
     - chmod 644 ~/.ssh/known_hosts
   script:
     - scp docker-deploy/docker-compose.yml gitlab@$DEPLOY_SERVER_IP:/opt/docker/comedian/
-    - ssh gitlab@$DEV_DEPLOY_SERVER_IP "$DEPLOY_COMMAND"
+    - ssh gitlab@$DEPLOY_SERVER_IP "$DEPLOY_COMMAND"
     - ssh-agent -k
   when:
     manual
