@@ -4,4 +4,5 @@
 comedian
 .env
 /docker/
-docker-compose.yml
+./docker-deploy/configs/nginx/certs/*
+./docker-deploy/.env
