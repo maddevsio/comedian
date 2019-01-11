@@ -128,7 +128,7 @@ func (ba *BotAPI) generateHelpText() HelpText {
 		DefaultMessage: &i18n.Message{
 			ID:          "RemoveTimetable",
 			Description: "Displays usage of add_timetable command",
-			Other:       "To remove individual standup schedule for members use `remove_timetable` command and tag members. Example: `remove_timetable @user1 @user2`  ",
+			Other:       "To remove individual standup schedule for members use `remove_timetable` command and tag members. Example: `remove_timetable @user1 @user2` ",
 		},
 	})
 	reportOnUser := localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -152,21 +152,21 @@ func (ba *BotAPI) generateHelpText() HelpText {
 			Other:       "To view standup for user in project use `report_on_user_in_project` command. Tag user and then project, then insert date from and date to you want to view your report. Example: `report_on_user_in_project @user #projectName 2017-01-01 2017-01-31`",
 		},
 	})
-
+	sep := "- "
 	ht := HelpText{
 		TextHead:              textHead + "\n",
-		AddMembers:            addMembers + "\n",
-		ShowMembers:           showMembers + "\n",
-		RemoveMembers:         removeMembers + "\n",
-		AddDeadline:           addDeadline + "\n",
-		ShowDeadline:          showDeadline + "\n",
-		RemoveDeadline:        removeDeadline + "\n",
-		AddTimetable:          addTimetable + "\n",
-		ShowTimetable:         showTimetable + "\n",
-		RemoveTimetable:       removeTimetable + "\n",
-		ReportOnUser:          reportOnUser + "\n",
-		ReportOnProject:       reportOnProject + "\n",
-		ReportOnUserInProject: reportOnUserInProject + "\n",
+		AddMembers:            sep + addMembers + "\n",
+		ShowMembers:           sep + showMembers + "\n",
+		RemoveMembers:         sep + removeMembers + "\n",
+		AddDeadline:           sep + addDeadline + "\n",
+		ShowDeadline:          sep + showDeadline + "\n",
+		RemoveDeadline:        sep + removeDeadline + "\n",
+		AddTimetable:          sep + addTimetable + "\n",
+		ShowTimetable:         sep + showTimetable + "\n",
+		RemoveTimetable:       sep + removeTimetable + "\n",
+		ReportOnUser:          sep + reportOnUser + "\n",
+		ReportOnProject:       sep + reportOnProject + "\n",
+		ReportOnUserInProject: sep + reportOnUserInProject + "\n",
 	}
 	return ht
 }
