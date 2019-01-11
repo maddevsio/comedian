@@ -48,6 +48,10 @@ services:
       - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
     depends_on:
       - db
+    logging:
+      driver: syslog
+      options:
+        tag: "docker/comedian"
 
 
   comedian_nappy:
