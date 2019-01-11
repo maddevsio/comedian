@@ -256,7 +256,7 @@ func (b *Bot) handleMessage(msg *slack.MessageEvent, botUserID string) {
 			})
 			if err != nil {
 				logrus.Errorf("CreateStandup failed: %v", err)
-				b.SendUserMessage(b.CP.ManagerSlackUserID, errorReportToManager)
+				b.SendUserMessage(b.CP.ManagerSlackUserID, fmt.Sprintf(errorReportToManager, err))
 				b.SendEphemeralMessage(msg.Channel, msg.User, couldNotSaveStandup)
 				return
 			}
@@ -566,26 +566,64 @@ func (b *Bot) recordBug(channelID, userID, bug string) {
 	user, err := b.DB.SelectUser(userID)
 	if err != nil {
 		logrus.Error(err)
-		return
+		//if user doesn't exist, create the user
+		users, err := b.API.GetUsers()
+		if err != nil {
+			logrus.Errorf("recordBug: API.GetUsers failed: ", err)
+			return
+		}
+		var newUser slack.User
+		for _, u := range users {
+			if u.ID == userID {
+				newUser.ID = u.ID
+				newUser.Name = u.Name
+				newUser.RealName = u.RealName
+				break
+			}
+		}
+		if newUser.ID != "" {
+			nUser, err := b.DB.CreateUser(model.User{
+				UserID:   newUser.ID,
+				UserName: newUser.Name,
+				RealName: newUser.RealName,
+				Role:     "",
+			})
+			if err != nil {
+				errorCreateUser := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "ErrorCreateUser",
+						Description: "Displays a message if occures error creating user",
+						Other:       "Couldn't save user because of following error: ",
+					},
+				})
+				errorCreateUser += err.Error()
+				b.SendUserMessage(b.CP.ManagerSlackUserID, errorCreateUser)
+				return
+			}
+			user = nUser
+			logrus.Infof("Successfully created user: %v", newUser.RealName)
+		} else {
+			return
+		}
 	}
-	channel, err := b.API.GetChannelInfo(channelID)
 
+	channel, err := b.API.GetChannelInfo(channelID)
 	if err != nil {
+		//message from private channel
 		logrus.Error(err)
-		bugRecordedWithError := localizer.MustLocalize(&i18n.LocalizeConfig{
+		bugRecordedInPrivateChannel := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
-				ID:          "BugRecorded",
+				ID:          "BugRecordedInPrivateChannel",
 				Description: "Displays a message when user send a bug (with error in API.GetChannelInfo)",
-				Other:       "{{.user}} in {{.channel}} reported a bug!",
+				Other:       "{{.user}} from private channel reported a bug!",
 			},
 			TemplateData: map[string]interface{}{
-				"user":    user,
-				"channel": channel,
+				"user": user.RealName,
 			},
 		})
-		bugRecordedWithError += "\n"
-		bugRecordedWithError += bug
-		b.SendUserMessage(b.CP.ManagerSlackUserID, bugRecordedWithError)
+		bugRecordedInPrivateChannel += "\n"
+		bugRecordedInPrivateChannel += bug
+		b.SendUserMessage(b.CP.ManagerSlackUserID, bugRecordedInPrivateChannel)
 		return
 	}
 
