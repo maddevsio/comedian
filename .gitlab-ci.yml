@@ -1,5 +1,6 @@
 stages:
   - build
+  - deploy
 services:
   - docker:dind
 
@@ -13,4 +14,24 @@ build:
     - docker push registry.gitlab.com/team-monitoring/comedian
   only:
     - master
+  when:
+    manual
 
+deploy:
+  stage: deploy
+  image: halfb00t/alpine:3.7
+  before_script:
+    - eval "$(ssh-agent -s)"
+    - echo "$DEPLOY_SERVER_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $DEV_DEPLOY_SERVER_IP >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - scp docker-deploy/docker-compose.yml gitlab@$DEV_DEPLOY_SERVER_IP:/opt/docker/comedian/
+    - ssh gitlab@$DEV_DEPLOY_SERVER_IP "$DEPLOY_COMMAND"
+    - ssh-agent -k
+  when:
+    manual
+  only:
+    - master
