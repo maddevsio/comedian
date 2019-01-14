@@ -147,7 +147,7 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 			exist = append(exist, u)
 			continue
 		}
-		added = append(exist, u)
+		added = append(added, u)
 	}
 
 	if len(failed) != 0 {
