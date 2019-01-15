@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sirupsen/logrus"
 )
 
 // Config struct used for configuration of app with env variables
@@ -23,5 +24,8 @@ func Get() (Config, error) {
 	if err != nil {
 		return c, err
 	}
+
+	logrus.Info(c)
+
 	return c, nil
 }
