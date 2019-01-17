@@ -573,11 +573,13 @@ func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
 	if err != nil {
 		logrus.Infof("User does not have a timetable: %v", err)
 		//channel member doesn't has timetable and joined after channel standup time
-		if createdHour > standupHour {
-			return false
-		} else if createdHour == standupHour {
-			if createdMin > standupMin {
+		if createdYear == dateYear && createdMon == dateMon && createdDay == dateDay {
+			if createdHour > standupHour {
 				return false
+			} else if createdHour == standupHour {
+				if createdMin > standupMin {
+					return false
+				}
 			}
 		}
 		return true
