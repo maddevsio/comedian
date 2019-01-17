@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
@@ -14,9 +13,9 @@ import (
 
 //CollectorInfo used to parse sprint data from Collector
 type CollectorInfo struct {
-	SprintURL   string    `json:"link_to_sprint"`
-	SprintStart time.Time `json:"started"`
-	SprintEnd   time.Time `json:"end"`
+	SprintURL   string `json:"link_to_sprint"`
+	SprintStart string `json:"started"`
+	SprintEnd   string `json:"end"`
 	Tasks       []struct {
 		Issue    string `json:"title"`
 		Status   string `json:"status"`
