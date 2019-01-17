@@ -24,13 +24,13 @@ type CollectorInfo struct {
 }
 
 //GetSprintData sends api request to collector service and returns Info object
-func GetSprintData(bot *bot.Bot, channel string) (sprintInfo CollectorInfo, err error) {
+func GetSprintData(bot *bot.Bot) (sprintInfo CollectorInfo, err error) {
 	var sprintData CollectorInfo
 	if bot.CP.CollectorEnabled == false {
 		return sprintData, err
 	}
 	var collectorURL string
-	collectorURL = fmt.Sprintf("%v/rest/api/v1/projects/%v/sprint/detail/", bot.Conf.CollectorURL, channel)
+	collectorURL = fmt.Sprintf("%v/rest/api/v1/projects/%v/sprint/detail/", bot.Conf.CollectorURL, bot.TeamDomain)
 	req, err := http.NewRequest("GET", collectorURL, nil)
 	if err != nil {
 		return sprintInfo, err
