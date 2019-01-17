@@ -80,6 +80,8 @@ type (
 		ReminderRepeatsMax int    `db:"reminder_repeats_max" json:"reminder_repeats_max" schema:"reminder_repeats_max"`
 		ReminderTime       int64  `db:"reminder_time" json:"reminder_time" schema:"reminder_time"`
 		CollectorEnabled   bool   `db:"collector_enabled" json:"collector_enabled" schema:"collector_enabled"`
+		SprintReportTurn   bool   `db:"sprint_report_on" json:"sprint_report_on" schema:"sprint_report_on"`
+		SprintReportTime   string `db:"sprint_report_time" json:"sprint_report_time" schema:"sprint_report_time"`
 	}
 )
 
