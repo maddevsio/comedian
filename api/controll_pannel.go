@@ -21,6 +21,16 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 func (ba *BotAPI) renderControllPannel(c echo.Context) error {
 
 	logrus.Info(ba.Bot.CP)
+	logrus.Info("ba.Bot.CP.SprintReportChannel: ", ba.Bot.CP.SprintReportChannel)
+	logrus.Info("ba.Bot.CP.SprintReportTime: ", ba.Bot.CP.SprintReportTime)
+	logrus.Info("ba.Bot.CP.SprintReportTurn: ", ba.Bot.CP.SprintReportTurn)
+	logrus.Info("ba.Bot.CP.Monday: ", ba.Bot.CP.Monday)
+	logrus.Info("ba.Bot.CP.Tuesday: ", ba.Bot.CP.Tuesday)
+	logrus.Info("ba.Bot.CP.Wednesday: ", ba.Bot.CP.Wednesday)
+	logrus.Info("ba.Bot.CP.Thursday: ", ba.Bot.CP.Thursday)
+	logrus.Info("ba.Bot.CP.Friday: ", ba.Bot.CP.Friday)
+	logrus.Info("ba.Bot.CP.Saturday: ", ba.Bot.CP.Saturday)
+	logrus.Info("ba.Bot.CP.Sunday: ", ba.Bot.CP.Sunday)
 
 	data := map[string]interface{}{
 		"manager_slack_user_id": ba.Bot.CP.ManagerSlackUserID,
@@ -31,6 +41,16 @@ func (ba *BotAPI) renderControllPannel(c echo.Context) error {
 		"reminder_repeats_max":  ba.Bot.CP.ReminderRepeatsMax,
 		"language":              ba.Bot.CP.Language,
 		"collector_enabled":     ba.Bot.CP.CollectorEnabled,
+		"sprint_report_turn":    ba.Bot.CP.SprintReportTurn,
+		"sprint_report_time":    ba.Bot.CP.SprintReportTime,
+		"sprint_report_channel": ba.Bot.CP.SprintReportChannel,
+		"monday":                ba.Bot.CP.Monday,
+		"tuesday":               ba.Bot.CP.Tuesday,
+		"wednesday":             ba.Bot.CP.Wednesday,
+		"thursday":              ba.Bot.CP.Thursday,
+		"friday":                ba.Bot.CP.Friday,
+		"saturday":              ba.Bot.CP.Saturday,
+		"sunday":                ba.Bot.CP.Sunday,
 	}
 	return c.Render(http.StatusOK, "admin", data)
 }
@@ -66,6 +86,11 @@ func (ba *BotAPI) updateConfig(c echo.Context) error {
 		logrus.Error(err)
 		return err
 	}
+	srt, err := strconv.ParseBool(form.Get("sprint_report_turn"))
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
 	cp.NotifierInterval = ni
 	cp.ManagerSlackUserID = form.Get("manager_slack_user_id")
 	cp.ReportingChannel = form.Get("reporting_channel")
@@ -74,6 +99,16 @@ func (ba *BotAPI) updateConfig(c echo.Context) error {
 	cp.ReminderRepeatsMax = rrm
 	cp.ReminderTime = rt
 	cp.CollectorEnabled = ce
+	cp.SprintReportTurn = srt
+	cp.SprintReportTime = form.Get("sprint_report_time")
+	cp.SprintReportChannel = form.Get("sprint_report_channel")
+	cp.Monday = form.Get("monday")
+	cp.Tuesday = form.Get("tuesday")
+	cp.Wednesday = form.Get("wednesday")
+	cp.Thursday = form.Get("thursday")
+	cp.Friday = form.Get("friday")
+	cp.Saturday = form.Get("saturday")
+	cp.Sunday = form.Get("sunday")
 
 	_, err = ba.Bot.DB.UpdateControllPannel(*cp)
 	if err != nil {
