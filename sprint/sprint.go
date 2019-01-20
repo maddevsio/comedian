@@ -24,15 +24,17 @@ type CollectorInfo struct {
 }
 
 //GetSprintData sends api request to collector service and returns Info object
-func GetSprintData(bot *bot.Bot) (sprintInfo CollectorInfo, err error) {
+func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err error) {
+	logrus.Info("Get sprint data from collector")
 	var sprintData CollectorInfo
 	if bot.CP.CollectorEnabled == false {
-		return sprintData, err
+		return sprintData, errors.New("Collector disabled")
 	}
 	var collectorURL string
-	collectorURL = fmt.Sprintf("%v/rest/api/v1/projects/%v/sprint/detail/", bot.Conf.CollectorURL, bot.TeamDomain)
+	collectorURL = fmt.Sprintf("%v/rest/api/v1/projects/%v/%v/sprint/detail/", bot.Conf.CollectorURL, bot.TeamDomain, project)
 	req, err := http.NewRequest("GET", collectorURL, nil)
 	if err != nil {
+		logrus.Errorf("sprint: NewRequest failed: %v", err)
 		return sprintInfo, err
 	}
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", bot.Conf.CollectorToken))
