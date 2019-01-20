@@ -618,8 +618,8 @@ func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
 
 func (m *MySQL) CreateControllPannel() (model.ControllPannel, error) {
 	_, err := m.conn.Exec(
-		"INSERT INTO `controll_pannel` (notifier_interval, manager_slack_user_id, reporting_channel, report_time, language, reminder_repeats_max, reminder_time, collector_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		30, "", "", "10:00", "en_US", 3, int64(10), false)
+		"INSERT INTO `controll_pannel` (notifier_interval, manager_slack_user_id, reporting_channel, report_time, language, reminder_repeats_max, reminder_time, collector_enabled,sprint_report_status,sprint_report_time,sprint_report_channel,sprint_weekdays) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		30, "", "", "10:00", "en_US", 3, int64(10), false, false, "9:00", "", "")
 	if err != nil {
 		return model.ControllPannel{}, err
 	}
