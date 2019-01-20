@@ -1,9 +1,12 @@
 package sprint
 
 import (
+	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
+	"gitlab.com/team-monitoring/comedian/utils"
 )
 
 //ReporterSprint is used to send report about sprint progress
@@ -30,12 +33,42 @@ func (r *ReporterSprint) Start() {
 	}
 }
 
-//bot.CP.Turn
-//bot.CP.PeportTime
-//bot.CP.Weekdays
-//bot.CP.FinStatus
-
 //SendSprintReport send report about sprint
 func (r *ReporterSprint) SendSprintReport() {
-
+	if r.bot.CP.SprintReportStatus {
+		sprintWeekdays := strings.Split(r.bot.CP.SprintWeekdays, ",")
+		weekdays := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
+		var sprintdays []string
+		if len(sprintWeekdays) == 7 {
+			for i := 0; i < 7; i++ {
+				if sprintWeekdays[i] == "on" {
+					sprintdays = append(sprintdays, weekdays[i])
+				}
+			}
+		}
+		if bot.InList(time.Now().Weekday().String(), sprintdays) {
+			hour, minute, err := utils.FormatTime(r.bot.CP.SprintReportTime)
+			if err != nil {
+				logrus.Errorf("sprint_reporter: Error parsing report time: %v", err)
+				return
+			}
+			if time.Now().Hour() == hour && time.Now().Minute() == minute {
+				channels, err := r.bot.DB.GetAllChannels()
+				if err != nil {
+					logrus.Errorf("sprint.GetAllChannels failed: %v", err)
+					return
+				}
+				for _, channel := range channels {
+					collectorInfo, err := GetSprintData(r.bot, channel.ChannelName)
+					if err != nil {
+						logrus.Errorf("sprint_reporter: GetSprintData failed: %v", err)
+						continue
+					}
+					activeSprint := MakeActiveSprint(collectorInfo)
+					message := MakeMessage(r.bot, activeSprint)
+					r.bot.SendMessage(r.bot.CP.SprintReportChannel, message, nil)
+				}
+			}
+		}
+	}
 }
