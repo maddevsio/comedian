@@ -80,16 +80,10 @@ type (
 		ReminderRepeatsMax  int    `db:"reminder_repeats_max" json:"reminder_repeats_max" schema:"reminder_repeats_max"`
 		ReminderTime        int64  `db:"reminder_time" json:"reminder_time" schema:"reminder_time"`
 		CollectorEnabled    bool   `db:"collector_enabled" json:"collector_enabled" schema:"collector_enabled"`
-		SprintReportTurn    bool   `db:"sprint_report_turn" json:"sprint_report_turn" schema:"sprint_report_turn"`
+		SprintReportStatus  bool   `db:"sprint_report_status" json:"sprint_report_status" schema:"sprint_report_status"`
 		SprintReportTime    string `db:"sprint_report_time" json:"sprint_report_time" schema:"sprint_report_time"`
 		SprintReportChannel string `db:"sprint_report_channel" json:"sprint_report_channel" schema:"sprint_report_channel"`
-		Monday              string `db:"monday" json:"monday" schema: "monday"`
-		Tuesday             string `db:"tuesday" json:"tuesday" schema: "tuesday"`
-		Wednesday           string `db:"wednesday" json:"wednesday" schema: "wednesday"`
-		Thursday            string `db:"thursday" json:"thursday" schema: "thursday"`
-		Friday              string `db:"friday" json:"friday" schema: "friday"`
-		Saturday            string `db:"saturday" json:"saturday" schema: "saturday"`
-		Sunday              string `db:"sunday" json:"sunday" schema: "sunday"`
+		SprintWeekdays      string `db:"sprint_weekdays" json:"sprint_weekdays" schema:"sprint_weekdays"`
 	}
 )
 
