@@ -25,13 +25,14 @@ type CollectorInfo struct {
 
 //GetSprintData sends api request to collector service and returns Info object
 func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err error) {
-	logrus.Info("Get sprint data from collector")
+	logrus.Infof("Get sprint data from collector. Project: %v", project)
 	var sprintData CollectorInfo
 	if bot.CP.CollectorEnabled == false {
 		return sprintData, errors.New("Collector disabled")
 	}
 	var collectorURL string
 	collectorURL = fmt.Sprintf("%v/rest/api/v1/projects/%v/%v/sprint/detail/", bot.Conf.CollectorURL, bot.TeamDomain, project)
+	logrus.Info("collectorURL: ", collectorURL)
 	req, err := http.NewRequest("GET", collectorURL, nil)
 	if err != nil {
 		logrus.Errorf("sprint: NewRequest failed: %v", err)
@@ -44,13 +45,14 @@ func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err 
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		logrus.Errorf("sprint: response status code - %v. Could not get data", res.StatusCode)
+		logrus.Errorf("sprint: response status code - %v. Could not get data. project: %v", res.StatusCode, project)
 		return sprintInfo, errors.New("could not get data on this request")
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		logrus.Errorf("sprint: ioutil.ReadAll failed: %v", err)
 	}
+	logrus.Infof("Response body %v", body)
 	json.Unmarshal(body, &sprintInfo)
 	return sprintInfo, err
 }
