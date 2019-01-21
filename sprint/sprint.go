@@ -52,7 +52,6 @@ func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err 
 	if err != nil {
 		logrus.Errorf("sprint: ioutil.ReadAll failed: %v", err)
 	}
-	logrus.Infof("Response body %v", body)
 	json.Unmarshal(body, &sprintInfo)
 	return sprintInfo, err
 }
