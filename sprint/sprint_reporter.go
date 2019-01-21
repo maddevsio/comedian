@@ -36,6 +36,7 @@ func (r *ReporterSprint) Start() {
 //SendSprintReport send report about sprint
 func (r *ReporterSprint) SendSprintReport() {
 	if r.bot.CP.SprintReportStatus {
+		logrus.Info("SprintReportStatus true")
 		sprintWeekdays := strings.Split(r.bot.CP.SprintWeekdays, ",")
 		weekdays := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
 		var sprintdays []string
@@ -46,6 +47,7 @@ func (r *ReporterSprint) SendSprintReport() {
 				}
 			}
 		}
+		logrus.Info("Sprint weekdays: ", sprintdays)
 		if bot.InList(time.Now().Weekday().String(), sprintdays) {
 			hour, minute, err := utils.FormatTime(r.bot.CP.SprintReportTime)
 			if err != nil {
@@ -59,12 +61,15 @@ func (r *ReporterSprint) SendSprintReport() {
 					return
 				}
 				for _, channel := range channels {
+					logrus.Infof("GetSprintData by channel: %v", channel.ChannelName)
 					collectorInfo, err := GetSprintData(r.bot, channel.ChannelName)
 					if err != nil {
 						logrus.Errorf("sprint_reporter: GetSprintData failed: %v", err)
 						continue
 					}
+					logrus.Info("collectorInfo: ", collectorInfo)
 					activeSprint := MakeActiveSprint(collectorInfo)
+					logrus.Info("activeSprint: ", activeSprint)
 					message := MakeMessage(r.bot, activeSprint)
 					r.bot.SendMessage(r.bot.CP.SprintReportChannel, message, nil)
 				}
