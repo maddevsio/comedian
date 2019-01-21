@@ -313,7 +313,7 @@ other = "<@{{.user}}>, сроки пропущены! Пожалуйста, на
 
 [TagNonReporters]
 description = "Display message about those who did not submit standup"
-one = "{{.user}}, у тебя пропущен дедлайн и ты до сих пор не сдал стендап!"
+one = "{{.user}}, у тебя пропущен дедлайн и до сих пор нет стендапа!"
 few = "{{.users}}, у вас пропущен дедлайн и вы до сих пор не сдали стендап!"
 many = "{{.users}}, у вас пропущен дедлайн и вы до сих пор не сдали стендап!"
 other = "{{.users}}, у вас пропущен дедлайн и вы до сих пор не сдали стендап!"
@@ -536,3 +536,47 @@ Other = "Чтобы посмотреть отчет по пользовател�
 [ErrorCreateUser]
 Description = "Displays a message if occures an error creating user"
 Other = "Произошла ошибка при сохранении пользователя: "
+
+[SprintProgressPercent]
+Description = "Displays header message about sprint progress"
+Other = "Спринт завершен на {{.percent}}%"
+
+[sprintTotalDays]
+Description = "Displays total days of sprint"
+one = "день"
+few = "дня"
+many = "дней"
+other = "дней"
+
+[sprintPassedDays]
+Description = "Displays total days of sprint"
+one = "день"
+few = "дня"
+many = "дней"
+other = "дней"
+
+[sprintLeftDays]
+Description = "Displays total days of sprint"
+one = "день"
+few = "дня"
+many = "дней"
+other = "дней"
+
+[SprintDays]
+Description = "Displays message about sprint duration"
+Other = "Спринт длится {{.totalDays}} {{.td}}, прошло {{.passedDays}} {{.pd}}, осталось {{.leftDays}} {{.ld}}."
+
+[InProgressTasksTitle]
+Description = "Displays title of message about in progress issues"
+one = "In progress таск : "
+few = "In progress таски: "
+many = "In progress таски: "
+other = "In progress таски: "
+
+[InProgressTask]
+Description = "Displays message about in progress tasks"
+Other = "{{.issue}} - {{.assignee}};"
+
+[UrlTitle]
+Description = "Displays url of sprint"
+Other = "Ссылка на спринт: {{.url}}"

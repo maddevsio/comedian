@@ -93,6 +93,67 @@
                     </div>
                   </div>
             </div>
+
+            <hr class="mb-2">
+
+            <div class="row">
+              <div class="col-md-3 mb-2">
+                <label for="sprint_report_status">Sprint report status</label>
+                <select class="custom-select d-block w-100" name="sprint_report_status" id="sprint_report_status" required>
+                  <option value="false"  placeholder="">Choose...</option>
+                  <option value="true" >Turn on</option>
+                  <option value="false" >Turn off</option>
+                </select>
+                <div class="invalid-feedback">
+                  Please select sprint reporting state!
+                </div>
+              </div>
+              <div class="col-md-3 mb-2">
+                  <label for="sprint_report_time">Sprint report time</label>
+                  <input type="text" class="form-control" id="sprint_report_time" name="sprint_report_time" value={{.sprint_report_time}} placeholder="" required>
+                  <div class="invalid-feedback">
+                          Sprint reporting time required.
+                  </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="sprint_report_channel">Sprint report channel</label>
+                    <input type="text" class="form-control" id="sprint_report_channel" name="sprint_report_channel" value={{.sprint_report_channel}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Sprint reporting channel required.
+                    </div>
+                  </div>
+                <div class="col-md-3 mb-2">
+                    <label for="sprint_report_turn">Sprint report weekdays</label>
+                <div>
+                  <input type="checkbox" id="monday" name="monday" {{.monday}}>
+                  <label for="monday">Monday</label>
+                </div>
+                <div>
+                  <input type="checkbox" id="tuesday" name="tuesday" {{.tuesday}}>
+                  <label for="tuesday">Tuesday</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="wednesday" name="wednesday" {{.wednesday}}>
+                    <label for="wednesday">Wednesday</label>
+                  </div>
+                  <div>
+                      <input type="checkbox" id="thursday" name="thursday" {{.thursday}}>
+                      <label for="thursday">Thursday</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="friday" name="friday" {{.friday}}>
+                        <label for="friday">Friday</label>
+                      </div>
+                      <div>
+                          <input type="checkbox" id="saturday" name="saturday" {{.saturday}}>
+                          <label for="saturday">Saturday</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="sunday" name="sunday" {{.sunday}}>
+                            <label for="sunday">Sunday</label>
+                          </div>
+              </div>
+            </div>
             
             <hr class="mb-2">
             

@@ -7,6 +7,7 @@ import (
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/notifier"
 	"gitlab.com/team-monitoring/comedian/reporting"
+	"gitlab.com/team-monitoring/comedian/sprint"
 )
 
 func main() {
@@ -37,6 +38,9 @@ func main() {
 		log.Fatal(err)
 	}
 	go func() { log.Fatal(notifier.Start()) }()
+
+	sreporter := sprint.NewReporterSprint(bot)
+	go func() { sreporter.Start() }()
 
 	bot.Run()
 }

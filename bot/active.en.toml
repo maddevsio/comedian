@@ -498,3 +498,39 @@ Other = "To view standup for user in project use `report_on_user_in_project` com
 [ErrorCreateUser]
 Description = "Displays a message if occures an error creating user"
 Other = "Couldn't save user because of following error: "
+
+[SprintProgressPercent]
+Description = "Displays header message about sprint progress"
+Other = "Sprint completed: {{.percent}}%"
+
+[sprintTotalDays]
+Description = "Displays total days of sprint"
+One = "day"
+Other = "days"
+
+[sprintPassedDays]
+Description = "Displays total days of sprint"
+One = "day"
+Other = "days"
+
+[sprintLeftDays]
+Description = "Displays total days of sprint"
+One = "day"
+Other = "days"
+
+[SprintDays]
+Description = "Displays message about sprint duration"
+Other = "Sprint lasts {{.totalDays}} {{.td}},{{.passedDays}} {{.pd}} passed, {{.leftDays}} {{.ld}} left."
+
+[InProgressTasksTitle]
+Description = "Displays title of message about in progress issues"
+One = "In progress task: "
+Other = "In progress tasks: "
+
+[InProgressTask]
+Description = "Displays message about in progress tasks"
+Other = "{{.issue}} - {{.assignee}};"
+
+[UrlTitle]
+Description = "Displays url of sprint"
+Other = "URL: {{.url}}"
