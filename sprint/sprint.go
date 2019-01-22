@@ -11,6 +11,11 @@ import (
 	"gitlab.com/team-monitoring/comedian/bot"
 )
 
+//Message used to parse response from Collector in cases of error
+type Message struct {
+	Message string `json:"message"`
+}
+
 //CollectorInfo used to parse sprint data from Collector
 type CollectorInfo struct {
 	SprintURL   string `json:"link_to_sprint"`
@@ -20,6 +25,7 @@ type CollectorInfo struct {
 		Issue    string `json:"title"`
 		Status   string `json:"status"`
 		Assignee string `json:"assignee"`
+		Link     string `json:"link"`
 	} `json:"issues"`
 }
 
@@ -45,6 +51,22 @@ func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err 
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
+		if res.StatusCode == 404 {
+			var message Message
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				logrus.Errorf("sprint: ioutil.ReadAll failed: %v", err)
+			}
+			json.Unmarshal(body, &message)
+			if message.Message == "Project not found" {
+				return sprintInfo, errors.New("could not get data on this request")
+			} else if message.Message == "Project does not have a sprints" {
+				return sprintInfo, errors.New("could not get data on this request")
+			} else if message.Message == "Project does not have the active sprints" {
+				//send message about project hasn't active sprint
+				return sprintInfo, errors.New("could not get data on this request")
+			}
+		}
 		logrus.Errorf("sprint: response status code - %v. Could not get data. project: %v", res.StatusCode, project)
 		return sprintInfo, errors.New("could not get data on this request")
 	}
