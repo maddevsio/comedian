@@ -203,3 +203,33 @@ services:
       driver: syslog
       options:
         tag: "docker/comedian-comedian-testing"
+
+comedian_enactusauca:
+    image: registry.gitlab.com/team-monitoring/comedian:latest
+    restart: on-failure
+    links:
+      - db:db
+    networks:
+      - comedian_comedian
+    expose: 
+      - 8080
+    environment:
+      - TZ=Asia/Bishkek
+      - COMEDIAN_SLACK_TOKEN=${ENACTUSAUCA_COMEDIAN_SLACK_TOKEN}
+      - COMEDIAN_DATABASE=${ENACTUSAUCA_COMEDIAN_DATABASE}
+      - COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
+      - COMEDIAN_COLLECTOR_TOKEN=${ENACTUSAUCA_COMEDIAN_COLLECTOR_TOKEN}
+      - COMEDIAN_COLLECTOR_URL=${ENACTUSAUCA_COMEDIAN_COLLECTOR_URL}
+      - COMEDIAN_SECRET_TOKEN=${ENACTUSAUCA_COMEDIAN_SECRET_TOKEN}
+      - COMEDIAN_SLACK_DOMAIN=${ENACTUSAUCA_COMEDIAN_SLACK_DOMAIN}
+      - COMEDIAN_LOGIN=${ENACTUSAUCA_COMEDIAN_LOGIN}
+      - COMEDIAN_PASSWORD=${ENACTUSAUCA_COMEDIAN_PASSWORD}
+      - VIRTUAL_HOST=enactusauca.comedian.maddevs.co
+      - LETSENCRYPT_HOST=enactusauca.comedian.maddevs.co
+      - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
+    depends_on:
+      - db
+    logging:
+      driver: syslog
+      options:
+        tag: "docker/comedian-enactusauca"
