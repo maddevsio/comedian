@@ -39,7 +39,7 @@ func main() {
 	}
 	go func() { log.Fatal(notifier.Start()) }()
 
-	sreporter := sprint.NewReporterSprint(bot)
+	sreporter := sprint.NewReporterSprint(bot, reporter)
 	go func() { sreporter.Start() }()
 
 	bot.Run()
