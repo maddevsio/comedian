@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
 )
@@ -31,6 +32,7 @@ type CollectorInfo struct {
 
 //GetSprintData sends api request to collector service and returns Info object
 func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err error) {
+	localizer := i18n.NewLocalizer(bot.Bundle, bot.CP.Language)
 	logrus.Infof("Get sprint data from collector. Project: %v", project)
 	var sprintData CollectorInfo
 	if bot.CP.CollectorEnabled == false {
@@ -63,7 +65,14 @@ func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err 
 			} else if message.Message == "Project does not have a sprints" {
 				return sprintInfo, errors.New("could not get data on this request")
 			} else if message.Message == "Project does not have the active sprints" {
-				//send message about project hasn't active sprint
+				notActiveSprint := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "NotActiveSprint",
+						Description: "Displays message if project doesn't has active sprint",
+						Other:       "Project has no active sprint yet",
+					},
+				})
+				bot.SendMessage(bot.CP.SprintReportChannel, notActiveSprint, nil)
 				return sprintInfo, errors.New("could not get data on this request")
 			}
 		}
