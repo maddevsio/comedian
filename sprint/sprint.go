@@ -7,9 +7,15 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
 )
+
+//Message used to parse response from Collector in cases of error
+type Message struct {
+	Message string `json:"message"`
+}
 
 //CollectorInfo used to parse sprint data from Collector
 type CollectorInfo struct {
@@ -20,11 +26,13 @@ type CollectorInfo struct {
 		Issue    string `json:"title"`
 		Status   string `json:"status"`
 		Assignee string `json:"assignee"`
+		Link     string `json:"link"`
 	} `json:"issues"`
 }
 
 //GetSprintData sends api request to collector service and returns Info object
 func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err error) {
+	localizer := i18n.NewLocalizer(bot.Bundle, bot.CP.Language)
 	logrus.Infof("Get sprint data from collector. Project: %v", project)
 	var sprintData CollectorInfo
 	if bot.CP.CollectorEnabled == false {
@@ -45,6 +53,29 @@ func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err 
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
+		if res.StatusCode == 404 {
+			var message Message
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				logrus.Errorf("sprint: ioutil.ReadAll failed: %v", err)
+			}
+			json.Unmarshal(body, &message)
+			if message.Message == "Project not found" {
+				return sprintInfo, errors.New("could not get data on this request")
+			} else if message.Message == "Project does not have a sprints" {
+				return sprintInfo, errors.New("could not get data on this request")
+			} else if message.Message == "Project does not have the active sprints" {
+				notActiveSprint := localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:          "NotActiveSprint",
+						Description: "Displays message if project doesn't has active sprint",
+						Other:       "Project has no active sprint yet",
+					},
+				})
+				bot.SendMessage(bot.CP.SprintReportChannel, notActiveSprint, nil)
+				return sprintInfo, errors.New("could not get data on this request")
+			}
+		}
 		logrus.Errorf("sprint: response status code - %v. Could not get data. project: %v", res.StatusCode, project)
 		return sprintInfo, errors.New("could not get data on this request")
 	}

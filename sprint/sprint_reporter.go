@@ -6,18 +6,21 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
+	"gitlab.com/team-monitoring/comedian/reporting"
 	"gitlab.com/team-monitoring/comedian/utils"
 )
 
 //ReporterSprint is used to send report about sprint progress
 type ReporterSprint struct {
-	bot *bot.Bot
+	bot      *bot.Bot
+	reporter reporting.Reporter
 }
 
 //NewReporterSprint creates a new string reporter
-func NewReporterSprint(Bot *bot.Bot) ReporterSprint {
+func NewReporterSprint(Bot *bot.Bot, r reporting.Reporter) ReporterSprint {
 	reporterSprint := ReporterSprint{
-		bot: Bot,
+		bot:      Bot,
+		reporter: r,
 	}
 	return reporterSprint
 }
@@ -36,7 +39,6 @@ func (r *ReporterSprint) Start() {
 //SendSprintReport send report about sprint
 func (r *ReporterSprint) SendSprintReport() {
 	if r.bot.CP.SprintReportStatus {
-		logrus.Info("SprintReportStatus true")
 		sprintWeekdays := strings.Split(r.bot.CP.SprintWeekdays, ",")
 		weekdays := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
 		var sprintdays []string
@@ -47,7 +49,6 @@ func (r *ReporterSprint) SendSprintReport() {
 				}
 			}
 		}
-		logrus.Info("Sprint weekdays: ", sprintdays)
 		if bot.InList(time.Now().Weekday().String(), sprintdays) {
 			hour, minute, err := utils.FormatTime(r.bot.CP.SprintReportTime)
 			if err != nil {
@@ -70,7 +71,10 @@ func (r *ReporterSprint) SendSprintReport() {
 					logrus.Info("collectorInfo: ", collectorInfo)
 					activeSprint := MakeActiveSprint(collectorInfo)
 					logrus.Info("activeSprint: ", activeSprint)
-					message := MakeMessage(r.bot, activeSprint)
+					message, err := MakeMessage(r.bot, activeSprint, channel.ChannelName, r.reporter)
+					if err != nil {
+						return
+					}
 					r.bot.SendMessage(r.bot.CP.SprintReportChannel, message, nil)
 				}
 			}

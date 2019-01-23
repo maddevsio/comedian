@@ -2,19 +2,24 @@ package sprint
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
+	"gitlab.com/team-monitoring/comedian/utils"
+
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
+	"gitlab.com/team-monitoring/comedian/reporting"
 )
 
 type Task struct {
 	Issue    string
 	Status   string
 	Assignee string
+	Link     string
 }
 
 type ActiveSprint struct {
@@ -24,6 +29,7 @@ type ActiveSprint struct {
 	SprintDaysCount    int
 	PassedDays         int
 	URL                string
+	StartDate          time.Time
 }
 
 func prepareTime(timestring string) (date time.Time, err error) {
@@ -63,6 +69,7 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 			inProgressTask.Issue = task.Issue
 			inProgressTask.Status = task.Status
 			inProgressTask.Assignee = task.Assignee
+			inProgressTask.Link = task.Link
 			activeSprint.InProgressTasks = append(activeSprint.InProgressTasks, inProgressTask)
 		}
 		//collect done
@@ -75,6 +82,7 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 	if err != nil {
 		logrus.Errorf("sprint.prepareTime failed: %v", err)
 	}
+	activeSprint.StartDate = startDate
 	endDate, err := prepareTime(collectorInfo.SprintEnd)
 	if err != nil {
 		logrus.Errorf("sprint.prepareTime failed: %v", err)
@@ -86,7 +94,7 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 }
 
 //MakeMessage make message about sprint
-func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint) string {
+func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r reporting.Reporter) (string, error) {
 	localizer := i18n.NewLocalizer(bot.Bundle, bot.CP.Language)
 	//progressSprint=resolved_tasks/totalCountOfTasks*100
 	var totalMessage string
@@ -164,27 +172,73 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "InProgressTask",
 				Description: "Displays message about in progress tasks",
-				Other:       "{{.issue}} - {{.assignee}};",
+				Other:       "{{.i}} {{.issue}} - {{.assignee}};",
 			},
 			TemplateData: map[string]interface{}{
+				"i":        "-",
 				"issue":    task.Issue,
 				"assignee": task.Assignee,
 			},
 		})
 		inProgressTask += "\n"
 		totalMessage += inProgressTask
+		totalMessage += task.Link + "\n"
 	}
+	totalMessage += "\n"
+	//calculate total worklogs of team members
+	var totalTeamWorlogs int
+	channelID, err := bot.DB.GetChannelID(project)
+	if err != nil {
+		logrus.Infof("sprint_reporting:GetChannelID failed. ChannelName: %v", project)
+		return "", err
+	}
+	channelMembers, err := bot.DB.ListChannelMembers(channelID)
+	if err != nil {
+		logrus.Errorf("sprint_reporting:ListChannelMembers failed: %v", err)
+	}
+	for _, channelMember := range channelMembers {
+		_, worklogs, err := r.GetCollectorDataOnMember(channelMember, activeSprint.StartDate, time.Now())
+		if err != nil {
+			logrus.Infof("sprint_reporting:GetCollectorDataOnMember failed: %v. Member's user_id: %v", err, channelMember.UserID)
+			continue
+		}
+		totalTeamWorlogs += worklogs.Worklogs
+	}
+	worklogs := utils.SecondsToHuman(totalTeamWorlogs)
+	totalSprintWorklogsOfTeam := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "totalSprintWorklogsOfTeam",
+			Description: "Displays message about total worklogs of team members",
+			Other:       "Total worklogs of team on period from {{.start}} to {{.now}}:  {{.totalWorklogs}} (h)",
+		},
+		TemplateData: map[string]interface{}{
+			"totalWorklogs": worklogs,
+			"start":         MakeDate(activeSprint.StartDate),
+			"now":           MakeDate(time.Now()),
+		},
+	})
+	totalMessage += totalSprintWorklogsOfTeam
 	totalMessage += "\n"
 	urlTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "UrlTitle",
 			Description: "Displays url of sprint",
-			Other:       "URL: {{.url}}",
+			Other:       "Link to sprint: {{.url}}",
 		},
 		TemplateData: map[string]interface{}{
 			"url": activeSprint.URL,
 		},
 	})
 	totalMessage += urlTitle
-	return totalMessage
+	return totalMessage, nil
+}
+
+//MakeDate convert date to string
+func MakeDate(date time.Time) string {
+	y := date.Year()
+	m := date.Month()
+	d := date.Day()
+
+	sdate := fmt.Sprintf("%v %v %v", d, m, y)
+	return sdate
 }
