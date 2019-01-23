@@ -23,10 +23,11 @@ type CollectorInfo struct {
 	SprintStart string `json:"started"`
 	SprintEnd   string `json:"end"`
 	Tasks       []struct {
-		Issue    string `json:"title"`
-		Status   string `json:"status"`
-		Assignee string `json:"assignee"`
-		Link     string `json:"link"`
+		Issue            string `json:"title"`
+		Status           string `json:"status"`
+		Assignee         string `json:"assignee"`
+		AssigneeFullName string `json:"assignee_name"`
+		Link             string `json:"link"`
 	} `json:"issues"`
 }
 

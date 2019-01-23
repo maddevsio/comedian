@@ -3,6 +3,7 @@ package sprint
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -16,10 +17,11 @@ import (
 )
 
 type Task struct {
-	Issue    string
-	Status   string
-	Assignee string
-	Link     string
+	Issue            string
+	Status           string
+	Assignee         string
+	AssigneeFullName string
+	Link             string
 }
 
 type ActiveSprint struct {
@@ -69,6 +71,7 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 			inProgressTask.Issue = task.Issue
 			inProgressTask.Status = task.Status
 			inProgressTask.Assignee = task.Assignee
+			inProgressTask.AssigneeFullName = task.AssigneeFullName
 			inProgressTask.Link = task.Link
 			activeSprint.InProgressTasks = append(activeSprint.InProgressTasks, inProgressTask)
 		}
@@ -167,22 +170,45 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 	})
 	inProgressTasksTitle += "\n"
 	totalMessage += inProgressTasksTitle
+	//sorts inprogress tasks by alphabet
+	sort.Slice(activeSprint.InProgressTasks, func(i, j int) bool {
+		return activeSprint.InProgressTasks[i].AssigneeFullName < activeSprint.InProgressTasks[j].AssigneeFullName
+	})
 	for _, task := range activeSprint.InProgressTasks {
-		inProgressTask := localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:          "InProgressTask",
-				Description: "Displays message about in progress tasks",
-				Other:       "{{.i}} {{.issue}} - {{.assignee}};",
-			},
-			TemplateData: map[string]interface{}{
-				"i":        "-",
-				"issue":    task.Issue,
-				"assignee": task.Assignee,
-			},
-		})
-		inProgressTask += "\n"
-		totalMessage += inProgressTask
-		totalMessage += task.Link + "\n"
+		if task.AssigneeFullName != "" {
+			inProgressTask := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "InProgressTask",
+					Description: "Displays message about in progress tasks",
+					Other:       "{{.i}} {{.issue}} - {{.assignee}};",
+				},
+				TemplateData: map[string]interface{}{
+					"i":        "-",
+					"issue":    task.Issue,
+					"assignee": task.AssigneeFullName,
+				},
+			})
+			inProgressTask += "\n"
+			totalMessage += inProgressTask
+			totalMessage += task.Link + "\n"
+		} else if task.AssigneeFullName == "" {
+			//if full name from jira empty, uses name
+			inProgressTask := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "InProgressTask",
+					Description: "Displays message about in progress tasks",
+					Other:       "{{.i}} {{.issue}} - {{.assignee}};",
+				},
+				TemplateData: map[string]interface{}{
+					"i":        "-",
+					"issue":    task.Issue,
+					"assignee": task.Assignee,
+				},
+			})
+			inProgressTask += "\n"
+			totalMessage += inProgressTask
+			totalMessage += task.Link + "\n"
+		}
 	}
 	totalMessage += "\n"
 	//calculate total worklogs of team members
