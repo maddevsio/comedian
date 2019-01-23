@@ -204,7 +204,7 @@ services:
       options:
         tag: "docker/comedian-comedian-testing"
 
-comedian_enactusauca:
+  comedian_enactusauca:
     image: registry.gitlab.com/team-monitoring/comedian:latest
     restart: on-failure
     links:
