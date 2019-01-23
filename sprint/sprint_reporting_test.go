@@ -62,7 +62,7 @@ func TestMakeActiveSprint(t *testing.T) {
 		URL:                "url_1",
 		StartDate:          startDate,
 	}
-	task1 := Task{Issue: "issue_1", Status: "indeterminate", Assignee: "user_1", Link: "link to task1"}
+	task1 := Task{Issue: "issue_1", Status: "indeterminate", Assignee: "user_1", AssigneeFullName: "fullName1", Link: "link to task1"}
 	var InProgressTasks []Task
 	InProgressTasks = append(InProgressTasks, task1)
 	activeSprint.InProgressTasks = InProgressTasks
@@ -75,14 +75,15 @@ func TestMakeActiveSprint(t *testing.T) {
 			SprintStart: "2019-01-01T16:29:02.432+06:00",
 			SprintEnd:   "2019-01-11T16:29:00.000+06:00",
 			Tasks: []struct {
-				Issue    string `json:"title"`
-				Status   string `json:"status"`
-				Assignee string `json:"assignee"`
-				Link     string `json:"link"`
+				Issue            string `json:"title"`
+				Status           string `json:"status"`
+				Assignee         string `json:"assignee"`
+				AssigneeFullName string `json:"assignee_name"`
+				Link             string `json:"link"`
 			}{
-				{"issue_1", "indeterminate", "user_1", "link to task1"},
-				{"issue_2", "done", "user_1", "link to task2"},
-				{"issue_3", "done", "user_3", "link to task3"},
+				{"issue_1", "indeterminate", "user_1", "fullName1", "link to task1"},
+				{"issue_2", "done", "user_1", "fullName1", "link to task2"},
+				{"issue_3", "done", "user_3", "fullName3", "link to task3"},
 			},
 		}, activeSprint},
 	}
@@ -116,10 +117,11 @@ func TestMakeMessage(t *testing.T) {
 		StartDate:          startDate,
 	}
 	var inProgressTasks1 []Task
-	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue1", Status: "indeterminate", Assignee: "user1", Link: "link_to_task1"})
-	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue2", Status: "indeterminate", Assignee: "user1", Link: "link_to_task2"})
-	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue3", Status: "indeterminate", Assignee: "user2", Link: "link_to_task3"})
-	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue4", Status: "indeterminate", Assignee: "user2", Link: "link_to_task4"})
+	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue1", Status: "indeterminate", Assignee: "user1", AssigneeFullName: "Bob", Link: "link_to_task1"})
+	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue2", Status: "indeterminate", Assignee: "user1", AssigneeFullName: "John", Link: "link_to_task2"})
+	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue3", Status: "indeterminate", Assignee: "user2", AssigneeFullName: "Frank", Link: "link_to_task3"})
+	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue4", Status: "indeterminate", Assignee: "user2", AssigneeFullName: "Clark", Link: "link_to_task4"})
+	//if fullname is empty than name must used instead
 	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue5", Status: "indeterminate", Assignee: "user1", Link: "link_to_task5"})
 	activeS1.InProgressTasks = inProgressTasks1
 
@@ -153,7 +155,7 @@ func TestMakeMessage(t *testing.T) {
 		activeSprint ActiveSprint
 		expected     string
 	}{
-		{activeS1, "Sprint completed: 50%\nSprint lasts 10 days,5 days passed, 5 days left.\nIn progress tasks: \n- issue1 - user1;\nlink_to_task1\n- issue2 - user1;\nlink_to_task2\n- issue3 - user2;\nlink_to_task3\n- issue4 - user2;\nlink_to_task4\n- issue5 - user1;\nlink_to_task5\n\nTotal worklogs of team on period from 1 January 2019 to 5 January 2019:  16:00 (h)\nLink to sprint: /url/to/sprint"},
+		{activeS1, "Sprint completed: 50%\nSprint lasts 10 days,5 days passed, 5 days left.\nIn progress tasks: \n- issue5 - user1;\nlink_to_task5\n- issue1 - Bob;\nlink_to_task1\n- issue4 - Clark;\nlink_to_task4\n- issue3 - Frank;\nlink_to_task3\n- issue2 - John;\nlink_to_task2\n\nTotal worklogs of team on period from 1 January 2019 to 5 January 2019:  0:00 (h)\nLink to sprint: /url/to/sprint"},
 	}
 	for _, test := range testCase {
 		actual, err := MakeMessage(bot, test.activeSprint, "project", r)
