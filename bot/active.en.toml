@@ -529,7 +529,7 @@ Other = "In progress tasks: "
 
 [InProgressTask]
 Description = "Displays message about in progress tasks"
-Other = "{{.i}} "{{.issue}}" - {{.assignee}};"
+Other = "{{.i}} {{.issue}} - {{.assignee}};"
 
 [UrlTitle]
 Description = "Displays url of sprint"
