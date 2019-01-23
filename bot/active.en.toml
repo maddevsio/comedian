@@ -534,3 +534,11 @@ Other = "{{.i}} "{{.issue}}" - {{.assignee}};"
 [UrlTitle]
 Description = "Displays url of sprint"
 Other = "Link to sprint: {{.url}}"
+
+[totalSprintWorklogsOfTeam]
+Description = "Displays message about total worklogs of team members"
+Other = "Total worklogs of team on period from {{.start}} to {{.now}}:  {{.totalWorklogs}} (h)"
+
+[NotActiveSprint]
+Description = "Displays message if project doesn't has active sprint"
+Other = "Project has no active sprint yet"
