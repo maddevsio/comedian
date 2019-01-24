@@ -90,7 +90,6 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 		}
 	}
 	//check members to find members that hasn't inprogress tasks
-	logrus.Info("hasInProgressTasks: ", hasInProgressTasks)
 	for _, task := range collectorInfo.Tasks {
 		if !bot.InList(task.AssigneeFullName, hasInProgressTasks) {
 			activeSprint.HasNotInProgressTasks = append(activeSprint.HasNotInProgressTasks, task.AssigneeFullName)
