@@ -25,13 +25,14 @@ type Task struct {
 }
 
 type ActiveSprint struct {
-	TotalNumberOfTasks int
-	InProgressTasks    []Task
-	ResolvedTasksCount int
-	SprintDaysCount    int
-	PassedDays         int
-	URL                string
-	StartDate          time.Time
+	TotalNumberOfTasks    int
+	InProgressTasks       []Task
+	HasNotInProgressTasks []string
+	ResolvedTasksCount    int
+	SprintDaysCount       int
+	PassedDays            int
+	URL                   string
+	StartDate             time.Time
 }
 
 func prepareTime(timestring string) (date time.Time, err error) {
@@ -64,10 +65,17 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 	activeSprint.URL = collectorInfo.SprintURL
 	//calculate TotalNumberOfTasks
 	activeSprint.TotalNumberOfTasks = len(collectorInfo.Tasks)
+	//members that have inprogress tasks
+	var hasInProgressTasks []string
 	for _, task := range collectorInfo.Tasks {
 		//collect inprogress tasks
 		var inProgressTask Task
+		//inprogress tasks
 		if task.Status == "indeterminate" {
+			//add in hasTasks member that has task without doubling
+			if !bot.InList(task.AssigneeFullName, hasInProgressTasks) {
+				hasInProgressTasks = append(hasInProgressTasks, task.AssigneeFullName)
+			}
 			inProgressTask.Issue = task.Issue
 			inProgressTask.Status = task.Status
 			inProgressTask.Assignee = task.Assignee
@@ -79,6 +87,13 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 		if task.Status == "done" {
 			//increase count of resolved tasks
 			activeSprint.ResolvedTasksCount++
+		}
+	}
+	//check members to find members that hasn't inprogress tasks
+	logrus.Info("hasInProgressTasks: ", hasInProgressTasks)
+	for _, task := range collectorInfo.Tasks {
+		if !bot.InList(task.AssigneeFullName, hasInProgressTasks) {
+			activeSprint.HasNotInProgressTasks = append(activeSprint.HasNotInProgressTasks, task.AssigneeFullName)
 		}
 	}
 	startDate, err := prepareTime(collectorInfo.SprintStart)
