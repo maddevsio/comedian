@@ -284,12 +284,12 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			Other:       "*No tasks In Progress:*",
 		},
 	})
+	attachment3.Pretext = notInProgressTaskTitle
+	attachment3.MarkdownIn = append(attachment3.MarkdownIn, attachment3.Pretext)
+	attachments = append(attachments, attachment3)
 	if len(activeSprint.HasNotInProgressTasks) > 0 {
 		var attachment slack.Attachment
 		for _, task := range activeSprint.HasNotInProgressTasks {
-			attachment3.Pretext = notInProgressTaskTitle
-			attachment3.MarkdownIn = append(attachment3.MarkdownIn, attachment3.Pretext)
-			attachments = append(attachments, attachment3)
 			//members that has not inprogress tasks
 			notInProgressTask := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
