@@ -95,7 +95,9 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 	//check members to find members that hasn't inprogress tasks
 	for _, task := range collectorInfo.Tasks {
 		if !bot.InList(task.AssigneeFullName, hasInProgressTasks) {
-			activeSprint.HasNotInProgressTasks = append(activeSprint.HasNotInProgressTasks, task.AssigneeFullName)
+			if !bot.InList(task.AssigneeFullName, activeSprint.HasNotInProgressTasks) {
+				activeSprint.HasNotInProgressTasks = append(activeSprint.HasNotInProgressTasks, task.AssigneeFullName)
+			}
 		}
 	}
 	startDate, err := prepareTime(collectorInfo.SprintStart)
