@@ -55,6 +55,7 @@ func TestMakeActiveSprint(t *testing.T) {
 	startDate, err := prepareTime("2019-01-01T16:29:02.432+06:00")
 	assert.NoError(t, err)
 	activeSprint := ActiveSprint{
+		Name:               "Sprint Name1",
 		TotalNumberOfTasks: 5,
 		ResolvedTasksCount: 3,
 		SprintDaysCount:    10,
@@ -74,6 +75,7 @@ func TestMakeActiveSprint(t *testing.T) {
 		activeSprint  ActiveSprint
 	}{
 		{CollectorInfo{
+			SprintName:  "Sprint Name1",
 			SprintURL:   "url_1",
 			SprintStart: "2019-01-01T16:29:02.432+06:00",
 			SprintEnd:   "2019-01-11T16:29:00.000+06:00",
@@ -115,6 +117,7 @@ func TestMakeMessage(t *testing.T) {
 	startDate, err := prepareTime("2019-01-01T16:29:02.432+06:00")
 	assert.NoError(t, err)
 	activeS1 := ActiveSprint{
+		Name:               "SprintName",
 		TotalNumberOfTasks: 10,
 		ResolvedTasksCount: 5,
 		SprintDaysCount:    10,
@@ -130,6 +133,8 @@ func TestMakeMessage(t *testing.T) {
 	//if fullname is empty than name must used instead
 	inProgressTasks1 = append(inProgressTasks1, Task{Issue: "issue5", Status: "indeterminate", Assignee: "user1", Link: "link_to_task5"})
 	activeS1.InProgressTasks = inProgressTasks1
+	//user hasn't inprogress tasks
+	activeS1.HasNotInProgressTasks = append(activeS1.HasNotInProgressTasks, "USER")
 
 	channel, err := bot.DB.CreateChannel(model.Channel{
 		ChannelID:   "cid2",
@@ -161,10 +166,10 @@ func TestMakeMessage(t *testing.T) {
 		activeSprint ActiveSprint
 		expected     string
 	}{
-		{activeS1, "Sprint completed: 50%\nSprint lasts 10 days,5 days passed, 5 days left.\nIn progress tasks: \n- issue5 - user1;\nlink_to_task5\n- issue1 - Bob;\nlink_to_task1\n- issue4 - Clark;\nlink_to_task4\n- issue3 - Frank;\nlink_to_task3\n- issue2 - John;\nlink_to_task2\n\nTotal worklogs of team on period from 1 January 2019 to 5 January 2019:  0:00 (h)\nLink to sprint: /url/to/sprint"},
+		{activeS1, ""},
 	}
 	for _, test := range testCase {
-		actual, err := MakeMessage(bot, test.activeSprint, "project", r)
+		actual, _, err := MakeMessage(bot, test.activeSprint, "project", r)
 		assert.NoError(t, err)
 		assert.Equal(t, test.expected, actual)
 	}
@@ -184,8 +189,9 @@ func TestMakeDate(t *testing.T) {
 		date     time.Time
 		expected string
 	}{
-		{time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC), "1 January 2019"},
-		{time.Date(2019, 02, 20, 0, 0, 0, 0, time.UTC), "20 February 2019"},
+		{time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC), "1.01.2019"},
+		{time.Date(2019, 02, 20, 0, 0, 0, 0, time.UTC), "20.02.2019"},
+		{time.Date(2019, 10, 15, 0, 0, 0, 0, time.UTC), "15.10.2019"},
 	}
 	for _, test := range testCase {
 		actual := MakeDate(test.date)
