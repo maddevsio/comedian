@@ -71,11 +71,11 @@ func (r *ReporterSprint) SendSprintReport() {
 					logrus.Info("collectorInfo: ", collectorInfo)
 					activeSprint := MakeActiveSprint(collectorInfo)
 					logrus.Info("activeSprint: ", activeSprint)
-					message, err := MakeMessage(r.bot, activeSprint, channel.ChannelName, r.reporter)
+					message, attachments, err := MakeMessage(r.bot, activeSprint, channel.ChannelName, r.reporter)
 					if err != nil {
 						return
 					}
-					r.bot.SendMessage(r.bot.CP.SprintReportChannel, message, nil)
+					r.bot.SendMessage(r.bot.CP.SprintReportChannel, message, attachments)
 				}
 			}
 		}

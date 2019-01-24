@@ -19,6 +19,7 @@ type Message struct {
 
 //CollectorInfo used to parse sprint data from Collector
 type CollectorInfo struct {
+	SprintName  string `json:"sprint_name"`
 	SprintURL   string `json:"link_to_sprint"`
 	SprintStart string `json:"started"`
 	SprintEnd   string `json:"end"`
@@ -60,12 +61,8 @@ func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err 
 			if err != nil {
 				logrus.Errorf("sprint: ioutil.ReadAll failed: %v", err)
 			}
-			json.Unmarshal(body, &message)
-			if message.Message == "Project not found" {
-				return sprintInfo, errors.New("could not get data on this request")
-			} else if message.Message == "Project does not have a sprints" {
-				return sprintInfo, errors.New("could not get data on this request")
-			} else if message.Message == "Project does not have the active sprints" {
+			err = json.Unmarshal(body, &message)
+			if message.Message == "Project does not have the active sprints" {
 				notActiveSprint := localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:          "NotActiveSprint",
@@ -75,6 +72,10 @@ func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err 
 				})
 				bot.SendMessage(bot.CP.SprintReportChannel, notActiveSprint, nil)
 				return sprintInfo, errors.New("could not get data on this request")
+			}
+			if err != nil {
+				logrus.Errorf("sprint_reporting: json.Unmarshal failed: %v", err)
+				return sprintInfo, errors.New("Error unmarshaling json")
 			}
 		}
 		logrus.Errorf("sprint: response status code - %v. Could not get data. project: %v", res.StatusCode, project)

@@ -11,6 +11,7 @@ import (
 	"gitlab.com/team-monitoring/comedian/utils"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
 	"gitlab.com/team-monitoring/comedian/reporting"
@@ -25,6 +26,7 @@ type Task struct {
 }
 
 type ActiveSprint struct {
+	Name                  string
 	TotalNumberOfTasks    int
 	InProgressTasks       []Task
 	HasNotInProgressTasks []string
@@ -62,6 +64,7 @@ func countDays(startDate, endDate time.Time) (countDays int) {
 //MakeActiveSprint make ActiveSprint struct from CollectorInfo
 func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 	var activeSprint ActiveSprint
+	activeSprint.Name = collectorInfo.SprintName
 	activeSprint.URL = collectorInfo.SprintURL
 	//calculate TotalNumberOfTasks
 	activeSprint.TotalNumberOfTasks = len(collectorInfo.Tasks)
@@ -111,10 +114,11 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 }
 
 //MakeMessage make message about sprint
-func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r reporting.Reporter) (string, error) {
+func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r reporting.Reporter) (string, []slack.Attachment, error) {
 	localizer := i18n.NewLocalizer(bot.Bundle, bot.CP.Language)
 	//progressSprint=resolved_tasks/totalCountOfTasks*100
-	var totalMessage string
+	var attachments []slack.Attachment
+	var attachment1 slack.Attachment
 	progressSprint := float32(activeSprint.ResolvedTasksCount) / float32(activeSprint.TotalNumberOfTasks) * 100
 	sprintProgressPercent := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
@@ -126,8 +130,19 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			"percent": int(progressSprint),
 		},
 	})
-	sprintProgressPercent += "\n"
-	totalMessage += sprintProgressPercent
+	attachment1.Title = sprintProgressPercent
+	sprintTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "SprintTitle",
+			Description: "Displays name of sprint",
+			Other:       "*{{.name}} report*",
+		},
+		TemplateData: map[string]interface{}{
+			"name": activeSprint.Name,
+		},
+	})
+	attachment1.Pretext = sprintTitle
+	attachment1.MarkdownIn = append(attachment1.MarkdownIn, attachment1.Pretext)
 	leftDays := activeSprint.SprintDaysCount - activeSprint.PassedDays
 	sprintTotalDays := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
@@ -160,7 +175,7 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 		DefaultMessage: &i18n.Message{
 			ID:          "SprintDays",
 			Description: "Displays message about sprint duration",
-			Other:       "Sprint lasts {{.totalDays}} {{.td}},{{.passedDays}} {{.pd}} passed, {{.leftDays}} {{.ld}} left.",
+			Other:       "Sprint lasts {{.totalDays}} {{.td}}, {{.passedDays}} {{.pd}} passed, {{.leftDays}} {{.ld}} left.",
 		},
 		TemplateData: map[string]interface{}{
 			"totalDays":  activeSprint.SprintDaysCount,
@@ -172,65 +187,131 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 		},
 	})
 	sprintDays += "\n"
-	totalMessage += sprintDays
+	attachment1.Text = sprintDays
+	urlTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "UrlTitle",
+			Description: "Displays url of sprint",
+			Other:       "{{.url}}",
+		},
+		TemplateData: map[string]interface{}{
+			"url": activeSprint.URL,
+		},
+	})
+	attachment1.Text += urlTitle
+	attachments = append(attachments, attachment1)
+	var attachment2 slack.Attachment
 	inProgressTasksTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "InProgressTasksTitle",
 			Description: "Displays title of message about in progress issues",
-			One:         "In progress task: ",
-			Other:       "In progress tasks: ",
+			One:         "*In progress task:* ",
+			Other:       "*In progress tasks:* ",
 		},
 		PluralCount: len(activeSprint.InProgressTasks),
 	})
-	inProgressTasksTitle += "\n"
-	totalMessage += inProgressTasksTitle
+	attachment2.Pretext = inProgressTasksTitle
+	attachment2.MarkdownIn = append(attachment2.MarkdownIn, attachment2.Pretext)
+	attachments = append(attachments, attachment2)
 	//sorts inprogress tasks by alphabet
 	sort.Slice(activeSprint.InProgressTasks, func(i, j int) bool {
 		return activeSprint.InProgressTasks[i].AssigneeFullName < activeSprint.InProgressTasks[j].AssigneeFullName
 	})
 	for _, task := range activeSprint.InProgressTasks {
+		var attachment slack.Attachment
 		if task.AssigneeFullName != "" {
-			inProgressTask := localizer.MustLocalize(&i18n.LocalizeConfig{
+			inProgressTaskTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
-					ID:          "InProgressTask",
-					Description: "Displays message about in progress tasks",
-					Other:       "{{.i}} {{.issue}} - {{.assignee}};",
+					ID:          "InProgressTaskTitle",
+					Description: "Displays asignee name as attachment title",
+					Other:       "{{.assignee}}",
 				},
 				TemplateData: map[string]interface{}{
-					"i":        "-",
-					"issue":    task.Issue,
 					"assignee": task.AssigneeFullName,
 				},
 			})
-			inProgressTask += "\n"
-			totalMessage += inProgressTask
-			totalMessage += task.Link + "\n"
-		} else if task.AssigneeFullName == "" {
-			//if full name from jira empty, uses name
+			attachment.Title = inProgressTaskTitle
+			attachment.Color = "#2eb886"
 			inProgressTask := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:          "InProgressTask",
 					Description: "Displays message about in progress tasks",
-					Other:       "{{.i}} {{.issue}} - {{.assignee}};",
+					Other:       "{{.issue}};",
 				},
 				TemplateData: map[string]interface{}{
-					"i":        "-",
-					"issue":    task.Issue,
-					"assignee": task.Assignee,
+					"issue": task.Issue,
 				},
 			})
 			inProgressTask += "\n"
-			totalMessage += inProgressTask
-			totalMessage += task.Link + "\n"
+			attachment.Text = inProgressTask
+			attachment.Text += task.Link
+			attachments = append(attachments, attachment)
+		} else if task.AssigneeFullName == "" {
+			//if full name from jira empty, uses name
+			inProgressTaskTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "InProgressTaskTitle",
+					Description: "Displays asignee name as attachment title",
+					Other:       "{{.assignee}}",
+				},
+				TemplateData: map[string]interface{}{
+					"assignee": task.Assignee,
+				},
+			})
+			attachment.Title = inProgressTaskTitle
+			attachment.Color = "#2eb886"
+			inProgressTask := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "InProgressTask",
+					Description: "Displays message about in progress tasks",
+					Other:       "{{.issue}};",
+				},
+				TemplateData: map[string]interface{}{
+					"issue": task.Issue,
+				},
+			})
+			inProgressTask += "\n"
+			attachment.Text = inProgressTask
+			attachment.Text += task.Link
+			attachments = append(attachments, attachment)
 		}
 	}
-	totalMessage += "\n"
+	var attachment3 slack.Attachment
+	notInProgressTaskTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "notInProgressTaskTitle",
+			Description: "Displays title of message about members that has not inprogress tasks",
+			Other:       "*No tasks In Progress:*",
+		},
+	})
+	if len(activeSprint.HasNotInProgressTasks) > 0 {
+		var attachment slack.Attachment
+		for _, task := range activeSprint.HasNotInProgressTasks {
+			attachment3.Pretext = notInProgressTaskTitle
+			attachment3.MarkdownIn = append(attachment3.MarkdownIn, attachment3.Pretext)
+			attachments = append(attachments, attachment3)
+			//members that has not inprogress tasks
+			notInProgressTask := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "notInProgressTask",
+					Description: "Displays members that has not in progress tasks",
+					Other:       "{{.name}}",
+				},
+				TemplateData: map[string]interface{}{
+					"name": task,
+				},
+			})
+			attachment.Title = notInProgressTask
+			attachment.Color = "danger"
+			attachments = append(attachments, attachment)
+		}
+	}
 	//calculate total worklogs of team members
 	var totalTeamWorlogs int
 	channelID, err := bot.DB.GetChannelID(project)
 	if err != nil {
 		logrus.Infof("sprint_reporting:GetChannelID failed. ChannelName: %v", project)
-		return "", err
+		return "", attachments, err
 	}
 	channelMembers, err := bot.DB.ListChannelMembers(channelID)
 	if err != nil {
@@ -245,11 +326,12 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 		totalTeamWorlogs += worklogs.Worklogs
 	}
 	worklogs := utils.SecondsToHuman(totalTeamWorlogs)
+	var attachment4 slack.Attachment
 	totalSprintWorklogsOfTeam := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "totalSprintWorklogsOfTeam",
 			Description: "Displays message about total worklogs of team members",
-			Other:       "Total worklogs of team on period from {{.start}} to {{.now}}:  {{.totalWorklogs}} (h)",
+			Other:       "*Total worklogs of team on period from {{.start}} to {{.now}}:*  {{.totalWorklogs}} (h)",
 		},
 		TemplateData: map[string]interface{}{
 			"totalWorklogs": worklogs,
@@ -257,28 +339,22 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			"now":           MakeDate(time.Now()),
 		},
 	})
-	totalMessage += totalSprintWorklogsOfTeam
-	totalMessage += "\n"
-	urlTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:          "UrlTitle",
-			Description: "Displays url of sprint",
-			Other:       "Link to sprint: {{.url}}",
-		},
-		TemplateData: map[string]interface{}{
-			"url": activeSprint.URL,
-		},
-	})
-	totalMessage += urlTitle
-	return totalMessage, nil
+	attachment4.Pretext = totalSprintWorklogsOfTeam
+	attachment4.MarkdownIn = append(attachment3.MarkdownIn, attachment4.Pretext)
+	attachments = append(attachments, attachment4)
+	return "", attachments, nil
 }
 
 //MakeDate convert date to string
 func MakeDate(date time.Time) string {
 	y := date.Year()
-	m := date.Month()
+	m := int(date.Month())
 	d := date.Day()
-
-	sdate := fmt.Sprintf("%v %v %v", d, m, y)
+	var sdate string
+	if m < 10 {
+		sdate = fmt.Sprintf("%v.0%v.%v", d, m, y)
+	} else {
+		sdate = fmt.Sprintf("%v.%v.%v", d, m, y)
+	}
 	return sdate
 }

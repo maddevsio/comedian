@@ -568,23 +568,35 @@ Other = "Спринт длится {{.totalDays}} {{.td}}, прошло {{.passe
 
 [InProgressTasksTitle]
 Description = "Displays title of message about in progress issues"
-one = "In progress таск : "
-few = "In progress таски: "
-many = "In progress таски: "
-other = "In progress таски: "
+one = "*In progress таск :*"
+few = "*In progress таски:*"
+many = "*In progress таски:*"
+other = "In progress таски:*"
 
 [InProgressTask]
 Description = "Displays message about in progress tasks"
-Other = "{{.i}} {{.issue}} - {{.assignee}};"
+Other = "{{.issue}}"
 
 [UrlTitle]
 Description = "Displays url of sprint"
-Other = "Ссылка на спринт: {{.url}}"
+Other = "{{.url}}"
 
 [totalSprintWorklogsOfTeam]
 Description = "Displays message about total worklogs of team members"
-Other = "Общие ворклоги команды за период с {{.start}} по {{.now}}:  {{.totalWorklogs}} (ч)"
+Other = "*Общие ворклоги команды за период с {{.start}} по {{.now}}:*  {{.totalWorklogs}} (ч)"
 
 [NotActiveSprint]
 Description = "Displays message if project doesn't has active sprint"
 Other = "У проекта еще нет активного спринта"
+
+[InProgressTaskTitle]
+Description = "Displays asignee name as attachment title"
+Other = "{{.assignee}}"
+
+[notInProgressTaskTitle]
+Description = "Displays title of message about members that has not inprogress tasks"
+Other = "*Нет тасков In Progress:*"
+
+[notInProgressTask]
+Description = "Displays members that has not in progress tasks"
+Other = "{{.name}}"
