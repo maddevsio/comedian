@@ -554,3 +554,7 @@ Other = "*No tasks In Progress:*"
 [notInProgressTask]
 Description = "Displays members that has not in progress tasks"
 Other = "{{.name}}"
+
+[SprintTitle]
+Description = "Displays name of sprint"
+Other = "*{{.name}} report*"
