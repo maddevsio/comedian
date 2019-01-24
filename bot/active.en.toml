@@ -520,25 +520,37 @@ Other = "days"
 
 [SprintDays]
 Description = "Displays message about sprint duration"
-Other = "Sprint lasts {{.totalDays}} {{.td}},{{.passedDays}} {{.pd}} passed, {{.leftDays}} {{.ld}} left."
+Other = "Sprint lasts {{.totalDays}} {{.td}}, {{.passedDays}} {{.pd}} passed, {{.leftDays}} {{.ld}} left."
 
 [InProgressTasksTitle]
 Description = "Displays title of message about in progress issues"
-One = "In progress task: "
-Other = "In progress tasks: "
+One = "*In progress task:* "
+Other = "*In progress tasks:* "
 
 [InProgressTask]
 Description = "Displays message about in progress tasks"
-Other = "{{.i}} {{.issue}} - {{.assignee}};"
+Other = "{{.issue}}"
 
 [UrlTitle]
 Description = "Displays url of sprint"
-Other = "Link to sprint: {{.url}}"
+Other = "{{.url}}"
 
 [totalSprintWorklogsOfTeam]
 Description = "Displays message about total worklogs of team members"
-Other = "Total worklogs of team on period from {{.start}} to {{.now}}:  {{.totalWorklogs}} (h)"
+Other = "*Total worklogs of team on period from {{.start}} to {{.now}}:*  {{.totalWorklogs}} (h)"
 
 [NotActiveSprint]
 Description = "Displays message if project doesn't has active sprint"
 Other = "Project has no active sprint yet"
+
+[InProgressTaskTitle]
+Description = "Displays asignee name as attachment title"
+Other = "{{.assignee}}"
+
+[notInProgressTaskTitle]
+Description = "Displays title of message about members that has not inprogress tasks"
+Other = "*No tasks In Progress:*"
+
+[notInProgressTask]
+Description = "Displays members that has not in progress tasks"
+Other = "{{.name}}"
