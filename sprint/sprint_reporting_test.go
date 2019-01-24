@@ -55,16 +55,19 @@ func TestMakeActiveSprint(t *testing.T) {
 	startDate, err := prepareTime("2019-01-01T16:29:02.432+06:00")
 	assert.NoError(t, err)
 	activeSprint := ActiveSprint{
-		TotalNumberOfTasks: 3,
-		ResolvedTasksCount: 2,
+		TotalNumberOfTasks: 5,
+		ResolvedTasksCount: 3,
 		SprintDaysCount:    10,
 		PassedDays:         5,
 		URL:                "url_1",
 		StartDate:          startDate,
 	}
+	activeSprint.HasNotInProgressTasks = append(activeSprint.HasNotInProgressTasks, "fullName4")
 	task1 := Task{Issue: "issue_1", Status: "indeterminate", Assignee: "user_1", AssigneeFullName: "fullName1", Link: "link to task1"}
+	task2 := Task{Issue: "issue_4", Status: "indeterminate", Assignee: "user_3", AssigneeFullName: "fullName3", Link: "link to task4"}
 	var InProgressTasks []Task
 	InProgressTasks = append(InProgressTasks, task1)
+	InProgressTasks = append(InProgressTasks, task2)
 	activeSprint.InProgressTasks = InProgressTasks
 	testCase := []struct {
 		collectorInfo CollectorInfo
@@ -84,6 +87,9 @@ func TestMakeActiveSprint(t *testing.T) {
 				{"issue_1", "indeterminate", "user_1", "fullName1", "link to task1"},
 				{"issue_2", "done", "user_1", "fullName1", "link to task2"},
 				{"issue_3", "done", "user_3", "fullName3", "link to task3"},
+				{"issue_4", "indeterminate", "user_3", "fullName3", "link to task4"},
+				//fullname4 is hasn't inprogress tasks
+				{"issue_5", "done", "user_4", "fullName4", "link to task4"},
 			},
 		}, activeSprint},
 	}
