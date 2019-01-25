@@ -241,8 +241,9 @@ func (r *Reporter) displayYesterdayTeamReport() (FinalReport string, err error) 
 		}
 
 		attachments = r.sortReportEntries(attachmentsPull)
-
-		r.bot.SendMessage(channel.ChannelID, reportHeader, attachments)
+		if r.bot.CP.IndividualReportingStatus {
+			r.bot.SendMessage(channel.ChannelID, reportHeader, attachments)
+		}
 
 		allReports = append(allReports, attachments...)
 	}
