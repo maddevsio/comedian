@@ -33,26 +33,32 @@ func (ba *BotAPI) renderControllPannel(c echo.Context) error {
 			}
 		}
 	}
+	//status of individual reporting
+	var status string
+	if ba.Bot.CP.IndividualReportingStatus {
+		status = "checked"
+	}
 
 	data := map[string]interface{}{
-		"manager_slack_user_id": ba.Bot.CP.ManagerSlackUserID,
-		"reporting_channel":     ba.Bot.CP.ReportingChannel,
-		"report_time":           ba.Bot.CP.ReportTime,
-		"notifier_interval":     ba.Bot.CP.NotifierInterval,
-		"reminder_time":         ba.Bot.CP.ReminderTime,
-		"reminder_repeats_max":  ba.Bot.CP.ReminderRepeatsMax,
-		"language":              ba.Bot.CP.Language,
-		"collector_enabled":     ba.Bot.CP.CollectorEnabled,
-		"sprint_report_status":  ba.Bot.CP.SprintReportStatus,
-		"sprint_report_time":    ba.Bot.CP.SprintReportTime,
-		"sprint_report_channel": ba.Bot.CP.SprintReportChannel,
-		"monday":                sprintdays["monday"],
-		"tuesday":               sprintdays["tuesday"],
-		"wednesday":             sprintdays["wednesday"],
-		"thursday":              sprintdays["thursday"],
-		"friday":                sprintdays["friday"],
-		"saturday":              sprintdays["saturday"],
-		"sunday":                sprintdays["sunday"],
+		"manager_slack_user_id":       ba.Bot.CP.ManagerSlackUserID,
+		"reporting_channel":           ba.Bot.CP.ReportingChannel,
+		"individual_reporting_status": status,
+		"report_time":                 ba.Bot.CP.ReportTime,
+		"notifier_interval":           ba.Bot.CP.NotifierInterval,
+		"reminder_time":               ba.Bot.CP.ReminderTime,
+		"reminder_repeats_max":        ba.Bot.CP.ReminderRepeatsMax,
+		"language":                    ba.Bot.CP.Language,
+		"collector_enabled":           ba.Bot.CP.CollectorEnabled,
+		"sprint_report_status":        ba.Bot.CP.SprintReportStatus,
+		"sprint_report_time":          ba.Bot.CP.SprintReportTime,
+		"sprint_report_channel":       ba.Bot.CP.SprintReportChannel,
+		"monday":                      sprintdays["monday"],
+		"tuesday":                     sprintdays["tuesday"],
+		"wednesday":                   sprintdays["wednesday"],
+		"thursday":                    sprintdays["thursday"],
+		"friday":                      sprintdays["friday"],
+		"saturday":                    sprintdays["saturday"],
+		"sunday":                      sprintdays["sunday"],
 	}
 	return c.Render(http.StatusOK, "admin", data)
 }
@@ -92,6 +98,13 @@ func (ba *BotAPI) updateConfig(c echo.Context) error {
 	if err != nil {
 		logrus.Error(err)
 		return err
+	}
+	//calculate "individual_reporting_status"
+	status := form.Get("individual_reporting_status")
+	if status == "on" {
+		cp.IndividualReportingStatus = true
+	} else {
+		cp.IndividualReportingStatus = false
 	}
 	cp.NotifierInterval = ni
 	cp.ManagerSlackUserID = form.Get("manager_slack_user_id")
