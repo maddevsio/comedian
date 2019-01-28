@@ -35,8 +35,8 @@ other = "Members {{.users}} already have roles."
 
 [AddMembersFailed]
 description = "Displays a message when errors occur when assigning users"
-one = "Could not assign member: {{.user}} ."
-other = "Could not assign members: {{.users}} ."
+one = "Could not assign member: {{.user}} . Wrong username."
+other = "Could not assign members: {{.users}} . Wrong usernames."
 
 [AddPMsAdded]
 description = "Displays a message when users successfully assigning as PMs"
@@ -50,8 +50,8 @@ other = "Users {{.PMs}} already have roles."
 
 [AddPMsFailed]
 description = "Displays a message when errors occur when assigning users as PM"
-one =  "Could not assign user as PM: {{.PM}}."
-other = "Could not assign users as PMs: {{.PMs}}."
+one =  "Could not assign user as PM: {{.PM}}. Wrong username."
+other = "Could not assign users as PMs: {{.PMs}}. Wrong usernames."
 
 [AddStandupTime]
 description = "Displays a message when a standup time is successfully added for a channel"
@@ -95,8 +95,8 @@ other = " on "
 
 [DeleteAdminsFailed]
 description = "Diplays message when admin deletion errors occur"
-one = "Could not remove user as admin: {{.admin}} !"
-other = "Could not remove users as admins: {{.admins}} !"
+one = "Could not remove user as admin: {{.admin}} . User does not exist."
+other = "Could not remove users as admins: {{.admins}} . Users do not exist."
 
 [DeleteAdminsSucceed]
 description = "Diplays message when admins have been successfully deleted"
@@ -105,8 +105,8 @@ other = "Users were removed as admins: {{.admins}} ."
 
 [DeleteMembersFailed]
 description = "Displays a message when user deletion errors occur"
-one = "Could not remove the member: {{.user}} !"
-other = "Could not remove the following members: {{.users}} !"
+one = "Could not remove the member: {{.user}} . User is not standuper and not tracked."
+other = "Could not remove the following members: {{.users}} . Users are not standupers and not tracked."
 
 [DeleteMembersSucceed]
 description = "Displays a message when users have been successfully deleted"

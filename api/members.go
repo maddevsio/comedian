@@ -156,8 +156,8 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddPMsFailed",
 					Description: "Displays a message when errors occur when assigning users as PM",
-					One:         "Could not assign user as PM: {{.PM}}",
-					Other:       "Could not assign users as PMs: {{.PMs}}",
+					One:         "Could not assign user as PM: {{.PM}}. Wrong username.",
+					Other:       "Could not assign users as PMs: {{.PMs}}. Wrong usernames.",
 				},
 				PluralCount: len(failed),
 				TemplateData: map[string]interface{}{
@@ -171,8 +171,8 @@ func (ba *BotAPI) addMembers(users []string, role, channel string) string {
 				DefaultMessage: &i18n.Message{
 					ID:          "AddMembersFailed",
 					Description: "Displays a message when errors occur when assigning users",
-					One:         "Could not assign member: {{.user}} .",
-					Other:       "Could not assign members: {{.users}} .",
+					One:         "Could not assign member: {{.user}} . Wrong username.",
+					Other:       "Could not assign members: {{.users}} . Wrong usernames.",
 				},
 				PluralCount: len(failed),
 				TemplateData: map[string]interface{}{
@@ -300,8 +300,8 @@ func (ba *BotAPI) addAdmins(users []string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "AddAdminsFailed",
 				Description: "Displays message when user added as admin for Comedian",
-				One:         "Could not assign user as admin: {{.admin}}",
-				Other:       "Could not assign users as admins: {{.admins}}",
+				One:         "Could not assign user as admin: {{.admin}}. User does not exist.",
+				Other:       "Could not assign users as admins: {{.admins}}. User does not exist.",
 			},
 			PluralCount: len(failed),
 			TemplateData: map[string]interface{}{
@@ -481,8 +481,8 @@ func (ba *BotAPI) deleteMembers(members []string, channelID string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteMembersFailed",
 				Description: "Displays a message when user deletion errors occur",
-				One:         "Could not remove the member: {{.user}} !",
-				Other:       "Could not remove the following members: {{.users}} !",
+				One:         "Could not remove the member: {{.user}} . User is not standuper and not tracked.",
+				Other:       "Could not remove the following members: {{.users}}. Users are standupers and not tracked.",
 			},
 			PluralCount: len(failed),
 			TemplateData: map[string]interface{}{
@@ -557,8 +557,8 @@ func (ba *BotAPI) deleteAdmins(users []string) string {
 			DefaultMessage: &i18n.Message{
 				ID:          "DeleteAdminsFailed",
 				Description: "Diplays message when admin deletion errors occur",
-				One:         "Could not remove user as admin: {{.admin}}",
-				Other:       "Could not remove users as admins: {{.admins}}",
+				One:         "Could not remove user as admin: {{.admin}}. User does not exist.",
+				Other:       "Could not remove users as admins: {{.admins}}. Users do not exist.",
 			},
 			PluralCount: len(failed),
 			TemplateData: map[string]interface{}{
