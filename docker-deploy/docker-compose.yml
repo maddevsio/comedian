@@ -43,6 +43,8 @@ services:
       - COMEDIAN_LOGIN=${MADDEVS_COMEDIAN_LOGIN}
       - COMEDIAN_PASSWORD=${MADDEVS_COMEDIAN_PASSWORD}
       - COMEDIAN_SECRET_TOKEN=${MADDEVS_COMEDIAN_SECRET_TOKEN}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_ENVIRONMENT=comedian
       - VIRTUAL_HOST=comedian.maddevs.co
       - LETSENCRYPT_HOST=comedian.maddevs.co
       - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
@@ -74,6 +76,8 @@ services:
       - COMEDIAN_SLACK_DOMAIN=${NAPPY_COMEDIAN_SLACK_DOMAIN}
       - COMEDIAN_LOGIN=${MADDEVS_COMEDIAN_LOGIN}
       - COMEDIAN_PASSWORD=${MADDEVS_COMEDIAN_PASSWORD}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_ENVIRONMENT=nappy
       - VIRTUAL_HOST=nappy.comedian.maddevs.co
       - LETSENCRYPT_HOST=nappy.comedian.maddevs.co
       - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
@@ -103,7 +107,9 @@ services:
       - COMEDIAN_SECRET_TOKEN=${BUSGOVN_COMEDIAN_SECRET_TOKEN}
       - COMEDIAN_SLACK_DOMAIN=${BUSGOVN_COMEDIAN_SLACK_DOMAIN}
       - COMEDIAN_LOGIN=${MADDEVS_COMEDIAN_LOGIN}
-      - COMEDIAN_PASSWORD=${MADDEVS_COMEDIAN_PASSWORD}      
+      - COMEDIAN_PASSWORD=${MADDEVS_COMEDIAN_PASSWORD}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_ENVIRONMENT=busgovn      
       - VIRTUAL_HOST=busgovn.comedian.maddevs.co
       - LETSENCRYPT_HOST=busgovn.comedian.maddevs.co
       - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
@@ -134,6 +140,8 @@ services:
       - COMEDIAN_SLACK_DOMAIN=${LUMICI_COMEDIAN_SLACK_DOMAIN}
       - COMEDIAN_LOGIN=${MADDEVS_COMEDIAN_LOGIN}
       - COMEDIAN_PASSWORD=${MADDEVS_COMEDIAN_PASSWORD}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_ENVIRONMENT=lumici
       - VIRTUAL_HOST=lumici.comedian.maddevs.co
       - LETSENCRYPT_HOST=lumici.comedian.maddevs.co
       - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
@@ -164,6 +172,8 @@ services:
       - COMEDIAN_SLACK_DOMAIN=${COMEDIAN_TESTING_COMEDIAN_SLACK_DOMAIN}
       - COMEDIAN_LOGIN=${COMEDIAN_TESTING_COMEDIAN_LOGIN}
       - COMEDIAN_PASSWORD=${COMEDIAN_TESTING_COMEDIAN_PASSWORD}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_ENVIRONMENT=comedian-testing
       - VIRTUAL_HOST=comedian-testing.comedian.maddevs.co
       - LETSENCRYPT_HOST=comedian-testing.comedian.maddevs.co
       - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
