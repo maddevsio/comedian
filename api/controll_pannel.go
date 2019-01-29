@@ -39,26 +39,52 @@ func (ba *BotAPI) renderControllPannel(c echo.Context) error {
 		status = "checked"
 	}
 
+	//selected in <select> tag
+	var languageSelectedRUS, languageSelectedEN string
+	if ba.Bot.CP.Language == "ru_RU" {
+		languageSelectedRUS = "selected"
+	} else if ba.Bot.CP.Language == "en_US" {
+		languageSelectedEN = "selected"
+	}
+	var sprintReportStatusSelectedTrue, sprintReportStatusSelectedFalse string
+	if ba.Bot.CP.SprintReportStatus == true {
+		sprintReportStatusSelectedTrue = "selected"
+	} else {
+		sprintReportStatusSelectedFalse = "selected"
+	}
+	var collectorSelectedEnabled, collectorSelectedDisabled string
+	if ba.Bot.CP.CollectorEnabled == true {
+		collectorSelectedEnabled = "selected"
+	} else {
+		collectorSelectedDisabled = "selected"
+	}
+
 	data := map[string]interface{}{
-		"manager_slack_user_id":       ba.Bot.CP.ManagerSlackUserID,
-		"reporting_channel":           ba.Bot.CP.ReportingChannel,
-		"individual_reporting_status": status,
-		"report_time":                 ba.Bot.CP.ReportTime,
-		"notifier_interval":           ba.Bot.CP.NotifierInterval,
-		"reminder_time":               ba.Bot.CP.ReminderTime,
-		"reminder_repeats_max":        ba.Bot.CP.ReminderRepeatsMax,
-		"language":                    ba.Bot.CP.Language,
-		"collector_enabled":           ba.Bot.CP.CollectorEnabled,
-		"sprint_report_status":        ba.Bot.CP.SprintReportStatus,
-		"sprint_report_time":          ba.Bot.CP.SprintReportTime,
-		"sprint_report_channel":       ba.Bot.CP.SprintReportChannel,
-		"monday":                      sprintdays["monday"],
-		"tuesday":                     sprintdays["tuesday"],
-		"wednesday":                   sprintdays["wednesday"],
-		"thursday":                    sprintdays["thursday"],
-		"friday":                      sprintdays["friday"],
-		"saturday":                    sprintdays["saturday"],
-		"sunday":                      sprintdays["sunday"],
+		"manager_slack_user_id":               ba.Bot.CP.ManagerSlackUserID,
+		"reporting_channel":                   ba.Bot.CP.ReportingChannel,
+		"individual_reporting_status":         status,
+		"report_time":                         ba.Bot.CP.ReportTime,
+		"notifier_interval":                   ba.Bot.CP.NotifierInterval,
+		"reminder_time":                       ba.Bot.CP.ReminderTime,
+		"reminder_repeats_max":                ba.Bot.CP.ReminderRepeatsMax,
+		"language":                            ba.Bot.CP.Language,
+		"languageSelectedRUS":                 languageSelectedRUS,
+		"languageSelectedEN":                  languageSelectedEN,
+		"collector_enabled":                   ba.Bot.CP.CollectorEnabled,
+		"collector_selected_enabled":          collectorSelectedEnabled,
+		"collector_selected_disabled":         collectorSelectedDisabled,
+		"sprint_report_status":                ba.Bot.CP.SprintReportStatus,
+		"sprint_report_status_selected_true":  sprintReportStatusSelectedTrue,
+		"sprint_report_status_selected_false": sprintReportStatusSelectedFalse,
+		"sprint_report_time":                  ba.Bot.CP.SprintReportTime,
+		"sprint_report_channel":               ba.Bot.CP.SprintReportChannel,
+		"monday":                              sprintdays["monday"],
+		"tuesday":                             sprintdays["tuesday"],
+		"wednesday":                           sprintdays["wednesday"],
+		"thursday":                            sprintdays["thursday"],
+		"friday":                              sprintdays["friday"],
+		"saturday":                            sprintdays["saturday"],
+		"sunday":                              sprintdays["sunday"],
 	}
 	return c.Render(http.StatusOK, "admin", data)
 }
