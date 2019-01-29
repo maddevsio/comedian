@@ -1,6 +1,10 @@
 package main
 
 import (
+	"os"
+
+	"github.com/evalphobia/logrus_sentry"
+	raven "github.com/getsentry/raven-go"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/api"
 	"gitlab.com/team-monitoring/comedian/bot"
@@ -9,6 +13,25 @@ import (
 	"gitlab.com/team-monitoring/comedian/reporting"
 	"gitlab.com/team-monitoring/comedian/sprint"
 )
+
+func init() {
+	raven.SetSampleRate(0.25)
+	log.SetFormatter(&log.JSONFormatter{
+		DisableTimestamp: false,
+		PrettyPrint:      true,
+	})
+	log.SetReportCaller(true)
+
+	hook, err := logrus_sentry.NewSentryHook(os.Getenv("SENTRY_DSN"), []log.Level{
+		log.PanicLevel,
+		log.FatalLevel,
+		log.ErrorLevel,
+	})
+
+	if err == nil {
+		log.AddHook(hook)
+	}
+}
 
 func main() {
 	config, err := config.Get()
