@@ -54,30 +54,31 @@ func GetSprintData(bot *bot.Bot, project string) (sprintInfo CollectorInfo, err 
 		return sprintInfo, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		if res.StatusCode == 404 {
-			var message Message
-			body, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				logrus.Errorf("sprint: ioutil.ReadAll failed: %v", err)
-			}
-			err = json.Unmarshal(body, &message)
-			if message.Message == "Project does not have the active sprints" {
-				notActiveSprint := localizer.MustLocalize(&i18n.LocalizeConfig{
-					DefaultMessage: &i18n.Message{
-						ID:          "NotActiveSprint",
-						Description: "Displays message if project doesn't has active sprint",
-						Other:       "Project has no active sprint yet",
-					},
-				})
-				bot.SendMessage(bot.CP.SprintReportChannel, notActiveSprint, nil)
-				return sprintInfo, errors.New("could not get data on this request")
-			}
-			if err != nil {
-				logrus.Errorf("sprint_reporting: json.Unmarshal failed: %v", err)
-				return sprintInfo, errors.New("Error unmarshaling json")
-			}
+	if res.StatusCode == 404 {
+		var message Message
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			logrus.Errorf("sprint: ioutil.ReadAll failed: %v", err)
+			return sprintInfo, err
 		}
+		err = json.Unmarshal(body, &message)
+		if message.Message == "Project does not have the active sprints" {
+			notActiveSprint := localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:          "NotActiveSprint",
+					Description: "Displays message if project doesn't has active sprint",
+					Other:       "Project has no active sprint yet",
+				},
+			})
+			bot.SendMessage(bot.CP.SprintReportChannel, notActiveSprint, nil)
+			return sprintInfo, errors.New("could not get data on this request")
+		}
+		if err != nil {
+			logrus.Errorf("sprint_reporting: json.Unmarshal failed: %v", err)
+			return sprintInfo, errors.New("Error unmarshaling json")
+		}
+	}
+	if res.StatusCode != 200 {
 		logrus.Errorf("sprint: response status code - %v. Could not get data. project: %v", res.StatusCode, project)
 		return sprintInfo, errors.New("could not get data on this request")
 	}
