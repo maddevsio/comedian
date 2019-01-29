@@ -39,6 +39,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Error("Test Error! Do not pannic!")
+
 	bot, err := bot.NewBot(config)
 	if err != nil {
 		log.Fatal(err)
