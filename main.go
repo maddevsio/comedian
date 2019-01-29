@@ -16,11 +16,6 @@ import (
 
 func init() {
 	raven.SetSampleRate(0.25)
-	log.SetFormatter(&log.JSONFormatter{
-		DisableTimestamp: false,
-		PrettyPrint:      true,
-	})
-	log.SetReportCaller(true)
 
 	hook, err := logrus_sentry.NewSentryHook(os.Getenv("SENTRY_DSN"), []log.Level{
 		log.PanicLevel,

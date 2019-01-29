@@ -36,7 +36,7 @@ func (r *SprintReporter) SendSprintReport() {
 	logrus.Info("Send sprint report begin")
 
 	if !r.bot.CP.SprintReportStatus || !r.bot.CP.CollectorEnabled {
-		logrus.Info("Sprint Report of colletor turned off ")
+		logrus.Info("Sprint Report or collector turned off ")
 		return
 	}
 
@@ -46,7 +46,7 @@ func (r *SprintReporter) SendSprintReport() {
 		return
 	}
 
-	if time.Now().Hour() != hour && time.Now().Minute() != minute {
+	if !(time.Now().Hour() == hour && time.Now().Minute() == minute) {
 		logrus.Info("Not a time for Sprint Report")
 		return
 	}
@@ -76,6 +76,11 @@ func (r *SprintReporter) SendSprintReport() {
 	})
 
 	for _, channel := range channels {
+
+		if channel.StandupTime == 0 {
+			logrus.Info("skip the channel!")
+			continue
+		}
 
 		sprintInfo, err := r.GetSprintInfo(channel.ChannelName)
 		if err != nil {
