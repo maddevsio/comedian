@@ -1,20 +1,21 @@
 package sprint
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
+	"gitlab.com/team-monitoring/comedian/collector"
 	"gitlab.com/team-monitoring/comedian/utils"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
-	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
-	"gitlab.com/team-monitoring/comedian/reporting"
+	"gitlab.com/team-monitoring/comedian/model"
 )
 
 type Task struct {
@@ -26,33 +27,32 @@ type Task struct {
 }
 
 type ActiveSprint struct {
-	Name                  string
-	TotalNumberOfTasks    int
-	InProgressTasks       []Task
-	HasNotInProgressTasks []string
-	ResolvedTasksCount    int
-	SprintDaysCount       int
-	PassedDays            int
-	URL                   string
-	StartDate             time.Time
+	Name               string
+	TotalNumberOfTasks int
+	InProgressTasks    []Task
+	NotInProgressTasks []string
+	ResolvedTasksCount int
+	SprintDaysCount    int
+	PassedDays         int
+	URL                string
+	StartDate          time.Time
+	LeftDays           int
+	SprintProgress     float32
 }
 
-func prepareTime(timestring string) (date time.Time, err error) {
-	//2019-01-14T16:29:02.432+06:00"
-	parts := strings.Split(timestring, "T")
-	var year, month, day int
-	if len(parts) == 2 {
-		//get year,month,day from time string
-		ymt := strings.Split(parts[0], "-")
-		if len(ymt) == 3 {
-			year, _ = strconv.Atoi(ymt[0])
-			month, _ = strconv.Atoi(ymt[1])
-			day, _ = strconv.Atoi(ymt[2])
-			date = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
-			return date, err
-		}
-	}
-	return date, errors.New("Error parsing time")
+//SprintInfo used to parse sprint data from Collector
+type SprintInfo struct {
+	SprintName  string `json:"sprint_name"`
+	SprintURL   string `json:"link_to_sprint"`
+	SprintStart string `json:"started"`
+	SprintEnd   string `json:"end"`
+	Tasks       []struct {
+		Issue            string `json:"title"`
+		Status           string `json:"status"`
+		Assignee         string `json:"assignee"`
+		AssigneeFullName string `json:"assignee_name"`
+		Link             string `json:"link"`
+	} `json:"issues"`
 }
 
 //countDays return count days between periods
@@ -61,16 +61,60 @@ func countDays(startDate, endDate time.Time) (countDays int) {
 	return countDays
 }
 
+//GetSprintInfo sends api request to collector service and returns Info object
+func (r *SprintReporter) GetSprintInfo(project string) (sprintInfo SprintInfo, err error) {
+	collectorURL := fmt.Sprintf("%v/rest/api/v1/projects/%v/%v/sprint/detail/", r.bot.Conf.CollectorURL, r.bot.TeamDomain, project)
+
+	req, err := http.NewRequest("GET", collectorURL, nil)
+	if err != nil {
+		return sprintInfo, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", r.bot.Conf.CollectorToken))
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return sprintInfo, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return sprintInfo, errors.New("could not get data on this request")
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return sprintInfo, err
+	}
+	err = json.Unmarshal(body, &sprintInfo)
+	if err != nil {
+		return sprintInfo, err
+	}
+	return sprintInfo, err
+}
+
 //MakeActiveSprint make ActiveSprint struct from CollectorInfo
-func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
+func MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
 	var activeSprint ActiveSprint
-	activeSprint.Name = collectorInfo.SprintName
-	activeSprint.URL = collectorInfo.SprintURL
-	//calculate TotalNumberOfTasks
-	activeSprint.TotalNumberOfTasks = len(collectorInfo.Tasks)
-	//members that have inprogress tasks
+	activeSprint.Name = sprintInfo.SprintName
+	activeSprint.URL = sprintInfo.SprintURL
+
+	layout := "2019-01-14T16:29:02.432+06:00"
+	startDate, err := time.Parse(layout, sprintInfo.SprintStart)
+	if err != nil {
+		return activeSprint, err
+	}
+	endDate, err := time.Parse(layout, sprintInfo.SprintEnd)
+	if err != nil {
+		return activeSprint, err
+	}
+
+	activeSprint.StartDate = startDate
+	activeSprint.SprintDaysCount = countDays(startDate, endDate)
+	activeSprint.PassedDays = countDays(startDate, time.Now())
+
+	activeSprint.TotalNumberOfTasks = len(sprintInfo.Tasks)
+
 	var hasInProgressTasks []string
-	for _, task := range collectorInfo.Tasks {
+	for _, task := range sprintInfo.Tasks {
 		//collect inprogress tasks
 		var inProgressTask Task
 		//inprogress tasks
@@ -92,36 +136,31 @@ func MakeActiveSprint(collectorInfo CollectorInfo) ActiveSprint {
 			activeSprint.ResolvedTasksCount++
 		}
 	}
+
 	//check members to find members that hasn't inprogress tasks
-	for _, task := range collectorInfo.Tasks {
+	for _, task := range sprintInfo.Tasks {
 		if !bot.InList(task.AssigneeFullName, hasInProgressTasks) {
-			if !bot.InList(task.AssigneeFullName, activeSprint.HasNotInProgressTasks) {
-				activeSprint.HasNotInProgressTasks = append(activeSprint.HasNotInProgressTasks, task.AssigneeFullName)
+			if !bot.InList(task.AssigneeFullName, activeSprint.NotInProgressTasks) {
+				activeSprint.NotInProgressTasks = append(activeSprint.NotInProgressTasks, task.AssigneeFullName)
 			}
 		}
 	}
-	startDate, err := prepareTime(collectorInfo.SprintStart)
-	if err != nil {
-		logrus.Errorf("sprint.prepareTime failed: %v", err)
-	}
-	activeSprint.StartDate = startDate
-	endDate, err := prepareTime(collectorInfo.SprintEnd)
-	if err != nil {
-		logrus.Errorf("sprint.prepareTime failed: %v", err)
-	}
-	activeSprint.SprintDaysCount = countDays(startDate, endDate)
-	currentDate := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
-	activeSprint.PassedDays = countDays(startDate, currentDate)
-	return activeSprint
+
+	sprintProgress := float32(activeSprint.ResolvedTasksCount) / float32(activeSprint.TotalNumberOfTasks) * 100
+	leftDays := activeSprint.SprintDaysCount - activeSprint.PassedDays
+
+	activeSprint.SprintProgress = sprintProgress
+	activeSprint.LeftDays = leftDays
+
+	return activeSprint, nil
 }
 
 //MakeMessage make message about sprint
-func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r reporting.Reporter) (string, []slack.Attachment, error) {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.CP.Language)
-	//progressSprint=resolved_tasks/totalCountOfTasks*100
+func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string) ([]slack.Attachment, error) {
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
 	var attachments []slack.Attachment
-	var attachment1 slack.Attachment
-	progressSprint := float32(activeSprint.ResolvedTasksCount) / float32(activeSprint.TotalNumberOfTasks) * 100
+	var sprintBasicInfo slack.Attachment
+
 	sprintProgressPercent := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "SprintProgressPercent",
@@ -129,10 +168,10 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			Other:       "Sprint completed: {{.percent}}%",
 		},
 		TemplateData: map[string]interface{}{
-			"percent": int(progressSprint),
+			"percent": int(activeSprint.SprintProgress),
 		},
 	})
-	attachment1.Title = sprintProgressPercent
+	sprintBasicInfo.Title = sprintProgressPercent
 	sprintTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "SprintTitle",
@@ -143,9 +182,9 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			"name": activeSprint.Name,
 		},
 	})
-	attachment1.Pretext = sprintTitle
-	attachment1.MarkdownIn = append(attachment1.MarkdownIn, attachment1.Pretext)
-	leftDays := activeSprint.SprintDaysCount - activeSprint.PassedDays
+	sprintBasicInfo.Pretext = sprintTitle
+	sprintBasicInfo.MarkdownIn = append(sprintBasicInfo.MarkdownIn, sprintBasicInfo.Pretext)
+
 	sprintTotalDays := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "sprintTotalDays",
@@ -171,25 +210,26 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			One:         "day",
 			Other:       "days",
 		},
-		PluralCount: leftDays,
+		PluralCount: activeSprint.LeftDays,
 	})
 	sprintDays := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "SprintDays",
 			Description: "Displays message about sprint duration",
-			Other:       "Sprint lasts {{.totalDays}} {{.td}}, {{.passedDays}} {{.pd}} passed, {{.leftDays}} {{.ld}} left.",
+			Other:       "Sprint lasts {{.totalDays}} {{.td}}, {{.passedDays}} {{.pd}} passed, {{.leftDays}} {{.ld}} left.\n",
 		},
 		TemplateData: map[string]interface{}{
 			"totalDays":  activeSprint.SprintDaysCount,
 			"td":         sprintTotalDays,
 			"passedDays": activeSprint.PassedDays,
 			"pd":         sprintPassedDays,
-			"leftDays":   leftDays,
+			"leftDays":   activeSprint.LeftDays,
 			"ld":         sprintLeftDays,
 		},
 	})
-	sprintDays += "\n"
-	attachment1.Text = sprintDays
+
+	sprintBasicInfo.Text = sprintDays
+
 	urlTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "UrlTitle",
@@ -200,9 +240,10 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			"url": activeSprint.URL,
 		},
 	})
-	attachment1.Text += urlTitle
-	attachments = append(attachments, attachment1)
-	var attachment2 slack.Attachment
+	sprintBasicInfo.Text += urlTitle
+	attachments = append(attachments, sprintBasicInfo)
+
+	var inProgressTasts slack.Attachment
 	inProgressTasksTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "InProgressTasksTitle",
@@ -212,13 +253,15 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 		},
 		PluralCount: len(activeSprint.InProgressTasks),
 	})
-	attachment2.Pretext = inProgressTasksTitle
-	attachment2.MarkdownIn = append(attachment2.MarkdownIn, attachment2.Pretext)
-	attachments = append(attachments, attachment2)
+	inProgressTasts.Pretext = inProgressTasksTitle
+	inProgressTasts.MarkdownIn = append(inProgressTasts.MarkdownIn, inProgressTasts.Pretext)
+	attachments = append(attachments, inProgressTasts)
+
 	//sorts inprogress tasks by alphabet
 	sort.Slice(activeSprint.InProgressTasks, func(i, j int) bool {
 		return activeSprint.InProgressTasks[i].AssigneeFullName < activeSprint.InProgressTasks[j].AssigneeFullName
 	})
+
 	for _, task := range activeSprint.InProgressTasks {
 		var attachment slack.Attachment
 		if task.AssigneeFullName != "" {
@@ -278,7 +321,8 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			attachments = append(attachments, attachment)
 		}
 	}
-	var attachment3 slack.Attachment
+
+	var notInProgressTasks slack.Attachment
 	notInProgressTaskTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "notInProgressTaskTitle",
@@ -286,12 +330,13 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			Other:       "*No tasks In Progress:*",
 		},
 	})
-	attachment3.Pretext = notInProgressTaskTitle
-	attachment3.MarkdownIn = append(attachment3.MarkdownIn, attachment3.Pretext)
-	attachments = append(attachments, attachment3)
-	if len(activeSprint.HasNotInProgressTasks) > 0 {
+	notInProgressTasks.Pretext = notInProgressTaskTitle
+	notInProgressTasks.MarkdownIn = append(notInProgressTasks.MarkdownIn, notInProgressTasks.Pretext)
+	attachments = append(attachments, notInProgressTasks)
+
+	if len(activeSprint.NotInProgressTasks) > 0 {
 		var attachment slack.Attachment
-		for _, task := range activeSprint.HasNotInProgressTasks {
+		for _, task := range activeSprint.NotInProgressTasks {
 			//members that has not inprogress tasks
 			notInProgressTask := localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
@@ -308,27 +353,8 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 			attachments = append(attachments, attachment)
 		}
 	}
-	//calculate total worklogs of team members
-	var totalTeamWorlogs int
-	channelID, err := bot.DB.GetChannelID(project)
-	if err != nil {
-		logrus.Infof("sprint_reporting:GetChannelID failed. ChannelName: %v", project)
-		return "", attachments, err
-	}
-	channelMembers, err := bot.DB.ListChannelMembers(channelID)
-	if err != nil {
-		logrus.Errorf("sprint_reporting:ListChannelMembers failed: %v", err)
-	}
-	for _, channelMember := range channelMembers {
-		_, worklogs, err := r.GetCollectorDataOnMember(channelMember, activeSprint.StartDate, time.Now())
-		if err != nil {
-			logrus.Infof("sprint_reporting:GetCollectorDataOnMember failed: %v. Member's user_id: %v", err, channelMember.UserID)
-			continue
-		}
-		totalTeamWorlogs += worklogs.Worklogs
-	}
-	worklogs := utils.SecondsToHuman(totalTeamWorlogs)
-	var attachment4 slack.Attachment
+
+	var worklogsInfo slack.Attachment
 	totalSprintWorklogsOfTeam := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "totalSprintWorklogsOfTeam",
@@ -337,26 +363,53 @@ func MakeMessage(bot *bot.Bot, activeSprint ActiveSprint, project string, r repo
 		},
 		TemplateData: map[string]interface{}{
 			"totalWorklogs": worklogs,
-			"start":         MakeDate(activeSprint.StartDate),
-			"now":           MakeDate(time.Now()),
+			"start":         activeSprint.StartDate.Format("2006-01-02"),
+			"now":           time.Now().Format("2006-01-02"),
 		},
 	})
-	attachment4.Pretext = totalSprintWorklogsOfTeam
-	attachment4.MarkdownIn = append(attachment3.MarkdownIn, attachment4.Pretext)
-	attachments = append(attachments, attachment4)
-	return "", attachments, nil
+	worklogsInfo.Pretext = totalSprintWorklogsOfTeam
+	worklogsInfo.MarkdownIn = append(worklogsInfo.MarkdownIn, worklogsInfo.Pretext)
+	attachments = append(attachments, worklogsInfo)
+	return attachments, nil
 }
 
-//MakeDate convert date to string
-func MakeDate(date time.Time) string {
-	y := date.Year()
-	m := int(date.Month())
-	d := date.Day()
-	var sdate string
-	if m < 10 {
-		sdate = fmt.Sprintf("%v.0%v.%v", d, m, y)
-	} else {
-		sdate = fmt.Sprintf("%v.%v.%v", d, m, y)
+//GetCollectorDataOnMember sends API request to Collector endpoint and returns CollectorData type
+func (r *SprintReporter) GetCollectorDataOnMember(member model.ChannelMember, startDate, endDate time.Time) (collector.Data, collector.Data, error) {
+	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
+	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
+
+	project, err := r.bot.DB.GetChannelName(member.ChannelID)
+	if err != nil {
+		return collector.Data{}, collector.Data{}, err
 	}
-	return sdate
+
+	dataOnUser, err := collector.GetCollectorData(r.bot, "users", member.UserID, dateFrom, dateTo)
+	if err != nil {
+		return collector.Data{}, collector.Data{}, err
+	}
+
+	userInProject := fmt.Sprintf("%v/%v", member.UserID, project)
+	dataOnUserInProject, err := collector.GetCollectorData(r.bot, "user-in-project", userInProject, dateFrom, dateTo)
+	if err != nil {
+		return collector.Data{}, collector.Data{}, err
+	}
+
+	return dataOnUser, dataOnUserInProject, err
+}
+
+//CountTotalWorklogs counts total worklogs
+func (r *SprintReporter) CountTotalWorklogs(channelID string, startDate time.Time) (string, error) {
+	var totalTeamWorlogs int
+	channelMembers, err := r.bot.DB.ListChannelMembers(channelID)
+	if err != nil {
+		return "", err
+	}
+	for _, channelMember := range channelMembers {
+		_, worklogs, err := r.GetCollectorDataOnMember(channelMember, startDate, time.Now())
+		if err != nil {
+			return "", err
+		}
+		totalTeamWorlogs += worklogs.Worklogs
+	}
+	return utils.SecondsToHuman(totalTeamWorlogs), nil
 }

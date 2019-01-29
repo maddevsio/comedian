@@ -4,29 +4,24 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
-	"gitlab.com/team-monitoring/comedian/reporting"
 	"gitlab.com/team-monitoring/comedian/utils"
 )
 
-//ReporterSprint is used to send report about sprint progress
-type ReporterSprint struct {
-	bot      *bot.Bot
-	reporter reporting.Reporter
+//SprintReporter is used to send report about sprint progress
+type SprintReporter struct {
+	bot *bot.Bot
 }
 
-//NewReporterSprint creates a new string reporter
-func NewReporterSprint(Bot *bot.Bot, r reporting.Reporter) ReporterSprint {
-	reporterSprint := ReporterSprint{
-		bot:      Bot,
-		reporter: r,
-	}
-	return reporterSprint
+//NewSprintReporter creates a new string reporter
+func NewSprintReporter(Bot *bot.Bot) SprintReporter {
+	return SprintReporter{Bot}
 }
 
 // Start starts all sprint reports treads
-func (r *ReporterSprint) Start() {
+func (r *SprintReporter) Start() {
 	sprintReport := time.NewTicker(time.Second * 60).C
 	for {
 		select {
@@ -37,51 +32,70 @@ func (r *ReporterSprint) Start() {
 }
 
 //SendSprintReport send report about sprint
-func (r *ReporterSprint) SendSprintReport() {
-	logrus.Info("CP: ", r.bot.CP)
-	if !r.bot.CP.SprintReportStatus {
-		logrus.Infof("Sprint Report Status: %v", r.bot.CP.SprintReportStatus)
+func (r *SprintReporter) SendSprintReport() {
+
+	if !r.bot.CP.SprintReportStatus || !r.bot.CP.CollectorEnabled {
 		return
 	}
-	sprintWeekdays := strings.Split(r.bot.CP.SprintWeekdays, ",")
-	weekdays := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
-	var sprintdays []string
-	for i := 0; i < 7; i++ {
-		if sprintWeekdays[i] == "on" {
-			sprintdays = append(sprintdays, weekdays[i])
-		}
-	}
-	if !bot.InList(time.Now().Weekday().String(), sprintdays) {
-		logrus.Info("sprint days: ", sprintdays)
-		return
-	}
+
 	hour, minute, err := utils.FormatTime(r.bot.CP.SprintReportTime)
 	if err != nil {
-		logrus.Errorf("sprint_reporter: Error parsing report time: %v", err)
 		return
 	}
-	if time.Now().Hour() == hour && time.Now().Minute() == minute {
-		channels, err := r.bot.DB.GetAllChannels()
+
+	if time.Now().Hour() != hour && time.Now().Minute() != minute {
+		return
+	}
+
+	sprintWeekdays := strings.Split(r.bot.CP.SprintWeekdays, ",")
+
+	//need to think about weekdays in ints Sunday should == 0
+	if sprintWeekdays[time.Now().Weekday()] != "on" {
+		return
+	}
+
+	channels, err := r.bot.DB.GetAllChannels()
+	if err != nil {
+		return
+	}
+
+	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
+
+	noActiveSprints := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "NotActiveSprint",
+			Description: "Displays message if project doesn't has active sprint",
+			Other:       "Project has no active sprint yet",
+		},
+	})
+
+	for _, channel := range channels {
+
+		sprintInfo, err := r.GetSprintInfo(channel.ChannelName)
 		if err != nil {
-			logrus.Errorf("sprint.GetAllChannels failed: %v", err)
-			return
+			logrus.Error(err)
+			r.bot.SendMessage(r.bot.CP.SprintReportChannel, noActiveSprints, nil)
+			continue
 		}
-		for _, channel := range channels {
-			logrus.Infof("GetSprintData by channel: %v", channel.ChannelName)
-			collectorInfo, err := GetSprintData(r.bot, channel.ChannelName)
-			if err != nil {
-				logrus.Errorf("sprint_reporter: GetSprintData failed: %v", err)
-				continue
-			}
-			logrus.Info("collectorInfo: ", collectorInfo)
-			activeSprint := MakeActiveSprint(collectorInfo)
-			logrus.Info("activeSprint: ", activeSprint)
-			message, attachments, err := MakeMessage(r.bot, activeSprint, channel.ChannelName, r.reporter)
-			if err != nil {
-				logrus.Infof("MakeMessage failed: %v", err)
-				return
-			}
-			r.bot.SendMessage(r.bot.CP.SprintReportChannel, message, attachments)
+
+		activeSprint, err := MakeActiveSprint(sprintInfo)
+		if err != nil {
+			logrus.Error(err)
+			continue
 		}
+
+		totalWorklogs, err := r.CountTotalWorklogs(channel.ChannelID, activeSprint.StartDate)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
+
+		attachments, err := r.MakeMessage(activeSprint, totalWorklogs)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
+
+		r.bot.SendMessage(r.bot.CP.SprintReportChannel, "", attachments)
 	}
 }

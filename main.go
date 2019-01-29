@@ -39,8 +39,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Error("Test Error! Do not pannic!")
-
 	bot, err := bot.NewBot(config)
 	if err != nil {
 		log.Fatal(err)
@@ -64,7 +62,7 @@ func main() {
 	}
 	go func() { log.Fatal(notifier.Start()) }()
 
-	sreporter := sprint.NewReporterSprint(bot, reporter)
+	sreporter := sprint.NewSprintReporter(bot)
 	go func() { sreporter.Start() }()
 
 	bot.Run()
