@@ -33,17 +33,21 @@ func (r *SprintReporter) Start() {
 
 //SendSprintReport send report about sprint
 func (r *SprintReporter) SendSprintReport() {
+	logrus.Info("Send sprint report begin")
 
 	if !r.bot.CP.SprintReportStatus || !r.bot.CP.CollectorEnabled {
+		logrus.Info("Sprint Report of colletor turned off ")
 		return
 	}
 
 	hour, minute, err := utils.FormatTime(r.bot.CP.SprintReportTime)
 	if err != nil {
+		logrus.Info("Sprint Report Time messed up")
 		return
 	}
 
 	if time.Now().Hour() != hour && time.Now().Minute() != minute {
+		logrus.Info("Not a time for Sprint Report")
 		return
 	}
 
@@ -51,11 +55,13 @@ func (r *SprintReporter) SendSprintReport() {
 
 	//need to think about weekdays in ints Sunday should == 0
 	if sprintWeekdays[time.Now().Weekday()] != "on" {
+		logrus.Info("Sprint Report is not ON today!")
 		return
 	}
 
 	channels, err := r.bot.DB.GetAllChannels()
 	if err != nil {
+		logrus.Error("Sprint Report failed: %v", err)
 		return
 	}
 
