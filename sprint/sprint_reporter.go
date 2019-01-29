@@ -38,46 +38,50 @@ func (r *ReporterSprint) Start() {
 
 //SendSprintReport send report about sprint
 func (r *ReporterSprint) SendSprintReport() {
-	if r.bot.CP.SprintReportStatus {
-		sprintWeekdays := strings.Split(r.bot.CP.SprintWeekdays, ",")
-		weekdays := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
-		var sprintdays []string
-		if len(sprintWeekdays) == 7 {
-			for i := 0; i < 7; i++ {
-				if sprintWeekdays[i] == "on" {
-					sprintdays = append(sprintdays, weekdays[i])
-				}
-			}
+	logrus.Info("CP: ", r.bot.CP)
+	if !r.bot.CP.SprintReportStatus {
+		logrus.Infof("Sprint Report Status: %v", r.bot.CP.SprintReportStatus)
+		return
+	}
+	sprintWeekdays := strings.Split(r.bot.CP.SprintWeekdays, ",")
+	weekdays := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
+	var sprintdays []string
+	for i := 0; i < 7; i++ {
+		if sprintWeekdays[i] == "on" {
+			sprintdays = append(sprintdays, weekdays[i])
 		}
-		if bot.InList(time.Now().Weekday().String(), sprintdays) {
-			hour, minute, err := utils.FormatTime(r.bot.CP.SprintReportTime)
+	}
+	if !bot.InList(time.Now().Weekday().String(), sprintdays) {
+		logrus.Info("sprint days: ", sprintdays)
+		return
+	}
+	hour, minute, err := utils.FormatTime(r.bot.CP.SprintReportTime)
+	if err != nil {
+		logrus.Errorf("sprint_reporter: Error parsing report time: %v", err)
+		return
+	}
+	if time.Now().Hour() == hour && time.Now().Minute() == minute {
+		channels, err := r.bot.DB.GetAllChannels()
+		if err != nil {
+			logrus.Errorf("sprint.GetAllChannels failed: %v", err)
+			return
+		}
+		for _, channel := range channels {
+			logrus.Infof("GetSprintData by channel: %v", channel.ChannelName)
+			collectorInfo, err := GetSprintData(r.bot, channel.ChannelName)
 			if err != nil {
-				logrus.Errorf("sprint_reporter: Error parsing report time: %v", err)
+				logrus.Errorf("sprint_reporter: GetSprintData failed: %v", err)
+				continue
+			}
+			logrus.Info("collectorInfo: ", collectorInfo)
+			activeSprint := MakeActiveSprint(collectorInfo)
+			logrus.Info("activeSprint: ", activeSprint)
+			message, attachments, err := MakeMessage(r.bot, activeSprint, channel.ChannelName, r.reporter)
+			if err != nil {
+				logrus.Infof("MakeMessage failed: %v", err)
 				return
 			}
-			if time.Now().Hour() == hour && time.Now().Minute() == minute {
-				channels, err := r.bot.DB.GetAllChannels()
-				if err != nil {
-					logrus.Errorf("sprint.GetAllChannels failed: %v", err)
-					return
-				}
-				for _, channel := range channels {
-					logrus.Infof("GetSprintData by channel: %v", channel.ChannelName)
-					collectorInfo, err := GetSprintData(r.bot, channel.ChannelName)
-					if err != nil {
-						logrus.Errorf("sprint_reporter: GetSprintData failed: %v", err)
-						continue
-					}
-					logrus.Info("collectorInfo: ", collectorInfo)
-					activeSprint := MakeActiveSprint(collectorInfo)
-					logrus.Info("activeSprint: ", activeSprint)
-					message, attachments, err := MakeMessage(r.bot, activeSprint, channel.ChannelName, r.reporter)
-					if err != nil {
-						return
-					}
-					r.bot.SendMessage(r.bot.CP.SprintReportChannel, message, attachments)
-				}
-			}
+			r.bot.SendMessage(r.bot.CP.SprintReportChannel, message, attachments)
 		}
 	}
 }
