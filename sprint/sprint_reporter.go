@@ -4,7 +4,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
 	"gitlab.com/team-monitoring/comedian/utils"
@@ -36,18 +35,16 @@ func (r *SprintReporter) SendSprintReport() {
 	logrus.Info("Send sprint report begin")
 
 	if !r.bot.CP.SprintReportStatus || !r.bot.CP.CollectorEnabled {
-		logrus.Info("Sprint Report or collector turned off ")
 		return
 	}
 
 	hour, minute, err := utils.FormatTime(r.bot.CP.SprintReportTime)
 	if err != nil {
-		logrus.Info("Sprint Report Time messed up")
+		logrus.Errorf("Sprint Report Time messed up. Error: %v", err)
 		return
 	}
 
 	if !(time.Now().Hour() == hour && time.Now().Minute() == minute) {
-		logrus.Info("Not a time for Sprint Report")
 		return
 	}
 
@@ -55,7 +52,6 @@ func (r *SprintReporter) SendSprintReport() {
 
 	//need to think about weekdays in ints Sunday should == 0
 	if sprintWeekdays[time.Now().Weekday()] != "on" {
-		logrus.Info("Sprint Report is not ON today!")
 		return
 	}
 
@@ -65,27 +61,16 @@ func (r *SprintReporter) SendSprintReport() {
 		return
 	}
 
-	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
-
-	noActiveSprints := localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:          "NotActiveSprint",
-			Description: "Displays message if project doesn't has active sprint",
-			Other:       "Project has no active sprint yet",
-		},
-	})
-
 	for _, channel := range channels {
 
 		if channel.StandupTime == 0 {
-			logrus.Info("skip the channel!")
+			logrus.Infof("skip the channel %v. standup time is 0", channel.ChannelName)
 			continue
 		}
 
 		sprintInfo, err := r.GetSprintInfo(channel.ChannelName)
 		if err != nil {
 			logrus.Error(err)
-			r.bot.SendMessage(r.bot.CP.SprintReportChannel, noActiveSprints, nil)
 			continue
 		}
 
@@ -101,12 +86,12 @@ func (r *SprintReporter) SendSprintReport() {
 			continue
 		}
 
-		attachments, err := r.MakeMessage(activeSprint, totalWorklogs)
+		message, attachments, err := r.MakeMessage(activeSprint, totalWorklogs)
 		if err != nil {
 			logrus.Error(err)
 			continue
 		}
 
-		r.bot.SendMessage(r.bot.CP.SprintReportChannel, "", attachments)
+		r.bot.SendMessage(r.bot.CP.SprintReportChannel, message, attachments)
 	}
 }
