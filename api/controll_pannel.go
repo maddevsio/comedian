@@ -24,7 +24,7 @@ func (ba *BotAPI) renderControllPannel(c echo.Context) error {
 	logrus.Info(ba.Bot.CP)
 
 	sprintweekdays := strings.Split(ba.Bot.CP.SprintWeekdays, ",")
-	weekdays := []string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
+	weekdays := []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}
 	sprintdays := make(map[string]string)
 	if len(sprintweekdays) == 7 {
 		for i := 0; i < 7; i++ {
@@ -152,7 +152,7 @@ func (ba *BotAPI) updateConfig(c echo.Context) error {
 	saturday := form.Get("saturday")
 	sunday := form.Get("sunday")
 
-	cp.SprintWeekdays = monday + "," + tuesday + "," + wednesday + "," + thursday + "," + friday + "," + saturday + "," + sunday
+	cp.SprintWeekdays = sunday + "," + monday + "," + tuesday + "," + wednesday + "," + thursday + "," + friday + "," + saturday
 
 	_, err = ba.Bot.DB.UpdateControllPannel(*cp)
 	if err != nil {

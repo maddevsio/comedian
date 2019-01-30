@@ -136,6 +136,10 @@
                   </div>
                 <div class="col-md-3 mb-2">
                     <label for="sprint_report_turn">Sprint report weekdays</label>
+                    <div>
+                      <input type="checkbox" id="sunday" name="sunday" {{.sunday}}>
+                      <label for="sunday">Sunday</label>
+                    </div>
                 <div>
                   <input type="checkbox" id="monday" name="monday" {{.monday}}>
                   <label for="monday">Monday</label>
@@ -160,10 +164,6 @@
                           <input type="checkbox" id="saturday" name="saturday" {{.saturday}}>
                           <label for="saturday">Saturday</label>
                         </div>
-                        <div>
-                            <input type="checkbox" id="sunday" name="sunday" {{.sunday}}>
-                            <label for="sunday">Sunday</label>
-                          </div>
               </div>
             </div>
             
