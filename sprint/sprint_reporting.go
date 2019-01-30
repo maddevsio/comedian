@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"gitlab.com/team-monitoring/comedian/collector"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
+	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/bot"
 	"gitlab.com/team-monitoring/comedian/model"
 )
@@ -64,7 +67,7 @@ func countDays(startDate, endDate time.Time) (countDays int) {
 //GetSprintInfo sends api request to collector service and returns Info object
 func (r *SprintReporter) GetSprintInfo(project string) (sprintInfo SprintInfo, err error) {
 	collectorURL := fmt.Sprintf("%v/rest/api/v1/projects/%v/%v/sprint/detail/", r.bot.Conf.CollectorURL, r.bot.TeamDomain, project)
-
+	logrus.Info("collectorURL: ", collectorURL)
 	req, err := http.NewRequest("GET", collectorURL, nil)
 	if err != nil {
 		return sprintInfo, err
@@ -91,21 +94,42 @@ func (r *SprintReporter) GetSprintInfo(project string) (sprintInfo SprintInfo, e
 	return sprintInfo, err
 }
 
+func prepareTime(timestring string) (date time.Time, err error) {
+	//2019-01-14T16:29:02.432+06:00"
+	parts := strings.Split(timestring, "T")
+	var year, month, day int
+	if len(parts) == 2 {
+		//get year,month,day from time string
+		ymt := strings.Split(parts[0], "-")
+		if len(ymt) == 3 {
+			year, _ = strconv.Atoi(ymt[0])
+			month, _ = strconv.Atoi(ymt[1])
+			day, _ = strconv.Atoi(ymt[2])
+			date = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+			return date, err
+		}
+	}
+	return date, errors.New("Error parsing time")
+}
+
 //MakeActiveSprint make ActiveSprint struct from CollectorInfo
 func MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
 	var activeSprint ActiveSprint
 	activeSprint.Name = sprintInfo.SprintName
 	activeSprint.URL = sprintInfo.SprintURL
 
-	layout := "2019-01-14T16:29:02.432+06:00"
-	startDate, err := time.Parse(layout, sprintInfo.SprintStart)
+	startDate, err := prepareTime(sprintInfo.SprintStart)
 	if err != nil {
-		return activeSprint, err
+		logrus.Errorf("sprint.prepareTime failed: %v", err)
 	}
-	endDate, err := time.Parse(layout, sprintInfo.SprintEnd)
+	endDate, err := prepareTime(sprintInfo.SprintEnd)
 	if err != nil {
-		return activeSprint, err
+		logrus.Errorf("sprint.prepareTime failed: %v", err)
 	}
+
+	activeSprint.SprintDaysCount = countDays(startDate, endDate)
+	currentDate := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
+	activeSprint.PassedDays = countDays(startDate, currentDate)
 
 	activeSprint.StartDate = startDate
 	activeSprint.SprintDaysCount = countDays(startDate, endDate)
@@ -152,14 +176,45 @@ func MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
 	activeSprint.SprintProgress = sprintProgress
 	activeSprint.LeftDays = leftDays
 
+	logrus.Info("activeSprint: ", activeSprint)
+
 	return activeSprint, nil
 }
 
 //MakeMessage make message about sprint
-func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string) ([]slack.Attachment, error) {
+func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string) (string, []slack.Attachment, error) {
 	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
 	var attachments []slack.Attachment
 	var sprintBasicInfo slack.Attachment
+
+	//if sprint's duration passed send message about sprint overdue on
+	if activeSprint.LeftDays < 0 {
+		sprintExpiredDays := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "SprintExpiredDays",
+				Description: "Displays expired day or days of sprint",
+				One:         "day",
+				Other:       "days",
+			},
+			PluralCount: activeSprint.LeftDays,
+		})
+
+		sprintExpired := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "SprintExpired",
+				Description: "Display message if sprint expired",
+				Other:       "Deadline of sprint expired {{.days}} {{.day}} ago.",
+			},
+			TemplateData: map[string]interface{}{
+				"days": activeSprint.LeftDays * (-1),
+				"day":  sprintExpiredDays,
+			},
+		})
+		message := sprintExpired
+		message += "\n"
+		message += activeSprint.URL
+		return message, attachments, nil
+	}
 
 	sprintProgressPercent := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
@@ -227,7 +282,7 @@ func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string)
 			"ld":         sprintLeftDays,
 		},
 	})
-
+	sprintDays += "\n"
 	sprintBasicInfo.Text = sprintDays
 
 	urlTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -370,7 +425,7 @@ func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string)
 	worklogsInfo.Pretext = totalSprintWorklogsOfTeam
 	worklogsInfo.MarkdownIn = append(worklogsInfo.MarkdownIn, worklogsInfo.Pretext)
 	attachments = append(attachments, worklogsInfo)
-	return attachments, nil
+	return "", attachments, nil
 }
 
 //GetCollectorDataOnMember sends API request to Collector endpoint and returns CollectorData type

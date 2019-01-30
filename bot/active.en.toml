@@ -558,3 +558,12 @@ Other = "{{.name}}"
 [SprintTitle]
 Description = "Displays name of sprint"
 Other = "*{{.name}} report*"
+
+[SprintExpiredDays]
+Description = "Displays expired day or days of sprint"
+One = "day"
+Other = "days"
+
+[SprintExpired]
+Description = "Display message if sprint expired"
+Other = "Deadline of sprint expired {{.days}} {{.day}} ago."

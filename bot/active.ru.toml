@@ -604,3 +604,14 @@ Other = "{{.name}}"
 [SprintTitle]
 Description = "Displays name of sprint"
 Other = "*{{.name}} репорт*"
+
+[SprintExpiredDays]
+Description = "Displays expired day or days of sprint"
+one = "день"
+few = "дня"
+many = "дней"
+other = "дней"
+
+[SprintExpired]
+Description = "Display message if sprint expired"
+Other = "Сроки спринта просрочены на {{.days}} {{.day}}. Спринт еще не закрыт."
