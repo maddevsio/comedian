@@ -595,7 +595,7 @@ Other = "{{.assignee}}"
 
 [notInProgressTaskTitle]
 Description = "Displays title of message about members that has not inprogress tasks"
-Other = "*Нет тасков In Progress:*"
+Other = "*Нет задач в статусе In Progress*"
 
 [notInProgressTask]
 Description = "Displays members that has not in progress tasks"

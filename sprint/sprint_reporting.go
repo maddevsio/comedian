@@ -382,7 +382,7 @@ func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string)
 		DefaultMessage: &i18n.Message{
 			ID:          "notInProgressTaskTitle",
 			Description: "Displays title of message about members that has not inprogress tasks",
-			Other:       "*No tasks In Progress:*",
+			Other:       "*No tasks In Progress*",
 		},
 	})
 	notInProgressTasks.Pretext = notInProgressTaskTitle
