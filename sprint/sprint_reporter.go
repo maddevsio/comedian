@@ -32,7 +32,6 @@ func (r *SprintReporter) Start() {
 
 //SendSprintReport send report about sprint
 func (r *SprintReporter) SendSprintReport() {
-	logrus.Info("Send sprint report begin")
 
 	if !r.bot.CP.SprintReportStatus || !r.bot.CP.CollectorEnabled {
 		return
@@ -70,25 +69,29 @@ func (r *SprintReporter) SendSprintReport() {
 
 		sprintInfo, err := r.GetSprintInfo(channel.ChannelName)
 		if err != nil {
-			logrus.Error(err)
+			logrus.Errorf("Failed to GetSprintInfo in channel [%v], reason [%v]. Skipping!", channel.ChannelName, err)
 			continue
 		}
+
+		logrus.Infof("Channlel [%v], Sprint Info: [%v]", channel.ChannelName, sprintInfo)
 
 		activeSprint, err := MakeActiveSprint(sprintInfo)
 		if err != nil {
-			logrus.Error(err)
+			logrus.Errorf("Failed to MakeActiveSprint in channel [%v], reason [%v]. Skipping!", channel.ChannelName, err)
 			continue
 		}
+		logrus.Infof("Channel [%v], Active Sprint: [%v]", channel.ChannelName, activeSprint)
 
 		totalWorklogs, err := r.CountTotalWorklogs(channel.ChannelID, activeSprint.StartDate)
 		if err != nil {
-			logrus.Error(err)
+			logrus.Errorf("Failed to CountTotalWorklogs in channel [%v], reason [%v]. Skipping!", channel.ChannelName, err)
 			continue
 		}
+		logrus.Infof("Channel [%v], Total Worklogs: [%v]", channel.ChannelName, totalWorklogs)
 
 		message, attachments, err := r.MakeMessage(activeSprint, totalWorklogs)
 		if err != nil {
-			logrus.Error(err)
+			logrus.Errorf("Failed to MakeMessage in channel [%v], reason [%v]. Skipping!", channel.ChannelName, err)
 			continue
 		}
 

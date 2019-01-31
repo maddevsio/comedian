@@ -67,7 +67,6 @@ func countDays(startDate, endDate time.Time) (countDays int) {
 //GetSprintInfo sends api request to collector service and returns Info object
 func (r *SprintReporter) GetSprintInfo(project string) (sprintInfo SprintInfo, err error) {
 	collectorURL := fmt.Sprintf("%v/rest/api/v1/projects/%v/%v/sprint/detail/", r.bot.Conf.CollectorURL, r.bot.TeamDomain, project)
-	logrus.Info("collectorURL: ", collectorURL)
 	req, err := http.NewRequest("GET", collectorURL, nil)
 	if err != nil {
 		return sprintInfo, err
@@ -80,7 +79,8 @@ func (r *SprintReporter) GetSprintInfo(project string) (sprintInfo SprintInfo, e
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		return sprintInfo, errors.New("could not get data on this request")
+		err := fmt.Sprintf("could not get collector data. request [%v], responce [%v]", req.URL.Path, res.StatusCode)
+		return sprintInfo, errors.New(err)
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -120,14 +120,15 @@ func MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
 
 	startDate, err := prepareTime(sprintInfo.SprintStart)
 	if err != nil {
-		logrus.Errorf("sprint.prepareTime failed: %v", err)
+		return activeSprint, err
 	}
 	endDate, err := prepareTime(sprintInfo.SprintEnd)
 	if err != nil {
-		logrus.Errorf("sprint.prepareTime failed: %v", err)
+		return activeSprint, err
 	}
 
 	activeSprint.SprintDaysCount = countDays(startDate, endDate)
+	//this may recognize current date incorrectly since it does so with timeUTC
 	currentDate := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
 	activeSprint.PassedDays = countDays(startDate, currentDate)
 
@@ -176,12 +177,11 @@ func MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
 	activeSprint.SprintProgress = sprintProgress
 	activeSprint.LeftDays = leftDays
 
-	logrus.Info("activeSprint: ", activeSprint)
-
 	return activeSprint, nil
 }
 
 //MakeMessage make message about sprint
+//Need to divide this into several separate functions!
 func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string) (string, []slack.Attachment, error) {
 	localizer := i18n.NewLocalizer(r.bot.Bundle, r.bot.CP.Language)
 	var attachments []slack.Attachment
@@ -428,6 +428,25 @@ func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string)
 	return "", attachments, nil
 }
 
+//CountTotalWorklogs counts total worklogs
+func (r *SprintReporter) CountTotalWorklogs(channelID string, startDate time.Time) (string, error) {
+	var totalTeamWorlogs int
+	channelMembers, err := r.bot.DB.ListChannelMembers(channelID)
+	if err != nil {
+		return "", err
+	}
+	for _, channelMember := range channelMembers {
+		_, dataOnUserInProject, err := r.GetCollectorDataOnMember(channelMember, startDate, time.Now())
+		if err != nil {
+			// need to think if we still want to get sprint info if worklogs are incorrect.
+			logrus.Error(err)
+			continue
+		}
+		totalTeamWorlogs += dataOnUserInProject.Worklogs
+	}
+	return utils.SecondsToHuman(totalTeamWorlogs), nil
+}
+
 //GetCollectorDataOnMember sends API request to Collector endpoint and returns CollectorData type
 func (r *SprintReporter) GetCollectorDataOnMember(member model.ChannelMember, startDate, endDate time.Time) (collector.Data, collector.Data, error) {
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
@@ -450,21 +469,4 @@ func (r *SprintReporter) GetCollectorDataOnMember(member model.ChannelMember, st
 	}
 
 	return dataOnUser, dataOnUserInProject, err
-}
-
-//CountTotalWorklogs counts total worklogs
-func (r *SprintReporter) CountTotalWorklogs(channelID string, startDate time.Time) (string, error) {
-	var totalTeamWorlogs int
-	channelMembers, err := r.bot.DB.ListChannelMembers(channelID)
-	if err != nil {
-		return "", err
-	}
-	for _, channelMember := range channelMembers {
-		_, worklogs, err := r.GetCollectorDataOnMember(channelMember, startDate, time.Now())
-		if err != nil {
-			return "", err
-		}
-		totalTeamWorlogs += worklogs.Worklogs
-	}
-	return utils.SecondsToHuman(totalTeamWorlogs), nil
 }
