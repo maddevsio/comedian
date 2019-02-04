@@ -24,6 +24,11 @@ services:
     #  interval: 10s
     #  timeout: 10s
     #  retries: 40
+#    logging:
+#      driver: syslog
+#      options:
+#        tag: "docker/comedian-mysql"
+
 
   golang:
     container_name: golang-test
@@ -43,3 +48,8 @@ services:
     volumes:
       - ./:/go/src/gitlab.com/team-monitoring/comedian/
     command: make migrate run_tests
+#    logging:
+#      driver: syslog
+#      options:
+#        tag: "docker/comedian-golang"
+
