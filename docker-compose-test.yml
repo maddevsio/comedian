@@ -47,7 +47,7 @@ services:
     working_dir: /go/src/gitlab.com/team-monitoring/comedian/
     volumes:
       - ./:/go/src/gitlab.com/team-monitoring/comedian/
-    command: make migrate run_tests
+    command: make migration-ci run_tests
 #    logging:
 #      driver: syslog
 #      options:

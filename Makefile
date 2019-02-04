@@ -19,6 +19,9 @@ build_docker:
 
 docker: build_linux build_docker
 
+migration-ci:
+            ./goose -dir migrations mysql "comedian:comedian@tcp(db:3306)/comedian"  up
+
 migrate:
 	goose -dir migrations mysql "comedian:comedian@tcp(db:3306)/comedian"  up
 
