@@ -19,11 +19,11 @@ services:
       - comedian_comedian
     # volumes:
     #   - ./percona:/var/lib/mysql:rw
-    #healthcheck:
-    #  test: "mysql -ucomedian --password=comedian -e 'show databases;' |grep comedian"
-    #  interval: 10s
-    #  timeout: 10s
-    #  retries: 40
+    healthcheck:
+     test: "mysql -ucomedian --password=comedian -e 'show databases;' |grep comedian"
+     interval: 30s
+     timeout: 20s
+     retries: 10
 #    logging:
 #      driver: syslog
 #      options:
@@ -47,9 +47,12 @@ services:
     working_dir: /go/src/gitlab.com/team-monitoring/comedian/
     volumes:
       - ./:/go/src/gitlab.com/team-monitoring/comedian/
-    command: make migration-ci 
-#    logging:
-#      driver: syslog
-#      options:
-#        tag: "docker/comedian-golang"
+    command: make migration-ci run_tests
+    depends_on:
+      db:
+          condition: service_healthy
+    # logging:
+    #   driver: syslog
+    #   options:
+    #     tag: "docker/comedian-golang"
 
