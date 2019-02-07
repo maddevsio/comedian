@@ -18,8 +18,10 @@ tests:
     - docker exec -i golang-test ls
     - sleep 10
     - docker exec -i golang-test make run_tests
+  allow_failure: true
   only:
     - master
+  
 
 build:
   image: docker:latest
