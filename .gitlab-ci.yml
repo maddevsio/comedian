@@ -45,7 +45,7 @@ staging_deploy:
     - ssh-keyscan -H $DEPLOY_SERVER_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - scp docker-deploy/docker-compose.yml gitlab@$DEPLOY_SERVER_IP:/opt/docker/comedian/
+    - scp docker-deploy/docker-compose-staging.yml gitlab@$DEPLOY_SERVER_IP:/opt/docker/staging-comedian/docker-compose.yml
     - ssh gitlab@$DEPLOY_SERVER_IP "$STAGING_DEPLOY_COMMAND"
     - ssh-agent -k
   only:

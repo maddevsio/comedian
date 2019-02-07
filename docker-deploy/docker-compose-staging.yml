@@ -1,0 +1,56 @@
+version: '2.2'
+networks:
+  comedian_comedian:
+    external: true
+
+services:
+
+  staging-db:
+    image: percona/percona-server:5.7
+    restart: on-failure
+    command: --max_allowed_packet=32505856                                                                                                                                                     
+    environment:                                                                                                                                                                               
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}                                                                                                                                             
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    networks:
+      - comedian_comedian
+    volumes:
+      - ./percona:/var/lib/mysql:rw
+    logging:
+      driver: syslog
+      options:
+        tag: "docker/staging-comedian-db"
+
+  staging-comedian:
+    image: registry.gitlab.com/team-monitoring/comedian:latest
+    restart: on-failure
+    links:
+      - staging-db:staging-db
+    networks:
+      - comedian_comedian
+    expose: 
+      - 8080
+    environment:
+      - TZ=Asia/Bishkek
+      - COMEDIAN_SLACK_TOKEN=${MADDEVS_COMEDIAN_SLACK_TOKEN}
+      - COMEDIAN_DATABASE=${MADDEVS_COMEDIAN_DATABASE}
+      - COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
+      - COMEDIAN_COLLECTOR_TOKEN=${MADDEVS_COMEDIAN_COLLECTOR_TOKEN}
+      - COMEDIAN_COLLECTOR_URL=${MADDEVS_COMEDIAN_COLLECTOR_URL}
+      - COMEDIAN_SLACK_DOMAIN=${MADDEVS_COMEDIAN_SLACK_DOMAIN}
+      - COMEDIAN_LOGIN=${MADDEVS_COMEDIAN_LOGIN}
+      - COMEDIAN_PASSWORD=${MADDEVS_COMEDIAN_PASSWORD}
+      - COMEDIAN_SECRET_TOKEN=${MADDEVS_COMEDIAN_SECRET_TOKEN}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_ENVIRONMENT=comedian
+      - VIRTUAL_HOST=staging.comedian.maddevs.co
+      - LETSENCRYPT_HOST=staging.comedian.maddevs.co
+      - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
+    depends_on:
+      - staging-db
+    logging:
+      driver: syslog
+      options:
+        tag: "docker/staging-comedian"
