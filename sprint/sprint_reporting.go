@@ -143,8 +143,8 @@ func MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
 		//collect inprogress tasks
 		var inProgressTask Task
 		//inprogress tasks
-		if task.Status == "indeterminate" {
-			//add in hasTasks member that has task without doubling
+		if task.Status == "In Progress" {
+			//add in hasTasks member that has task without duplication
 			if !bot.InList(task.AssigneeFullName, hasInProgressTasks) {
 				hasInProgressTasks = append(hasInProgressTasks, task.AssigneeFullName)
 			}
@@ -156,7 +156,7 @@ func MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
 			activeSprint.InProgressTasks = append(activeSprint.InProgressTasks, inProgressTask)
 		}
 		//collect done
-		if task.Status == "done" {
+		if task.Status == "Done" {
 			//increase count of resolved tasks
 			activeSprint.ResolvedTasksCount++
 		}
