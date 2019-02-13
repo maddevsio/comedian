@@ -85,6 +85,7 @@ type (
 		SprintReportTime          string `db:"sprint_report_time" json:"sprint_report_time" schema:"sprint_report_time"`
 		SprintReportChannel       string `db:"sprint_report_channel" json:"sprint_report_channel" schema:"sprint_report_channel"`
 		SprintWeekdays            string `db:"sprint_weekdays" json:"sprint_weekdays" schema:"sprint_weekdays"`
+		TaskDoneStatus            string `db:"task_done_status" json:"task_done_status" schema:"task_done_status"`
 	}
 )
 

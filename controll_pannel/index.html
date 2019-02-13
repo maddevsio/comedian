@@ -134,7 +134,20 @@
                             Sprint reporting channel required.
                     </div>
                   </div>
+                  
+                  <div class="col-md-3 mb-2">
+                    <label for="task_done_status">Task done status</label>
+                    <input type="text" class="form-control" id="task_done_status" name="task_done_status" value={{.task_done_status}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Sprint tasks final status.
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="mb-2">
+                  
                 <div class="col-md-3 mb-2">
+
                     <label for="sprint_report_turn">Sprint report weekdays</label>
                     <div>
                       <input type="checkbox" id="sunday" name="sunday" {{.sunday}}>
@@ -166,6 +179,7 @@
                         </div>
               </div>
             </div>
+          </div>
             
             <hr class="mb-2">
             
