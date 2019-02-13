@@ -152,7 +152,7 @@ services:
       options:
         tag: "docker/comedian-lumici"
     
-   comedian_textmining:
+  comedian_textmining:
     image: registry.gitlab.com/team-monitoring/comedian:latest
     restart: on-failure
     links:
