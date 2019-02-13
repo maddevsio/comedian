@@ -78,6 +78,7 @@ func (ba *BotAPI) renderControllPannel(c echo.Context) error {
 		"sprint_report_status_selected_false": sprintReportStatusSelectedFalse,
 		"sprint_report_time":                  ba.Bot.CP.SprintReportTime,
 		"sprint_report_channel":               ba.Bot.CP.SprintReportChannel,
+		"task_done_status":                    ba.Bot.CP.TaskDoneStatus,
 		"monday":                              sprintdays["monday"],
 		"tuesday":                             sprintdays["tuesday"],
 		"wednesday":                           sprintdays["wednesday"],
@@ -143,6 +144,7 @@ func (ba *BotAPI) updateConfig(c echo.Context) error {
 	cp.SprintReportStatus = srs
 	cp.SprintReportTime = form.Get("sprint_report_time")
 	cp.SprintReportChannel = form.Get("sprint_report_channel")
+	cp.TaskDoneStatus = form.Get("task_done_status")
 
 	monday := form.Get("monday")
 	tuesday := form.Get("tuesday")
