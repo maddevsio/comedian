@@ -113,7 +113,7 @@ func prepareTime(timestring string) (date time.Time, err error) {
 }
 
 //MakeActiveSprint make ActiveSprint struct from CollectorInfo
-func MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
+func (r *SprintReporter) MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
 	var activeSprint ActiveSprint
 	activeSprint.Name = sprintInfo.SprintName
 	activeSprint.URL = sprintInfo.SprintURL
@@ -156,7 +156,7 @@ func MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, error) {
 			activeSprint.InProgressTasks = append(activeSprint.InProgressTasks, inProgressTask)
 		}
 		//collect done
-		if task.Status == "Done" {
+		if task.Status == r.bot.CP.TaskDoneStatus {
 			//increase count of resolved tasks
 			activeSprint.ResolvedTasksCount++
 		}

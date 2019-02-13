@@ -75,7 +75,7 @@ func (r *SprintReporter) SendSprintReport() {
 
 		logrus.Infof("Channlel [%v], Sprint Info: [%v]", channel.ChannelName, sprintInfo)
 
-		activeSprint, err := MakeActiveSprint(sprintInfo)
+		activeSprint, err := r.MakeActiveSprint(sprintInfo)
 		if err != nil {
 			logrus.Errorf("Failed to MakeActiveSprint in channel [%v], reason [%v]. Skipping!", channel.ChannelName, err)
 			continue
