@@ -69,8 +69,8 @@ func (ba *BotAPI) addDuty(params string) (message string) {
 	}
 	tasks := parameters[2]
 
-	requsers := strings.Split(users, "")
-	reqTasks := strings.Split(tasks, "")
+	requsers := strings.Split(users, " ")
+	reqTasks := strings.Split(tasks, " ")
 	message, err = makeRequest(requsers, reqTasks, parameter)
 	if err != nil {
 		logrus.Errorf("Error making request to on-duty service: %v", err)
