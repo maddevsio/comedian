@@ -23,7 +23,7 @@ type RequestDuty struct {
 	Tasks     []string `json:"duty_tasks"`
 }
 
-func makeRequest(requsers, reqTasks []string, parameter int) (string, error) {
+func makeRequest(requsers, reqTasks []string, parameter int, endpoint string) (string, error) {
 	req := &RequestDuty{
 		Users:     requsers,
 		Parameter: parameter,
@@ -34,7 +34,7 @@ func makeRequest(requsers, reqTasks []string, parameter int) (string, error) {
 		return "", err
 	}
 	onDutyService := os.Getenv("ON_DUTY_SERVICE")
-	url := onDutyService + "/duty"
+	url := onDutyService + endpoint
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return "", err
@@ -63,7 +63,7 @@ func (ba *BotAPI) addDuty(params string) (message string) {
 		return message
 	}
 	users := parameters[0]
-	parameter, err := strconv.Atoi(parameters[1])
+	parameter, err := strconv.Atoi(strings.TrimSpace((parameters[1])))
 	if err != nil {
 		return message
 	}
@@ -71,10 +71,58 @@ func (ba *BotAPI) addDuty(params string) (message string) {
 
 	requsers := strings.Split(users, " ")
 	reqTasks := strings.Split(tasks, " ")
-	message, err = makeRequest(requsers, reqTasks, parameter)
+	message, err = makeRequest(requsers, reqTasks, parameter, "/duty")
 	if err != nil {
 		logrus.Errorf("Error making request to on-duty service: %v", err)
 		return message
 	}
+	return message
+}
+
+func (ba *BotAPI) addDutyAdmin(params string) (message string) {
+	parameters := strings.Split(params, ",")
+	if len(parameters) < 3 {
+		logrus.Error("Not enough parameters")
+		return message
+	}
+	users := parameters[0]
+	logrus.Info("parameters[1]: ", parameters[1])
+	parameter, err := strconv.Atoi(strings.TrimSpace(parameters[1]))
+	if err != nil {
+		return message
+	}
+	tasks := parameters[2]
+
+	requsers := strings.Split(users, " ")
+	reqTasks := strings.Split(tasks, " ")
+	message, err = makeRequest(requsers, reqTasks, parameter, "/duty_admin")
+	if err != nil {
+		logrus.Errorf("Error making request to on-duty service: %v", err)
+		return message
+	}
+	return message
+}
+
+func (ba *BotAPI) dutyShow() (message string) {
+	onDutyService := os.Getenv("ON_DUTY_SERVICE")
+	url := onDutyService + "/duty_show"
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return message
+	}
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return message
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		return message
+	}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return message
+	}
+	message = string(body)
 	return message
 }
