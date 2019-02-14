@@ -86,7 +86,6 @@ func (ba *BotAPI) addDutyAdmin(params string) (message string) {
 		return message
 	}
 	users := parameters[0]
-	logrus.Info("parameters[1]: ", parameters[1])
 	parameter, err := strconv.Atoi(strings.TrimSpace(parameters[1]))
 	if err != nil {
 		return message
