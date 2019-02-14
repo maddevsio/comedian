@@ -48,6 +48,7 @@ services:
       - VIRTUAL_HOST=staging.comedian.maddevs.co
       - LETSENCRYPT_HOST=staging.comedian.maddevs.co
       - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
+      - ON_DUTY_SERVICE=${ON_DUTY_SERVICE}
     depends_on:
       - staging-db
     logging:
