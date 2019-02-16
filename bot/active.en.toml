@@ -567,3 +567,11 @@ Other = "days"
 [SprintExpired]
 Description = "Display message if sprint expired"
 Other = "Deadline of sprint expired {{.days}} {{.day}} ago."
+
+[SprintGoal]
+Description = "Displays goal of sprint"
+Other = "Sprint goal: {{.goal}}"
+
+[notDefinedGoal]
+Description = "Displays message that sprint's goal is not defined"
+Other = "not defined"
