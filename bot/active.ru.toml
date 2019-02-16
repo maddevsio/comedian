@@ -615,3 +615,11 @@ other = "дней"
 [SprintExpired]
 Description = "Display message if sprint expired"
 Other = "Сроки спринта просрочены на {{.days}} {{.day}}. Спринт еще не закрыт."
+
+[SprintGoal]
+Description = "Displays goal of sprint"
+Other = "Цель спринта: {{.goal}}"
+
+[notDefinedGoal]
+Description = "Displays message that sprint's goal is not defined"
+Other = "не определена"

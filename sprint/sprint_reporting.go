@@ -41,6 +41,7 @@ type ActiveSprint struct {
 	StartDate          time.Time
 	LeftDays           int
 	SprintProgress     float32
+	Goal               string
 }
 
 //SprintInfo used to parse sprint data from Collector
@@ -49,6 +50,7 @@ type SprintInfo struct {
 	SprintURL   string `json:"link_to_sprint"`
 	SprintStart string `json:"started"`
 	SprintEnd   string `json:"end"`
+	SprintGoal  string `json:"goal"`
 	Tasks       []struct {
 		Issue            string `json:"title"`
 		Status           string `json:"status"`
@@ -117,6 +119,7 @@ func (r *SprintReporter) MakeActiveSprint(sprintInfo SprintInfo) (ActiveSprint, 
 	var activeSprint ActiveSprint
 	activeSprint.Name = sprintInfo.SprintName
 	activeSprint.URL = sprintInfo.SprintURL
+	activeSprint.Goal = sprintInfo.SprintGoal
 
 	startDate, err := prepareTime(sprintInfo.SprintStart)
 	if err != nil {
@@ -240,6 +243,30 @@ func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string)
 	sprintBasicInfo.Pretext = sprintTitle
 	sprintBasicInfo.MarkdownIn = append(sprintBasicInfo.MarkdownIn, sprintBasicInfo.Pretext)
 
+	sGoal := activeSprint.Goal
+	if sGoal == "" {
+		notDefinedGoal := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "notDefinedGoal",
+				Description: "Displays message that sprint's goal is not defined",
+				Other:       "not defined",
+			},
+		})
+		sGoal = notDefinedGoal
+	}
+	sprintGoal := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "SprintGoal",
+			Description: "Displays goal of sprint",
+			Other:       "Sprint goal: {{.goal}}",
+		},
+		TemplateData: map[string]interface{}{
+			"goal": sGoal,
+		},
+	})
+	sprintGoal += "\n"
+	sprintBasicInfo.Text = sprintGoal
+
 	sprintTotalDays := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "sprintTotalDays",
@@ -283,7 +310,7 @@ func (r *SprintReporter) MakeMessage(activeSprint ActiveSprint, worklogs string)
 		},
 	})
 	sprintDays += "\n"
-	sprintBasicInfo.Text = sprintDays
+	sprintBasicInfo.Text += sprintDays
 
 	urlTitle := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
