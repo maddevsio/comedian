@@ -73,21 +73,17 @@ func (ba *BotAPI) addOnDutyProject(params string, channelID string) (message str
 
 	var requsers, reqTasks []string
 	for _, user := range strings.Split(users, " ") {
-		logrus.Info("user: ", user)
 		if user == "" {
 			continue
 		}
 		requsers = append(requsers, user)
 	}
-	logrus.Info("requsers: ", requsers)
 	for _, task := range strings.Split(tasks, " ") {
-		logrus.Info("task: ", task)
 		if task == "" {
 			continue
 		}
 		reqTasks = append(reqTasks, task)
 	}
-	logrus.Info("reqTasks: ", reqTasks)
 	message, err = makeRequest(requsers, reqTasks, parameter, "/onduty_project", channelID)
 	if err != nil {
 		logrus.Errorf("Error making request to on-duty service: %v", err)
@@ -111,14 +107,12 @@ func (ba *BotAPI) addOnDutyDevops(params, channelID string) (message string) {
 
 	var requsers, reqTasks []string
 	for _, user := range strings.Split(users, " ") {
-		logrus.Info("user: ", user)
 		if user == "" {
 			continue
 		}
 		requsers = append(requsers, user)
 	}
 	for _, task := range strings.Split(tasks, " ") {
-		logrus.Info("task: ", task)
 		if task == "" {
 			continue
 		}
