@@ -131,12 +131,12 @@ func (ba *BotAPI) implementCommands(form FullSlackForm) string {
 		return ba.generateReportOnProject(accessLevel, params)
 	case "report_on_user_in_project":
 		return ba.generateReportOnUserInProject(accessLevel, params)
-	case "add_duty":
-		return ba.addDuty(params)
-	case "add_duty_admin":
-		return ba.addDutyAdmin(params)
-	case "duty_show":
-		return ba.dutyShow()
+	case "add_onduty_project":
+		return ba.addOnDutyProject(params, form.ChannelID)
+	case "add_onduty_devops":
+		return ba.addOnDutyDevops(params, form.ChannelID)
+	case "onduty_show":
+		return ba.onDutyShow()
 	default:
 		return ba.DisplayHelpText("")
 	}
