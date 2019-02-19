@@ -21,13 +21,15 @@ type RequestDuty struct {
 	//2 - duty 3 days, if duty weekday is friday
 	Parameter int      `json:"parameter"`
 	Tasks     []string `json:"duty_tasks"`
+	ChannelID string   `json:"channel_id"`
 }
 
-func makeRequest(requsers, reqTasks []string, parameter int, endpoint string) (string, error) {
+func makeRequest(requsers, reqTasks []string, parameter int, endpoint string, channelID string) (string, error) {
 	req := &RequestDuty{
 		Users:     requsers,
 		Parameter: parameter,
 		Tasks:     reqTasks,
+		ChannelID: channelID,
 	}
 	reqBody, err := json.Marshal(req)
 	if err != nil {
@@ -56,7 +58,7 @@ func makeRequest(requsers, reqTasks []string, parameter int, endpoint string) (s
 	return message, nil
 }
 
-func (ba *BotAPI) addDuty(params string) (message string) {
+func (ba *BotAPI) addOnDutyProject(params string, channelID string) (message string) {
 	///comedian add_duty @name1 @name2 @name3 , <parameter>, tasks...
 	parameters := strings.Split(params, ",")
 	if len(parameters) < 3 {
@@ -69,9 +71,24 @@ func (ba *BotAPI) addDuty(params string) (message string) {
 	}
 	tasks := parameters[2]
 
-	requsers := strings.Split(users, " ")
-	reqTasks := strings.Split(tasks, " ")
-	message, err = makeRequest(requsers, reqTasks, parameter, "/duty")
+	var requsers, reqTasks []string
+	for _, user := range strings.Split(users, " ") {
+		logrus.Info("user: ", user)
+		if user == "" {
+			continue
+		}
+		requsers = append(requsers, user)
+	}
+	logrus.Info("requsers: ", requsers)
+	for _, task := range strings.Split(tasks, " ") {
+		logrus.Info("task: ", task)
+		if task == "" {
+			continue
+		}
+		reqTasks = append(reqTasks, task)
+	}
+	logrus.Info("reqTasks: ", reqTasks)
+	message, err = makeRequest(requsers, reqTasks, parameter, "/onduty_project", channelID)
 	if err != nil {
 		logrus.Errorf("Error making request to on-duty service: %v", err)
 		return message
@@ -79,7 +96,7 @@ func (ba *BotAPI) addDuty(params string) (message string) {
 	return message
 }
 
-func (ba *BotAPI) addDutyAdmin(params string) (message string) {
+func (ba *BotAPI) addOnDutyDevops(params, channelID string) (message string) {
 	parameters := strings.Split(params, ",")
 	if len(parameters) < 3 {
 		logrus.Error("Not enough parameters")
@@ -92,9 +109,22 @@ func (ba *BotAPI) addDutyAdmin(params string) (message string) {
 	}
 	tasks := parameters[2]
 
-	requsers := strings.Split(users, " ")
-	reqTasks := strings.Split(tasks, " ")
-	message, err = makeRequest(requsers, reqTasks, parameter, "/duty_admin")
+	var requsers, reqTasks []string
+	for _, user := range strings.Split(users, " ") {
+		logrus.Info("user: ", user)
+		if user == "" {
+			continue
+		}
+		requsers = append(requsers, user)
+	}
+	for _, task := range strings.Split(tasks, " ") {
+		logrus.Info("task: ", task)
+		if task == "" {
+			continue
+		}
+		reqTasks = append(reqTasks, task)
+	}
+	message, err = makeRequest(requsers, reqTasks, parameter, "/onduty_devops", channelID)
 	if err != nil {
 		logrus.Errorf("Error making request to on-duty service: %v", err)
 		return message
@@ -102,9 +132,9 @@ func (ba *BotAPI) addDutyAdmin(params string) (message string) {
 	return message
 }
 
-func (ba *BotAPI) dutyShow() (message string) {
+func (ba *BotAPI) onDutyShow() (message string) {
 	onDutyService := os.Getenv("ON_DUTY_SERVICE")
-	url := onDutyService + "/duty_show"
+	url := onDutyService + "/onduty_show"
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return message
