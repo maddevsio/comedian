@@ -136,7 +136,7 @@ func (ba *BotAPI) implementCommands(form FullSlackForm) string {
 	case "add_onduty_devops":
 		return ba.addOnDutyDevops(params, form.ChannelID)
 	case "onduty_show":
-		return ba.onDutyShow()
+		return ba.onDutyShow(form.ChannelID)
 	default:
 		return ba.DisplayHelpText("")
 	}
