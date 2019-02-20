@@ -23,31 +23,21 @@ tests:
     - master
   
 
-build_staging:
-  image: docker:latest
-  stage: build
-  before_script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
-  script:
-    - docker build --pull -t registry.gitlab.com/team-monitoring/comedian/staging .
-    - docker push registry.gitlab.com/team-monitoring/comedian/staging
-  only:
-    - master
-  when:
-    manual
-
-build_prod:
+build:
   image: docker:latest
   stage: build
   before_script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
     - docker build --pull -t registry.gitlab.com/team-monitoring/comedian .
+    - docker tag registry.gitlab.com/team-monitoring/comedian registry.gitlab.com/team-monitoring/comedian:staging
     - docker push registry.gitlab.com/team-monitoring/comedian
+    - docker push registry.gitlab.com/team-monitoring/comedian:staging
   only:
     - master
   when:
     manual
+
 
 staging_deploy:
   stage: deploy
@@ -65,8 +55,8 @@ staging_deploy:
     - ssh-agent -k
   only:
     - master
-  dependencies:
-    - build_staging
+  when:
+    manual
 
 deploy:
   stage: deploy
@@ -84,5 +74,5 @@ deploy:
     - ssh-agent -k
   only:
     - master
-  dependencies:
-    - build_prod
+  when:
+    manual

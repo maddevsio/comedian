@@ -24,7 +24,7 @@ services:
         tag: "docker/staging-comedian-db"
 
   staging-comedian:
-    image: registry.gitlab.com/team-monitoring/comedian/staging:latest
+    image: registry.gitlab.com/team-monitoring/comedian:staging
     restart: on-failure
     links:
       - staging-db:staging-db
