@@ -23,7 +23,19 @@ tests:
     - master
   
 
-build:
+build_staging:
+  image: docker:latest
+  stage: build
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+  script:
+    - docker build --pull -t registry.gitlab.com/team-monitoring/comedian/staging .
+    - docker push registry.gitlab.com/team-monitoring/comedian
+  only:
+    - master
+
+
+build_prod:
   image: docker:latest
   stage: build
   before_script:
@@ -33,6 +45,8 @@ build:
     - docker push registry.gitlab.com/team-monitoring/comedian
   only:
     - master
+  when:
+    manual
 
 staging_deploy:
   stage: deploy
@@ -65,7 +79,7 @@ deploy:
     - scp docker-deploy/docker-compose.yml gitlab@$DEPLOY_SERVER_IP:/opt/docker/comedian/
     - ssh gitlab@$DEPLOY_SERVER_IP "$DEPLOY_COMMAND"
     - ssh-agent -k
-  when:
-    manual
   only:
     - master
+  dependencies:
+    - build_prod
