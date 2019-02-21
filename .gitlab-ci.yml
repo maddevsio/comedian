@@ -55,8 +55,7 @@ staging_deploy:
     - ssh-agent -k
   only:
     - master
-  when:
-    manual
+
 
 deploy:
   stage: deploy
