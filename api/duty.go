@@ -126,10 +126,18 @@ func (ba *BotAPI) addOnDutyDevops(params, channelID string) (message string) {
 	return message
 }
 
-func (ba *BotAPI) onDutyShow() (message string) {
+func (ba *BotAPI) onDutyShow(channelID string) (message string) {
+	requestDuty := &RequestDuty{
+		ChannelID: channelID,
+	}
+	requestDutyBytes, err := json.Marshal(requestDuty)
+	if err != nil {
+		logrus.Errorf("api.duty.go: json.Marshal failed: %v", err)
+		return ""
+	}
 	onDutyService := os.Getenv("ON_DUTY_SERVICE")
 	url := onDutyService + "/onduty_show"
-	request, err := http.NewRequest("GET", url, nil)
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(requestDutyBytes))
 	if err != nil {
 		return message
 	}
