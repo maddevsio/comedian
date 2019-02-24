@@ -99,6 +99,7 @@ func (api *ComedianAPI) renderControllPannel(c echo.Context) error {
 		"sprint_report_status_selected_false": sprintReportStatusSelectedFalse,
 		"sprint_report_time":                  cp.SprintReportTime,
 		"sprint_report_channel":               cp.SprintReportChannel,
+		"task_done_status":                    cp.TaskDoneStatus,
 		"monday":                              sprintdays["monday"],
 		"tuesday":                             sprintdays["tuesday"],
 		"wednesday":                           sprintdays["wednesday"],
@@ -169,6 +170,7 @@ func (api *ComedianAPI) updateConfig(c echo.Context) error {
 	bot.Properties.SprintReportTime = form.Get("sprint_report_time")
 	bot.Properties.SprintReportChannel = form.Get("sprint_report_channel")
 	bot.Properties.Password = form.Get("password")
+	bot.Properties.TaskDoneStatus = form.Get("task_done_status")
 
 	monday := form.Get("monday")
 	tuesday := form.Get("tuesday")

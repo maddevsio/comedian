@@ -66,6 +66,7 @@ type (
 		SprintReportTime          string `db:"sprint_report_time" json:"sprint_report_time" schema:"sprint_report_time"`
 		SprintReportChannel       string `db:"sprint_report_channel" json:"sprint_report_channel" schema:"sprint_report_channel"`
 		SprintWeekdays            string `db:"sprint_weekdays" json:"sprint_weekdays" schema:"sprint_weekdays"`
+		TaskDoneStatus            string `db:"task_done_status" json:"task_done_status" schema:"task_done_status"`
 		AccessToken               string `db:"bot_access_token" json:"bot_access_token" schema:"bot_access_token"`
 		TeamID                    string `db:"team_id" json:"team_id" schema:"team_id"`
 		TeamName                  string `db:"team_name" json:"team_name" schema:"team_name"`

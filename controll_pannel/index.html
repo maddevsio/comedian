@@ -24,24 +24,21 @@
          
             <div class="row">
                 <div class="col-md-3 mb-2">
+                    <label for="team_name">Team Name</label>
+                    <input type="text" class="form-control" id="team_name" name="team_name" value={{.team_name}} placeholder="" readonly>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="password">Password</label>
+                    <input type="text" class="form-control" id="password" name="password" value={{.password}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Password required.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
                     <label for="manager_slack_user_id">Manager Slack User ID</label>
                     <input type="text" class="form-control" id="manager_slack_user_id" name="manager_slack_user_id" value={{.manager_slack_user_id}} placeholder="" required>
                     <div class="invalid-feedback">
                             Manager Slack User ID required.
-                    </div>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label for="reporting_channel">Reporting Slack Channel</label>
-                    <input type="text" class="form-control" id="reporting_channel" name="reporting_channel" value={{.reporting_channel}} placeholder="" required>
-                    <div class="invalid-feedback">
-                            Reporting Slack Channel required.
-                    </div>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label for="report_time">Reporting Time</label>
-                    <input type="text" class="form-control" id="report_time" name="report_time" value={{.report_time}} placeholder="" required>
-                    <div class="invalid-feedback">
-                            Reporting Time required.
                     </div>
                 </div>
                 <div class="col-md-3 mb-2">
@@ -55,23 +52,6 @@
                     Please select a valid language.
                   </div>
                 </div>
-            </div>
-
-            <hr class="mb-2">
-
-            <div class="row">
-              <div class="col-md-3 mb-2">
-                  <label for="individual_reporting_status">Individual standup reporting status</label>
-              <div>
-                <input type="checkbox" id="individual_reporting_status" name="individual_reporting_status" {{.individual_reporting_status}}>
-                <label for="individual_reporting_status">Enabled</label>
-              </div>
-            </div>
-          </div>
-
-          <hr class="mb-2">
-            
-            <div class="row">
                 <div class="col-md-3 mb-2">
                     <label for="notifier_interval">Notifier Interval</label>
                     <input type="text" class="form-control" id="notifier_interval" name="notifier_interval" value={{.notifier_interval}} placeholder="" required>
@@ -94,6 +74,32 @@
                     </div>
                 </div>
                 <div class="col-md-3 mb-2">
+                </div>
+            </div>
+
+            <hr class="mb-2">
+         
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label for="reporting_channel">Reporting Slack Channel</label>
+                    <input type="text" class="form-control" id="reporting_channel" name="reporting_channel" value={{.reporting_channel}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Reporting Slack Channel required.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="report_time">Reporting Time</label>
+                    <input type="text" class="form-control" id="report_time" name="report_time" value={{.report_time}} placeholder="" required>
+                    <div class="invalid-feedback">
+                            Reporting Time required.
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                      <label for="individual_reporting_status">Individual standup reporting status</label>
+                      <input type="checkbox" id="individual_reporting_status" name="individual_reporting_status" {{.individual_reporting_status}}>
+                      <label for="individual_reporting_status">Enabled</label>
+                </div>
+                <div class="col-md-3 mb-2">
                     <label for="collector_enabled">Collector</label>
                     <select class="custom-select d-block w-100" name="collector_enabled" id="collector_enabled" required>
                       <option value={{.collector_enabled}}  placeholder="">Choose...</option>
@@ -103,7 +109,7 @@
                     <div class="invalid-feedback">
                       Please select Collector state!
                     </div>
-                  </div>
+                </div>
             </div>
 
           <hr class="mb-2">
@@ -127,33 +133,29 @@
                           Sprint reporting time required.
                   </div>
                 </div>
-                <div class="col-md-3 mb-2">
-                    <label for="sprint_report_channel">Sprint report channel</label>
-                    <input type="text" class="form-control" id="sprint_report_channel" name="sprint_report_channel" value={{.sprint_report_channel}} placeholder="" required>
-                    <div class="invalid-feedback">
-                            Sprint reporting channel required.
-                    </div>
-                  </div>
-                  
-                  <div class="col-md-3 mb-2">
-                    <label for="task_done_status">Task done status</label>
-                    <input type="text" class="form-control" id="task_done_status" name="task_done_status" value={{.task_done_status}} placeholder="" required>
-                    <div class="invalid-feedback">
-                            Sprint tasks final status.
-                    </div>
+              <div class="col-md-3 mb-2">
+                  <label for="sprint_report_channel">Sprint report channel</label>
+                  <input type="text" class="form-control" id="sprint_report_channel" name="sprint_report_channel" value={{.sprint_report_channel}} placeholder="" required>
+                  <div class="invalid-feedback">
+                          Sprint reporting channel required.
                   </div>
                 </div>
+              <div class="col-md-3 mb-2">
+                <label for="task_done_status">Task done status</label>
+                <input type="text" class="form-control" id="task_done_status" name="task_done_status" value={{.task_done_status}} placeholder="" required>
+                <div class="invalid-feedback">
+                        Sprint tasks final status.
+                </div>
+              </div>
+              
 
-                <hr class="mb-2">
-                  
-                <div class="col-md-3 mb-2">
-
-                    <label for="sprint_report_turn">Sprint report weekdays</label>
-                    <div>
-                      <input type="checkbox" id="sunday" name="sunday" {{.sunday}}>
-                      <label for="sunday">Sunday</label>
-                    </div>
-                <div>
+              <div class="col-md-3 mb-2">
+                  <label for="sprint_report_turn">Sprint report weekdays</label>
+                  <div>
+                    <input type="checkbox" id="sunday" name="sunday" {{.sunday}}>
+                    <label for="sunday">Sunday</label>
+                  </div>
+              <div>
                   <input type="checkbox" id="monday" name="monday" {{.monday}}>
                   <label for="monday">Monday</label>
                 </div>
@@ -179,7 +181,6 @@
                         </div>
               </div>
             </div>
-          </div>
             
             <hr class="mb-2">
             

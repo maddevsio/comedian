@@ -438,8 +438,8 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 func (m *MySQL) CreateControllPannel(token, teamID, teamName string) (model.ControllPannel, error) {
 	var cp model.ControllPannel
 	res, err := m.conn.Exec(
-		"INSERT INTO `controll_pannel` (notifier_interval, manager_slack_user_id, reporting_channel, report_time, language, reminder_repeats_max, reminder_time, collector_enabled,sprint_report_status,sprint_report_time,sprint_report_channel,sprint_weekdays,individual_reporting_status,bot_access_token, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		30, "", "", "10:00", "en_US", 3, int64(10), false, false, "9:00", "", "", false, token, teamID, teamName, teamName)
+		"INSERT INTO `controll_pannel` (notifier_interval, manager_slack_user_id, reporting_channel, report_time, language, reminder_repeats_max, reminder_time, collector_enabled,sprint_report_status,sprint_report_time,sprint_report_channel,sprint_weekdays,individual_reporting_status,bot_access_token, team_id, team_name, password, task_done_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		30, "", "", "10:00", "en_US", 3, int64(10), false, false, "9:00", "", "", false, token, teamID, teamName, teamName, "")
 	if err != nil {
 		return model.ControllPannel{}, err
 	}
@@ -474,8 +474,8 @@ func (m *MySQL) GetControllPannel(teamName string) (model.ControllPannel, error)
 //UpdateControllPannel updates controll pannel
 func (m *MySQL) UpdateControllPannel(cp model.ControllPannel) (model.ControllPannel, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `controll_pannel` set notifier_interval=?, manager_slack_user_id=?, reporting_channel=?, report_time=?, language=?, reminder_repeats_max=?, reminder_time=?, collector_enabled=?, sprint_report_status=?, sprint_report_time=?, sprint_report_channel=?,sprint_weekdays=?,individual_reporting_status=?, password=? where id=?",
-		cp.NotifierInterval, cp.ManagerSlackUserID, cp.ReportingChannel, cp.ReportTime, cp.Language, cp.ReminderRepeatsMax, cp.ReminderTime, cp.CollectorEnabled, cp.SprintReportStatus, cp.SprintReportTime, cp.SprintReportChannel, cp.SprintWeekdays, cp.IndividualReportingStatus, cp.Password, cp.ID,
+		"UPDATE `controll_pannel` set notifier_interval=?, manager_slack_user_id=?, reporting_channel=?, report_time=?, language=?, reminder_repeats_max=?, reminder_time=?, collector_enabled=?, sprint_report_status=?, sprint_report_time=?, sprint_report_channel=?,sprint_weekdays=?,individual_reporting_status=?, password=?, task_done_status=? where id=?",
+		cp.NotifierInterval, cp.ManagerSlackUserID, cp.ReportingChannel, cp.ReportTime, cp.Language, cp.ReminderRepeatsMax, cp.ReminderTime, cp.CollectorEnabled, cp.SprintReportStatus, cp.SprintReportTime, cp.SprintReportChannel, cp.SprintWeekdays, cp.IndividualReportingStatus, cp.Password, cp.TaskDoneStatus, cp.ID,
 	)
 	if err != nil {
 		return cp, err
