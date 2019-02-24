@@ -42,14 +42,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
-  name = "github.com/dgrijalva/jwt-go"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
-  version = "v3.2.0"
-
-[[projects]]
   digest = "1:dad3e6a4836bfd3ede4d14e89c6b2beefefa05adda045179276d9a668ae727dc"
   name = "github.com/evalphobia/logrus_sentry"
   packages = ["."]
@@ -91,22 +83,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:867a400cf7d2eb7db0735058ab9c89a061bb8f44b9b68b148a8503d0bc5529f3"
-  name = "github.com/jarcoal/httpmock"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "53def6cd0f87425f5425d4f0f27f66f048759b94"
-
-[[projects]]
-  branch = "master"
-  digest = "1:4db2738e3625ff5b5752fd48e2e48f5b008790a7ac5d68b7663f380d2d5c4b39"
-  name = "github.com/jasonlvhit/gocron"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "6771d4b492ba2d5f57919c04b4cddb3735365120"
-
-[[projects]]
-  branch = "master"
   digest = "1:d8715388cdd077d4b5e477e92e93e8c2c16c5f8cdc1f79b0ef2616ef8ea09f9f"
   name = "github.com/jmoiron/sqlx"
   packages = [
@@ -133,24 +109,19 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:efd601ad1d1189884f37ed075fadb5bbd17f1f5acf5862827247c6da56d125ba"
+  digest = "1:bf618941b014c2a86e4a6f39d4a26541c06fc63387fc50d4694d67eac2151f4a"
   name = "github.com/labstack/echo"
-  packages = [
-    ".",
-    "middleware",
-  ]
+  packages = ["."]
   pruneopts = "UT"
   revision = "38772c686c76b501f94bd6cd5b77f5842e93b559"
   version = "v3.3.10"
 
 [[projects]]
-  digest = "1:764bce605f1c70823a567ac3205a03e6b7f375ca747d8820fded0b0abddda802"
+  digest = "1:01eb0269028d3c2e21b5b6cd9b1ba81bc4170ab293fcffa84e3aa3a6138a92e8"
   name = "github.com/labstack/gommon"
   packages = [
-    "bytes",
     "color",
     "log",
-    "random",
   ]
   pruneopts = "UT"
   revision = "7fd9f68ece0bcb1a905fac8f1549f0083f71c51b"
@@ -185,9 +156,12 @@
   version = "v2.0.0-beta.6"
 
 [[projects]]
-  digest = "1:ace662a36243b5cdc2f71e654175dc192f903fafbf3411a95bc910c1cad53ce7"
+  digest = "1:b52d79334c56547a9658cb74ba37732be769d7c9f0f60da6390efe08861211c1"
   name = "github.com/nlopes/slack"
-  packages = ["."]
+  packages = [
+    ".",
+    "slackevents",
+  ]
   pruneopts = "UT"
   revision = "0db1d5eae1116bf7c8ed96c6749acfbf4daaec3e"
   version = "v0.3.0"
@@ -284,14 +258,6 @@
   revision = "e9657d882bb81064595ca3b56cbe2546bbabf7b1"
   version = "v1.4.0"
 
-[[projects]]
-  branch = "v1"
-  digest = "1:6c802dcce0c717e7fc42d788ee1e2c1393c64b60339d908c0585c32dc5dec994"
-  name = "gopkg.in/jarcoal/httpmock.v1"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "275e9df93516fc27a998eca24c8f1cca277ce5bf"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -303,18 +269,15 @@
     "github.com/getsentry/raven-go",
     "github.com/go-sql-driver/mysql",
     "github.com/gorilla/schema",
-    "github.com/jarcoal/httpmock",
-    "github.com/jasonlvhit/gocron",
     "github.com/jmoiron/sqlx",
     "github.com/kelseyhightower/envconfig",
     "github.com/labstack/echo",
-    "github.com/labstack/echo/middleware",
     "github.com/nicksnyder/go-i18n/v2/i18n",
     "github.com/nlopes/slack",
+    "github.com/nlopes/slack/slackevents",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "golang.org/x/text/language",
-    "gopkg.in/jarcoal/httpmock.v1",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

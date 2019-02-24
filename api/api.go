@@ -1,79 +1,150 @@
 package api
 
 import (
-	"fmt"
+	"encoding/json"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
-	"github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/bot"
-	"gitlab.com/team-monitoring/comedian/utils"
+	"github.com/nlopes/slack"
+	"github.com/nlopes/slack/slackevents"
+	log "github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/botuser"
+	"gitlab.com/team-monitoring/comedian/comedianbot"
+	"gitlab.com/team-monitoring/comedian/model"
+	"gitlab.com/team-monitoring/comedian/storage"
 )
 
-// BotAPI struct used to handle slack requests (slash commands)
-type BotAPI struct {
-	echo *echo.Echo
-	Bot  *bot.Bot
+// ComedianAPI struct used to handle slack requests (slash commands)
+type ComedianAPI struct {
+	echo     *echo.Echo
+	DB       *storage.MySQL
+	Comedian *comedianbot.Comedian
 }
 
-// FullSlackForm struct used for parsing full payload from slack
-type FullSlackForm struct {
-	Command     string `schema:"command"`
-	Text        string `schema:"text"`
-	ChannelID   string `schema:"channel_id"`
-	ChannelName string `schema:"channel_name"`
-	UserID      string `schema:"user_id"`
-	UserName    string `schema:"user_name"`
-}
+// NewComedianAPI creates API for Slack commands
+func NewComedianAPI(comedian *comedianbot.Comedian) (ComedianAPI, error) {
 
-// NewBotAPI creates API for Slack commands
-func NewBotAPI(bot *bot.Bot) (*BotAPI, error) {
+	echo := echo.New()
 
-	e := echo.New()
-
-	ba := &BotAPI{
-		echo: e,
-		Bot:  bot,
+	api := ComedianAPI{
+		echo:     echo,
+		DB:       comedian.DB,
+		Comedian: comedian,
 	}
 
 	t := &Template{
-		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/controll_pannel/index.html")),
+		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/controll_pannel/*.html")),
 	}
 
-	endPoint := fmt.Sprintf("/commands%s", ba.Bot.Conf.SecretToken)
+	echo.Renderer = t
+	echo.GET("/login", api.renderLoginPage)
+	echo.POST("/event", api.handleEvent)
+	echo.GET("/admin", api.renderControllPannel)
+	echo.POST("/config", api.updateConfig)
+	echo.POST("/service-message", api.handleServiceMessage)
 
-	g := ba.echo.Group("/")
+	echo.POST("/commands", api.handleCommands)
+	echo.GET("/auth", api.auth)
 
-	g.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-		if username == ba.Bot.Conf.Login && password == ba.Bot.Conf.Password {
-			return true, nil
-		}
-		return false, nil
-	}))
+	err := comedian.SetBots()
 
-	ba.echo.POST(endPoint, ba.handleCommands)
-	ba.echo.Renderer = t
-	g.GET("admin", ba.renderControllPannel)
-	g.POST("config", ba.updateConfig)
-
-	return ba, nil
+	return api, err
 }
 
 // Start starts http server
-func (ba *BotAPI) Start() error {
-	return ba.echo.Start(ba.Bot.Conf.HTTPBindAddr)
+func (api *ComedianAPI) Start() error {
+	return api.echo.Start(api.Comedian.Config.HTTPBindAddr)
 }
 
-func (ba *BotAPI) handleCommands(c echo.Context) error {
-	var form FullSlackForm
+func (api *ComedianAPI) handleEvent(c echo.Context) error {
+	type Event struct {
+		Token     string `json:"token"`
+		Challenge string `json:"challenge"`
+		Type      string `json:"type"`
+	}
+
+	var incomingEvent Event
+	var event slackevents.EventsAPICallbackEvent
+
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(body, &incomingEvent)
+	if err != nil {
+		return err
+	}
+
+	//Need for enabling of Event Subscriptions.
+	if incomingEvent.Type == slackevents.URLVerification {
+		return c.String(http.StatusOK, incomingEvent.Challenge)
+	}
+
+	if incomingEvent.Type == slackevents.CallbackEvent {
+		err = json.Unmarshal(body, &event)
+		if err != nil {
+			return err
+		}
+
+		err = api.DB.DeleteControllPannel(event.TeamID)
+		if err != nil {
+			return err
+		}
+		log.Info("Controll Pannel was deleted")
+		return c.String(http.StatusOK, "Success")
+	}
+
+	return c.String(http.StatusOK, "Success")
+}
+
+func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
+	type ServiceEvent struct {
+		TeamName    string             `json:"team_name"`
+		AccessToken string             `json:"bot_access_token"`
+		Channel     string             `json:"channel"`
+		Message     string             `json:"message"`
+		Attachments []slack.Attachment `json:"attachments"`
+	}
+
+	var incomingEvent ServiceEvent
+
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	err = json.Unmarshal(body, &incomingEvent)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	for _, bot := range api.Comedian.Bots {
+		log.Info(bot.Properties.TeamName)
+		if bot.Properties.TeamName == incomingEvent.TeamName {
+			if bot.Properties.AccessToken != incomingEvent.AccessToken {
+				return c.String(http.StatusForbidden, "wrong access token")
+			}
+			bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
+		}
+	}
+
+	return nil
+
+}
+
+func (api *ComedianAPI) handleCommands(c echo.Context) error {
+	var form model.FullSlackForm
 
 	urlValues, err := c.FormParams()
 	if err != nil {
-		logrus.Errorf("BotAPI: c.FormParams failed: %v\n", err)
+		log.Errorf("ComedianAPI: c.FormParams failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 
@@ -84,77 +155,58 @@ func (ba *BotAPI) handleCommands(c echo.Context) error {
 		return c.String(http.StatusOK, err.Error())
 	}
 
-	return c.String(http.StatusOK, ba.implementCommands(form))
-
-}
-
-func (ba *BotAPI) implementCommands(form FullSlackForm) string {
-	_, err := ba.Bot.DB.SelectChannel(form.ChannelID)
-	if err != nil {
-		logrus.Errorf("SelectChannel failed: %v", err)
-		return err.Error()
-	}
-
 	if form.Command != "/comedian" {
-		return err.Error()
+		return c.String(http.StatusBadRequest, "slash command should be `/comedian`")
 	}
 
-	accessLevel, err := ba.getAccessLevel(form.UserID, form.ChannelID)
+	var bot *botuser.Bot
+
+	for _, b := range api.Comedian.Bots {
+		if form.TeamID == b.Properties.TeamID {
+			bot = b
+		}
+	}
+
+	_, err = bot.DB.SelectChannel(form.ChannelID)
 	if err != nil {
-		return err.Error()
+		return err
 	}
 
-	command, params := utils.CommandParsing(form.Text)
+	message := bot.ImplementCommands(form)
 
-	switch command {
-	case "add":
-		return ba.addCommand(accessLevel, form.ChannelID, params)
-	case "show":
-		return ba.showCommand(form.ChannelID, params)
-	case "remove":
-		return ba.deleteCommand(accessLevel, form.ChannelID, params)
-	case "add_deadline":
-		return ba.addTime(accessLevel, form.ChannelID, params)
-	case "remove_deadline":
-		return ba.removeTime(accessLevel, form.ChannelID)
-	case "show_deadline":
-		return ba.showTime(form.ChannelID)
-	case "add_timetable":
-		return ba.addTimeTable(accessLevel, form.ChannelID, params)
-	case "remove_timetable":
-		return ba.removeTimeTable(accessLevel, form.ChannelID, params)
-	case "show_timetable":
-		return ba.showTimeTable(accessLevel, form.ChannelID, params)
-	case "report_on_user":
-		return ba.generateReportOnUser(accessLevel, params)
-	case "report_on_project":
-		return ba.generateReportOnProject(accessLevel, params)
-	case "report_on_user_in_project":
-		return ba.generateReportOnUserInProject(accessLevel, params)
-	case "add_onduty_project":
-		return ba.addOnDutyProject(params, form.ChannelID)
-	case "add_onduty_devops":
-		return ba.addOnDutyDevops(params, form.ChannelID)
-	case "onduty_show":
-		return ba.onDutyShow(form.ChannelID)
-	default:
-		return ba.DisplayHelpText("")
-	}
+	return c.String(http.StatusOK, message)
+
 }
 
-func (ba *BotAPI) getAccessLevel(userID, channelID string) (int, error) {
-	user, err := ba.Bot.DB.SelectUser(userID)
+func (api *ComedianAPI) auth(c echo.Context) error {
+
+	urlValues, err := c.FormParams()
 	if err != nil {
-		return 0, err
+		log.Errorf("ComedianAPI: c.FormParams failed: %v\n", err)
+		return c.String(http.StatusUnauthorized, err.Error())
 	}
-	if userID == ba.Bot.CP.ManagerSlackUserID {
-		return 1, nil
+
+	code := urlValues.Get("code")
+
+	resp, err := slack.GetOAuthResponse(api.Comedian.Config.SlackClientID, api.Comedian.Config.SlackClientSecret, code, "", false)
+	if err != nil {
+		log.Error(err)
+		return err
 	}
-	if user.IsAdmin() {
-		return 2, nil
+
+	cp, err := api.DB.CreateControllPannel(resp.Bot.BotAccessToken, resp.TeamID, resp.TeamName)
+
+	if err != nil {
+		return err
 	}
-	if ba.Bot.DB.UserIsPMForProject(userID, channelID) {
-		return 3, nil
-	}
-	return 4, nil
+
+	bot := botuser.Bot{}
+
+	bot.API = slack.New(resp.Bot.BotAccessToken)
+	bot.Properties = cp
+	bot.DB = api.Comedian.DB
+
+	api.Comedian.BotsChan <- &bot
+
+	return api.renderLoginPage(c)
 }

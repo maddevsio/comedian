@@ -3,12 +3,8 @@ package utils
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/team-monitoring/comedian/bot"
-	"gitlab.com/team-monitoring/comedian/config"
-	"gitlab.com/team-monitoring/comedian/model"
 )
 
 func TestSplitUser(t *testing.T) {
@@ -58,42 +54,6 @@ func TestFormatTime(t *testing.T) {
 		assert.Equal(t, test.eMin, aMin)
 		assert.Equal(t, test.err, err)
 	}
-}
-
-func TestPrepareTimetable(t *testing.T) {
-	c, err := config.Get()
-	bot, err := bot.NewBot(c)
-
-	m, err := bot.DB.CreateChannelMember(model.ChannelMember{
-		UserID:    "testUser",
-		ChannelID: "testChannel",
-	})
-	assert.NoError(t, err)
-
-	tt, err := bot.DB.CreateTimeTable(model.TimeTable{
-		ChannelMemberID: m.ID,
-	})
-	assert.NoError(t, err)
-
-	timeNow := time.Date(2018, 10, 7, 10, 0, 0, 0, time.UTC)
-	tt.Monday = timeNow.Unix()
-	tt.Tuesday = timeNow.Unix()
-	tt.Wednesday = timeNow.Unix()
-	tt.Thursday = timeNow.Unix()
-	tt.Friday = timeNow.Unix()
-
-	tt, err = bot.DB.UpdateTimeTable(tt)
-
-	assert.NoError(t, err)
-	assert.Equal(t, timeNow.Unix(), tt.Monday)
-
-	timeUpdate := time.Date(2018, 10, 7, 12, 0, 0, 0, time.UTC).Unix()
-
-	tt = PrepareTimeTable(tt, "mon tue wed thu fri sat sun", timeUpdate)
-	assert.Equal(t, timeUpdate, tt.Monday)
-	assert.NoError(t, bot.DB.DeleteChannelMember(m.UserID, m.ChannelID))
-	assert.NoError(t, bot.DB.DeleteTimeTable(tt.ID))
-
 }
 
 func TestCommandParsing(t *testing.T) {

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	// This line is must for working MySQL database
@@ -38,8 +37,8 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 		return s, err
 	}
 	res, err := m.conn.Exec(
-		"INSERT INTO `standups` (created, modified, comment, channel_id, user_id, message_ts) VALUES (?, ?, ?, ?, ?, ?)",
-		time.Now().UTC(), time.Now().UTC(), s.Comment, s.ChannelID, s.UserID, s.MessageTS,
+		"INSERT INTO `standups` (team_id, created, modified, comment, channel_id, user_id, message_ts) VALUES (?,?, ?, ?, ?, ?, ?)",
+		s.TeamID, time.Now().UTC(), time.Now().UTC(), s.Comment, s.ChannelID, s.UserID, s.MessageTS,
 	)
 	if err != nil {
 		return s, err
@@ -56,8 +55,8 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 // UpdateStandup updates standup entry in database
 func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `standups` SET modified=?, comment=?, message_ts=? WHERE id=?",
-		time.Now().UTC(), s.Comment, s.MessageTS, s.ID,
+		"UPDATE `standups` SET team_id=?, modified=?, comment=?, message_ts=? WHERE id=?",
+		s.TeamID, time.Now().UTC(), s.Comment, s.MessageTS, s.ID,
 	)
 	if err != nil {
 		return s, err
@@ -93,6 +92,14 @@ func (m *MySQL) SelectStandupsFiltered(userID, channelID string, dateStart, date
 	return items, err
 }
 
+// ListStandups returns array of standup entries from database
+// Helper function for testing
+func (m *MySQL) ListStandups() ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.conn.Select(&items, "SELECT * FROM `standups`")
+	return items, err
+}
+
 // DeleteStandup deletes standup entry from database
 func (m *MySQL) DeleteStandup(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `standups` WHERE id=?", id)
@@ -106,8 +113,8 @@ func (m *MySQL) CreateChannelMember(s model.ChannelMember) (model.ChannelMember,
 		return s, err
 	}
 	res, err := m.conn.Exec(
-		"INSERT INTO `channel_members` (user_id, channel_id, standup_time, role_in_channel, created) VALUES (?, ?,?, ?, ?)",
-		s.UserID, s.ChannelID, 0, s.RoleInChannel, time.Now())
+		"INSERT INTO `channel_members` (team_id, user_id, channel_id, standup_time, role_in_channel, created) VALUES (?,?, ?,?, ?, ?)",
+		s.TeamID, s.UserID, s.ChannelID, 0, s.RoleInChannel, time.Now())
 	if err != nil {
 		return s, err
 	}
@@ -196,6 +203,7 @@ func (m *MySQL) ListChannelMembers(channelID string) ([]model.ChannelMember, err
 	return items, err
 }
 
+//ListChannelMembersByRole lists channels members with the same role
 func (m *MySQL) ListChannelMembersByRole(channelID, role string) ([]model.ChannelMember, error) {
 	items := []model.ChannelMember{}
 	err := m.conn.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=? and role_in_channel=?", channelID, role)
@@ -246,25 +254,22 @@ func (m *MySQL) DeleteStandupTime(channelID string) error {
 	return err
 }
 
-// AddToStandupHistory creates backup standup entry in standup_edit_history database
-func (m *MySQL) AddToStandupHistory(s model.StandupEditHistory) (model.StandupEditHistory, error) {
-	err := s.Validate()
-	if err != nil {
-		return s, err
-	}
+// CreateChannel creates standup entry in database
+func (m *MySQL) CreateChannel(c model.Channel) (model.Channel, error) {
 	res, err := m.conn.Exec(
-		"INSERT INTO `standup_edit_history` (created, standup_id, standup_text) VALUES (?, ?, ?)",
-		time.Now().UTC(), s.StandupID, s.StandupText)
+		"INSERT INTO `channels` (team_id, channel_name, channel_id, channel_standup_time) VALUES (?, ?, ?, ?)",
+		c.TeamID, c.ChannelName, c.ChannelID, 0,
+	)
 	if err != nil {
-		return s, err
+		return c, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return s, err
+		return c, err
 	}
-	s.ID = id
+	c.ID = id
 
-	return s, nil
+	return c, nil
 }
 
 //GetAllChannels returns list of unique channels
@@ -301,32 +306,6 @@ func (m *MySQL) GetChannelID(channelName string) (string, error) {
 	return channelID, nil
 }
 
-// ListStandups returns array of standup entries from database
-// Helper function for testing
-func (m *MySQL) ListStandups() ([]model.Standup, error) {
-	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standups`")
-	return items, err
-}
-
-// CreateChannel creates standup entry in database
-func (m *MySQL) CreateChannel(c model.Channel) (model.Channel, error) {
-	res, err := m.conn.Exec(
-		"INSERT INTO `channels` (channel_name, channel_id, channel_standup_time) VALUES (?, ?, ?)",
-		c.ChannelName, c.ChannelID, 0,
-	)
-	if err != nil {
-		return c, err
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		return c, err
-	}
-	c.ID = id
-
-	return c, nil
-}
-
 // SelectChannel selects Channel entry from database
 func (m *MySQL) SelectChannel(channelID string) (model.Channel, error) {
 	var c model.Channel
@@ -347,6 +326,16 @@ func (m *MySQL) GetChannels() ([]model.Channel, error) {
 	return c, err
 }
 
+// GetTeamChannels selects Channel entry from database with specific team_id
+func (m *MySQL) GetTeamChannels(teamID string) ([]model.Channel, error) {
+	var c []model.Channel
+	err := m.conn.Select(&c, "SELECT * FROM `channels` where team_id=?", teamID)
+	if err != nil {
+		return c, err
+	}
+	return c, err
+}
+
 // DeleteChannel deletes Channel entry from database
 func (m *MySQL) DeleteChannel(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `channels` WHERE id=?", id)
@@ -356,8 +345,8 @@ func (m *MySQL) DeleteChannel(id int64) error {
 // CreateUser creates standup entry in database
 func (m *MySQL) CreateUser(c model.User) (model.User, error) {
 	res, err := m.conn.Exec(
-		"INSERT INTO `users` (user_name, user_id, role, real_name) VALUES (?, ?, ?, ?)",
-		c.UserName, c.UserID, c.Role, c.RealName,
+		"INSERT INTO `users` (team_id, user_name, user_id, role, real_name) VALUES (?, ?, ?, ?, ?)",
+		c.TeamID, c.UserName, c.UserID, c.Role, c.RealName,
 	)
 	if err != nil {
 		return c, err
@@ -374,8 +363,8 @@ func (m *MySQL) CreateUser(c model.User) (model.User, error) {
 // UpdateUser updates User entry in database
 func (m *MySQL) UpdateUser(c model.User) (model.User, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `users` SET role=?, real_name=? WHERE id=?",
-		c.Role, c.RealName, c.ID,
+		"UPDATE `users` SET role=?, real_name=?, team_id=? WHERE id=?",
+		c.Role, c.RealName, c.TeamID, c.ID,
 	)
 	if err != nil {
 		return c, err
@@ -395,7 +384,7 @@ func (m *MySQL) SelectUser(userID string) (model.User, error) {
 	return c, err
 }
 
-// SelectUser selects User entry from database
+// ListUsers selects Users from database
 func (m *MySQL) ListUsers() ([]model.User, error) {
 	var u []model.User
 	err := m.conn.Select(&u, "SELECT * FROM `users`")
@@ -445,204 +434,48 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	return false
 }
 
-// CreateTimeTable creates tt entry in database
-func (m *MySQL) CreateTimeTable(t model.TimeTable) (model.TimeTable, error) {
+//CreateControllPannel creates bot properties for the newly created bot
+func (m *MySQL) CreateControllPannel(token, teamID, teamName string) (model.ControllPannel, error) {
+	var cp model.ControllPannel
 	res, err := m.conn.Exec(
-		"INSERT INTO `timetables` (channel_member_id, created, modified) VALUES (?, ?, ?)",
-		t.ChannelMemberID, time.Now(), time.Now())
+		"INSERT INTO `controll_pannel` (notifier_interval, manager_slack_user_id, reporting_channel, report_time, language, reminder_repeats_max, reminder_time, collector_enabled,sprint_report_status,sprint_report_time,sprint_report_channel,sprint_weekdays,individual_reporting_status,bot_access_token, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		30, "", "", "10:00", "en_US", 3, int64(10), false, false, "9:00", "", "", false, token, teamID, teamName, teamName)
 	if err != nil {
-		return t, err
+		return model.ControllPannel{}, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return t, err
-	}
-	t.ID = id
-
-	return t, nil
-}
-
-// UpdateTimeTable updates TimeTable entry in database
-func (m *MySQL) UpdateTimeTable(t model.TimeTable) (model.TimeTable, error) {
-	_, err := m.conn.Exec(
-		"UPDATE `timetables` set modified =?, monday =?, tuesday =?, wednesday =?, thursday =?, friday =?, saturday =?, sunday = ? where id=?",
-		time.Now(), t.Monday, t.Tuesday, t.Wednesday, t.Thursday, t.Friday, t.Saturday, t.Sunday, t.ID,
-	)
-	if err != nil {
-		return t, err
-	}
-	var i model.TimeTable
-	err = m.conn.Get(&i, "SELECT * FROM `timetables` WHERE id=?", t.ID)
-	return i, err
-}
-
-// SelectTimeTable selects TimeTable entry from database
-func (m *MySQL) SelectTimeTable(ChannelMemberID int64) (model.TimeTable, error) {
-	var c model.TimeTable
-	err := m.conn.Get(&c, "SELECT * FROM `timetables` WHERE channel_member_id=?", ChannelMemberID)
-	if err != nil {
-		return c, err
-	}
-	return c, err
-}
-
-// DeleteTimeTable deletes TimeTable entry from database
-func (m *MySQL) DeleteTimeTable(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `timetables` WHERE id=?", id)
-	return err
-}
-
-//ListTimeTablesForDay returns list of chan members who has timetables
-func (m *MySQL) ListTimeTablesForDay(day string) ([]model.TimeTable, error) {
-	var tt []model.TimeTable
-	query := fmt.Sprintf("select channel_member_id, %s from timetables where %s != 0", day, day)
-	err := m.conn.Select(&tt, query)
-	if err != nil {
-		return tt, err
-	}
-	return tt, nil
-}
-
-func (m *MySQL) MemberHasTimeTable(id int64) bool {
-	var t int64
-	err := m.conn.Get(&t, "SELECT id FROM `timetables` WHERE channel_member_id=?", id)
-	if err != nil {
-		return false
-	}
-	logrus.Infof("MemberHasTimeTable ID: %v", t)
-	return true
-}
-
-//ReturnDayFromTimetable return days from timetable where day is not 0
-func (m *MySQL) ReturnDayFromTimetable(tt model.TimeTable) (days map[string]int64) {
-	days = make(map[string]int64)
-	if tt.Monday != 0 {
-		days["Monday"] = tt.Monday
-	}
-	if tt.Tuesday != 0 {
-		days["Tuesday"] = tt.Tuesday
-	}
-	if tt.Wednesday != 0 {
-		days["Wednesday"] = tt.Wednesday
-	}
-	if tt.Thursday != 0 {
-		days["Thursday"] = tt.Thursday
-	}
-	if tt.Friday != 0 {
-		days["Friday"] = tt.Friday
-	}
-	if tt.Saturday != 0 {
-		days["Saturday"] = tt.Saturday
-	}
-	if tt.Sunday != 0 {
-		days["Sunday"] = tt.Sunday
-	}
-	return days
-}
-
-//MemberShouldBeTracked returns true if member should be tracked
-func (m *MySQL) MemberShouldBeTracked(id int64, date time.Time) bool {
-	logrus.Info("In MemberShouldBeTracked")
-	//if channel member joined after standup deadline, bot shouldn't tracked user, and shouldn't mentioned his standup next day in report
-	//channel member need to find channel members's created date
-	chMember, err := m.SelectChannelMember(id)
-	if err != nil {
-		logrus.Errorf("mysql.MemberShouldBeTracked: SelectChannelMember failed: %v", err)
-		return false
-	}
-	//channel need to find standup time of channel
-	channel, err := m.SelectChannel(chMember.ChannelID)
-	if err != nil {
-		logrus.Errorf("mysql.MemberShouldBeTracked: SelectChannel failed: %v", err)
-		return false
-	}
-	//channel member created date
-	createdYear, createdMon, createdDay := chMember.Created.Date()
-	createdHour := chMember.Created.Hour()
-	createdMin := chMember.Created.Minute()
-	//requested date
-	dateYear, dateMon, dateDay := date.Date()
-	//channel's standup time
-	//if channel members's created time after channel's standuptime then don't track
-	standupTime := time.Unix(channel.StandupTime, 0)
-	standupHour := standupTime.Hour()
-	standupMin := standupTime.Minute()
-
-	var tt model.TimeTable
-	err = m.conn.Get(&tt, "SELECT * FROM `timetables` WHERE channel_member_id=?", id)
-	if err != nil {
-		logrus.Infof("User does not have a timetable: %v", err)
-		//channel member doesn't has timetable and joined after channel standup time
-		if createdYear == dateYear && createdMon == dateMon && createdDay == dateDay {
-			if createdHour > standupHour {
-				return false
-			} else if createdHour == standupHour {
-				if createdMin > standupMin {
-					return false
-				}
-			}
-		}
-		return true
-	}
-	if tt.IsEmpty() {
-		logrus.Infof("Timetable for %v is empty! Do not track", tt.ChannelMemberID)
-		return false
-	}
-	logrus.Infof("MemberHasTimeTable ID:%v not empty", tt.ID)
-	//channel member has individual timetable
-	weekday := date.Weekday().String()
-	days := m.ReturnDayFromTimetable(tt)
-	if value, in := days[weekday]; in {
-		stTime := time.Unix(value, 0)
-		stTimeHours := stTime.Hour()
-		stTimeMin := stTime.Minute()
-		//channel member has timetable and joined after standup time
-		if createdYear == dateYear && createdMon == dateMon && createdDay == dateDay {
-			if createdHour > stTimeHours {
-				return false
-			} else if createdHour == stTimeHours {
-				if createdMin > stTimeMin {
-					return false
-				}
-			}
-		}
-	}
-
-	day := fmt.Sprintf("%v", date.Weekday())
-	if tt.ShowDeadlineOn(strings.ToLower(day)) != 0 {
-		return true
-	}
-
-	return false
-}
-
-func (m *MySQL) CreateControllPannel() (model.ControllPannel, error) {
-	_, err := m.conn.Exec(
-		"INSERT INTO `controll_pannel` (notifier_interval, manager_slack_user_id, reporting_channel, report_time, language, reminder_repeats_max, reminder_time, collector_enabled,sprint_report_status,sprint_report_time,sprint_report_channel,sprint_weekdays,individual_reporting_status,task_done_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		30, "", "", "10:00", "en_US", 3, int64(10), false, false, "9:00", "", "", false, "")
-	if err != nil {
 		return model.ControllPannel{}, err
 	}
-	cp, err := m.GetControllPannel()
-	if err != nil {
-		return model.ControllPannel{}, err
-	}
+	cp.ID = id
 	return cp, nil
 }
 
-func (m *MySQL) GetControllPannel() (model.ControllPannel, error) {
-	var cp model.ControllPannel
-	err := m.conn.Get(&cp, "SELECT * FROM `controll_pannel`")
+//GetControllPannels returns all controll pannels
+func (m *MySQL) GetControllPannels() ([]model.ControllPannel, error) {
+	var cp []model.ControllPannel
+	err := m.conn.Select(&cp, "SELECT * FROM `controll_pannel`")
 	if err != nil {
 		return cp, err
 	}
 	return cp, nil
 }
 
+//GetControllPannel returns a particular controll pannel
+func (m *MySQL) GetControllPannel(teamName string) (model.ControllPannel, error) {
+	var cp model.ControllPannel
+	err := m.conn.Get(&cp, "SELECT * FROM `controll_pannel` where team_name=?", teamName)
+	if err != nil {
+		return cp, err
+	}
+	return cp, nil
+}
+
+//UpdateControllPannel updates controll pannel
 func (m *MySQL) UpdateControllPannel(cp model.ControllPannel) (model.ControllPannel, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `controll_pannel` set notifier_interval=?, manager_slack_user_id=?, reporting_channel=?, report_time=?, language=?, reminder_repeats_max=?, reminder_time=?, collector_enabled=?, sprint_report_status=?, sprint_report_time=?, sprint_report_channel=?,sprint_weekdays=?,individual_reporting_status=?, task_done_status=? where id=?",
-		cp.NotifierInterval, cp.ManagerSlackUserID, cp.ReportingChannel, cp.ReportTime, cp.Language, cp.ReminderRepeatsMax, cp.ReminderTime, cp.CollectorEnabled, cp.SprintReportStatus, cp.SprintReportTime, cp.SprintReportChannel, cp.SprintWeekdays, cp.IndividualReportingStatus, cp.TaskDoneStatus, cp.ID,
+		"UPDATE `controll_pannel` set notifier_interval=?, manager_slack_user_id=?, reporting_channel=?, report_time=?, language=?, reminder_repeats_max=?, reminder_time=?, collector_enabled=?, sprint_report_status=?, sprint_report_time=?, sprint_report_channel=?,sprint_weekdays=?,individual_reporting_status=?, password=? where id=?",
+		cp.NotifierInterval, cp.ManagerSlackUserID, cp.ReportingChannel, cp.ReportTime, cp.Language, cp.ReminderRepeatsMax, cp.ReminderTime, cp.CollectorEnabled, cp.SprintReportStatus, cp.SprintReportTime, cp.SprintReportChannel, cp.SprintWeekdays, cp.IndividualReportingStatus, cp.Password, cp.ID,
 	)
 	if err != nil {
 		return cp, err
@@ -653,4 +486,10 @@ func (m *MySQL) UpdateControllPannel(cp model.ControllPannel) (model.ControllPan
 		return cp, err
 	}
 	return controllPannel, err
+}
+
+//DeleteControllPannel deletes controll pannel
+func (m *MySQL) DeleteControllPannel(teamID string) error {
+	_, err := m.conn.Exec("DELETE FROM `controll_pannel` WHERE team_id=?", teamID)
+	return err
 }

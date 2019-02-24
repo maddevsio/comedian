@@ -6,8 +6,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-
-	"gitlab.com/team-monitoring/comedian/model"
 )
 
 //SplitUser divides full user object to name & id
@@ -57,31 +55,6 @@ func FormatTime(t string) (hour, min int, err error) {
 		return
 	}
 	return hour, min, nil
-}
-
-func PrepareTimeTable(tt model.TimeTable, weekdays string, timeInt int64) model.TimeTable {
-	if strings.Contains(weekdays, "mon") || strings.Contains(weekdays, "пн") {
-		tt.Monday = timeInt
-	}
-	if strings.Contains(weekdays, "tue") || strings.Contains(weekdays, "вт") {
-		tt.Tuesday = timeInt
-	}
-	if strings.Contains(weekdays, "wed") || strings.Contains(weekdays, "ср") {
-		tt.Wednesday = timeInt
-	}
-	if strings.Contains(weekdays, "thu") || strings.Contains(weekdays, "чт") {
-		tt.Thursday = timeInt
-	}
-	if strings.Contains(weekdays, "fri") || strings.Contains(weekdays, "пт") {
-		tt.Friday = timeInt
-	}
-	if strings.Contains(weekdays, "sat") || strings.Contains(weekdays, "сб") {
-		tt.Saturday = timeInt
-	}
-	if strings.Contains(weekdays, "sun") || strings.Contains(weekdays, "вс") {
-		tt.Sunday = timeInt
-	}
-	return tt
 }
 
 //CommandParsing parses string into command Title and Command Body
