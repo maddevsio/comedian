@@ -197,6 +197,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	cp, err := api.DB.CreateControllPannel(resp.Bot.BotAccessToken, resp.TeamID, resp.TeamName)
 
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
