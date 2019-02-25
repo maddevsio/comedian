@@ -4,6 +4,10 @@
 
 <div align="center"> Simple stand up bot for slack to help you with remote stand up meetings automation </div>
 
+<br>
+
+<div align="center"><a href="https://slack.com/oauth/authorize?client_id=535492614212.559251194212&scope=commands,bot"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a></div>
+
 <div align="center">
 
 ![](https://travis-ci.org/maddevsio/comedian.svg?branch=master)
