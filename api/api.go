@@ -125,9 +125,12 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 		return err
 	}
 
+	log.Info("Service request: ", incomingEvent)
+
 	for _, bot := range api.Comedian.Bots {
-		log.Info(bot.Properties.TeamName)
+		log.Info("Bot that can handle request: ", bot.Properties)
 		if bot.Properties.TeamName == incomingEvent.TeamName {
+			log.Info(bot.Properties.AccessToken != incomingEvent.AccessToken)
 			if bot.Properties.AccessToken != incomingEvent.AccessToken {
 				return c.String(http.StatusForbidden, "wrong access token")
 			}
