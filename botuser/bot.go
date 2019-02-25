@@ -360,7 +360,6 @@ func (bot *Bot) UpdateUsersList() {
 
 		u, err := bot.DB.SelectUser(user.ID)
 		if err != nil && !user.Deleted {
-			logrus.Errorf("SelectUser with ID [%v] failed %v", user.ID, err)
 			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
 				u, err = bot.DB.CreateUser(model.User{
 					TeamID:   user.TeamID,

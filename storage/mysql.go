@@ -437,17 +437,17 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 //CreateControllPannel creates bot properties for the newly created bot
 func (m *MySQL) CreateControllPannel(token, teamID, teamName string) (model.ControllPannel, error) {
 	var cp model.ControllPannel
-	res, err := m.conn.Exec(
+	_, err := m.conn.Exec(
 		"INSERT INTO `controll_pannel` (notifier_interval, manager_slack_user_id, reporting_channel, report_time, language, reminder_repeats_max, reminder_time, collector_enabled,sprint_report_status,sprint_report_time,sprint_report_channel,sprint_weekdays,individual_reporting_status,bot_access_token, team_id, team_name, password, task_done_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		30, "", "", "10:00", "en_US", 3, int64(10), false, false, "9:00", "", "", false, token, teamID, teamName, teamName, "")
 	if err != nil {
 		return model.ControllPannel{}, err
 	}
-	id, err := res.LastInsertId()
+	cp, err = m.GetControllPannel(teamName)
 	if err != nil {
-		return model.ControllPannel{}, err
+		return cp, err
 	}
-	cp.ID = id
+
 	return cp, nil
 }
 

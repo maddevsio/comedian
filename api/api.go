@@ -167,6 +167,13 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 		}
 	}
 
+	if bot == nil {
+		log.Error("No bot found to inmplement the request!")
+		return c.String(http.StatusOK, "No bot is willing to implement the request. Something went wrong!")
+	}
+
+	log.Info(bot)
+
 	_, err = bot.DB.SelectChannel(form.ChannelID)
 	if err != nil {
 		return err
@@ -201,13 +208,13 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	bot := botuser.Bot{}
+	bot := &botuser.Bot{}
 
 	bot.API = slack.New(resp.Bot.BotAccessToken)
 	bot.Properties = cp
 	bot.DB = api.Comedian.DB
 
-	api.Comedian.BotsChan <- &bot
+	api.Comedian.BotsChan <- bot
 
 	return api.renderLoginPage(c)
 }
