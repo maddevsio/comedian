@@ -37,6 +37,7 @@ build:
     - master
   when:
     manual
+  allow_failure: false
 
 
 staging_deploy:
