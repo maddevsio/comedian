@@ -17,7 +17,7 @@ func (bot *Bot) NotifyChannels() {
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
 		return
 	}
-	channels, err := bot.DB.GetTeamChannels(bot.Properties.TeamID)
+	channels, err := bot.db.GetTeamChannels(bot.Properties.TeamID)
 	if err != nil {
 		logrus.Errorf("notifier: ListAllStandupTime failed: %v\n", err)
 		return
@@ -54,7 +54,7 @@ func (bot *Bot) SendWarning(channelID string) {
 	for _, user := range nonReporters {
 		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
 	}
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 	minutes := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "Minutes",
@@ -92,11 +92,11 @@ func (bot *Bot) SendWarning(channelID string) {
 
 //SendChannelNotification starts standup reminders and direct reminders to users
 func (bot *Bot) SendChannelNotification(channelID string) {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
-	members, err := bot.DB.ListChannelMembers(channelID)
+	members, err := bot.db.ListChannelMembers(channelID)
 	if err != nil {
-		logrus.Errorf("notifier: bot.DB.ListChannelMembers failed: %v\n", err)
+		logrus.Errorf("notifier: bot.db.ListChannelMembers failed: %v\n", err)
 		return
 	}
 	if len(members) == 0 {
@@ -113,7 +113,7 @@ func (bot *Bot) SendChannelNotification(channelID string) {
 		return
 	}
 
-	channel, err := bot.DB.SelectChannel(channelID)
+	channel, err := bot.db.SelectChannel(channelID)
 	if err != nil {
 		logrus.Errorf("notifier: SelectChannel failed: %v\n", err)
 		return
@@ -189,7 +189,7 @@ func (bot *Bot) SendChannelNotification(channelID string) {
 // getNonReporters returns a list of standupers that did not write standups
 func (bot *Bot) getCurrentDayNonReporters(channelID string) ([]model.ChannelMember, error) {
 	timeFrom := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
-	nonReporters, err := bot.DB.GetNonReporters(channelID, timeFrom, time.Now())
+	nonReporters, err := bot.db.GetNonReporters(channelID, timeFrom, time.Now())
 	if err != nil && err != errors.New("no rows in result set") {
 		logrus.Errorf("notifier: GetNonReporters failed: %v\n", err)
 		return nil, err

@@ -12,7 +12,7 @@ import (
 )
 
 func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 	accessAtLeastAdmin := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "AccessAtLeastAdmin",
@@ -75,7 +75,7 @@ func (bot *Bot) showCommand(channelID, params string) string {
 }
 
 func (bot *Bot) deleteCommand(accessLevel int, channelID, params string) string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 	accessAtLeastAdmin := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "AccessAtLeastAdmin",
@@ -120,7 +120,7 @@ func (bot *Bot) deleteCommand(accessLevel int, channelID, params string) string 
 }
 
 func (bot *Bot) addMembers(users []string, role, channel string) string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
 	var failed, exist, added []string
 	var text string
@@ -133,9 +133,9 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := bot.DB.FindChannelMemberByUserID(userID, channel)
+		user, err := bot.db.FindChannelMemberByUserID(userID, channel)
 		if err != nil {
-			chanMember, _ := bot.DB.CreateChannelMember(model.ChannelMember{
+			chanMember, _ := bot.db.CreateChannelMember(model.ChannelMember{
 				TeamID:        bot.Properties.TeamID,
 				UserID:        userID,
 				ChannelID:     channel,
@@ -256,7 +256,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 }
 
 func (bot *Bot) addAdmins(users []string) string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
 	var failed, exist, added []string
 	var text string
@@ -269,7 +269,7 @@ func (bot *Bot) addAdmins(users []string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := bot.DB.SelectUser(userID)
+		user, err := bot.db.SelectUser(userID)
 		if err != nil {
 			failed = append(failed, u)
 			continue
@@ -279,7 +279,7 @@ func (bot *Bot) addAdmins(users []string) string {
 			continue
 		}
 		user.Role = "admin"
-		bot.DB.UpdateUser(user)
+		bot.db.UpdateUser(user)
 		adminAssigned := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "PMAssigned",
@@ -349,9 +349,9 @@ func (bot *Bot) addAdmins(users []string) string {
 
 func (bot *Bot) listMembers(channelID, role string) string {
 	logrus.Info(bot.Properties)
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
-	members, err := bot.DB.ListChannelMembersByRole(channelID, role)
+	members, err := bot.db.ListChannelMembersByRole(channelID, role)
 	if err != nil {
 		return fmt.Sprintf("failed to list members :%v\n", err)
 	}
@@ -415,9 +415,9 @@ func (bot *Bot) listMembers(channelID, role string) string {
 }
 
 func (bot *Bot) listAdmins() string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
-	admins, err := bot.DB.ListAdmins()
+	admins, err := bot.db.ListAdmins()
 	if err != nil {
 		return fmt.Sprintf("failed to list users :%v\n", err)
 	}
@@ -454,7 +454,7 @@ func (bot *Bot) listAdmins() string {
 }
 
 func (bot *Bot) deleteMembers(members []string, channelID string) string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
 	var failed, deleted []string
 	var text string
@@ -467,13 +467,13 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := bot.DB.FindChannelMemberByUserID(userID, channelID)
+		user, err := bot.db.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
 			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
 			failed = append(failed, u)
 			continue
 		}
-		bot.DB.DeleteChannelMember(user.UserID, channelID)
+		bot.db.DeleteChannelMember(user.UserID, channelID)
 		deleted = append(deleted, u)
 	}
 
@@ -514,7 +514,7 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 }
 
 func (bot *Bot) deleteAdmins(users []string) string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
 	var failed, deleted []string
 	var text string
@@ -527,7 +527,7 @@ func (bot *Bot) deleteAdmins(users []string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := bot.DB.SelectUser(userID)
+		user, err := bot.db.SelectUser(userID)
 		if err != nil {
 			failed = append(failed, u)
 			continue
@@ -537,7 +537,7 @@ func (bot *Bot) deleteAdmins(users []string) string {
 			continue
 		}
 		user.Role = ""
-		bot.DB.UpdateUser(user)
+		bot.db.UpdateUser(user)
 		adminRemoved := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "PMRemoved",

@@ -59,7 +59,7 @@ func (bot *Bot) DisplayHelpText(command string) string {
 }
 
 func (bot *Bot) generateHelpText() HelpText {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
 	textHead := localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{

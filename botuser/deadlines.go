@@ -12,7 +12,7 @@ import (
 )
 
 func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 	if accessLevel > 3 {
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -28,7 +28,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 	if err != nil {
 		return err.Error()
 	}
-	err = bot.DB.CreateStandupTime(timeInt, channelID)
+	err = bot.db.CreateStandupTime(timeInt, channelID)
 	if err != nil {
 		somethingWentWrong := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -41,7 +41,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 		return somethingWentWrong
 
 	}
-	channelMembers, err := bot.DB.ListChannelMembers(channelID)
+	channelMembers, err := bot.db.ListChannelMembers(channelID)
 	if err != nil {
 		logrus.Errorf("BotAPI: ListChannelMembers failed: %v\n", err)
 	}
@@ -74,7 +74,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 }
 
 func (bot *Bot) removeTime(accessLevel int, channelID string) string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 	if accessLevel > 3 {
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -86,7 +86,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 		return accessAtLeastPM
 
 	}
-	err := bot.DB.DeleteStandupTime(channelID)
+	err := bot.db.DeleteStandupTime(channelID)
 	if err != nil {
 		somethingWentWrong := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -99,7 +99,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 		return somethingWentWrong
 
 	}
-	st, err := bot.DB.ListChannelMembers(channelID)
+	st, err := bot.db.ListChannelMembers(channelID)
 	if len(st) != 0 {
 		removeStandupTimeWithUsers := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -123,9 +123,9 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 }
 
 func (bot *Bot) showTime(channelID string) string {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
-	standupTime, err := bot.DB.GetChannelStandupTime(channelID)
+	standupTime, err := bot.db.GetChannelStandupTime(channelID)
 	if err != nil || standupTime == int64(0) {
 		showNoStandupTime := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -153,7 +153,7 @@ func (bot *Bot) showTime(channelID string) string {
 
 //ParseTimeTextToInt parse time text to int
 func (bot *Bot) ParseTimeTextToInt(timeText string) (int64, error) {
-	localizer := i18n.NewLocalizer(bot.Bundle, bot.Properties.Language)
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
 	if timeText == "0" {
 		return int64(0), nil

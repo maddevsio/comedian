@@ -87,7 +87,6 @@ type (
 
 	ServiceEvent struct {
 		TeamName    string             `json:"team_name"`
-		AccessToken string             `json:"bot_access_token"`
 		Channel     string             `json:"channel"`
 		Message     string             `json:"message"`
 		Attachments []slack.Attachment `json:"attachments"`
