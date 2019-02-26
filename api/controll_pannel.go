@@ -24,7 +24,7 @@ func (api *ComedianAPI) renderLoginPage(c echo.Context) error {
 	return c.Render(http.StatusOK, "login", nil)
 }
 
-func (api *ComedianAPI) renderControllPannel(c echo.Context) error {
+func (api *ComedianAPI) renderControlPannel(c echo.Context) error {
 
 	form, err := c.FormParams()
 	if err != nil {
@@ -33,7 +33,7 @@ func (api *ComedianAPI) renderControllPannel(c echo.Context) error {
 
 	logrus.Info(form)
 
-	cp, err := api.DB.GetControllPannel(form.Get("team_name"))
+	cp, err := api.DB.GetControlPannel(form.Get("team_name"))
 	if err != nil {
 		return c.Render(http.StatusNotFound, "login", nil)
 	}
@@ -182,13 +182,13 @@ func (api *ComedianAPI) updateConfig(c echo.Context) error {
 
 	bot.Properties.SprintWeekdays = sunday + "," + monday + "," + tuesday + "," + wednesday + "," + thursday + "," + friday + "," + saturday
 
-	_, err = api.DB.UpdateControllPannel(bot.Properties)
+	_, err = api.DB.UpdateControlPannel(bot.Properties)
 	if err != nil {
 		logrus.Error(err)
 		return err
 	}
 
-	logrus.Info("UpdateControllPannel success")
+	logrus.Info("UpdateControlPannel success")
 
-	return api.renderControllPannel(c)
+	return api.renderControlPannel(c)
 }

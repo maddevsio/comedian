@@ -42,7 +42,7 @@ func New(c config.Config) (*Comedian, error) {
 
 //SetBots populates Comedian with bots
 func (comedian Comedian) SetBots() error {
-	listOfProperties, err := comedian.DB.GetControllPannels()
+	listOfProperties, err := comedian.DB.GetControlPannels()
 	if err != nil {
 		return err
 	}

@@ -43,7 +43,7 @@ func NewComedianAPI(comedian *comedianbot.Comedian) (ComedianAPI, error) {
 	echo.Renderer = t
 	echo.GET("/login", api.renderLoginPage)
 	echo.POST("/event", api.handleEvent)
-	echo.GET("/admin", api.renderControllPannel)
+	echo.GET("/admin", api.renderControlPannel)
 	echo.POST("/config", api.updateConfig)
 	echo.POST("/service-message", api.handleServiceMessage)
 
@@ -91,7 +91,7 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 			return err
 		}
 
-		err = api.DB.DeleteControllPannel(event.TeamID)
+		err = api.DB.DeleteControlPannel(event.TeamID)
 		if err != nil {
 			return err
 		}
@@ -204,7 +204,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	cp, err := api.DB.CreateControllPannel(resp.Bot.BotAccessToken, resp.TeamID, resp.TeamName)
+	cp, err := api.DB.CreateControlPannel(resp.Bot.BotAccessToken, resp.TeamID, resp.TeamName)
 
 	if err != nil {
 		log.Error(err)

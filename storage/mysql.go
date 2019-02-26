@@ -434,16 +434,16 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	return false
 }
 
-//CreateControllPannel creates bot properties for the newly created bot
-func (m *MySQL) CreateControllPannel(token, teamID, teamName string) (model.ControllPannel, error) {
-	var cp model.ControllPannel
+//CreateControlPannel creates bot properties for the newly created bot
+func (m *MySQL) CreateControlPannel(token, teamID, teamName string) (model.ControlPannel, error) {
+	var cp model.ControlPannel
 	_, err := m.conn.Exec(
 		"INSERT INTO `controll_pannel` (notifier_interval, manager_slack_user_id, reporting_channel, report_time, language, reminder_repeats_max, reminder_time, collector_enabled,sprint_report_status,sprint_report_time,sprint_report_channel,sprint_weekdays,individual_reporting_status,bot_access_token, team_id, team_name, password, task_done_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		30, "", "", "10:00", "en_US", 3, int64(10), false, false, "9:00", "", "", false, token, teamID, teamName, teamName, "")
 	if err != nil {
-		return model.ControllPannel{}, err
+		return model.ControlPannel{}, err
 	}
-	cp, err = m.GetControllPannel(teamName)
+	cp, err = m.GetControlPannel(teamName)
 	if err != nil {
 		return cp, err
 	}
@@ -451,9 +451,9 @@ func (m *MySQL) CreateControllPannel(token, teamID, teamName string) (model.Cont
 	return cp, nil
 }
 
-//GetControllPannels returns all controll pannels
-func (m *MySQL) GetControllPannels() ([]model.ControllPannel, error) {
-	var cp []model.ControllPannel
+//GetControlPannels returns all controll pannels
+func (m *MySQL) GetControlPannels() ([]model.ControlPannel, error) {
+	var cp []model.ControlPannel
 	err := m.conn.Select(&cp, "SELECT * FROM `controll_pannel`")
 	if err != nil {
 		return cp, err
@@ -461,9 +461,9 @@ func (m *MySQL) GetControllPannels() ([]model.ControllPannel, error) {
 	return cp, nil
 }
 
-//GetControllPannel returns a particular controll pannel
-func (m *MySQL) GetControllPannel(teamName string) (model.ControllPannel, error) {
-	var cp model.ControllPannel
+//GetControlPannel returns a particular controll pannel
+func (m *MySQL) GetControlPannel(teamName string) (model.ControlPannel, error) {
+	var cp model.ControlPannel
 	err := m.conn.Get(&cp, "SELECT * FROM `controll_pannel` where team_name=?", teamName)
 	if err != nil {
 		return cp, err
@@ -471,8 +471,8 @@ func (m *MySQL) GetControllPannel(teamName string) (model.ControllPannel, error)
 	return cp, nil
 }
 
-//UpdateControllPannel updates controll pannel
-func (m *MySQL) UpdateControllPannel(cp model.ControllPannel) (model.ControllPannel, error) {
+//UpdateControlPannel updates controll pannel
+func (m *MySQL) UpdateControlPannel(cp model.ControlPannel) (model.ControlPannel, error) {
 	_, err := m.conn.Exec(
 		"UPDATE `controll_pannel` set notifier_interval=?, manager_slack_user_id=?, reporting_channel=?, report_time=?, language=?, reminder_repeats_max=?, reminder_time=?, collector_enabled=?, sprint_report_status=?, sprint_report_time=?, sprint_report_channel=?,sprint_weekdays=?,individual_reporting_status=?, password=?, task_done_status=? where id=?",
 		cp.NotifierInterval, cp.ManagerSlackUserID, cp.ReportingChannel, cp.ReportTime, cp.Language, cp.ReminderRepeatsMax, cp.ReminderTime, cp.CollectorEnabled, cp.SprintReportStatus, cp.SprintReportTime, cp.SprintReportChannel, cp.SprintWeekdays, cp.IndividualReportingStatus, cp.Password, cp.TaskDoneStatus, cp.ID,
@@ -480,16 +480,16 @@ func (m *MySQL) UpdateControllPannel(cp model.ControllPannel) (model.ControllPan
 	if err != nil {
 		return cp, err
 	}
-	var controllPannel model.ControllPannel
+	var ControlPannel model.ControlPannel
 	err = m.conn.Get(&cp, "SELECT * FROM `controll_pannel`")
 	if err != nil {
 		return cp, err
 	}
-	return controllPannel, err
+	return ControlPannel, err
 }
 
-//DeleteControllPannel deletes controll pannel
-func (m *MySQL) DeleteControllPannel(teamID string) error {
+//DeleteControlPannel deletes controll pannel
+func (m *MySQL) DeleteControlPannel(teamID string) error {
 	_, err := m.conn.Exec("DELETE FROM `controll_pannel` WHERE team_id=?", teamID)
 	return err
 }

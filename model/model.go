@@ -50,8 +50,8 @@ type (
 		Created       time.Time `db:"created" json:"created"`
 	}
 
-	// ControllPannel used for updating and storing different configuration parameters
-	ControllPannel struct {
+	// ControlPannel used for updating and storing different configuration parameters
+	ControlPannel struct {
 		ID                        int64  `db:"id"`
 		NotifierInterval          int    `db:"notifier_interval" json:"notifier_interval" schema:"notifier_interval"`
 		ManagerSlackUserID        string `db:"manager_slack_user_id" json:"manager_slack_user_id" schema:"manager_slack_user_id"`

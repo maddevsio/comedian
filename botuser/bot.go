@@ -21,7 +21,7 @@ var (
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
 	API        *slack.Client
-	Properties model.ControllPannel
+	Properties model.ControlPannel
 	DB         *storage.MySQL
 	Bundle     *i18n.Bundle
 }
