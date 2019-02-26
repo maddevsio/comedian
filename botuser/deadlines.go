@@ -134,7 +134,6 @@ func (bot *Bot) showTime(channelID string) string {
 				Other:       "No standup time set for this channel yet! Please, add a standup time using `/comedian add_deadline` command!",
 			},
 		})
-		logrus.Errorf("GetChannelStandupTime failed: %v", err)
 		return showNoStandupTime
 
 	}

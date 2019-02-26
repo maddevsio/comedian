@@ -33,6 +33,7 @@ services:
     expose: 
       - 8080
     environment:
+      - TZ=Asia/Bishkek
       - COMEDIAN_DATABASE=${MADDEVS_COMEDIAN_DATABASE}
       - COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
       - COMEDIAN_SLACK_CLIENT_ID=${MADDEVS_COMEDIAN_SLACK_CLIENT_ID}
