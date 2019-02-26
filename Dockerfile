@@ -21,8 +21,8 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
 COPY comedianbot/active.en.toml /comedianbot/
 COPY comedianbot/active.ru.toml /comedianbot/  
 COPY --from=0  /go/src/gitlab.com/team-monitoring/comedian/comedian /
-COPY controll_pannel/index.html /src/gitlab.com/team-monitoring/comedian/controll_pannel/
-COPY controll_pannel/login.html /src/gitlab.com/team-monitoring/comedian/controll_pannel/
+COPY templates/index.html /src/gitlab.com/team-monitoring/comedian/templates/
+COPY templates/login.html /src/gitlab.com/team-monitoring/comedian/templates/
 COPY goose /
 COPY migrations /migrations
 COPY entrypoint.sh /

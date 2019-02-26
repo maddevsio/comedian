@@ -37,7 +37,7 @@ func NewComedianAPI(comedian *comedianbot.Comedian) (ComedianAPI, error) {
 	}
 
 	t := &Template{
-		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/controll_pannel/*.html")),
+		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/templates/*.html")),
 	}
 
 	echo.Renderer = t
