@@ -9,7 +9,6 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/botuser"
 )
 
 type Template struct {
@@ -33,7 +32,7 @@ func (api *ComedianAPI) renderControlPannel(c echo.Context) error {
 
 	logrus.Info(form)
 
-	cp, err := api.DB.GetControlPannel(form.Get("team_name"))
+	cp, err := api.db.GetControlPannel(form.Get("team_name"))
 	if err != nil {
 		return c.Render(http.StatusNotFound, "login", nil)
 	}
@@ -118,11 +117,9 @@ func (api *ComedianAPI) updateConfig(c echo.Context) error {
 		return err
 	}
 
-	bot := &botuser.Bot{}
-	for _, b := range api.Comedian.Bots {
-		if b.Properties.TeamName == form.Get("team_name") {
-			bot = b
-		}
+	bot, err := api.comedian.SelectBot(form.Get("team_name"))
+	if err != nil {
+		return err
 	}
 
 	ni, err := strconv.Atoi(form.Get("notifier_interval"))
@@ -182,7 +179,7 @@ func (api *ComedianAPI) updateConfig(c echo.Context) error {
 
 	bot.Properties.SprintWeekdays = sunday + "," + monday + "," + tuesday + "," + wednesday + "," + thursday + "," + friday + "," + saturday
 
-	_, err = api.DB.UpdateControlPannel(bot.Properties)
+	_, err = api.db.UpdateControlPannel(bot.Properties)
 	if err != nil {
 		logrus.Error(err)
 		return err

@@ -1,6 +1,7 @@
 package comedianbot
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,68 +10,45 @@ import (
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/botuser"
-	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
 	"golang.org/x/text/language"
 )
 
 // Comedian is the main struct of the project
 type Comedian struct {
-	Bots     []*botuser.Bot
-	Config   config.Config
-	DB       *storage.MySQL
-	BotsChan chan *botuser.Bot
+	bots     []*botuser.Bot
+	db       *storage.MySQL
+	botsChan chan *botuser.Bot
 }
 
 //New makes new Comedian
-func New(c config.Config) (*Comedian, error) {
+func New(db *storage.MySQL) *Comedian {
 	comedian := Comedian{}
-	comedian.Config = c
-	comedian.Bots = []*botuser.Bot{}
-	comedian.BotsChan = make(chan *botuser.Bot)
-
-	db, err := storage.NewMySQL(c)
-	if err != nil {
-		return &comedian, err
-	}
-
-	comedian.DB = db
-
-	return &comedian, nil
-
+	comedian.bots = []*botuser.Bot{}
+	comedian.botsChan = make(chan *botuser.Bot)
+	comedian.db = db
+	return &comedian
 }
 
 //SetBots populates Comedian with bots
 func (comedian Comedian) SetBots() error {
-	listOfProperties, err := comedian.DB.GetControlPannels()
+	controllPannels, err := comedian.db.GetControlPannels()
 	if err != nil {
 		return err
 	}
 
-	for _, properties := range listOfProperties {
-		bot := botuser.Bot{}
-
-		bot.API = slack.New(properties.AccessToken)
-		bot.Properties = properties
-		bot.DB = comedian.DB
-
-		comedian.BotsChan <- &bot
-
+	for _, cp := range controllPannels {
+		comedian.AddBot(cp)
 	}
 	return nil
 }
 
 // StartBots launches the bots
 func (comedian *Comedian) StartBots() {
-	for bot := range comedian.BotsChan {
-		bundle := &i18n.Bundle{DefaultLanguage: language.English}
-		bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-		bundle.LoadMessageFile("comedianbot/active.en.toml")
-		bundle.LoadMessageFile("comedianbot/active.ru.toml")
+	for bot := range comedian.botsChan {
 
-		bot.Bundle = bundle
-
-		comedian.Bots = append(comedian.Bots, bot)
+		comedian.bots = append(comedian.bots, bot)
 
 		bot.UpdateUsersList()
 
@@ -100,4 +78,52 @@ func (comedian *Comedian) StartBots() {
 			}
 		}(bot)
 	}
+}
+
+func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
+	for _, bot := range comedian.bots {
+		log.Info("Bot that can handle request: ", bot.Properties)
+		if bot.Properties.TeamName == incomingEvent.TeamName {
+			log.Info(bot.Properties.AccessToken != incomingEvent.AccessToken)
+			if bot.Properties.AccessToken != incomingEvent.AccessToken {
+				return errors.New("wrong access token")
+			}
+			bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
+		}
+	}
+	return nil
+}
+
+func (comedian *Comedian) SelectBot(team string) (*botuser.Bot, error) {
+	var bot *botuser.Bot
+
+	for _, b := range comedian.bots {
+		if team == b.Properties.TeamID || team == b.Properties.TeamName {
+			bot = b
+		}
+	}
+
+	if bot == nil {
+		return bot, errors.New("no bot found to implement the request")
+	}
+
+	return bot, nil
+}
+
+func (comedian *Comedian) AddBot(cp model.ControlPannel) error {
+	bot := &botuser.Bot{}
+
+	bot.API = slack.New(cp.AccessToken)
+	bot.Properties = cp
+	bot.DB = comedian.db
+
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	bundle.LoadMessageFile("comedianbot/active.en.toml")
+	bundle.LoadMessageFile("comedianbot/active.ru.toml")
+
+	bot.Bundle = bundle
+
+	comedian.botsChan <- bot
+	return nil
 }

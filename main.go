@@ -9,6 +9,7 @@ import (
 	"gitlab.com/team-monitoring/comedian/api"
 	"gitlab.com/team-monitoring/comedian/comedianbot"
 	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/storage"
 )
 
 func init() {
@@ -31,12 +32,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	comedian, err := comedianbot.New(config)
+	db, err := storage.NewMySQL(config)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	comedian := comedianbot.New(db)
+
 	go comedian.StartBots()
-	api, err := api.NewComedianAPI(comedian)
+
+	api, err := api.NewComedianAPI(config, db, comedian)
 	if err != nil {
 		log.Fatal(err)
 	}

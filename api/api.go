@@ -12,8 +12,8 @@ import (
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/botuser"
 	"gitlab.com/team-monitoring/comedian/comedianbot"
+	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
 )
@@ -21,19 +21,21 @@ import (
 // ComedianAPI struct used to handle slack requests (slash commands)
 type ComedianAPI struct {
 	echo     *echo.Echo
-	DB       *storage.MySQL
-	Comedian *comedianbot.Comedian
+	comedian *comedianbot.Comedian
+	db       *storage.MySQL
+	config   config.Config
 }
 
 // NewComedianAPI creates API for Slack commands
-func NewComedianAPI(comedian *comedianbot.Comedian) (ComedianAPI, error) {
+func NewComedianAPI(config config.Config, db *storage.MySQL, comedian *comedianbot.Comedian) (ComedianAPI, error) {
 
 	echo := echo.New()
 
 	api := ComedianAPI{
 		echo:     echo,
-		DB:       comedian.DB,
-		Comedian: comedian,
+		comedian: comedian,
+		db:       db,
+		config:   config,
 	}
 
 	t := &Template{
@@ -57,7 +59,7 @@ func NewComedianAPI(comedian *comedianbot.Comedian) (ComedianAPI, error) {
 
 // Start starts http server
 func (api *ComedianAPI) Start() error {
-	return api.echo.Start(api.Comedian.Config.HTTPBindAddr)
+	return api.echo.Start(api.config.HTTPBindAddr)
 }
 
 func (api *ComedianAPI) handleEvent(c echo.Context) error {
@@ -91,7 +93,7 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 			return err
 		}
 
-		err = api.DB.DeleteControlPannel(event.TeamID)
+		err = api.db.DeleteControlPannel(event.TeamID)
 		if err != nil {
 			return err
 		}
@@ -103,15 +105,8 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 }
 
 func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
-	type ServiceEvent struct {
-		TeamName    string             `json:"team_name"`
-		AccessToken string             `json:"bot_access_token"`
-		Channel     string             `json:"channel"`
-		Message     string             `json:"message"`
-		Attachments []slack.Attachment `json:"attachments"`
-	}
 
-	var incomingEvent ServiceEvent
+	var incomingEvent model.ServiceEvent
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
@@ -127,15 +122,9 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 
 	log.Info("Service request: ", incomingEvent)
 
-	for _, bot := range api.Comedian.Bots {
-		log.Info("Bot that can handle request: ", bot.Properties)
-		if bot.Properties.TeamName == incomingEvent.TeamName {
-			log.Info(bot.Properties.AccessToken != incomingEvent.AccessToken)
-			if bot.Properties.AccessToken != incomingEvent.AccessToken {
-				return c.String(http.StatusForbidden, "wrong access token")
-			}
-			bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
-		}
+	err = api.comedian.HandleEvent(incomingEvent)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -162,22 +151,7 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "slash command should be `/comedian`")
 	}
 
-	var bot *botuser.Bot
-
-	for _, b := range api.Comedian.Bots {
-		if form.TeamID == b.Properties.TeamID {
-			bot = b
-		}
-	}
-
-	if bot == nil {
-		log.Error("No bot found to inmplement the request!")
-		return c.String(http.StatusOK, "No bot is willing to implement the request. Something went wrong!")
-	}
-
-	log.Info(bot)
-
-	_, err = bot.DB.SelectChannel(form.ChannelID)
+	bot, err := api.comedian.SelectBot(form.TeamID)
 	if err != nil {
 		return err
 	}
@@ -198,26 +172,18 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	code := urlValues.Get("code")
 
-	resp, err := slack.GetOAuthResponse(api.Comedian.Config.SlackClientID, api.Comedian.Config.SlackClientSecret, code, "", false)
+	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	cp, err := api.DB.CreateControlPannel(resp.Bot.BotAccessToken, resp.TeamID, resp.TeamName)
-
+	cp, err := api.db.CreateControlPannel(resp.Bot.BotAccessToken, resp.TeamID, resp.TeamName)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
-	bot := &botuser.Bot{}
-
-	bot.API = slack.New(resp.Bot.BotAccessToken)
-	bot.Properties = cp
-	bot.DB = api.Comedian.DB
-
-	api.Comedian.BotsChan <- bot
+	api.comedian.AddBot(cp)
 
 	return api.renderLoginPage(c)
 }

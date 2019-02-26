@@ -84,6 +84,14 @@ type (
 		TeamID      string `schema:"team_id"`
 		TeamDomain  string `schema:"team_domain"`
 	}
+
+	ServiceEvent struct {
+		TeamName    string             `json:"team_name"`
+		AccessToken string             `json:"bot_access_token"`
+		Channel     string             `json:"channel"`
+		Message     string             `json:"message"`
+		Attachments []slack.Attachment `json:"attachments"`
+	}
 )
 
 //Report used to generate report structure
