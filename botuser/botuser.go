@@ -85,28 +85,8 @@ func (bot *Bot) Start() {
 
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent, botUserID string) {
 
-	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
-	oneStandupPerDay = localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:          "OneStandupPerDay",
-			Description: "Warning that only one standup per day is allowed",
-			Other:       "You can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!",
-		},
-		TemplateData: map[string]string{
-			"ID": msg.User,
-		},
-	})
-
-	couldNotSaveStandup = localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:          "CouldNotSaveStandup",
-			Description: "Displays a message when unexpected errors occur",
-			Other:       "Something went wrong and I could not save your standup in database. Please, report this to your PM.",
-		},
-		TemplateData: map[string]string{
-			"ID": msg.User,
-		},
-	})
+	oneStandupPerDay, _ = translation.Translate(bot.bundle, bot.Properties.Language, "OneStandupPerDay", 0, nil)
+	couldNotSaveStandup, _ = translation.Translate(bot.bundle, bot.Properties.Language, "CouldNotSaveStandup", 0, nil)
 
 	switch msg.SubType {
 	case typeMessage:
@@ -236,7 +216,6 @@ func (bot *Bot) HandleDeleteMessage(msg *slack.MessageEvent) error {
 }
 
 func (bot *Bot) analizeStandup(message string) string {
-	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 	message = strings.ToLower(message)
 
 	mentionsYesterdayWork := false
@@ -248,14 +227,8 @@ func (bot *Bot) analizeStandup(message string) string {
 	}
 
 	if !mentionsYesterdayWork {
-		standupHandleNoYesterdayWorkMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:          "StandupHandleNoYesterdayWorkMentioned",
-				Description: "No 'yesterday' keywords in standup",
-				Other:       ":warning: No 'yesterday' related keywords detected! Please, use one of the following: 'yesterday' or weekdays such as 'friday' etc.",
-			},
-		})
-		return standupHandleNoYesterdayWorkMentioned
+		problem, _ := translation.Translate(bot.bundle, bot.Properties.Language, "StandupHandleNoYesterdayWorkMentioned", 0, nil)
+		return problem
 	}
 
 	mentionsTodayPlans := false
@@ -266,14 +239,8 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsTodayPlans {
-		standupHandleNoTodayPlansMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:          "StandupHandleNoTodayPlansMentioned",
-				Description: "No 'today' keywords in standup",
-				Other:       ":warning: No 'today' related keywords detected! Please, use one of the following: 'today', 'going', 'plan'",
-			},
-		})
-		return standupHandleNoTodayPlansMentioned
+		problem, _ := translation.Translate(bot.bundle, bot.Properties.Language, "StandupHandleNoTodayPlansMentioned", 0, nil)
+		return problem
 	}
 
 	mentionsProblem := false
@@ -285,14 +252,8 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsProblem {
-		standupHandleNoProblemsMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:          "StandupHandleNoProblemsMentioned",
-				Description: "No 'problems' key in standup",
-				Other:       ":warning: No 'problems' related keywords detected! Please, use one of the following: 'problem', 'difficult', 'stuck', 'question', 'issue'",
-			},
-		})
-		return standupHandleNoProblemsMentioned
+		problem, _ := translation.Translate(bot.bundle, bot.Properties.Language, "StandupHandleNoProblemsMentioned", 0, nil)
+		return problem
 	}
 
 	return ""

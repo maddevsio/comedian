@@ -32,8 +32,8 @@ func TestTranslate(t *testing.T) {
 	}{
 		{"en_US", "WrongProject", 0, nil, "Invalid project name!"},
 		{"en_US", "Wrong", 0, nil, ""},
-		{"ru_RU", "AddPMsAdded", 1, map[string]interface{}{"PM": "user1", "PMs": "user2, user3, user4"}, "user1 теперь ПМ канала."},
-		{"ru_RU", "AddPMsAdded", 2, map[string]interface{}{"PM": "user1", "PMs": "user2, user3, user4"}, "Следующие пользователи назначены ПМами: user2, user3, user4 ."},
+		{"ru_RU", "AddPMsAdded", 1, map[string]interface{}{"PM": "user1", "PMs": "user2, user3, user4"}, "user1 теперь ПМ в проекте."},
+		{"ru_RU", "AddPMsAdded", 2, map[string]interface{}{"PM": "user1", "PMs": "user2, user3, user4"}, "user2, user3, user4 теперь ПМы в проекте."},
 	}
 
 	for _, tt := range testCases {
