@@ -1,8 +1,8 @@
 package botuser
 
 import (
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/translation"
 )
 
 //DisplayHelpText displays help text
@@ -27,9 +27,8 @@ func (bot *Bot) DisplayHelpText(command string) string {
 }
 
 func (bot *Bot) generateHelpText(messageID string) (string, error) {
-	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 
-	message, err := localizer.Localize(&i18n.LocalizeConfig{MessageID: messageID})
+	message, err := translation.Translate(bot.bundle, bot.Properties.Language, messageID, 0, nil)
 	if err != nil {
 		return "", err
 	}

@@ -23,24 +23,25 @@ func TestTranslate(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	message, err := Translate(bundle, "en_US", "WrongProject", 0, nil)
-	assert.NoError(t, err)
-	assert.Equal(t, "Invalid project name!", message)
+	testCases := []struct {
+		language     string
+		messageID    string
+		pluralCount  int
+		templateData map[string]interface{}
+		expected     string
+	}{
+		{"en_US", "WrongProject", 0, nil, "Invalid project name!"},
+		{"en_US", "Wrong", 0, nil, ""},
+		{"ru_RU", "AddPMsAdded", 1, map[string]interface{}{"PM": "user1", "PMs": "user2, user3, user4"}, "user1 теперь ПМ канала."},
+		{"ru_RU", "AddPMsAdded", 2, map[string]interface{}{"PM": "user1", "PMs": "user2, user3, user4"}, "Следующие пользователи назначены ПМами: user2, user3, user4 ."},
+	}
 
-	message, err = Translate(bundle, "en_US", "Wrong", 0, nil)
-	assert.Error(t, err)
+	for _, tt := range testCases {
+		message, err := Translate(bundle, tt.language, tt.messageID, tt.pluralCount, tt.templateData)
+		if err != nil {
+			assert.Error(t, err)
+		}
+		assert.Equal(t, tt.expected, message)
+	}
 
-	message, err = Translate(bundle, "ru_RU", "AddPMsAdded", 1, map[string]string{
-		"PM":  "user1",
-		"PMs": "user2, user3, user4",
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, "user1 теперь ПМ канала.", message)
-
-	message, err = Translate(bundle, "ru_RU", "AddPMsAdded", 2, map[string]string{
-		"PM":  "user1",
-		"PMs": "user2, user3, user4",
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, "Следующие пользователи назначены ПМами: user2, user3, user4 .", message)
 }

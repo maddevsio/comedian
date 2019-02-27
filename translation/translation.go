@@ -4,7 +4,7 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
-func Translate(bundle *i18n.Bundle, lang, messageID string, count int, templateData map[string]string) (string, error) {
+func Translate(bundle *i18n.Bundle, lang, messageID string, count int, templateData map[string]interface{}) (string, error) {
 
 	localizer := i18n.NewLocalizer(bundle, lang)
 
