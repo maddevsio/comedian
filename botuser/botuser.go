@@ -1,6 +1,7 @@
 package botuser
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -16,9 +17,17 @@ import (
 )
 
 var (
-	typeMessage       = ""
-	typeEditMessage   = "message_changed"
-	typeDeleteMessage = "message_deleted"
+	typeMessage         = ""
+	typeEditMessage     = "message_changed"
+	typeDeleteMessage   = "message_deleted"
+	oneStandupPerDay    string
+	couldNotSaveStandup string
+)
+
+const (
+	adminAccess       = 2
+	pmAccess          = 3
+	regularUserAccess = 4
 )
 
 // Bot struct used for storing and communicating with slack api
@@ -79,7 +88,7 @@ func (bot *Bot) Start() {
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent, botUserID string) {
 
 	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
-	oneStandupPerDay := localizer.MustLocalize(&i18n.LocalizeConfig{
+	oneStandupPerDay = localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "OneStandupPerDay",
 			Description: "Warning that only one standup per day is allowed",
@@ -90,7 +99,7 @@ func (bot *Bot) HandleMessage(msg *slack.MessageEvent, botUserID string) {
 		},
 	})
 
-	couldNotSaveStandup := localizer.MustLocalize(&i18n.LocalizeConfig{
+	couldNotSaveStandup = localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:          "CouldNotSaveStandup",
 			Description: "Displays a message when unexpected errors occur",
@@ -101,134 +110,134 @@ func (bot *Bot) HandleMessage(msg *slack.MessageEvent, botUserID string) {
 		},
 	})
 
-	errorReportToManager := localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:    "ErrorReportToManager",
-			Other: "I could not save standup for user <@{{.user}}> in channel <#{{.channel}}> because of the following reasons: %v",
-		},
-		TemplateData: map[string]string{
-			"user":    msg.User,
-			"channel": msg.Channel,
-		},
-	})
-
 	switch msg.SubType {
 	case typeMessage:
-
-		if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") {
-			return
-		}
-
-		messageIsStandup, problem := bot.analizeStandup(msg.Msg.Text)
-		if problem != "" {
-			bot.SendEphemeralMessage(msg.Channel, msg.User, problem)
-			return
-		}
-		if messageIsStandup {
-			if bot.db.SubmittedStandupToday(msg.User, msg.Channel) {
-				bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
-				return
-			}
-			standup, err := bot.db.CreateStandup(model.Standup{
-				TeamID:    msg.Team,
-				ChannelID: msg.Channel,
-				UserID:    msg.User,
-				Comment:   msg.Msg.Text,
-				MessageTS: msg.Msg.Timestamp,
-			})
-			if err != nil {
-				log.Errorf("CreateStandup failed: %v", err)
-				bot.SendUserMessage(bot.Properties.ManagerSlackUserID, fmt.Sprintf(errorReportToManager, err))
-				bot.SendEphemeralMessage(msg.Channel, msg.User, couldNotSaveStandup)
-				return
-			}
-			log.Infof("Standup created #id:%v\n", standup.ID)
-			item := slack.ItemRef{
-				Channel:   msg.Channel,
-				Timestamp: msg.Msg.Timestamp,
-				File:      "",
-				Comment:   "",
-			}
-			bot.slack.AddReaction("heavy_check_mark", item)
-			return
-		}
-	case typeEditMessage:
-
-		if !strings.Contains(msg.SubMessage.Text, botUserID) && !strings.Contains(msg.SubMessage.Text, "#standup") {
-			return
-		}
-
-		standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
+		err := bot.HandleNewMessage(msg, botUserID)
 		if err != nil {
-			messageIsStandup, problem := bot.analizeStandup(msg.SubMessage.Text)
-			if problem != "" {
-				bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
-				return
-			}
-			if messageIsStandup {
-				if bot.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
-					bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
-					return
-				}
-				log.Infof("CreateStandup while updating text ChannelID (%v), UserID (%v), Comment (%v), TimeStamp (%v)", msg.Channel, msg.SubMessage.User, msg.SubMessage.Text, msg.SubMessage.Timestamp)
-				standup, err := bot.db.CreateStandup(model.Standup{
-					TeamID:    msg.Team,
-					ChannelID: msg.Channel,
-					UserID:    msg.SubMessage.User,
-					Comment:   msg.SubMessage.Text,
-					MessageTS: msg.SubMessage.Timestamp,
-				})
-				if err != nil {
-					log.Errorf("CreateStandup while updating text failed: %v", err)
-					bot.SendUserMessage(bot.Properties.ManagerSlackUserID, errorReportToManager)
-					bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, couldNotSaveStandup)
-					return
-				}
-				log.Infof("Standup created #id:%v\n", standup.ID)
-				item := slack.ItemRef{
-					Channel:   msg.Channel,
-					Timestamp: msg.SubMessage.Timestamp,
-					File:      "",
-					Comment:   "",
-				}
-				bot.slack.AddReaction("heavy_check_mark", item)
-				return
-			}
+			log.Error(err)
 		}
 
-		messageIsStandup, problem := bot.analizeStandup(msg.SubMessage.Text)
-		if problem != "" {
-			bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
-			return
-		}
-		if messageIsStandup {
-			standup.Comment = msg.SubMessage.Text
-			st, err := bot.db.UpdateStandup(standup)
-			if err != nil {
-				log.Errorf("UpdateStandup failed: %v", err)
-				bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, couldNotSaveStandup)
-				return
-			}
-			log.Infof("Standup updated #id:%v\n", st.ID)
-			return
+	case typeEditMessage:
+		err := bot.HandleEditMessage(msg, botUserID)
+		if err != nil {
+			log.Error(err)
 		}
 
 	case typeDeleteMessage:
-		standup, err := bot.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
+		err := bot.HandleDeleteMessage(msg)
 		if err != nil {
-			log.Errorf("SelectStandupByMessageTS failed: %v", err)
-			return
+			log.Error(err)
 		}
-		err = bot.db.DeleteStandup(standup.ID)
-		if err != nil {
-			log.Errorf("DeleteStandup failed: %v", err)
-			return
-		}
-		log.Infof("Standup deleted #id:%v\n", standup.ID)
 	}
 }
 
-func (bot *Bot) analizeStandup(message string) (bool, string) {
+func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent, botUserID string) error {
+	if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") {
+		return errors.New("bot is not mentioned and no #standup in the message body")
+	}
+
+	problem := bot.analizeStandup(msg.Msg.Text)
+	if problem != "" {
+		bot.SendEphemeralMessage(msg.Channel, msg.User, problem)
+		return errors.New("Fail to save message as standup. Standup is not complete")
+	}
+
+	if bot.db.SubmittedStandupToday(msg.User, msg.Channel) {
+		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
+		return errors.New("Fail to save message as standup. User already submitted standup today")
+	}
+	standup, err := bot.db.CreateStandup(model.Standup{
+		TeamID:    msg.Team,
+		ChannelID: msg.Channel,
+		UserID:    msg.User,
+		Comment:   msg.Msg.Text,
+		MessageTS: msg.Msg.Timestamp,
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Standup created #id:%v\n", standup.ID)
+	item := slack.ItemRef{
+		Channel:   msg.Channel,
+		Timestamp: msg.Msg.Timestamp,
+		File:      "",
+		Comment:   "",
+	}
+	bot.slack.AddReaction("heavy_check_mark", item)
+	return nil
+}
+
+func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent, botUserID string) error {
+	if !strings.Contains(msg.SubMessage.Text, botUserID) && !strings.Contains(msg.SubMessage.Text, "#standup") {
+		return errors.New("bot is not mentioned and no #standup in the message body")
+	}
+
+	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
+	if err != nil {
+		problem := bot.analizeStandup(msg.SubMessage.Text)
+		if problem != "" {
+			bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
+			return errors.New("Fail to save edited message as standup. Standup is not complete")
+		}
+
+		if bot.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
+			bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
+			return errors.New("Fail to save edited message as standup. User already submitted standup today")
+		}
+
+		standup, err := bot.db.CreateStandup(model.Standup{
+			TeamID:    msg.Team,
+			ChannelID: msg.Channel,
+			UserID:    msg.SubMessage.User,
+			Comment:   msg.SubMessage.Text,
+			MessageTS: msg.SubMessage.Timestamp,
+		})
+		if err != nil {
+			return err
+		}
+
+		log.Infof("Standup created #id:%v\n", standup.ID)
+
+		item := slack.ItemRef{
+			Channel:   msg.Channel,
+			Timestamp: msg.SubMessage.Timestamp,
+			File:      "",
+			Comment:   "",
+		}
+		bot.slack.AddReaction("heavy_check_mark", item)
+		return nil
+	}
+
+	problem := bot.analizeStandup(msg.SubMessage.Text)
+	if problem != "" {
+		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
+		return errors.New("Fail to save edited message as standup. Standup is not complete")
+	}
+
+	standup.Comment = msg.SubMessage.Text
+	st, err := bot.db.UpdateStandup(standup)
+	if err != nil {
+		return err
+	}
+	log.Infof("Standup updated #id:%v\n", st.ID)
+	return nil
+}
+
+func (bot *Bot) HandleDeleteMessage(msg *slack.MessageEvent) error {
+	standup, err := bot.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
+	if err != nil {
+		return err
+	}
+	err = bot.db.DeleteStandup(standup.ID)
+	if err != nil {
+		return err
+	}
+	log.Infof("Standup deleted #id:%v\n", standup.ID)
+	return nil
+}
+
+func (bot *Bot) analizeStandup(message string) string {
 	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 	message = strings.ToLower(message)
 
@@ -248,7 +257,7 @@ func (bot *Bot) analizeStandup(message string) (bool, string) {
 				Other:       ":warning: No 'yesterday' related keywords detected! Please, use one of the following: 'yesterday' or weekdays such as 'friday' etc.",
 			},
 		})
-		return false, standupHandleNoYesterdayWorkMentioned
+		return standupHandleNoYesterdayWorkMentioned
 	}
 
 	mentionsTodayPlans := false
@@ -266,7 +275,7 @@ func (bot *Bot) analizeStandup(message string) (bool, string) {
 				Other:       ":warning: No 'today' related keywords detected! Please, use one of the following: 'today', 'going', 'plan'",
 			},
 		})
-		return false, standupHandleNoTodayPlansMentioned
+		return standupHandleNoTodayPlansMentioned
 	}
 
 	mentionsProblem := false
@@ -285,10 +294,10 @@ func (bot *Bot) analizeStandup(message string) (bool, string) {
 				Other:       ":warning: No 'problems' related keywords detected! Please, use one of the following: 'problem', 'difficult', 'stuck', 'question', 'issue'",
 			},
 		})
-		return false, standupHandleNoProblemsMentioned
+		return standupHandleNoProblemsMentioned
 	}
 
-	return true, ""
+	return ""
 }
 
 // SendMessage posts a message in a specified channel visible for everyone

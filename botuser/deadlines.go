@@ -13,7 +13,7 @@ import (
 
 func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
-	if accessLevel > 3 {
+	if accessLevel > pmAccess {
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AccessAtLeastPM",
@@ -75,7 +75,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 
 func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
-	if accessLevel > 3 {
+	if accessLevel > pmAccess {
 		accessAtLeastPM := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:          "AccessAtLeastPM",
