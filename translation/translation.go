@@ -9,16 +9,30 @@ import (
 func Translate(lang, messageID string, count int, templateData map[string]string) (string, error) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	bundle.LoadMessageFile("active.en.toml")
-	bundle.LoadMessageFile("active.ru.toml")
+	_, err := bundle.LoadMessageFile("translation/active.en.toml")
+	if err != nil {
+		return "", err
+	}
+	_, err = bundle.LoadMessageFile("translation/active.ru.toml")
+	if err != nil {
+		return "", err
+	}
 
 	localizer := i18n.NewLocalizer(bundle, lang)
 
-	text, err := localizer.Localize(&i18n.LocalizeConfig{
-		MessageID:    messageID,
-		PluralCount:  count,
-		TemplateData: templateData,
-	})
+	config := &i18n.LocalizeConfig{
+		MessageID: messageID,
+	}
+
+	if count != 0 {
+		config.PluralCount = count
+	}
+
+	if templateData != nil {
+		config.TemplateData = templateData
+	}
+
+	text, err := localizer.Localize(config)
 
 	if err != nil {
 		return "", err

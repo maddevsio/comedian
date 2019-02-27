@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
+	"gitlab.com/team-monitoring/comedian/translation"
 	"gitlab.com/team-monitoring/comedian/utils"
 	"golang.org/x/text/language"
 )
@@ -67,7 +68,11 @@ func (bot *Bot) Start() {
 				botUserID := fmt.Sprintf("<@%s>", rtm.GetInfo().User.ID)
 				bot.HandleMessage(ev, botUserID)
 			case *slack.ConnectedEvent:
-				log.Info("Reconnected!")
+				message, err := translation.Translate(bot.Properties.Language, "Reconnected", 0, nil)
+				if err != nil {
+					log.Error(err)
+				}
+				log.Info(message)
 			case *slack.MemberJoinedChannelEvent:
 				bot.HandleJoin(ev.Channel, ev.Team)
 			}

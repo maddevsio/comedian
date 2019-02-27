@@ -1,5 +1,8 @@
 ErrorReportToManager = "Could not save standup for user <@{{.user}}> in channel <#{{.channel}}> because of the following reasons: %v"
 
+[Reconnected]
+other = "Reconnected! I am back!"
+
 [AccessAtLeastAdmin]
 description = "Displays warning that role must be at least admin"
 other = "Access Denied! You need to be at least admin in this slack to use this command!"
