@@ -1,22 +1,10 @@
 package translation
 
 import (
-	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"golang.org/x/text/language"
 )
 
-func Translate(lang, messageID string, count int, templateData map[string]string) (string, error) {
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
-	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	_, err := bundle.LoadMessageFile("translation/active.en.toml")
-	if err != nil {
-		return "", err
-	}
-	_, err = bundle.LoadMessageFile("translation/active.ru.toml")
-	if err != nil {
-		return "", err
-	}
+func Translate(bundle *i18n.Bundle, lang, messageID string, count int, templateData map[string]string) (string, error) {
 
 	localizer := i18n.NewLocalizer(bundle, lang)
 

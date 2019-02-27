@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
@@ -14,7 +13,6 @@ import (
 	"gitlab.com/team-monitoring/comedian/storage"
 	"gitlab.com/team-monitoring/comedian/translation"
 	"gitlab.com/team-monitoring/comedian/utils"
-	"golang.org/x/text/language"
 )
 
 var (
@@ -39,17 +37,12 @@ type Bot struct {
 	bundle     *i18n.Bundle
 }
 
-func New(cp model.ControlPannel, db *storage.MySQL) *Bot {
+func New(bundle *i18n.Bundle, cp model.ControlPannel, db *storage.MySQL) *Bot {
 	bot := &Bot{}
 
 	bot.slack = slack.New(cp.AccessToken)
 	bot.Properties = cp
 	bot.db = db
-
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
-	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	bundle.LoadMessageFile("active.en.toml")
-	bundle.LoadMessageFile("active.ru.toml")
 
 	bot.bundle = bundle
 
@@ -68,7 +61,7 @@ func (bot *Bot) Start() {
 				botUserID := fmt.Sprintf("<@%s>", rtm.GetInfo().User.ID)
 				bot.HandleMessage(ev, botUserID)
 			case *slack.ConnectedEvent:
-				message, err := translation.Translate(bot.Properties.Language, "Reconnected", 0, nil)
+				message, err := translation.Translate(bot.bundle, bot.Properties.Language, "Reconnected", 0, nil)
 				if err != nil {
 					log.Error(err)
 				}

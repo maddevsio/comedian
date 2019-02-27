@@ -1,12 +1,16 @@
 package botuser
 
 import (
+	"log"
 	"testing"
 
+	"github.com/BurntSushi/toml"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
+	"golang.org/x/text/language"
 )
 
 func TestDisplayHelpText(t *testing.T) {
@@ -41,7 +45,19 @@ func TestDisplayHelpText(t *testing.T) {
 			Language: tt.language,
 		}
 
-		bot := New(cp, db)
+		bundle := &i18n.Bundle{DefaultLanguage: language.English}
+		bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+		_, err := bundle.LoadMessageFile("../active.en.toml")
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = bundle.LoadMessageFile("../active.ru.toml")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		bot := New(bundle, cp, db)
 		text := bot.DisplayHelpText(tt.command)
 		assert.Equal(t, tt.outputMessage, text)
 	}
