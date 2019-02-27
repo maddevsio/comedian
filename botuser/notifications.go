@@ -92,8 +92,6 @@ func (bot *Bot) SendWarning(channelID string) {
 
 //SendChannelNotification starts standup reminders and direct reminders to users
 func (bot *Bot) SendChannelNotification(channelID string) {
-	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
-
 	members, err := bot.db.ListChannelMembers(channelID)
 	if err != nil {
 		logrus.Errorf("notifier: bot.db.ListChannelMembers failed: %v\n", err)
@@ -119,63 +117,13 @@ func (bot *Bot) SendChannelNotification(channelID string) {
 		return
 	}
 
-	repeats := 0
+	var repeats int
 
 	notifyNotAll := func() error {
-		nonReporters, err := bot.getCurrentDayNonReporters(channelID)
+		err := bot.notifyNotAll(channel, &repeats)
 		if err != nil {
-			logrus.Errorf("notifier: n.getCurrentDayNonReporters failed: %v\n", err)
 			return err
 		}
-
-		nonReportersSlackIDs := []string{}
-		for _, nonReporter := range nonReporters {
-			nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("<@%v>", nonReporter.UserID))
-		}
-		logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
-
-		if repeats < bot.Properties.ReminderRepeatsMax && len(nonReporters) > 0 {
-
-			tagNonReporters := localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:          "TagNonReporters",
-					Description: "Display message about those who did not submit standup",
-					One:         "Hey, {{.user}}! You missed deadline and you are the only one who still did not submit standup! Get it done!",
-					Other:       "Hey, {{.users}}! You all missed deadline and still did not submit standups! Time management problems detected!",
-				},
-				PluralCount: len(nonReporters),
-				TemplateData: map[string]interface{}{
-					"user":  nonReportersSlackIDs[0],
-					"users": strings.Join(nonReportersSlackIDs, ", "),
-				},
-			})
-
-			bot.SendMessage(channelID, tagNonReporters, nil)
-			repeats++
-			err := errors.New("Continue backoff")
-			return err
-		}
-		// othervise Direct Message non reporters
-		for _, nonReporter := range nonReporters {
-			directMessage := localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:          "DirectMessage",
-					Description: "DM Warning message to those who did not submit standup",
-					Other:       "Hey, <@{{.user}}>! you failed to submit standup in <#{{.channelID}}|{{.channelName}}> on time! Do it ASAP!",
-				},
-				TemplateData: map[string]interface{}{
-					"user":        nonReporter.UserID,
-					"channelID":   channel.ChannelID,
-					"channelName": channel.ChannelName,
-				},
-			})
-
-			err := bot.SendUserMessage(nonReporter.UserID, directMessage)
-			if err != nil {
-				logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
-			}
-		}
-		//n.notifyAdminsAboutNonReporters(channelID, nonReportersSlackIDs)
 		return nil
 	}
 
@@ -184,6 +132,65 @@ func (bot *Bot) SendChannelNotification(channelID string) {
 	if err != nil {
 		logrus.Errorf("notifier: backoff.Retry failed: %v\n", err)
 	}
+}
+
+func (bot *Bot) notifyNotAll(channel model.Channel, repeats *int) error {
+	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
+
+	nonReporters, err := bot.getCurrentDayNonReporters(channel.ChannelID)
+	if err != nil {
+		logrus.Errorf("notifier: n.getCurrentDayNonReporters failed: %v\n", err)
+		return err
+	}
+
+	nonReportersSlackIDs := []string{}
+	for _, nonReporter := range nonReporters {
+		nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("<@%v>", nonReporter.UserID))
+	}
+	logrus.Infof("notifier: Notifier non reporters: %v", nonReporters)
+
+	if *repeats < bot.Properties.ReminderRepeatsMax && len(nonReporters) > 0 {
+
+		tagNonReporters := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "TagNonReporters",
+				Description: "Display message about those who did not submit standup",
+				One:         "Hey, {{.user}}! You missed deadline and you are the only one who still did not submit standup! Get it done!",
+				Other:       "Hey, {{.users}}! You all missed deadline and still did not submit standups! Time management problems detected!",
+			},
+			PluralCount: len(nonReporters),
+			TemplateData: map[string]interface{}{
+				"user":  nonReportersSlackIDs[0],
+				"users": strings.Join(nonReportersSlackIDs, ", "),
+			},
+		})
+
+		bot.SendMessage(channel.ChannelID, tagNonReporters, nil)
+		*repeats++
+		err := errors.New("Continue backoff")
+		return err
+	}
+	// othervise Direct Message non reporters
+	for _, nonReporter := range nonReporters {
+		directMessage := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:          "DirectMessage",
+				Description: "DM Warning message to those who did not submit standup",
+				Other:       "Hey, <@{{.user}}>! you failed to submit standup in <#{{.channelID}}|{{.channelName}}> on time! Do it ASAP!",
+			},
+			TemplateData: map[string]interface{}{
+				"user":        nonReporter.UserID,
+				"channelID":   channel.ChannelID,
+				"channelName": channel.ChannelName,
+			},
+		})
+
+		err := bot.SendUserMessage(nonReporter.UserID, directMessage)
+		if err != nil {
+			logrus.Errorf("notifier: s.SendMessage failed: %v\n", err)
+		}
+	}
+	return nil
 }
 
 // getNonReporters returns a list of standupers that did not write standups
