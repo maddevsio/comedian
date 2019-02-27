@@ -42,17 +42,17 @@ func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
 
 	switch role {
 	case "admin", "админ":
-		if accessLevel > 2 {
+		if accessLevel > adminAccess {
 			return accessAtLeastAdmin
 		}
 		return bot.addAdmins(members)
 	case "developer", "разработчик", "":
-		if accessLevel > 3 {
+		if accessLevel > pmAccess {
 			return accessAtLeastPM
 		}
 		return bot.addMembers(members, "developer", channelID)
 	case "pm", "пм":
-		if accessLevel > 2 {
+		if accessLevel > adminAccess {
 			return accessAtLeastAdmin
 		}
 		return bot.addMembers(members, "pm", channelID)
@@ -105,12 +105,12 @@ func (bot *Bot) deleteCommand(accessLevel int, channelID, params string) string 
 
 	switch role {
 	case "admin", "админ":
-		if accessLevel > 2 {
+		if accessLevel > adminAccess {
 			return accessAtLeastAdmin
 		}
 		return bot.deleteAdmins(members)
 	case "developer", "разработчик", "pm", "пм", "":
-		if accessLevel > 3 {
+		if accessLevel > pmAccess {
 			return accessAtLeastPM
 		}
 		return bot.deleteMembers(members, channelID)

@@ -24,6 +24,12 @@ var (
 	couldNotSaveStandup string
 )
 
+const (
+	adminAccess       = 2
+	pmAccess          = 3
+	regularUserAccess = 4
+)
+
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
 	slack      *slack.Client
