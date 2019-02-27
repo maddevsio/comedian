@@ -47,8 +47,8 @@ func New(cp model.ControlPannel, db *storage.MySQL) *Bot {
 
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	bundle.LoadMessageFile("botuser/active.en.toml")
-	bundle.LoadMessageFile("botuser/active.ru.toml")
+	bundle.LoadMessageFile("active.en.toml")
+	bundle.LoadMessageFile("active.ru.toml")
 
 	bot.bundle = bundle
 
