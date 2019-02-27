@@ -23,6 +23,17 @@ func TestDisplayHelpText(t *testing.T) {
 	}{
 		{"en_US", "", "All help!"},
 		{"en_US", "add", "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, default is a developer role, if the role is not selected. "},
+		{"ru_RU", "add", "Для добавления нового пользователя используйте команду `add`. Вот пример: `add @user @user1 / admin` Вы можете добавлять участников с ролями: _admin, pm, developer, designer_. Если роль не указана, то по умолчанию будет developer."},
+		{"en_US", "show", "To view members use `show` command. If you provide a role name, you will see members with this role. _admin, pm, developer, designer_. "},
+		{"ru_RU", "show", "Чтобы посмотреть список пользователей используйте команду `show`. Если Вы укажете роль, Вы увидите список пользователей с этой ролью ( _admin, pm, developer, designer_ )."},
+		{"en_US", "remove", "To remove members use `remove` command. If you provide a role name, you will remove members with this role. _admin, pm, developer, designer_. "},
+		{"ru_RU", "remove", "Чтобы удалить пользователя используйте команду `remove`. Если Вы также укажете роль, то можете удалить всех пользователей с этой ролью ( _admin, pm, developer, designer_ ). "},
+		{"en_US", "add_deadline", "To set standup deadline use `add_deadline` command. You need to provide it with hours and minutes in the 24hour format like 13:54. "},
+		{"ru_RU", "add_deadline", "Чтобы установить время сдачи стэндапов в канале используйте команду `add_deadline`. Вы должны указать время в 24-часовом формате. Например, 13:54. "},
+		{"en_US", "show_deadline", "To view standup deadline in the channel use `show_deadline` command. "},
+		{"ru_RU", "show_deadline", "Чтобы узнать установленное время сдачи стендапов в канале используйте команду `show_deadline`."},
+		{"en_US", "remove_deadline", "To remove standup deadline in the channel use `remove_deadline` command. "},
+		{"ru_RU", "remove_deadline", "Чтобы удалить время сдачи стендапов в канале используйте команду `remove_deadline`."},
 	}
 
 	for _, tt := range testCases {
