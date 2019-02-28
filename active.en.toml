@@ -1,4 +1,5 @@
-ErrorReportToManager = "Could not save standup for user <@{{.user}}> in channel <#{{.channel}}> because of the following reasons: %v"
+[Reconnected]
+other = "Reconnected! I am back!"
 
 [AccessAtLeastAdmin]
 description = "Displays warning that role must be at least admin"
@@ -15,18 +16,18 @@ other = "Users {{.admins}} are assigned as admins."
 
 [AddAdminsExist]
 description = "Displays message when users were already assigned as admins"
-one = "User {{.admin}} was already assigned as admin."
-other = "Users {{.admins}} were already assigned as admins."
+one = "User {{.admin}} was already assigned as admin.\n"
+other = "Users {{.admins}} were already assigned as admins.\n"
 
 [AddAdminsFailed]
 description = "Displays message when user added as admin for Comedian"
-one = "Could not assign user as admin: {{.admin}} !"
-other = "Could not assign users as admins: {{.admins}} !"
+one = "Could not assign user as admin: {{.admin}}!\n"
+other = "Could not assign users as admins: {{.admins}}!\n"
 
 [AddMembersAdded]
 description = "Displays a message when users are successfully assigned"
-one = "Member {{.user}} is assigned."
-other = "Members {{.users}} are assigned."
+one = "Member {{.user}} is assigned.\n"
+other = "Members {{.users}} are assigned.\n"
 
 [AddMembersExist]
 description = "Displays a message when errors occur when assigning users, which already has role"
@@ -105,8 +106,8 @@ other = "Users were removed as admins: {{.admins}} ."
 
 [DeleteMembersFailed]
 description = "Displays a message when user deletion errors occur"
-one = "Could not remove the member: {{.user}} . User is not standuper and not tracked."
-other = "Could not remove the following members: {{.users}} . Users are not standupers and not tracked."
+one = "Could not remove the member: {{.user}} . User is not standuper and not tracked. \n"
+other = "Could not remove the following members: {{.users}} . Users are not standupers and not tracked. \n"
 
 [DeleteMembersSucceed]
 description = "Displays a message when users have been successfully deleted"
@@ -205,11 +206,11 @@ other = "{{.user}} in #{{.channel}}"
 description = "Warning that only one standup per day is allowed"
 other = "You can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!"
 
-[PMAssigned]
+[AdminAssigned]
 description = "Displays message when user added as admin for Comedian"
 other = "You have been added as Admin for Comedian!"
 
-[PMRemoved]
+[AdminRemoved]
 description = "Displays message when user removed as admin from Comedian"
 other = "You have been removed as Admin from Comedian!"
 

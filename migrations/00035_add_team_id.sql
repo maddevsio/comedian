@@ -9,7 +9,7 @@ ALTER TABLE `controll_pannel` ADD `team_name` VARCHAR(255) NOT NULL;
 
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
-ALTER TABLE `channels` DROP `team_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL;
+ALTER TABLE `channels` DROP `team_id`;
 ALTER TABLE `controll_pannel` DROP `team_id`;
 ALTER TABLE `standups` DROP `team_id`;
 ALTER TABLE `users` DROP `team_id`; 

@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:ee907e9ead8d8b090f1e2c07967ff1ec7ed20687c2ffd270d1c6c1b71dff5496"
+  name = "github.com/AlekSi/pointer"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "08a25bac605b3fcb6cc27f3917b2c2c87451963d"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:9f3b30d9f8e0d7040f729b82dcbc8f0dead820a133b3147ce355fc451f32d761"
   name = "github.com/BurntSushi/toml"
   packages = ["."]
@@ -167,6 +175,20 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:1dab2923041f2f62abcd32e7dd5e4edab908fb148fc9f0895a149aab9deeddf9"
+  name = "github.com/olebedev/when"
+  packages = [
+    ".",
+    "rules",
+    "rules/common",
+    "rules/en",
+    "rules/ru",
+  ]
+  pruneopts = "UT"
+  revision = "164b693865145cf145dbf34e6cf2ed5cb1634bf0"
+
+[[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -275,6 +297,9 @@
     "github.com/nicksnyder/go-i18n/v2/i18n",
     "github.com/nlopes/slack",
     "github.com/nlopes/slack/slackevents",
+    "github.com/olebedev/when",
+    "github.com/olebedev/when/rules/en",
+    "github.com/olebedev/when/rules/ru",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "golang.org/x/text/language",

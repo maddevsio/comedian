@@ -33,6 +33,6 @@ db_clean:
 	goose -dir migrations mysql "comedian:comedian@/comedian"  up
 
 run_tests:
-	go test ./bot/ ./notifier/ ./config/ ./api/ ./utils/ ./storage/ ./reporting/ ./collector ./model -cover
+	go test ./botuser/ ./config/ ./api/ ./utils/ ./storage/ ./model/ ./comedianbot/ ./translation/ -cover
 
-test: db_clean run_tests
+test: run_tests

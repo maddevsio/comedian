@@ -6,14 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
+	"gitlab.com/team-monitoring/comedian/translation"
 	"gitlab.com/team-monitoring/comedian/utils"
-	"golang.org/x/text/language"
 )
 
 var (
@@ -38,17 +37,12 @@ type Bot struct {
 	bundle     *i18n.Bundle
 }
 
-func New(cp model.ControlPannel, db *storage.MySQL) *Bot {
+func New(bundle *i18n.Bundle, cp model.ControlPannel, db *storage.MySQL) *Bot {
 	bot := &Bot{}
 
 	bot.slack = slack.New(cp.AccessToken)
 	bot.Properties = cp
 	bot.db = db
-
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
-	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	bundle.LoadMessageFile("botuser/active.en.toml")
-	bundle.LoadMessageFile("botuser/active.ru.toml")
 
 	bot.bundle = bundle
 
@@ -67,7 +61,19 @@ func (bot *Bot) Start() {
 				botUserID := fmt.Sprintf("<@%s>", rtm.GetInfo().User.ID)
 				bot.HandleMessage(ev, botUserID)
 			case *slack.ConnectedEvent:
-				log.Info("Reconnected!")
+				payload := translation.Payload{bot.bundle, bot.Properties.Language, "Reconnected", 0, nil}
+				message, err := translation.Translate(payload)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"TeamName":     bot.Properties.TeamName,
+						"Language":     payload.Lang,
+						"MessageID":    payload.MessageID,
+						"Count":        payload.Count,
+						"TemplateData": payload.TemplateData,
+					}).Error("Failed to translate message!")
+					continue
+				}
+				log.Info(message)
 			case *slack.MemberJoinedChannelEvent:
 				bot.HandleJoin(ev.Channel, ev.Team)
 			}
@@ -86,29 +92,29 @@ func (bot *Bot) Start() {
 }
 
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent, botUserID string) {
-
-	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
-	oneStandupPerDay = localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:          "OneStandupPerDay",
-			Description: "Warning that only one standup per day is allowed",
-			Other:       "You can submit only one standup per day. Please, edit today's standup or submit your next standup tomorrow!",
-		},
-		TemplateData: map[string]string{
-			"ID": msg.User,
-		},
-	})
-
-	couldNotSaveStandup = localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:          "CouldNotSaveStandup",
-			Description: "Displays a message when unexpected errors occur",
-			Other:       "Something went wrong and I could not save your standup in database. Please, report this to your PM.",
-		},
-		TemplateData: map[string]string{
-			"ID": msg.User,
-		},
-	})
+	var err error
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "OneStandupPerDay", 0, nil}
+	oneStandupPerDay, err = translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
+	payload = translation.Payload{bot.bundle, bot.Properties.Language, "CouldNotSaveStandup", 0, nil}
+	couldNotSaveStandup, err = translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
 
 	switch msg.SubType {
 	case typeMessage:
@@ -238,7 +244,6 @@ func (bot *Bot) HandleDeleteMessage(msg *slack.MessageEvent) error {
 }
 
 func (bot *Bot) analizeStandup(message string) string {
-	localizer := i18n.NewLocalizer(bot.bundle, bot.Properties.Language)
 	message = strings.ToLower(message)
 
 	mentionsYesterdayWork := false
@@ -250,14 +255,19 @@ func (bot *Bot) analizeStandup(message string) string {
 	}
 
 	if !mentionsYesterdayWork {
-		standupHandleNoYesterdayWorkMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:          "StandupHandleNoYesterdayWorkMentioned",
-				Description: "No 'yesterday' keywords in standup",
-				Other:       ":warning: No 'yesterday' related keywords detected! Please, use one of the following: 'yesterday' or weekdays such as 'friday' etc.",
-			},
-		})
-		return standupHandleNoYesterdayWorkMentioned
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "StandupHandleNoYesterdayWorkMentioned", 0, nil}
+		problem, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+
+		}
+		return problem
 	}
 
 	mentionsTodayPlans := false
@@ -268,14 +278,19 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsTodayPlans {
-		standupHandleNoTodayPlansMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:          "StandupHandleNoTodayPlansMentioned",
-				Description: "No 'today' keywords in standup",
-				Other:       ":warning: No 'today' related keywords detected! Please, use one of the following: 'today', 'going', 'plan'",
-			},
-		})
-		return standupHandleNoTodayPlansMentioned
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "StandupHandleNoTodayPlansMentioned", 0, nil}
+		problem, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+
+		}
+		return problem
 	}
 
 	mentionsProblem := false
@@ -287,14 +302,19 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsProblem {
-		standupHandleNoProblemsMentioned := localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:          "StandupHandleNoProblemsMentioned",
-				Description: "No 'problems' key in standup",
-				Other:       ":warning: No 'problems' related keywords detected! Please, use one of the following: 'problem', 'difficult', 'stuck', 'question', 'issue'",
-			},
-		})
-		return standupHandleNoProblemsMentioned
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "StandupHandleNoProblemsMentioned", 0, nil}
+		problem, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+
+		}
+		return problem
 	}
 
 	return ""
