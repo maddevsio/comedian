@@ -59,13 +59,29 @@ func (bot *Bot) SendWarning(channelID string) error {
 		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
 	}
 
-	minutes, _ := translation.Translate(bot.bundle, bot.Properties.Language, "Minutes", int(bot.Properties.ReminderTime), map[string]interface{}{"time": bot.Properties.ReminderTime})
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "Minutes", int(bot.Properties.ReminderTime), map[string]interface{}{"time": bot.Properties.ReminderTime}}
+	minutes, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
 
-	warnNonReporters, _ := translation.Translate(bot.bundle, bot.Properties.Language, "WarnNonReporters", len(nonReporters), map[string]interface{}{
-		"user":    nonReportersIDs[0],
-		"users":   strings.Join(nonReportersIDs, ", "),
-		"minutes": minutes,
-	})
+	payload = translation.Payload{bot.bundle, bot.Properties.Language, "WarnNonReporters", len(nonReporters), map[string]interface{}{"user": nonReportersIDs[0], "users": strings.Join(nonReportersIDs, ", "), "minutes": minutes}}
+	warnNonReporters, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
 
 	err = bot.SendMessage(channelID, warnNonReporters, nil)
 	if err != nil {
@@ -135,25 +151,38 @@ func (bot *Bot) notifyNotAll(channel model.Channel, repeats *int) error {
 
 	if *repeats < bot.Properties.ReminderRepeatsMax && len(nonReporters) > 0 {
 
-		tagNonReporters, _ := translation.Translate(bot.bundle, bot.Properties.Language, "TagNonReporters", len(nonReporters), map[string]interface{}{
-			"user":  nonReportersSlackIDs[0],
-			"users": strings.Join(nonReportersSlackIDs, ", "),
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "TagNonReporters", len(nonReporters), map[string]interface{}{"user": nonReportersSlackIDs[0], "users": strings.Join(nonReportersSlackIDs, ", ")}}
+		tagNonReporters, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
 
 		bot.SendMessage(channel.ChannelID, tagNonReporters, nil)
 		*repeats++
-		err := errors.New("Continue backoff")
+		err = errors.New("Continue backoff")
 		return err
 	}
 	// othervise Direct Message non reporters
 	for _, nonReporter := range nonReporters {
-		directMessage, _ := translation.Translate(bot.bundle, bot.Properties.Language, "DirectMessage", len(nonReporters), map[string]interface{}{
-			"user":        nonReporter.UserID,
-			"channelID":   channel.ChannelID,
-			"channelName": channel.ChannelName,
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "DirectMessage", len(nonReporters), map[string]interface{}{"user": nonReporter.UserID, "channelID": channel.ChannelID, "channelName": channel.ChannelName}}
+		directMessage, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
 
-		err := bot.SendUserMessage(nonReporter.UserID, directMessage)
+		err = bot.SendUserMessage(nonReporter.UserID, directMessage)
 		if err != nil {
 			log.Errorf("notifier: s.SendMessage failed: %v\n", err)
 		}

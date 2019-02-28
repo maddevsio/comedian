@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/translation"
 	"gitlab.com/team-monitoring/comedian/utils"
@@ -13,8 +13,29 @@ import (
 
 func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
 
-	accessAtLeastAdmin, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AccessAtLeastAdmin", 0, nil)
-	accessAtLeastPM, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AccessAtLeastPM", 0, nil)
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "AccessAtLeastAdmin", 0, nil}
+	accessAtLeastAdmin, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate help message!")
+	}
+
+	payload = translation.Payload{bot.bundle, bot.Properties.Language, "AccessAtLeastPM", 0, nil}
+	accessAtLeastPM, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate help message!")
+	}
 
 	var role string
 	var members []string
@@ -62,8 +83,28 @@ func (bot *Bot) showCommand(channelID, params string) string {
 }
 
 func (bot *Bot) deleteCommand(accessLevel int, channelID, params string) string {
-	accessAtLeastAdmin, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AccessAtLeastAdmin", 0, nil)
-	accessAtLeastPM, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AccessAtLeastPM", 0, nil)
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "AccessAtLeastAdmin", 0, nil}
+	accessAtLeastAdmin, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate help message!")
+	}
+	payload = translation.Payload{bot.bundle, bot.Properties.Language, "AccessAtLeastPM", 0, nil}
+	accessAtLeastPM, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate help message!")
+	}
 
 	var role string
 	var members []string
@@ -119,7 +160,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 				ChannelID:     channel,
 				RoleInChannel: role,
 			})
-			logrus.Infof("ChannelMember created! ID:%v", chanMember.ID)
+			log.Infof("ChannelMember created! ID:%v", chanMember.ID)
 		}
 
 		added = append(added, u)
@@ -127,50 +168,92 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 
 	if len(failed) != 0 {
 		if role == "pm" {
-			addPMsFailed, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddPMsFailed", len(failed), map[string]interface{}{
-				"PM":  failed[0],
-				"PMs": strings.Join(failed, ", "),
-			})
+			payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddPMsFailed", len(failed), map[string]interface{}{"PM": failed[0], "PMs": strings.Join(failed, ", ")}}
+			addPMsFailed, err := translation.Translate(payload)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"TeamName":     bot.Properties.TeamName,
+					"Language":     payload.Lang,
+					"MessageID":    payload.MessageID,
+					"Count":        payload.Count,
+					"TemplateData": payload.TemplateData,
+				}).Error("Failed to translate help message!")
+			}
 			text += addPMsFailed
 
 		} else {
-			addMembersFailed, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddMembersFailed", len(failed), map[string]interface{}{
-				"user":  failed[0],
-				"users": strings.Join(failed, ", "),
-			})
+			payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddMembersFailed", len(failed), map[string]interface{}{"user": failed[0], "users": strings.Join(failed, ", ")}}
+			addMembersFailed, err := translation.Translate(payload)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"TeamName":     bot.Properties.TeamName,
+					"Language":     payload.Lang,
+					"MessageID":    payload.MessageID,
+					"Count":        payload.Count,
+					"TemplateData": payload.TemplateData,
+				}).Error("Failed to translate help message!")
+			}
 			text += addMembersFailed
 		}
 
 	}
 	if len(exist) != 0 {
 		if role == "pm" {
-			addPMsExist, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddPMsExist", len(exist), map[string]interface{}{
-				"PM":  exist[0],
-				"PMs": strings.Join(exist, ", "),
-			})
+			payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddPMsExist", len(exist), map[string]interface{}{"PM": exist[0], "PMs": strings.Join(exist, ", ")}}
+			addPMsExist, err := translation.Translate(payload)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"TeamName":     bot.Properties.TeamName,
+					"Language":     payload.Lang,
+					"MessageID":    payload.MessageID,
+					"Count":        payload.Count,
+					"TemplateData": payload.TemplateData,
+				}).Error("Failed to translate help message!")
+			}
 			text += addPMsExist
 		} else {
-			addMembersExist, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddMembersExist", len(exist), map[string]interface{}{
-				"user":  exist[0],
-				"users": strings.Join(exist, ", "),
-			})
+			payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddMembersExist", len(exist), map[string]interface{}{"user": exist[0], "users": strings.Join(exist, ", ")}}
+			addMembersExist, err := translation.Translate(payload)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"TeamName":     bot.Properties.TeamName,
+					"Language":     payload.Lang,
+					"MessageID":    payload.MessageID,
+					"Count":        payload.Count,
+					"TemplateData": payload.TemplateData,
+				}).Error("Failed to translate help message!")
+			}
 			text += addMembersExist
 		}
 
 	}
 	if len(added) != 0 {
 		if role == "pm" {
-			addPMsAdded, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddPMsAdded", len(added), map[string]interface{}{
-				"PM":  added[0],
-				"PMs": strings.Join(added, ", "),
-			})
+			payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddPMsAdded", len(added), map[string]interface{}{"PM": added[0], "PMs": strings.Join(added, ", ")}}
+			addPMsAdded, err := translation.Translate(payload)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"TeamName":     bot.Properties.TeamName,
+					"Language":     payload.Lang,
+					"MessageID":    payload.MessageID,
+					"Count":        payload.Count,
+					"TemplateData": payload.TemplateData,
+				}).Error("Failed to translate help message!")
+			}
 			text += addPMsAdded
 
 		} else {
-			addMembersAdded, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddMembersAdded", len(added), map[string]interface{}{
-				"user":  added[0],
-				"users": strings.Join(added, ", "),
-			})
+			payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddMembersAdded", len(added), map[string]interface{}{"user": added[0], "users": strings.Join(added, ", ")}}
+			addMembersAdded, err := translation.Translate(payload)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"TeamName":     bot.Properties.TeamName,
+					"Language":     payload.Lang,
+					"MessageID":    payload.MessageID,
+					"Count":        payload.Count,
+					"TemplateData": payload.TemplateData,
+				}).Error("Failed to translate help message!")
+			}
 			text += addMembersAdded
 		}
 
@@ -203,33 +286,64 @@ func (bot *Bot) addAdmins(users []string) string {
 		user.Role = "admin"
 		bot.db.UpdateUser(user)
 
-		adminAssigned, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AdminAssigned", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "AdminAssigned", 0, nil}
+		adminAssigned, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		err = bot.SendUserMessage(userID, adminAssigned)
 		if err != nil {
-			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+			log.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
 		added = append(added, u)
 	}
 
 	if len(failed) != 0 {
-		addAdminsFailed, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddAdminsFailed", len(failed), map[string]interface{}{
-			"admin":  failed[0],
-			"admins": strings.Join(failed, ", "),
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddAdminsFailed", len(failed), map[string]interface{}{"admin": failed[0], "admins": strings.Join(failed, ", ")}}
+		addAdminsFailed, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		text += addAdminsFailed
 	}
 	if len(exist) != 0 {
-		addAdminsExist, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddAdminsExist", len(exist), map[string]interface{}{
-			"admin":  exist[0],
-			"admins": strings.Join(exist, ", "),
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddAdminsExist", len(exist), map[string]interface{}{"admin": exist[0], "admins": strings.Join(exist, ", ")}}
+		addAdminsExist, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		text += addAdminsExist
 	}
 	if len(added) != 0 {
-		addAdminsAdded, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddAdminsAdded", len(added), map[string]interface{}{
-			"admin":  added[0],
-			"admins": strings.Join(added, ", "),
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddAdminsAdded", len(added), map[string]interface{}{"admin": added[0], "admins": strings.Join(added, ", ")}}
+		addAdminsAdded, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		text += addAdminsAdded
 	}
 
@@ -248,27 +362,61 @@ func (bot *Bot) listMembers(channelID, role string) string {
 	}
 	if role == "pm" {
 		if len(userIDs) < 1 {
-			listNoPMs, _ := translation.Translate(bot.bundle, bot.Properties.Language, "ListNoPMs", 0, nil)
+			payload := translation.Payload{bot.bundle, bot.Properties.Language, "ListNoPMs", 0, nil}
+			listNoPMs, err := translation.Translate(payload)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"TeamName":     bot.Properties.TeamName,
+					"Language":     payload.Lang,
+					"MessageID":    payload.MessageID,
+					"Count":        payload.Count,
+					"TemplateData": payload.TemplateData,
+				}).Error("Failed to translate help message!")
+			}
 			return listNoPMs
 		}
 
-		listPMs, _ := translation.Translate(bot.bundle, bot.Properties.Language, "ListPMs", len(userIDs), map[string]interface{}{
-			"pm":  userIDs[0],
-			"pms": strings.Join(userIDs, ", "),
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "ListPMs", len(userIDs), map[string]interface{}{"pm": userIDs[0], "pms": strings.Join(userIDs, ", ")}}
+		listPMs, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 
 		return listPMs
 
 	}
 	if len(userIDs) < 1 {
-		listNoStandupers, _ := translation.Translate(bot.bundle, bot.Properties.Language, "ListNoStandupers", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "ListNoStandupers", 0, nil}
+		listNoStandupers, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		return listNoStandupers
 
 	}
-	listStandupers, _ := translation.Translate(bot.bundle, bot.Properties.Language, "ListStandupers", len(userIDs), map[string]interface{}{
-		"standuper":  userIDs[0],
-		"standupers": strings.Join(userIDs, ", "),
-	})
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "ListStandupers", len(userIDs), map[string]interface{}{"standuper": userIDs[0], "standupers": strings.Join(userIDs, ", ")}}
+	listStandupers, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate help message!")
+	}
 	return listStandupers
 }
 
@@ -283,13 +431,30 @@ func (bot *Bot) listAdmins() string {
 		userNames = append(userNames, "<@"+admin.UserName+">")
 	}
 	if len(userNames) < 1 {
-		listNoAdmins, _ := translation.Translate(bot.bundle, bot.Properties.Language, "ListNoAdmins", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "ListNoAdmins", 0, nil}
+		listNoAdmins, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		return listNoAdmins
 	}
-	listAdmins, _ := translation.Translate(bot.bundle, bot.Properties.Language, "ListAdmins", len(userNames), map[string]interface{}{
-		"admin":  userNames[0],
-		"admins": strings.Join(userNames, ", "),
-	})
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "ListAdmins", len(userNames), map[string]interface{}{"admin": userNames[0], "admins": strings.Join(userNames, ", ")}}
+	listAdmins, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate help message!")
+	}
 	return listAdmins
 
 }
@@ -310,7 +475,7 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 
 		user, err := bot.db.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
-			logrus.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
+			log.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
 			failed = append(failed, u)
 			continue
 		}
@@ -320,17 +485,31 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 	}
 
 	if len(failed) != 0 {
-		deleteMembersFailed, _ := translation.Translate(bot.bundle, bot.Properties.Language, "DeleteMembersFailed", len(failed), map[string]interface{}{
-			"user":  failed[0],
-			"users": strings.Join(failed, ", "),
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "DeleteMembersFailed", len(failed), map[string]interface{}{"user": failed[0], "users": strings.Join(failed, ", ")}}
+		deleteMembersFailed, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		text += deleteMembersFailed
 	}
 	if len(deleted) != 0 {
-		deleteMembersSucceed, _ := translation.Translate(bot.bundle, bot.Properties.Language, "DeleteMembersSucceed", len(deleted), map[string]interface{}{
-			"user":  deleted[0],
-			"users": strings.Join(deleted, ", "),
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "DeleteMembersSucceed", len(deleted), map[string]interface{}{"user": deleted[0], "users": strings.Join(deleted, ", ")}}
+		deleteMembersSucceed, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		text += deleteMembersSucceed
 	}
 
@@ -361,27 +540,51 @@ func (bot *Bot) deleteAdmins(users []string) string {
 		}
 		user.Role = ""
 		bot.db.UpdateUser(user)
-		adminRemoved, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AdminRemoved", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "AdminRemoved", 0, nil}
+		adminRemoved, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 
 		err = bot.SendUserMessage(userID, adminRemoved)
 		if err != nil {
-			logrus.Errorf("rest: SendUserMessage failed: %v\n", err)
+			log.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
 		deleted = append(deleted, u)
 	}
 
 	if len(failed) != 0 {
-		deleteAdminsFailed, _ := translation.Translate(bot.bundle, bot.Properties.Language, "DeleteAdminsFailed", len(failed), map[string]interface{}{
-			"admin":  failed[0],
-			"admins": strings.Join(failed, ", "),
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "DeleteAdminsFailed", len(failed), map[string]interface{}{"admin": failed[0], "admins": strings.Join(failed, ", ")}}
+		deleteAdminsFailed, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		text += deleteAdminsFailed
 	}
 	if len(deleted) != 0 {
-		deleteAdminsSucceed, _ := translation.Translate(bot.bundle, bot.Properties.Language, "DeleteAdminsSucceed", len(deleted), map[string]interface{}{
-			"admin":  deleted[0],
-			"admins": strings.Join(deleted, ", "),
-		})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "DeleteAdminsSucceed", len(deleted), map[string]interface{}{"admin": deleted[0], "admins": strings.Join(deleted, ", ")}}
+		deleteAdminsSucceed, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate help message!")
+		}
 		text += deleteAdminsSucceed
 	}
 

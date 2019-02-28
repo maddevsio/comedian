@@ -12,7 +12,17 @@ import (
 
 func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 	if accessLevel > pmAccess {
-		accessAtLeastPM, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AccessAtLeastPM", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "AccessAtLeastPM", 0, nil}
+		accessAtLeastPM, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
 		return accessAtLeastPM
 	}
 
@@ -20,7 +30,17 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 	w.Add(en.All...)
 	w.Add(ru.All...)
 
-	somethingWentWrong, _ := translation.Translate(bot.bundle, bot.Properties.Language, "SomethingWentWrong", 0, nil)
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "SomethingWentWrong", 0, nil}
+	somethingWentWrong, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
 
 	r, err := w.Parse(params, time.Now())
 	if err != nil {
@@ -41,43 +61,123 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 	}
 
 	if len(channelMembers) == 0 {
-		addStandupTimeNoUsers, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddStandupTimeNoUsers", 0, map[string]interface{}{"timeInt": r.Time.Unix()})
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "AddStandupTimeNoUsers", 0, map[string]interface{}{"timeInt": r.Time.Unix()}}
+		addStandupTimeNoUsers, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
 		return addStandupTimeNoUsers
 	}
 
-	addStandupTime, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AddStandupTime", 0, map[string]interface{}{"timeInt": r.Time.Unix()})
+	payload = translation.Payload{bot.bundle, bot.Properties.Language, "AddStandupTime", 0, map[string]interface{}{"timeInt": r.Time.Unix()}}
+	addStandupTime, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
 	return addStandupTime
 }
 
 func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 	if accessLevel > pmAccess {
-		accessAtLeastPM, _ := translation.Translate(bot.bundle, bot.Properties.Language, "AccessAtLeastPM", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "AccessAtLeastPM", 0, nil}
+		accessAtLeastPM, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
 		return accessAtLeastPM
 	}
 
 	err := bot.db.DeleteStandupTime(channelID)
 	if err != nil {
-		somethingWentWrong, _ := translation.Translate(bot.bundle, bot.Properties.Language, "SomethingWentWrong", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "SomethingWentWrong", 0, nil}
+		somethingWentWrong, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
 		return somethingWentWrong
 
 	}
 	st, err := bot.db.ListChannelMembers(channelID)
 	if len(st) != 0 {
-		removeStandupTimeWithUsers, _ := translation.Translate(bot.bundle, bot.Properties.Language, "RemoveStandupTimeWithUsers", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "RemoveStandupTimeWithUsers", 0, nil}
+		removeStandupTimeWithUsers, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
 		return removeStandupTimeWithUsers
 	}
 
-	removeStandupTime, _ := translation.Translate(bot.bundle, bot.Properties.Language, "RemoveStandupTime", 0, nil)
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "RemoveStandupTime", 0, nil}
+	removeStandupTime, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
 	return removeStandupTime
 }
 
 func (bot *Bot) showTime(channelID string) string {
 	standupTime, err := bot.db.GetChannelStandupTime(channelID)
 	if err != nil || standupTime == int64(0) {
-		showNoStandupTime, _ := translation.Translate(bot.bundle, bot.Properties.Language, "ShowNoStandupTime", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "ShowNoStandupTime", 0, nil}
+		showNoStandupTime, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
 		return showNoStandupTime
 	}
 
-	showStandupTime, _ := translation.Translate(bot.bundle, bot.Properties.Language, "ShowStandupTime", 0, map[string]interface{}{"standuptime": standupTime})
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "ShowStandupTime", 0, map[string]interface{}{"standuptime": standupTime}}
+	showStandupTime, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
 	return showStandupTime
 }

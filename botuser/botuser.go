@@ -61,9 +61,17 @@ func (bot *Bot) Start() {
 				botUserID := fmt.Sprintf("<@%s>", rtm.GetInfo().User.ID)
 				bot.HandleMessage(ev, botUserID)
 			case *slack.ConnectedEvent:
-				message, err := translation.Translate(bot.bundle, bot.Properties.Language, "Reconnected", 0, nil)
+				payload := translation.Payload{bot.bundle, bot.Properties.Language, "Reconnected", 0, nil}
+				message, err := translation.Translate(payload)
 				if err != nil {
-					log.Error(err)
+					log.WithFields(log.Fields{
+						"TeamName":     bot.Properties.TeamName,
+						"Language":     payload.Lang,
+						"MessageID":    payload.MessageID,
+						"Count":        payload.Count,
+						"TemplateData": payload.TemplateData,
+					}).Error("Failed to translate message!")
+					continue
 				}
 				log.Info(message)
 			case *slack.MemberJoinedChannelEvent:
@@ -84,9 +92,29 @@ func (bot *Bot) Start() {
 }
 
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent, botUserID string) {
-
-	oneStandupPerDay, _ = translation.Translate(bot.bundle, bot.Properties.Language, "OneStandupPerDay", 0, nil)
-	couldNotSaveStandup, _ = translation.Translate(bot.bundle, bot.Properties.Language, "CouldNotSaveStandup", 0, nil)
+	var err error
+	payload := translation.Payload{bot.bundle, bot.Properties.Language, "OneStandupPerDay", 0, nil}
+	oneStandupPerDay, err = translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
+	payload = translation.Payload{bot.bundle, bot.Properties.Language, "CouldNotSaveStandup", 0, nil}
+	couldNotSaveStandup, err = translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.Properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
 
 	switch msg.SubType {
 	case typeMessage:
@@ -227,7 +255,18 @@ func (bot *Bot) analizeStandup(message string) string {
 	}
 
 	if !mentionsYesterdayWork {
-		problem, _ := translation.Translate(bot.bundle, bot.Properties.Language, "StandupHandleNoYesterdayWorkMentioned", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "StandupHandleNoYesterdayWorkMentioned", 0, nil}
+		problem, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+
+		}
 		return problem
 	}
 
@@ -239,7 +278,18 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsTodayPlans {
-		problem, _ := translation.Translate(bot.bundle, bot.Properties.Language, "StandupHandleNoTodayPlansMentioned", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "StandupHandleNoTodayPlansMentioned", 0, nil}
+		problem, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+
+		}
 		return problem
 	}
 
@@ -252,7 +302,18 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsProblem {
-		problem, _ := translation.Translate(bot.bundle, bot.Properties.Language, "StandupHandleNoProblemsMentioned", 0, nil)
+		payload := translation.Payload{bot.bundle, bot.Properties.Language, "StandupHandleNoProblemsMentioned", 0, nil}
+		problem, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.Properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+
+		}
 		return problem
 	}
 

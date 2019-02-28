@@ -4,20 +4,28 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
-func Translate(bundle *i18n.Bundle, lang, messageID string, count int, templateData map[string]interface{}) (string, error) {
+type Payload struct {
+	Bundle       *i18n.Bundle
+	Lang         string
+	MessageID    string
+	Count        int
+	TemplateData map[string]interface{}
+}
 
-	localizer := i18n.NewLocalizer(bundle, lang)
+func Translate(payload Payload) (string, error) {
+
+	localizer := i18n.NewLocalizer(payload.Bundle, payload.Lang)
 
 	config := &i18n.LocalizeConfig{
-		MessageID: messageID,
+		MessageID: payload.MessageID,
 	}
 
-	if count != 0 {
-		config.PluralCount = count
+	if payload.Count != 0 {
+		config.PluralCount = payload.Count
 	}
 
-	if templateData != nil {
-		config.TemplateData = templateData
+	if payload.TemplateData != nil {
+		config.TemplateData = payload.TemplateData
 	}
 
 	text, err := localizer.Localize(config)

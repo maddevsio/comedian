@@ -37,7 +37,8 @@ func TestTranslate(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		message, err := Translate(bundle, tt.language, tt.messageID, tt.pluralCount, tt.templateData)
+		payload := Payload{bundle, tt.language, tt.messageID, tt.pluralCount, tt.templateData}
+		message, err := Translate(payload)
 		if err != nil {
 			assert.Error(t, err)
 		}
