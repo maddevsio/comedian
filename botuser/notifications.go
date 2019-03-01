@@ -13,8 +13,8 @@ import (
 )
 
 // NotifyChannels reminds users of channels about upcoming or missing standups
-func (bot *Bot) NotifyChannels() {
-	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
+func (bot *Bot) NotifyChannels(t time.Time) {
+	if int(t.Weekday()) == 6 || int(t.Weekday()) == 0 {
 		return
 	}
 	channels, err := bot.db.GetTeamChannels(bot.properties.TeamID)
@@ -30,14 +30,14 @@ func (bot *Bot) NotifyChannels() {
 		}
 		standupTime := time.Unix(channel.StandupTime, 0)
 		warningTime := time.Unix(channel.StandupTime-bot.properties.ReminderTime*60, 0)
-		if time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute() {
+		if t.Hour() == warningTime.Hour() && t.Minute() == warningTime.Minute() {
 			err := bot.SendWarning(channel.ChannelID)
 			if err != nil {
 				log.Error(err)
 			}
 		}
 
-		if time.Now().Hour() == standupTime.Hour() && time.Now().Minute() == standupTime.Minute() {
+		if t.Hour() == standupTime.Hour() && t.Minute() == standupTime.Minute() {
 			go bot.SendChannelNotification(channel.ChannelID)
 		}
 	}

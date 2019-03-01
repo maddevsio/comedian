@@ -81,12 +81,9 @@ func (bot *Bot) Start() {
 	}(bot)
 
 	go func(bot *Bot) {
-		notificationForChannels := time.NewTicker(time.Second * 60).C
-		for {
-			select {
-			case <-notificationForChannels:
-				bot.NotifyChannels()
-			}
+		counter := time.NewTicker(time.Second * 60).C
+		for time := range counter {
+			bot.NotifyChannels(time)
 		}
 	}(bot)
 }
