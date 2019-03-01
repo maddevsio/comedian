@@ -434,16 +434,16 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	return false
 }
 
-//CreateControlPannel creates bot properties for the newly created bot
-func (m *MySQL) CreateControlPannel(token, teamID, teamName string) (model.ControlPannel, error) {
-	var cp model.ControlPannel
+//CreateBotSettings creates bot properties for the newly created bot
+func (m *MySQL) CreateBotSettings(token, teamID, teamName string) (model.BotSettings, error) {
+	var cp model.BotSettings
 	_, err := m.conn.Exec(
-		"INSERT INTO `controll_pannel` (notifier_interval, manager_slack_user_id, reporting_channel, report_time, language, reminder_repeats_max, reminder_time, collector_enabled,sprint_report_status,sprint_report_time,sprint_report_channel,sprint_weekdays,individual_reporting_status,bot_access_token, team_id, team_name, password, task_done_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		30, "", "", "10:00", "en_US", 3, int64(10), false, false, "9:00", "", "", false, token, teamID, teamName, teamName, "")
+		"INSERT INTO `bot_settings` (notifier_interval, manager_slack_user_id, language, reminder_repeats_max, reminder_time, bot_access_token, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		30, "", "en_US", 3, int64(10), token, teamID, teamName, teamName)
 	if err != nil {
-		return model.ControlPannel{}, err
+		return model.BotSettings{}, err
 	}
-	cp, err = m.GetControlPannel(teamName)
+	cp, err = m.GetBotSettings(teamName)
 	if err != nil {
 		return cp, err
 	}
@@ -451,45 +451,45 @@ func (m *MySQL) CreateControlPannel(token, teamID, teamName string) (model.Contr
 	return cp, nil
 }
 
-//GetControlPannels returns all controll pannels
-func (m *MySQL) GetControlPannels() ([]model.ControlPannel, error) {
-	var cp []model.ControlPannel
-	err := m.conn.Select(&cp, "SELECT * FROM `controll_pannel`")
+//GetAllBotSettings returns all controll pannels
+func (m *MySQL) GetAllBotSettings() ([]model.BotSettings, error) {
+	var cp []model.BotSettings
+	err := m.conn.Select(&cp, "SELECT * FROM `bot_settings`")
 	if err != nil {
 		return cp, err
 	}
 	return cp, nil
 }
 
-//GetControlPannel returns a particular controll pannel
-func (m *MySQL) GetControlPannel(teamName string) (model.ControlPannel, error) {
-	var cp model.ControlPannel
-	err := m.conn.Get(&cp, "SELECT * FROM `controll_pannel` where team_name=?", teamName)
+//GetBotSettings returns a particular controll pannel
+func (m *MySQL) GetBotSettings(teamName string) (model.BotSettings, error) {
+	var cp model.BotSettings
+	err := m.conn.Get(&cp, "SELECT * FROM `bot_settings` where team_name=?", teamName)
 	if err != nil {
 		return cp, err
 	}
 	return cp, nil
 }
 
-//UpdateControlPannel updates controll pannel
-func (m *MySQL) UpdateControlPannel(cp model.ControlPannel) (model.ControlPannel, error) {
+//UpdateBotSettings updates controll pannel
+func (m *MySQL) UpdateBotSettings(cp model.BotSettings) (model.BotSettings, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `controll_pannel` set notifier_interval=?, manager_slack_user_id=?, reporting_channel=?, report_time=?, language=?, reminder_repeats_max=?, reminder_time=?, collector_enabled=?, sprint_report_status=?, sprint_report_time=?, sprint_report_channel=?,sprint_weekdays=?,individual_reporting_status=?, password=?, task_done_status=? where id=?",
-		cp.NotifierInterval, cp.ManagerSlackUserID, cp.ReportingChannel, cp.ReportTime, cp.Language, cp.ReminderRepeatsMax, cp.ReminderTime, cp.CollectorEnabled, cp.SprintReportStatus, cp.SprintReportTime, cp.SprintReportChannel, cp.SprintWeekdays, cp.IndividualReportingStatus, cp.Password, cp.TaskDoneStatus, cp.ID,
+		"UPDATE `bot_settings` set notifier_interval=?, manager_slack_user_id=?, language=?, reminder_repeats_max=?, reminder_time=?, password=? where id=?",
+		cp.NotifierInterval, cp.ManagerSlackUserID, cp.Language, cp.ReminderRepeatsMax, cp.ReminderTime, cp.Password, cp.ID,
 	)
 	if err != nil {
 		return cp, err
 	}
-	var ControlPannel model.ControlPannel
-	err = m.conn.Get(&cp, "SELECT * FROM `controll_pannel`")
+	var BotSettings model.BotSettings
+	err = m.conn.Get(&cp, "SELECT * FROM `bot_settings`")
 	if err != nil {
 		return cp, err
 	}
-	return ControlPannel, err
+	return BotSettings, err
 }
 
-//DeleteControlPannel deletes controll pannel
-func (m *MySQL) DeleteControlPannel(teamID string) error {
-	_, err := m.conn.Exec("DELETE FROM `controll_pannel` WHERE team_id=?", teamID)
+//DeleteBotSettings deletes controll pannel
+func (m *MySQL) DeleteBotSettings(teamID string) error {
+	_, err := m.conn.Exec("DELETE FROM `bot_settings` WHERE team_id=?", teamID)
 	return err
 }

@@ -32,16 +32,16 @@ const (
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
 	slack      *slack.Client
-	Properties model.ControlPannel
+	Properties model.BotSettings
 	db         *storage.MySQL
 	bundle     *i18n.Bundle
 }
 
-func New(bundle *i18n.Bundle, cp model.ControlPannel, db *storage.MySQL) *Bot {
+func New(bundle *i18n.Bundle, settings model.BotSettings, db *storage.MySQL) *Bot {
 	bot := &Bot{}
 
-	bot.slack = slack.New(cp.AccessToken)
-	bot.Properties = cp
+	bot.slack = slack.New(settings.AccessToken)
+	bot.Properties = settings
 	bot.db = db
 
 	bot.bundle = bundle

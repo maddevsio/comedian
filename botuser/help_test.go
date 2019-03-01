@@ -41,7 +41,7 @@ func TestDisplayHelpText(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		cp := model.ControlPannel{
+		settings := model.BotSettings{
 			Language: tt.language,
 		}
 
@@ -57,7 +57,7 @@ func TestDisplayHelpText(t *testing.T) {
 			log.Fatal(err)
 		}
 
-		bot := New(bundle, cp, db)
+		bot := New(bundle, settings, db)
 		text := bot.DisplayHelpText(tt.command)
 		assert.Equal(t, tt.outputMessage, text)
 	}

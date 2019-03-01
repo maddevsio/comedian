@@ -26,6 +26,12 @@ type ComedianAPI struct {
 	config   config.Config
 }
 
+type Event struct {
+	Token     string `json:"token"`
+	Challenge string `json:"challenge"`
+	Type      string `json:"type"`
+}
+
 // NewComedianAPI creates API for Slack commands
 func NewComedianAPI(config config.Config, db *storage.MySQL, comedian *comedianbot.Comedian) (ComedianAPI, error) {
 
@@ -63,12 +69,6 @@ func (api *ComedianAPI) Start() error {
 }
 
 func (api *ComedianAPI) handleEvent(c echo.Context) error {
-	type Event struct {
-		Token     string `json:"token"`
-		Challenge string `json:"challenge"`
-		Type      string `json:"type"`
-	}
-
 	var incomingEvent Event
 	var event slackevents.EventsAPICallbackEvent
 
@@ -93,11 +93,11 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 			return err
 		}
 
-		err = api.db.DeleteControlPannel(event.TeamID)
+		err = api.db.DeleteBotSettings(event.TeamID)
 		if err != nil {
 			return err
 		}
-		log.Info("Controll Pannel was deleted")
+
 		return c.String(http.StatusOK, "Success")
 	}
 
@@ -110,17 +110,13 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
-
-	log.Info("Service request: ", incomingEvent)
 
 	err = api.comedian.HandleEvent(incomingEvent)
 	if err != nil {
@@ -128,7 +124,6 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 	}
 
 	return nil
-
 }
 
 func (api *ComedianAPI) handleCommands(c echo.Context) error {
@@ -136,7 +131,6 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 
 	urlValues, err := c.FormParams()
 	if err != nil {
-		log.Errorf("ComedianAPI: c.FormParams failed: %v\n", err)
 		return c.String(http.StatusOK, err.Error())
 	}
 
@@ -178,7 +172,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	cp, err := api.db.CreateControlPannel(resp.Bot.BotAccessToken, resp.TeamID, resp.TeamName)
+	cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.TeamID, resp.TeamName)
 	if err != nil {
 		return err
 	}
