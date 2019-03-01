@@ -54,7 +54,11 @@ func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 		return err
 	}
 
-	bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
+	err = bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
