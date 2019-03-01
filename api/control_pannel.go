@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo"
+	"gitlab.com/team-monitoring/comedian/model"
 )
 
 type Template struct {
@@ -84,14 +85,18 @@ func (api *ComedianAPI) updateConfig(c echo.Context) error {
 		return err
 	}
 
-	bot.Properties.NotifierInterval = ni
-	bot.Properties.ManagerSlackUserID = form.Get("manager_slack_user_id")
-	bot.Properties.Language = form.Get("language")
-	bot.Properties.ReminderRepeatsMax = rrm
-	bot.Properties.ReminderTime = rt
-	bot.Properties.Password = form.Get("password")
+	settings := model.BotSettings{
+		NotifierInterval:   ni,
+		ManagerSlackUserID: form.Get("manager_slack_user_id"),
+		Language:           form.Get("language"),
+		ReminderRepeatsMax: rrm,
+		ReminderTime:       rt,
+		Password:           form.Get("password"),
+	}
 
-	_, err = api.db.UpdateBotSettings(bot.Properties)
+	bot.SetProperties(settings)
+
+	_, err = api.db.UpdateBotSettings(settings)
 	if err != nil {
 		return err
 	}

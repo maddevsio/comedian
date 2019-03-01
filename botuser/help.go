@@ -27,11 +27,11 @@ func (bot *Bot) DisplayHelpText(command string) string {
 
 func (bot *Bot) generateHelpText(messageID string) (string, error) {
 
-	payload := translation.Payload{bot.bundle, bot.Properties.Language, messageID, 0, nil}
+	payload := translation.Payload{bot.bundle, bot.properties.Language, messageID, 0, nil}
 	message, err := translation.Translate(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"TeamName":     bot.Properties.TeamName,
+			"TeamName":     bot.properties.TeamName,
 			"Language":     payload.Lang,
 			"MessageID":    payload.MessageID,
 			"Count":        payload.Count,

@@ -17,7 +17,7 @@ func (bot *Bot) NotifyChannels() {
 	if int(time.Now().Weekday()) == 6 || int(time.Now().Weekday()) == 0 {
 		return
 	}
-	channels, err := bot.db.GetTeamChannels(bot.Properties.TeamID)
+	channels, err := bot.db.GetTeamChannels(bot.properties.TeamID)
 	if err != nil {
 		log.Errorf("notifier: ListAllStandupTime failed: %v\n", err)
 		return
@@ -29,7 +29,7 @@ func (bot *Bot) NotifyChannels() {
 			continue
 		}
 		standupTime := time.Unix(channel.StandupTime, 0)
-		warningTime := time.Unix(channel.StandupTime-bot.Properties.ReminderTime*60, 0)
+		warningTime := time.Unix(channel.StandupTime-bot.properties.ReminderTime*60, 0)
 		if time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute() {
 			err := bot.SendWarning(channel.ChannelID)
 			if err != nil {
@@ -59,11 +59,11 @@ func (bot *Bot) SendWarning(channelID string) error {
 		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
 	}
 
-	payload := translation.Payload{bot.bundle, bot.Properties.Language, "Minutes", int(bot.Properties.ReminderTime), map[string]interface{}{"time": bot.Properties.ReminderTime}}
+	payload := translation.Payload{bot.bundle, bot.properties.Language, "Minutes", int(bot.properties.ReminderTime), map[string]interface{}{"time": bot.properties.ReminderTime}}
 	minutes, err := translation.Translate(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"TeamName":     bot.Properties.TeamName,
+			"TeamName":     bot.properties.TeamName,
 			"Language":     payload.Lang,
 			"MessageID":    payload.MessageID,
 			"Count":        payload.Count,
@@ -71,11 +71,11 @@ func (bot *Bot) SendWarning(channelID string) error {
 		}).Error("Failed to translate message!")
 	}
 
-	payload = translation.Payload{bot.bundle, bot.Properties.Language, "WarnNonReporters", len(nonReporters), map[string]interface{}{"user": nonReportersIDs[0], "users": strings.Join(nonReportersIDs, ", "), "minutes": minutes}}
+	payload = translation.Payload{bot.bundle, bot.properties.Language, "WarnNonReporters", len(nonReporters), map[string]interface{}{"user": nonReportersIDs[0], "users": strings.Join(nonReportersIDs, ", "), "minutes": minutes}}
 	warnNonReporters, err := translation.Translate(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"TeamName":     bot.Properties.TeamName,
+			"TeamName":     bot.properties.TeamName,
 			"Language":     payload.Lang,
 			"MessageID":    payload.MessageID,
 			"Count":        payload.Count,
@@ -128,7 +128,7 @@ func (bot *Bot) SendChannelNotification(channelID string) {
 		return nil
 	}
 
-	b := backoff.NewConstantBackOff(time.Duration(bot.Properties.NotifierInterval) * time.Minute)
+	b := backoff.NewConstantBackOff(time.Duration(bot.properties.NotifierInterval) * time.Minute)
 	err = backoff.Retry(notifyNotAll, b)
 	if err != nil {
 		log.Errorf("notifier: backoff.Retry failed: %v\n", err)
@@ -149,13 +149,13 @@ func (bot *Bot) notifyNotAll(channel model.Channel, repeats *int) error {
 	}
 	log.Infof("notifier: Notifier non reporters: %v", nonReporters)
 
-	if *repeats < bot.Properties.ReminderRepeatsMax && len(nonReporters) > 0 {
+	if *repeats < bot.properties.ReminderRepeatsMax && len(nonReporters) > 0 {
 
-		payload := translation.Payload{bot.bundle, bot.Properties.Language, "TagNonReporters", len(nonReporters), map[string]interface{}{"user": nonReportersSlackIDs[0], "users": strings.Join(nonReportersSlackIDs, ", ")}}
+		payload := translation.Payload{bot.bundle, bot.properties.Language, "TagNonReporters", len(nonReporters), map[string]interface{}{"user": nonReportersSlackIDs[0], "users": strings.Join(nonReportersSlackIDs, ", ")}}
 		tagNonReporters, err := translation.Translate(payload)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"TeamName":     bot.Properties.TeamName,
+				"TeamName":     bot.properties.TeamName,
 				"Language":     payload.Lang,
 				"MessageID":    payload.MessageID,
 				"Count":        payload.Count,
@@ -170,11 +170,11 @@ func (bot *Bot) notifyNotAll(channel model.Channel, repeats *int) error {
 	}
 	// othervise Direct Message non reporters
 	for _, nonReporter := range nonReporters {
-		payload := translation.Payload{bot.bundle, bot.Properties.Language, "DirectMessage", len(nonReporters), map[string]interface{}{"user": nonReporter.UserID, "channelID": channel.ChannelID, "channelName": channel.ChannelName}}
+		payload := translation.Payload{bot.bundle, bot.properties.Language, "DirectMessage", len(nonReporters), map[string]interface{}{"user": nonReporter.UserID, "channelID": channel.ChannelID, "channelName": channel.ChannelName}}
 		directMessage, err := translation.Translate(payload)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"TeamName":     bot.Properties.TeamName,
+				"TeamName":     bot.properties.TeamName,
 				"Language":     payload.Lang,
 				"MessageID":    payload.MessageID,
 				"Count":        payload.Count,

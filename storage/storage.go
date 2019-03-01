@@ -472,18 +472,18 @@ func (m *MySQL) GetBotSettings(teamName string) (model.BotSettings, error) {
 }
 
 //UpdateBotSettings updates controll pannel
-func (m *MySQL) UpdateBotSettings(cp model.BotSettings) (model.BotSettings, error) {
+func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
 	_, err := m.conn.Exec(
 		"UPDATE `bot_settings` set notifier_interval=?, manager_slack_user_id=?, language=?, reminder_repeats_max=?, reminder_time=?, password=? where id=?",
-		cp.NotifierInterval, cp.ManagerSlackUserID, cp.Language, cp.ReminderRepeatsMax, cp.ReminderTime, cp.Password, cp.ID,
+		settings.NotifierInterval, settings.ManagerSlackUserID, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.Password, settings.ID,
 	)
 	if err != nil {
-		return cp, err
+		return settings, err
 	}
 	var BotSettings model.BotSettings
-	err = m.conn.Get(&cp, "SELECT * FROM `bot_settings`")
+	err = m.conn.Get(&settings, "SELECT * FROM `bot_settings`")
 	if err != nil {
-		return cp, err
+		return settings, err
 	}
 	return BotSettings, err
 }

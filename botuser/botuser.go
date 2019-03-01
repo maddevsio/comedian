@@ -32,7 +32,7 @@ const (
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
 	slack      *slack.Client
-	Properties model.BotSettings
+	properties model.BotSettings
 	db         *storage.MySQL
 	bundle     *i18n.Bundle
 }
@@ -41,7 +41,7 @@ func New(bundle *i18n.Bundle, settings model.BotSettings, db *storage.MySQL) *Bo
 	bot := &Bot{}
 
 	bot.slack = slack.New(settings.AccessToken)
-	bot.Properties = settings
+	bot.properties = settings
 	bot.db = db
 
 	bot.bundle = bundle
@@ -61,11 +61,11 @@ func (bot *Bot) Start() {
 				botUserID := fmt.Sprintf("<@%s>", rtm.GetInfo().User.ID)
 				bot.HandleMessage(ev, botUserID)
 			case *slack.ConnectedEvent:
-				payload := translation.Payload{bot.bundle, bot.Properties.Language, "Reconnected", 0, nil}
+				payload := translation.Payload{bot.bundle, bot.properties.Language, "Reconnected", 0, nil}
 				message, err := translation.Translate(payload)
 				if err != nil {
 					log.WithFields(log.Fields{
-						"TeamName":     bot.Properties.TeamName,
+						"TeamName":     bot.properties.TeamName,
 						"Language":     payload.Lang,
 						"MessageID":    payload.MessageID,
 						"Count":        payload.Count,
@@ -93,22 +93,22 @@ func (bot *Bot) Start() {
 
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent, botUserID string) {
 	var err error
-	payload := translation.Payload{bot.bundle, bot.Properties.Language, "OneStandupPerDay", 0, nil}
+	payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 	oneStandupPerDay, err = translation.Translate(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"TeamName":     bot.Properties.TeamName,
+			"TeamName":     bot.properties.TeamName,
 			"Language":     payload.Lang,
 			"MessageID":    payload.MessageID,
 			"Count":        payload.Count,
 			"TemplateData": payload.TemplateData,
 		}).Error("Failed to translate message!")
 	}
-	payload = translation.Payload{bot.bundle, bot.Properties.Language, "CouldNotSaveStandup", 0, nil}
+	payload = translation.Payload{bot.bundle, bot.properties.Language, "CouldNotSaveStandup", 0, nil}
 	couldNotSaveStandup, err = translation.Translate(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"TeamName":     bot.Properties.TeamName,
+			"TeamName":     bot.properties.TeamName,
 			"Language":     payload.Lang,
 			"MessageID":    payload.MessageID,
 			"Count":        payload.Count,
@@ -255,11 +255,11 @@ func (bot *Bot) analizeStandup(message string) string {
 	}
 
 	if !mentionsYesterdayWork {
-		payload := translation.Payload{bot.bundle, bot.Properties.Language, "StandupHandleNoYesterdayWorkMentioned", 0, nil}
+		payload := translation.Payload{bot.bundle, bot.properties.Language, "StandupHandleNoYesterdayWorkMentioned", 0, nil}
 		problem, err := translation.Translate(payload)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"TeamName":     bot.Properties.TeamName,
+				"TeamName":     bot.properties.TeamName,
 				"Language":     payload.Lang,
 				"MessageID":    payload.MessageID,
 				"Count":        payload.Count,
@@ -278,11 +278,11 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsTodayPlans {
-		payload := translation.Payload{bot.bundle, bot.Properties.Language, "StandupHandleNoTodayPlansMentioned", 0, nil}
+		payload := translation.Payload{bot.bundle, bot.properties.Language, "StandupHandleNoTodayPlansMentioned", 0, nil}
 		problem, err := translation.Translate(payload)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"TeamName":     bot.Properties.TeamName,
+				"TeamName":     bot.properties.TeamName,
 				"Language":     payload.Lang,
 				"MessageID":    payload.MessageID,
 				"Count":        payload.Count,
@@ -302,11 +302,11 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsProblem {
-		payload := translation.Payload{bot.bundle, bot.Properties.Language, "StandupHandleNoProblemsMentioned", 0, nil}
+		payload := translation.Payload{bot.bundle, bot.properties.Language, "StandupHandleNoProblemsMentioned", 0, nil}
 		problem, err := translation.Translate(payload)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"TeamName":     bot.Properties.TeamName,
+				"TeamName":     bot.properties.TeamName,
 				"Language":     payload.Lang,
 				"MessageID":    payload.MessageID,
 				"Count":        payload.Count,
@@ -494,8 +494,13 @@ func (bot *Bot) UpdateUsersList() {
 }
 
 func (bot *Bot) Suits(team string) bool {
-	if team == bot.Properties.TeamID || team == bot.Properties.TeamName {
+	if team == bot.properties.TeamID || team == bot.properties.TeamName {
 		return true
 	}
 	return false
+}
+
+func (bot *Bot) SetProperties(settings model.BotSettings) model.BotSettings {
+	bot.properties = settings
+	return bot.properties
 }
