@@ -29,13 +29,13 @@ func New(bundle *i18n.Bundle, db *storage.MySQL) *Comedian {
 
 //SetBots populates Comedian with bots
 func (comedian Comedian) SetBots() error {
-	controllPannels, err := comedian.db.GetControlPannels()
+	settings, err := comedian.db.GetAllBotSettings()
 	if err != nil {
 		return err
 	}
 
-	for _, cp := range controllPannels {
-		comedian.AddBot(cp)
+	for _, s := range settings {
+		comedian.AddBot(s)
 	}
 	return nil
 }
@@ -54,7 +54,11 @@ func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 		return err
 	}
 
-	bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
+	err = bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -75,8 +79,8 @@ func (comedian *Comedian) SelectBot(team string) (*botuser.Bot, error) {
 	return botuser, nil
 }
 
-func (comedian *Comedian) AddBot(cp model.ControlPannel) *botuser.Bot {
-	bot := botuser.New(comedian.bundle, cp, comedian.db)
+func (comedian *Comedian) AddBot(settings model.BotSettings) *botuser.Bot {
+	bot := botuser.New(comedian.bundle, settings, comedian.db)
 	comedian.botsChan <- bot
 	return bot
 }

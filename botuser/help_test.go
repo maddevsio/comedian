@@ -1,24 +1,16 @@
 package botuser
 
 import (
-	"log"
 	"testing"
 
 	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
-	"gitlab.com/team-monitoring/comedian/storage"
 	"golang.org/x/text/language"
 )
 
 func TestDisplayHelpText(t *testing.T) {
-	config, err := config.Get()
-	assert.NoError(t, err)
-
-	db, err := storage.NewMySQL(config)
-	assert.NoError(t, err)
 
 	testCases := []struct {
 		language      string
@@ -40,24 +32,23 @@ func TestDisplayHelpText(t *testing.T) {
 		{"ru_RU", "remove_deadline", "Чтобы удалить время сдачи стендапов в канале используйте команду `remove_deadline`."},
 	}
 
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+	_, err = bundle.LoadMessageFile("../active.ru.toml")
+	assert.NoError(t, err)
+
 	for _, tt := range testCases {
-		cp := model.ControlPannel{
+		properties := model.BotSettings{
 			Language: tt.language,
 		}
 
-		bundle := &i18n.Bundle{DefaultLanguage: language.English}
-		bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-
-		_, err := bundle.LoadMessageFile("../active.en.toml")
-		if err != nil {
-			log.Fatal(err)
+		bot := &Bot{
+			bundle:     bundle,
+			properties: properties,
 		}
-		_, err = bundle.LoadMessageFile("../active.ru.toml")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		bot := New(bundle, cp, db)
 		text := bot.DisplayHelpText(tt.command)
 		assert.Equal(t, tt.outputMessage, text)
 	}

@@ -35,21 +35,21 @@ func main() {
 
 	_, err := bundle.LoadMessageFile("active.en.toml")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Load active.en.toml message file failed: %v", err)
 	}
 	_, err = bundle.LoadMessageFile("active.ru.toml")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Load active.ru.toml message file failed: %v", err)
 	}
 
 	config, err := config.Get()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Get config failed: %v", err)
 	}
 
 	db, err := storage.NewMySQL(config)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("NewMySQL failed: %v", err)
 	}
 
 	comedian := comedianbot.New(bundle, db)
@@ -58,7 +58,7 @@ func main() {
 
 	api, err := api.NewComedianAPI(config, db, comedian)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("NewComedianAPI failed: %v", err)
 	}
 
 	api.Start()

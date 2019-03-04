@@ -49,27 +49,18 @@ type ChannelMember struct {
 	Created       time.Time `db:"created" json:"created"`
 }
 
-// ControlPannel used for updating and storing different configuration parameters
-type ControlPannel struct {
-	ID                        int64  `db:"id"`
-	NotifierInterval          int    `db:"notifier_interval" json:"notifier_interval" schema:"notifier_interval"`
-	ManagerSlackUserID        string `db:"manager_slack_user_id" json:"manager_slack_user_id" schema:"manager_slack_user_id"`
-	ReportingChannel          string `db:"reporting_channel" json:"reporting_channel" schema:"reporting_channel"`
-	IndividualReportingStatus bool   `db:"individual_reporting_status" json:"individual_reporting_status" schema:"individual_reporting_status"`
-	ReportTime                string `db:"report_time" json:"report_time" schema:"report_time"`
-	Language                  string `db:"language" json:"language" schema:"language"`
-	ReminderRepeatsMax        int    `db:"reminder_repeats_max" json:"reminder_repeats_max" schema:"reminder_repeats_max"`
-	ReminderTime              int64  `db:"reminder_time" json:"reminder_time" schema:"reminder_time"`
-	CollectorEnabled          bool   `db:"collector_enabled" json:"collector_enabled" schema:"collector_enabled"`
-	SprintReportStatus        bool   `db:"sprint_report_status" json:"sprint_report_status" schema:"sprint_report_status"`
-	SprintReportTime          string `db:"sprint_report_time" json:"sprint_report_time" schema:"sprint_report_time"`
-	SprintReportChannel       string `db:"sprint_report_channel" json:"sprint_report_channel" schema:"sprint_report_channel"`
-	SprintWeekdays            string `db:"sprint_weekdays" json:"sprint_weekdays" schema:"sprint_weekdays"`
-	TaskDoneStatus            string `db:"task_done_status" json:"task_done_status" schema:"task_done_status"`
-	AccessToken               string `db:"bot_access_token" json:"bot_access_token" schema:"bot_access_token"`
-	TeamID                    string `db:"team_id" json:"team_id" schema:"team_id"`
-	TeamName                  string `db:"team_name" json:"team_name" schema:"team_name"`
-	Password                  string `db:"password" json:"password" schema:"password"`
+// BotSettings is used for updating and storing different bot configuration parameters
+type BotSettings struct {
+	ID                 int64  `db:"id"`
+	UserID             string `db:"user_id"`
+	NotifierInterval   int    `db:"notifier_interval" json:"notifier_interval" schema:"notifier_interval"`
+	Language           string `db:"language" json:"language" schema:"language"`
+	ReminderRepeatsMax int    `db:"reminder_repeats_max" json:"reminder_repeats_max" schema:"reminder_repeats_max"`
+	ReminderTime       int64  `db:"reminder_time" json:"reminder_time" schema:"reminder_time"`
+	AccessToken        string `db:"bot_access_token" json:"bot_access_token" schema:"bot_access_token"`
+	TeamID             string `db:"team_id" json:"team_id" schema:"team_id"`
+	TeamName           string `db:"team_name" json:"team_name" schema:"team_name"`
+	Password           string `db:"password" json:"password" schema:"password"`
 }
 
 // FullSlackForm struct used for parsing full payload from slack

@@ -168,13 +168,6 @@ func TestCRUDChannelMember(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, su2.UserID, user.UserID)
 
-	chm, err := db.SelectChannelMember(su2.ID)
-	assert.NoError(t, err)
-	assert.Equal(t, su2.UserID, chm.UserID)
-
-	_, err = db.SelectChannelMember(345)
-	assert.Error(t, err)
-
 	users, err := db.ListChannelMembersByRole(su1.ChannelID, "developer")
 	assert.NoError(t, err)
 	assert.Equal(t, users[0].UserID, su1.UserID)

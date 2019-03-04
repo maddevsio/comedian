@@ -26,14 +26,14 @@
                 <div class="col-md-3 mb-2">
                 </div>
                 <div class="col-md-3 mb-2">
-                    <label for="login">Login</label>
+                    <label for="login">Login (name of your workspace) </label>
                     <input type="text" class="form-control" id="team_name" name="team_name" placeholder={{.team_name}} required>
                     <div class="invalid-feedback">
                             Login required.
                     </div>
                 </div>
                 <div class="col-md-3 mb-2">
-                    <label for="password">Password</label>
+                    <label for="password">Password*</label>
                     <input type="text" class="form-control" id="password" name="password" placeholder={{.password}} required>
                     <div class="invalid-feedback">
                             Password required.
@@ -41,6 +41,14 @@
                 </div>
                 <div class="col-md-3 mb-2">
                 </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-3 mb-3"></div>
+              <div class="col-md-6 mb-6">
+                <p class="text-center">* if this is your first time login, password is the same as login! Please, change your password after your first login to maintain security!</p>
+              </div>
+              <div class="col-md-3 mb-3"></div>
             </div>
             
             <div class="row">
