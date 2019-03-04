@@ -52,8 +52,8 @@ type ChannelMember struct {
 // BotSettings is used for updating and storing different bot configuration parameters
 type BotSettings struct {
 	ID                 int64  `db:"id"`
+	UserID             string `db:"user_id"`
 	NotifierInterval   int    `db:"notifier_interval" json:"notifier_interval" schema:"notifier_interval"`
-	ManagerSlackUserID string `db:"manager_slack_user_id" json:"manager_slack_user_id" schema:"manager_slack_user_id"`
 	Language           string `db:"language" json:"language" schema:"language"`
 	ReminderRepeatsMax int    `db:"reminder_repeats_max" json:"reminder_repeats_max" schema:"reminder_repeats_max"`
 	ReminderTime       int64  `db:"reminder_time" json:"reminder_time" schema:"reminder_time"`

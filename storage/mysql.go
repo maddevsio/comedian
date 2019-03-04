@@ -7,7 +7,6 @@ import (
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 )
@@ -141,13 +140,6 @@ func (m *MySQL) FindMembersByUserID(userID string) ([]model.ChannelMember, error
 	return u, err
 }
 
-//SelectChannelMember finds user in channel
-func (m *MySQL) SelectChannelMember(id int64) (model.ChannelMember, error) {
-	var u model.ChannelMember
-	err := m.conn.Get(&u, "SELECT * FROM `channel_members` WHERE id=?", id)
-	return u, err
-}
-
 //FindChannelMemberByUserName finds user in channel
 func (m *MySQL) FindChannelMemberByUserName(userName, channelID string) (model.ChannelMember, error) {
 	var u model.ChannelMember
@@ -175,7 +167,6 @@ func (m *MySQL) SubmittedStandupToday(userID, channelID string) bool {
 	var standup string
 	err := m.conn.Get(&standup, `SELECT comment FROM standups where channel_id=? and user_id=? and created between ? and ?`, channelID, userID, timeFrom, time.Now())
 	if err != nil {
-		logrus.Infof("User '%v' did not write standup in channel '%v' today yet \n", userID, channelID)
 		return false
 	}
 	return true
@@ -185,7 +176,7 @@ func (m *MySQL) SubmittedStandupToday(userID, channelID string) bool {
 func (m *MySQL) IsNonReporter(userID, channelID string, dateFrom, dateTo time.Time) (bool, error) {
 	var standup string
 	query := fmt.Sprintf("SELECT comment FROM standups where channel_id='%v' and user_id='%v' and created between '%v' and '%v'", channelID, userID, dateFrom, dateTo)
-	logrus.Infof("IsNonreporter Query: %s", query)
+
 	err := m.conn.Get(&standup, query)
 	if err != nil {
 		return false, err
@@ -427,7 +418,6 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 	if err != nil {
 		return false
 	}
-	logrus.Infof("Role in channel %v", role)
 	if role == "pm" {
 		return true
 	}
@@ -438,8 +428,8 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 func (m *MySQL) CreateBotSettings(token, teamID, teamName string) (model.BotSettings, error) {
 	var cp model.BotSettings
 	_, err := m.conn.Exec(
-		"INSERT INTO `bot_settings` (notifier_interval, manager_slack_user_id, language, reminder_repeats_max, reminder_time, bot_access_token, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		30, "", "en_US", 3, int64(10), token, teamID, teamName, teamName)
+		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		30, "en_US", 3, int64(10), token, teamID, teamName, teamName)
 	if err != nil {
 		return model.BotSettings{}, err
 	}
@@ -474,8 +464,8 @@ func (m *MySQL) GetBotSettings(teamName string) (model.BotSettings, error) {
 //UpdateBotSettings updates controll pannel
 func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `bot_settings` set notifier_interval=?, manager_slack_user_id=?, language=?, reminder_repeats_max=?, reminder_time=?, password=? where id=?",
-		settings.NotifierInterval, settings.ManagerSlackUserID, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.Password, settings.ID,
+		"UPDATE `bot_settings` set notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, password=? where id=?",
+		settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.Password, settings.ID,
 	)
 	if err != nil {
 		return settings, err

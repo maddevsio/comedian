@@ -47,15 +47,14 @@ func (api *ComedianAPI) renderControlPannel(c echo.Context) error {
 	}
 
 	data := map[string]interface{}{
-		"team_name":             settings.TeamName,
-		"password":              settings.Password,
-		"manager_slack_user_id": settings.ManagerSlackUserID,
-		"notifier_interval":     settings.NotifierInterval,
-		"reminder_time":         settings.ReminderTime,
-		"reminder_repeats_max":  settings.ReminderRepeatsMax,
-		"language":              settings.Language,
-		"languageSelectedRUS":   languageSelectedRUS,
-		"languageSelectedEN":    languageSelectedEN,
+		"team_name":            settings.TeamName,
+		"password":             settings.Password,
+		"notifier_interval":    settings.NotifierInterval,
+		"reminder_time":        settings.ReminderTime,
+		"reminder_repeats_max": settings.ReminderRepeatsMax,
+		"language":             settings.Language,
+		"languageSelectedRUS":  languageSelectedRUS,
+		"languageSelectedEN":   languageSelectedEN,
 	}
 	return c.Render(http.StatusOK, "admin", data)
 }
@@ -87,7 +86,6 @@ func (api *ComedianAPI) updateConfig(c echo.Context) error {
 
 	settings := model.BotSettings{
 		NotifierInterval:   ni,
-		ManagerSlackUserID: form.Get("manager_slack_user_id"),
 		Language:           form.Get("language"),
 		ReminderRepeatsMax: rrm,
 		ReminderTime:       rt,

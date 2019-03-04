@@ -2,7 +2,6 @@ package botuser
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -16,11 +15,9 @@ import (
 )
 
 var (
-	typeMessage         = ""
-	typeEditMessage     = "message_changed"
-	typeDeleteMessage   = "message_deleted"
-	oneStandupPerDay    string
-	couldNotSaveStandup string
+	typeMessage       = ""
+	typeEditMessage   = "message_changed"
+	typeDeleteMessage = "message_deleted"
 )
 
 const (
@@ -32,6 +29,7 @@ const (
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
 	slack      *slack.Client
+	rtm        *slack.RTM
 	properties model.BotSettings
 	db         *storage.MySQL
 	bundle     *i18n.Bundle
@@ -39,8 +37,8 @@ type Bot struct {
 
 func New(bundle *i18n.Bundle, settings model.BotSettings, db *storage.MySQL) *Bot {
 	bot := &Bot{}
-
 	bot.slack = slack.New(settings.AccessToken)
+	bot.rtm = bot.slack.NewRTM()
 	bot.properties = settings
 	bot.db = db
 
@@ -53,13 +51,12 @@ func (bot *Bot) Start() {
 	bot.UpdateUsersList()
 
 	go func(bot *Bot) {
-		rtm := bot.slack.NewRTM()
-		go rtm.ManageConnection()
-		for msg := range rtm.IncomingEvents {
+
+		go bot.rtm.ManageConnection()
+		for msg := range bot.rtm.IncomingEvents {
 			switch ev := msg.Data.(type) {
 			case *slack.MessageEvent:
-				botUserID := fmt.Sprintf("<@%s>", rtm.GetInfo().User.ID)
-				bot.HandleMessage(ev, botUserID)
+				bot.HandleMessage(ev)
 			case *slack.ConnectedEvent:
 				payload := translation.Payload{bot.bundle, bot.properties.Language, "Reconnected", 0, nil}
 				message, err := translation.Translate(payload)
@@ -74,6 +71,7 @@ func (bot *Bot) Start() {
 					continue
 				}
 				log.Info(message)
+				bot.properties.UserID = bot.rtm.GetInfo().User.ID
 			case *slack.MemberJoinedChannelEvent:
 				bot.HandleJoin(ev.Channel, ev.Team)
 			}
@@ -88,40 +86,17 @@ func (bot *Bot) Start() {
 	}(bot)
 }
 
-func (bot *Bot) HandleMessage(msg *slack.MessageEvent, botUserID string) {
-	var err error
-	payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-	oneStandupPerDay, err = translation.Translate(payload)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"TeamName":     bot.properties.TeamName,
-			"Language":     payload.Lang,
-			"MessageID":    payload.MessageID,
-			"Count":        payload.Count,
-			"TemplateData": payload.TemplateData,
-		}).Error("Failed to translate message!")
-	}
-	payload = translation.Payload{bot.bundle, bot.properties.Language, "CouldNotSaveStandup", 0, nil}
-	couldNotSaveStandup, err = translation.Translate(payload)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"TeamName":     bot.properties.TeamName,
-			"Language":     payload.Lang,
-			"MessageID":    payload.MessageID,
-			"Count":        payload.Count,
-			"TemplateData": payload.TemplateData,
-		}).Error("Failed to translate message!")
-	}
+func (bot *Bot) HandleMessage(msg *slack.MessageEvent) {
 
 	switch msg.SubType {
 	case typeMessage:
-		err := bot.HandleNewMessage(msg, botUserID)
+		err := bot.HandleNewMessage(msg)
 		if err != nil {
 			log.Error(err)
 		}
 
 	case typeEditMessage:
-		err := bot.HandleEditMessage(msg, botUserID)
+		err := bot.HandleEditMessage(msg)
 		if err != nil {
 			log.Error(err)
 		}
@@ -134,8 +109,8 @@ func (bot *Bot) HandleMessage(msg *slack.MessageEvent, botUserID string) {
 	}
 }
 
-func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent, botUserID string) error {
-	if !strings.Contains(msg.Msg.Text, botUserID) && !strings.Contains(msg.Msg.Text, "#standup") {
+func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
+	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) && !strings.Contains(msg.Msg.Text, "#standup") {
 		return errors.New("bot is not mentioned and no #standup in the message body")
 	}
 
@@ -146,6 +121,17 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent, botUserID string) erro
 	}
 
 	if bot.db.SubmittedStandupToday(msg.User, msg.Channel) {
+		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		oneStandupPerDay, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
 		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 		return errors.New("Fail to save message as standup. User already submitted standup today")
 	}
@@ -171,8 +157,8 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent, botUserID string) erro
 	return nil
 }
 
-func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent, botUserID string) error {
-	if !strings.Contains(msg.SubMessage.Text, botUserID) && !strings.Contains(msg.SubMessage.Text, "#standup") {
+func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
+	if !strings.Contains(msg.SubMessage.Text, bot.properties.UserID) && !strings.Contains(msg.SubMessage.Text, "#standup") {
 		return errors.New("bot is not mentioned and no #standup in the message body")
 	}
 
@@ -185,6 +171,17 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent, botUserID string) err
 		}
 
 		if bot.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
+			payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+			oneStandupPerDay, err := translation.Translate(payload)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"TeamName":     bot.properties.TeamName,
+					"Language":     payload.Lang,
+					"MessageID":    payload.MessageID,
+					"Count":        payload.Count,
+					"TemplateData": payload.TemplateData,
+				}).Error("Failed to translate message!")
+			}
 			bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
 			return errors.New("Fail to save edited message as standup. User already submitted standup today")
 		}
@@ -363,7 +360,6 @@ func (bot *Bot) HandleJoin(channelID, teamID string) {
 		return
 	}
 
-	log.Error("No such channel found! Will create one!")
 	channel, err := bot.slack.GetConversationInfo(channelID, true)
 	if err != nil {
 		log.Errorf("GetConversationInfo failed: %v", err)
