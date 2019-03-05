@@ -8,7 +8,7 @@ info:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
 host: "staging.comedian.maddevs.co"
-basePath: "/v2"
+basePath: "/v1"
 tags:
 - name: "standups"
   description: "Everything about standups"
@@ -24,6 +24,16 @@ schemes:
   - "https"
   - "http"
 paths:
+  /healthcheck:
+    get:
+      summary: "Check if Comedian is healthy"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+        503:
+          description: "service unavailable"
   /bots:
     get:
       tags:
@@ -45,7 +55,7 @@ paths:
       - "bots"
       summary: "Find bot by id"
       description: "Returns a single bot"
-      operationId: "getBotByid"
+      operationId: "getBotById"
       produces:
       - "application/json"
       parameters:
@@ -79,11 +89,6 @@ paths:
         description: "id of bot that needs to be updated"
         required: true
         type: "integer"
-      - name: "teamName"
-        in: "formData"
-        description: "Update Team Name of the bot"
-        required: true
-        type: "string"
       - name: "password"
         in: "formData"
         description: "Update password of the bot"
@@ -94,7 +99,7 @@ paths:
         description: "Update language of the bot"
         required: true
         type: "string"
-      - name: "notifierInterval"
+      - name: "notifier_interval"
         in: "formData"
         description: "Update notifier interval of the bot"
         required: true
@@ -102,14 +107,14 @@ paths:
         maximum: 59
         minimum: 1
         format: "int"
-      - name: "reminderTime"
+      - name: "reminder_time"
         in: "formData"
         description: "Update reminder time (in minutes) of the bot"
         required: true
         type: "integer"
         minimum: 1
         format: "int"
-      - name: "reminderRepeatMax"
+      - name: "reminder_repeat_max"
         in: "formData"
         description: "Update maximum reminder attempts of the bot"
         required: true
@@ -264,7 +269,7 @@ paths:
         description: "id of channel that needs to be updated"
         required: true
         type: "integer"
-      - name: "channelStandupTime"
+      - name: "channel_standup_time"
         in: "formData"
         description: "Update standuptime of the channel"
         required: true
@@ -291,7 +296,7 @@ paths:
         description: "id of channel that needs to be deleted"
         required: true
         type: "integer"
-      - name: "channelId"
+      - name: "channel_id"
         in: "path"
         description: "channel id to delete"
         required: true
@@ -360,13 +365,13 @@ paths:
         description: "id of channel that needs to be updated"
         required: true
         type: "integer"
-      - name: "standupTime"
+      - name: "member_standup_time"
         in: "formData"
-        description: "Update standuptime of the member"
+        description: "Update standup time of the member"
         required: true
         type: "integer"
         format: "bigint"
-      - name: "roleInChannel"
+      - name: "role_in_channel"
         in: "formData"
         description: "Update role in channel of the member"
         required: true
@@ -498,7 +503,7 @@ definitions:
     properties:
       id:
         type: "integer"
-      userName:
+      user_name:
         type: "string"
       userID:
         type: "string"
@@ -513,9 +518,9 @@ definitions:
         type: "integer"
       channelName:
         type: "string"
-      channelId:
+      channel_id:
         type: "string"
-      channelStandupTime:
+      channel_standup_time:
         type: "integer"
         format: "bigint"
 
@@ -526,7 +531,7 @@ definitions:
         type: "integer"
       userId:
         type: "string"
-      channelId:
+      channel_id:
         type: "string"
       standupTime:
         type: "integer"
@@ -543,7 +548,7 @@ definitions:
         type: "integer"
       userId:
         type: "string"
-      channelId:
+      channel_id:
         type: "string"
       comment:
         type: "string"
@@ -552,9 +557,9 @@ definitions:
         type: "string"
       modified:
         type: "string"
-      messageTs:
+      message_ts:
         type: "string"
-      teamId:
+      team_id:
         type: "string"
   Bot:
     type: "object"
@@ -565,16 +570,16 @@ definitions:
       id:
         type: "integer"
         format: "int64"
-      teamId:
+      team_id:
         type: "string"
         example: "TB9KS3E13"
-      teamName:
+      team_name:
         type: "string"
         example: "example"
       password:
         type: "string"
         example: "example"
-      botAccessToken:
+      bot_access_token:
         type: "string"
         example: "xoxb-383672116046-561658401305-mCNz8ybjHbD60L7gPUuPjYdp"
       language:
@@ -583,12 +588,12 @@ definitions:
         enum:
         - "ru_Ru"
         - "en_US"
-      notifierInterval:
+      notifier_interval:
         type: "integer"
         format: "int64"
-      reminderRepeatMax:
+      reminder_repeat_max:
         type: "integer"
         format: "int64"
-      reminderTime:
+      reminder_time:
         type: "integer"
         format: "int64"

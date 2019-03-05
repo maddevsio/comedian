@@ -48,6 +48,34 @@ func NewComedianAPI(config config.Config, db *storage.MySQL, comedian *comedianb
 		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/templates/*.html")),
 	}
 
+	restAPI := echo.Group("/v1")
+
+	restAPI.GET("/healthcheck", api.healthcheck)
+
+	restAPI.GET("/standups", api.healthcheck)
+	restAPI.GET("/standups/:id", api.healthcheck)
+	restAPI.POST("/standups/:id", api.healthcheck)
+	restAPI.DELETE("/standups/:id", api.healthcheck)
+
+	restAPI.GET("/users", api.healthcheck)
+	restAPI.GET("/users/:id", api.healthcheck)
+	restAPI.POST("/users/:id", api.healthcheck)
+
+	restAPI.GET("/channels", api.healthcheck)
+	restAPI.GET("/channels/:id", api.healthcheck)
+	restAPI.POST("/channels/:id", api.healthcheck)
+	restAPI.DELETE("/channels/:id", api.healthcheck)
+
+	restAPI.GET("/members", api.healthcheck)
+	restAPI.GET("/members/:id", api.healthcheck)
+	restAPI.POST("/members/:id", api.healthcheck)
+	restAPI.DELETE("/members/:id", api.healthcheck)
+
+	restAPI.GET("/bots", api.getBots)
+	restAPI.GET("/bots/:id", api.getBotByID)
+	restAPI.POST("/bots/:id", api.healthcheck)
+	restAPI.DELETE("/bots/:id", api.healthcheck)
+
 	echo.Renderer = t
 	echo.GET("/login", api.renderLoginPage)
 	echo.POST("/event", api.handleEvent)

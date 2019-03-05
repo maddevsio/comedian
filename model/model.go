@@ -13,8 +13,8 @@ type Standup struct {
 	TeamID    string    `db:"team_id" json:"team_id"`
 	Created   time.Time `db:"created" json:"created"`
 	Modified  time.Time `db:"modified" json:"modified"`
-	ChannelID string    `db:"channel_id" json:"channelId"`
-	UserID    string    `db:"user_id" json:"userId"`
+	ChannelID string    `db:"channel_id" json:"channel_id"`
+	UserID    string    `db:"user_id" json:"user_id"`
 	Comment   string    `db:"comment" json:"comment"`
 	MessageTS string    `db:"message_ts" json:"message_ts"`
 }
@@ -35,7 +35,7 @@ type Channel struct {
 	TeamID      string `db:"team_id" json:"team_id"`
 	ChannelName string `db:"channel_name" json:"channel_name"`
 	ChannelID   string `db:"channel_id" json:"channel_id"`
-	StandupTime int64  `db:"channel_standup_time" json:"time"`
+	StandupTime int64  `db:"channel_standup_time" json:"channel_standup_time"`
 }
 
 // ChannelMember model used for serialization/deserialization stored ChannelMembers
@@ -45,22 +45,22 @@ type ChannelMember struct {
 	UserID        string    `db:"user_id" json:"user_id"`
 	ChannelID     string    `db:"channel_id" json:"channel_id"`
 	RoleInChannel string    `db:"role_in_channel" json:"role_in_channel"`
-	StandupTime   int64     `db:"standup_time" json:"time"`
+	StandupTime   int64     `db:"standup_time" json:"member_standup_time"`
 	Created       time.Time `db:"created" json:"created"`
 }
 
 // BotSettings is used for updating and storing different bot configuration parameters
 type BotSettings struct {
-	ID                 int64  `db:"id"`
-	UserID             string `db:"user_id"`
-	NotifierInterval   int    `db:"notifier_interval" json:"notifier_interval" schema:"notifier_interval"`
-	Language           string `db:"language" json:"language" schema:"language"`
-	ReminderRepeatsMax int    `db:"reminder_repeats_max" json:"reminder_repeats_max" schema:"reminder_repeats_max"`
-	ReminderTime       int64  `db:"reminder_time" json:"reminder_time" schema:"reminder_time"`
-	AccessToken        string `db:"bot_access_token" json:"bot_access_token" schema:"bot_access_token"`
-	TeamID             string `db:"team_id" json:"team_id" schema:"team_id"`
-	TeamName           string `db:"team_name" json:"team_name" schema:"team_name"`
-	Password           string `db:"password" json:"password" schema:"password"`
+	ID                 int64  `db:"id" json:"id"`
+	UserID             string `db:"user_id" json:"user_id"`
+	NotifierInterval   int    `db:"notifier_interval" json:"notifier_interval" `
+	Language           string `db:"language" json:"language" `
+	ReminderRepeatsMax int    `db:"reminder_repeats_max" json:"reminder_repeats_max" `
+	ReminderTime       int64  `db:"reminder_time" json:"reminder_time" `
+	AccessToken        string `db:"bot_access_token" json:"bot_access_token" `
+	TeamID             string `db:"team_id" json:"team_id" `
+	TeamName           string `db:"team_name" json:"team_name" `
+	Password           string `db:"password" json:"password" `
 }
 
 // FullSlackForm struct used for parsing full payload from slack
@@ -75,6 +75,7 @@ type FullSlackForm struct {
 	TeamDomain  string `schema:"team_domain"`
 }
 
+// ServiceEvent event coming from services
 type ServiceEvent struct {
 	TeamName    string             `json:"team_name"`
 	Channel     string             `json:"channel"`

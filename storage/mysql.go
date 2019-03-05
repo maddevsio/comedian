@@ -426,42 +426,52 @@ func (m *MySQL) UserIsPMForProject(userID, channelID string) bool {
 
 //CreateBotSettings creates bot properties for the newly created bot
 func (m *MySQL) CreateBotSettings(token, teamID, teamName string) (model.BotSettings, error) {
-	var cp model.BotSettings
+	var bs model.BotSettings
 	_, err := m.conn.Exec(
 		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		30, "en_US", 3, int64(10), token, teamID, teamName, teamName)
 	if err != nil {
 		return model.BotSettings{}, err
 	}
-	cp, err = m.GetBotSettings(teamName)
+	bs, err = m.GetBotSettings(teamName)
 	if err != nil {
-		return cp, err
+		return bs, err
 	}
 
-	return cp, nil
+	return bs, nil
 }
 
-//GetAllBotSettings returns all controll pannels
+//GetAllBotSettings returns all bots
 func (m *MySQL) GetAllBotSettings() ([]model.BotSettings, error) {
-	var cp []model.BotSettings
-	err := m.conn.Select(&cp, "SELECT * FROM `bot_settings`")
+	var bs []model.BotSettings
+	err := m.conn.Select(&bs, "SELECT * FROM `bot_settings`")
 	if err != nil {
-		return cp, err
+		return bs, err
 	}
-	return cp, nil
+	return bs, nil
 }
 
-//GetBotSettings returns a particular controll pannel
+//GetBotSettings returns a particular bot
 func (m *MySQL) GetBotSettings(teamName string) (model.BotSettings, error) {
-	var cp model.BotSettings
-	err := m.conn.Get(&cp, "SELECT * FROM `bot_settings` where team_name=?", teamName)
+	var bs model.BotSettings
+	err := m.conn.Get(&bs, "SELECT * FROM `bot_settings` where team_name=?", teamName)
 	if err != nil {
-		return cp, err
+		return bs, err
 	}
-	return cp, nil
+	return bs, nil
 }
 
-//UpdateBotSettings updates controll pannel
+//GetBotSettingsByID returns a particular bot
+func (m *MySQL) GetBotSettingsByID(id int64) (model.BotSettings, error) {
+	var bs model.BotSettings
+	err := m.conn.Get(&bs, "SELECT * FROM `bot_settings` where id=?", id)
+	if err != nil {
+		return bs, err
+	}
+	return bs, nil
+}
+
+//UpdateBotSettings updates bot
 func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
 	_, err := m.conn.Exec(
 		"UPDATE `bot_settings` set notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, password=? where id=?",
@@ -478,7 +488,7 @@ func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings
 	return BotSettings, err
 }
 
-//DeleteBotSettings deletes controll pannel
+//DeleteBotSettings deletes bot
 func (m *MySQL) DeleteBotSettings(teamID string) error {
 	_, err := m.conn.Exec("DELETE FROM `bot_settings` WHERE team_id=?", teamID)
 	return err
