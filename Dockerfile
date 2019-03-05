@@ -18,8 +18,8 @@ ENV DOCKERIZE_VERSION v0.6.1
 RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
     && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
     && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-COPY botuser/active.en.toml /botuser/
-COPY botuser/active.ru.toml /botuser/  
+COPY active.en.toml  /
+COPY active.ru.toml  /  
 COPY --from=0  /go/src/gitlab.com/team-monitoring/comedian/comedian /
 COPY templates/index.html /src/gitlab.com/team-monitoring/comedian/templates/
 COPY templates/login.html /src/gitlab.com/team-monitoring/comedian/templates/
