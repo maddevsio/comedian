@@ -73,8 +73,8 @@ func NewComedianAPI(config config.Config, db *storage.MySQL, comedian *comedianb
 
 	restAPI.GET("/bots", api.getBots)
 	restAPI.GET("/bots/:id", api.getBotByID)
-	restAPI.POST("/bots/:id", api.healthcheck)
-	restAPI.DELETE("/bots/:id", api.healthcheck)
+	restAPI.POST("/bots/:id", api.updateBotByID)
+	restAPI.DELETE("/bots/:id", api.deleteBot)
 
 	echo.Renderer = t
 	echo.GET("/login", api.renderLoginPage)

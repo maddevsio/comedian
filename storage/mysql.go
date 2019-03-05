@@ -488,6 +488,12 @@ func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings
 	return BotSettings, err
 }
 
+//DeleteBotByID deletes bot
+func (m *MySQL) DeleteBotByID(id int64) error {
+	_, err := m.conn.Exec("DELETE FROM `bot_settings` WHERE id=?", id)
+	return err
+}
+
 //DeleteBotSettings deletes bot
 func (m *MySQL) DeleteBotSettings(teamID string) error {
 	_, err := m.conn.Exec("DELETE FROM `bot_settings` WHERE team_id=?", teamID)

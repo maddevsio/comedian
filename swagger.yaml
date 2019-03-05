@@ -55,7 +55,7 @@ paths:
       - "bots"
       summary: "Find bot by id"
       description: "Returns a single bot"
-      operationId: "getBotById"
+      operationId: "getBotByID"
       produces:
       - "application/json"
       parameters:
@@ -78,7 +78,7 @@ paths:
       - "bots"
       summary: "Updates a bot in the database with form data"
       description: ""
-      operationId: "updateBotWithForm"
+      operationId: "updateBotByID"
       consumes:
       - "application/x-www-form-urlencoded"
       produces:
@@ -133,7 +133,7 @@ paths:
       - "bots"
       summary: "Deletes a bot"
       description: "Turns off the bot in someone's slack"
-      operationId: "deletebot"
+      operationId: "deleteBot"
       produces:
       - "application/json"
       parameters:
