@@ -193,6 +193,11 @@ paths:
       produces:
       - "application/json"
       parameters:
+      - name: "id"
+        in: "path"
+        description: "id of user to return"
+        required: true
+        type: "integer"
       - name: "role"
         in: "formData"
         description: "User role"
@@ -281,6 +286,11 @@ paths:
       produces:
       - "application/json"
       parameters:
+      - name: "id"
+        in: "path"
+        description: "id of channel that needs to be deleted"
+        required: true
+        type: "integer"
       - name: "channelId"
         in: "path"
         description: "channel id to delete"
@@ -339,7 +349,7 @@ paths:
       tags:
       - "members"
       summary: "Updates a member in the database with form data"
-      operationId: "updateChannelWithForm"
+      operationId: "updateMemberWithForm"
       consumes:
       - "application/x-www-form-urlencoded"
       produces:
@@ -496,8 +506,6 @@ definitions:
         type: "string"
       realName:
         type: "string"
-      id:
-        type: "string"
   Channel:
     type: "object"
     properties:
@@ -510,8 +518,7 @@ definitions:
       channelStandupTime:
         type: "integer"
         format: "bigint"
-      id:
-        type: "string"
+
   Member:
     type: "object"
     properties:
@@ -525,11 +532,10 @@ definitions:
         type: "integer"
         format: "bigint"
       created:
-        type: "datetime"
+        type: "string"
       roleInChannel:
         type: "string"
-      id:
-        type: "string"
+
   Standup:
     type: "object"
     properties:
@@ -543,9 +549,9 @@ definitions:
         type: "string"
         format: "text"
       created:
-        type: "datetime"
+        type: "string"
       modified:
-        type: "datetime"
+        type: "string"
       messageTs:
         type: "string"
       teamId:
