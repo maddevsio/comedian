@@ -38,8 +38,8 @@ type Channel struct {
 	StandupTime int64  `db:"channel_standup_time" json:"channel_standup_time"`
 }
 
-// ChannelMember model used for serialization/deserialization stored ChannelMembers
-type ChannelMember struct {
+// Standuper model used for serialization/deserialization stored ChannelMembers
+type Standuper struct {
 	ID            int64     `db:"id" json:"id"`
 	TeamID        string    `db:"team_id" json:"team_id"`
 	UserID        string    `db:"user_id" json:"user_id"`
@@ -115,8 +115,8 @@ func (c Standup) Validate() error {
 }
 
 // Validate validates StandupUser struct
-func (c ChannelMember) Validate() error {
-	if c.UserID == "" && c.ChannelID == "" {
+func (s Standuper) Validate() error {
+	if s.UserID == "" && s.ChannelID == "" {
 		err := errors.New("User/Channel cannot be empty")
 		return err
 	}

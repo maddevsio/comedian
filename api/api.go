@@ -52,28 +52,28 @@ func NewComedianAPI(config config.Config, db *storage.MySQL, comedian *comedianb
 
 	restAPI.GET("/healthcheck", api.healthcheck)
 
-	restAPI.GET("/standups", api.healthcheck)
-	restAPI.GET("/standups/:id", api.healthcheck)
-	restAPI.POST("/standups/:id", api.healthcheck)
-	restAPI.DELETE("/standups/:id", api.healthcheck)
+	restAPI.GET("/standups", api.listStandups)
+	restAPI.GET("/standups/:id", api.getStandup)
+	restAPI.POST("/standups/:id", api.updateStandup)
+	restAPI.DELETE("/standups/:id", api.deleteStandup)
 
-	restAPI.GET("/users", api.healthcheck)
-	restAPI.GET("/users/:id", api.healthcheck)
-	restAPI.POST("/users/:id", api.healthcheck)
+	restAPI.GET("/users", api.listUsers)
+	restAPI.GET("/users/:id", api.getUser)
+	restAPI.POST("/users/:id", api.updateUser)
 
-	restAPI.GET("/channels", api.healthcheck)
-	restAPI.GET("/channels/:id", api.healthcheck)
-	restAPI.POST("/channels/:id", api.healthcheck)
-	restAPI.DELETE("/channels/:id", api.healthcheck)
+	restAPI.GET("/channels", api.listChannels)
+	restAPI.GET("/channels/:id", api.getChannel)
+	restAPI.POST("/channels/:id", api.updateChannel)
+	restAPI.DELETE("/channels/:id", api.deleteChannel)
 
-	restAPI.GET("/members", api.healthcheck)
-	restAPI.GET("/members/:id", api.healthcheck)
-	restAPI.POST("/members/:id", api.healthcheck)
-	restAPI.DELETE("/members/:id", api.healthcheck)
+	restAPI.GET("/standupers", api.listStandupers)
+	restAPI.GET("/standupers/:id", api.getStanduper)
+	restAPI.POST("/standupers/:id", api.updateStanduper)
+	restAPI.DELETE("/standupers/:id", api.deleteStanduper)
 
-	restAPI.GET("/bots", api.getBots)
-	restAPI.GET("/bots/:id", api.getBotByID)
-	restAPI.POST("/bots/:id", api.updateBotByID)
+	restAPI.GET("/bots", api.listBots)
+	restAPI.GET("/bots/:id", api.getBot)
+	restAPI.POST("/bots/:id", api.updateBot)
 	restAPI.DELETE("/bots/:id", api.deleteBot)
 
 	echo.Renderer = t

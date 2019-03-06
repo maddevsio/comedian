@@ -363,6 +363,7 @@ func (bot *Bot) HandleJoin(channelID, teamID string) {
 	channel, err := bot.slack.GetConversationInfo(channelID, true)
 	if err != nil {
 		log.Errorf("GetConversationInfo failed: %v", err)
+		return
 	}
 	createdChannel, err := bot.db.CreateChannel(model.Channel{
 		TeamID:      teamID,
@@ -479,7 +480,7 @@ func (bot *Bot) UpdateUsersList() {
 				continue
 			}
 			for _, member := range cm {
-				bot.db.DeleteChannelMember(member.UserID, member.ChannelID)
+				bot.db.DeleteStanduper(member.ID)
 			}
 		}
 	}

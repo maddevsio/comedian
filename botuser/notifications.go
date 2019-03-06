@@ -191,7 +191,7 @@ func (bot *Bot) notifyNotAll(channel model.Channel, repeats *int) error {
 }
 
 // getNonReporters returns a list of standupers that did not write standups
-func (bot *Bot) getCurrentDayNonReporters(channelID string) ([]model.ChannelMember, error) {
+func (bot *Bot) getCurrentDayNonReporters(channelID string) ([]model.Standuper, error) {
 	timeFrom := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
 	nonReporters, err := bot.db.GetNonReporters(channelID, timeFrom, time.Now())
 	if err != nil && err != errors.New("no rows in result set") {

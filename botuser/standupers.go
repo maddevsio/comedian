@@ -154,13 +154,16 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 		}
 
 		if err != nil {
-			chanMember, _ := bot.db.CreateChannelMember(model.ChannelMember{
+			standuper, err := bot.db.CreateStanduper(model.Standuper{
 				TeamID:        bot.properties.TeamID,
 				UserID:        userID,
 				ChannelID:     channel,
 				RoleInChannel: role,
 			})
-			log.Infof("ChannelMember created! ID:%v", chanMember.ID)
+			if err != nil {
+				log.Error(err)
+			}
+			log.Infof("ChannelMember created! ID:%v", standuper.ID)
 		}
 
 		added = append(added, u)
@@ -473,14 +476,14 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 		}
 		userID, _ := utils.SplitUser(u)
 
-		user, err := bot.db.FindChannelMemberByUserID(userID, channelID)
+		member, err := bot.db.FindChannelMemberByUserID(userID, channelID)
 		if err != nil {
 			log.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
 			failed = append(failed, u)
 			continue
 		}
 
-		bot.db.DeleteChannelMember(user.UserID, channelID)
+		bot.db.DeleteStanduper(member.ID)
 		deleted = append(deleted, u)
 	}
 
