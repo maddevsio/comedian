@@ -61,7 +61,7 @@ func (api *ComedianAPI) deleteBot(c echo.Context) error {
 		return c.JSON(http.StatusNotAcceptable, err)
 	}
 
-	err = api.db.DeleteBotByID(id)
+	err = api.db.DeleteBotSettingsByID(id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}

@@ -62,12 +62,12 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 		return somethingWentWrong
 	}
 
-	channelMembers, err := bot.db.ListChannelMembers(channelID)
+	standupers, err := bot.db.ListChannelStandupers(channelID)
 	if err != nil {
-		log.Errorf("BotAPI: ListChannelMembers failed: %v\n", err)
+		log.Errorf("BotAPI: ListChannelStandupers failed: %v\n", err)
 	}
 
-	if len(channelMembers) == 0 {
+	if len(standupers) == 0 {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "AddStandupTimeNoUsers", 0, map[string]interface{}{"timeInt": r.Time.Unix()}}
 		addStandupTimeNoUsers, err := translation.Translate(payload)
 		if err != nil {
@@ -147,7 +147,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 		return somethingWentWrong
 
 	}
-	st, err := bot.db.ListChannelMembers(channelID)
+	st, err := bot.db.ListChannelStandupers(channelID)
 	if len(st) != 0 {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "RemoveStandupTimeWithUsers", 0, nil}
 		removeStandupTimeWithUsers, err := translation.Translate(payload)

@@ -56,16 +56,6 @@ func (m *MySQL) SelectChannel(channelID string) (model.Channel, error) {
 	return c, err
 }
 
-// GetTeamChannels selects Channel entry from database with specific team_id
-func (m *MySQL) GetTeamChannels(teamID string) ([]model.Channel, error) {
-	var c []model.Channel
-	err := m.conn.Select(&c, "SELECT * FROM `channels` where team_id=?", teamID)
-	if err != nil {
-		return c, err
-	}
-	return c, err
-}
-
 // GetChannel selects Channel entry from database with specific id
 func (m *MySQL) GetChannel(id int64) ([]model.Channel, error) {
 	var c []model.Channel

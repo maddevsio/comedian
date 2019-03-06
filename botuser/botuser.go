@@ -24,6 +24,7 @@ const (
 	adminAccess       = 2
 	pmAccess          = 3
 	regularUserAccess = 4
+	noAccess          = 0
 )
 
 // Bot struct used for storing and communicating with slack api
@@ -120,7 +121,8 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		return errors.New("Fail to save message as standup. Standup is not complete")
 	}
 
-	if bot.db.SubmittedStandupToday(msg.User, msg.Channel) {
+	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
+	if standuper.SubmittedStandupToday {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay, err := translation.Translate(payload)
 		if err != nil {
@@ -170,7 +172,8 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 			return errors.New("Fail to save edited message as standup. Standup is not complete")
 		}
 
-		if bot.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
+		standuper, err := bot.db.FindStansuperByUserID(msg.SubMessage.User, msg.Channel)
+		if standuper.SubmittedStandupToday {
 			payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 			oneStandupPerDay, err := translation.Translate(payload)
 			if err != nil {
@@ -408,15 +411,22 @@ func (bot *Bot) ImplementCommands(form model.FullSlackForm) string {
 func (bot *Bot) getAccessLevel(userID, channelID string) (int, error) {
 	user, err := bot.db.SelectUser(userID)
 	if err != nil {
-		return 0, err
+		return noAccess, err
 	}
 	if user.IsAdmin() {
-		return 2, nil
+		return adminAccess, nil
 	}
-	if bot.db.UserIsPMForProject(userID, channelID) {
-		return 3, nil
+
+	standuper, err := bot.db.FindStansuperByUserID(userID, channelID)
+	if err != nil {
+		return regularUserAccess, nil
 	}
-	return 4, nil
+
+	if standuper.IsPM() {
+		return pmAccess, nil
+	}
+
+	return regularUserAccess, nil
 }
 
 //UpdateUsersList updates users in workspace
@@ -475,12 +485,14 @@ func (bot *Bot) UpdateUsersList() {
 
 		if user.Deleted {
 			bot.db.DeleteUser(u.ID)
-			cm, err := bot.db.FindMembersByUserID(u.UserID)
+			standupers, err := bot.db.ListStandupers()
 			if err != nil {
 				continue
 			}
-			for _, member := range cm {
-				bot.db.DeleteStanduper(member.ID)
+			for _, standuper := range standupers {
+				if u.UserID == standuper.UserID {
+					bot.db.DeleteStanduper(standuper.ID)
+				}
 			}
 		}
 	}

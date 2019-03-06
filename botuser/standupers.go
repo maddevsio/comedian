@@ -59,6 +59,11 @@ func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
 			return accessAtLeastPM
 		}
 		return bot.addMembers(members, "developer", channelID)
+	case "designer", "дизайнер":
+		if accessLevel > pmAccess {
+			return accessAtLeastPM
+		}
+		return bot.addMembers(members, "designer", channelID)
 	case "pm", "пм":
 		if accessLevel > adminAccess {
 			return accessAtLeastAdmin
@@ -75,6 +80,8 @@ func (bot *Bot) showCommand(channelID, params string) string {
 		return bot.listAdmins()
 	case "developer", "разработчик", "":
 		return bot.listMembers(channelID, "developer")
+	case "designer", "дизайнер":
+		return bot.listMembers(channelID, "designer")
 	case "pm", "пм":
 		return bot.listMembers(channelID, "pm")
 	default:
@@ -146,7 +153,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := bot.db.FindChannelMemberByUserID(userID, channel)
+		user, err := bot.db.FindStansuperByUserID(userID, channel)
 
 		if user.UserID == userID && user.ChannelID == channel {
 			exist = append(exist, u)
@@ -162,6 +169,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 			})
 			if err != nil {
 				log.Error(err)
+				continue
 			}
 			log.Infof("ChannelMember created! ID:%v", standuper.ID)
 		}
@@ -355,13 +363,15 @@ func (bot *Bot) addAdmins(users []string) string {
 
 func (bot *Bot) listMembers(channelID, role string) string {
 
-	members, err := bot.db.ListChannelMembersByRole(channelID, role)
+	standupers, err := bot.db.ListChannelStandupers(channelID)
 	if err != nil {
 		return fmt.Sprintf("failed to list members :%v\n", err)
 	}
 	var userIDs []string
-	for _, user := range members {
-		userIDs = append(userIDs, "<@"+user.UserID+">")
+	for _, standuper := range standupers {
+		if standuper.RoleInChannel == role {
+			userIDs = append(userIDs, "<@"+standuper.UserID+">")
+		}
 	}
 	if role == "pm" {
 		if len(userIDs) < 1 {
@@ -394,6 +404,7 @@ func (bot *Bot) listMembers(channelID, role string) string {
 		return listPMs
 
 	}
+
 	if len(userIDs) < 1 {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "ListNoStandupers", 0, nil}
 		listNoStandupers, err := translation.Translate(payload)
@@ -409,6 +420,7 @@ func (bot *Bot) listMembers(channelID, role string) string {
 		return listNoStandupers
 
 	}
+
 	payload := translation.Payload{bot.bundle, bot.properties.Language, "ListStandupers", len(userIDs), map[string]interface{}{"standuper": userIDs[0], "standupers": strings.Join(userIDs, ", ")}}
 	listStandupers, err := translation.Translate(payload)
 	if err != nil {
@@ -425,13 +437,15 @@ func (bot *Bot) listMembers(channelID, role string) string {
 
 func (bot *Bot) listAdmins() string {
 
-	admins, err := bot.db.ListAdmins()
+	users, err := bot.db.ListUsers()
 	if err != nil {
 		return fmt.Sprintf("failed to list users :%v\n", err)
 	}
 	var userNames []string
-	for _, admin := range admins {
-		userNames = append(userNames, "<@"+admin.UserName+">")
+	for _, user := range users {
+		if user.IsAdmin() {
+			userNames = append(userNames, "<@"+user.UserName+">")
+		}
 	}
 	if len(userNames) < 1 {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "ListNoAdmins", 0, nil}
@@ -459,7 +473,6 @@ func (bot *Bot) listAdmins() string {
 		}).Error("Failed to translate help message!")
 	}
 	return listAdmins
-
 }
 
 func (bot *Bot) deleteMembers(members []string, channelID string) string {
@@ -476,9 +489,9 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 		}
 		userID, _ := utils.SplitUser(u)
 
-		member, err := bot.db.FindChannelMemberByUserID(userID, channelID)
+		member, err := bot.db.FindStansuperByUserID(userID, channelID)
 		if err != nil {
-			log.Errorf("rest: FindChannelMemberByUserID failed: %v\n", err)
+			log.Errorf("rest: FindStansuperByUserID failed: %v\n", err)
 			failed = append(failed, u)
 			continue
 		}

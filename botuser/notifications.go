@@ -17,7 +17,7 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 	if int(t.Weekday()) == 6 || int(t.Weekday()) == 0 {
 		return
 	}
-	channels, err := bot.db.GetTeamChannels(bot.properties.TeamID)
+	channels, err := bot.db.ListChannels()
 	if err != nil {
 		log.Errorf("notifier: ListAllStandupTime failed: %v\n", err)
 		return
@@ -25,6 +25,10 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 
 	// For each standup time, if standup time is now, start reminder
 	for _, channel := range channels {
+		if channel.TeamID != bot.properties.TeamID {
+			continue
+		}
+
 		if channel.StandupTime == 0 {
 			continue
 		}
@@ -45,18 +49,21 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 
 // SendWarning reminds users in chat about upcoming standups
 func (bot *Bot) SendWarning(channelID string) error {
-	nonReporters, err := bot.getCurrentDayNonReporters(channelID)
+	standupers, err := bot.db.ListStandupers()
 	if err != nil {
 		return err
 	}
 
-	if len(nonReporters) == 0 {
+	if len(standupers) == 0 {
 		return nil
 	}
 
 	nonReportersIDs := []string{}
-	for _, user := range nonReporters {
-		nonReportersIDs = append(nonReportersIDs, "<@"+user.UserID+">")
+	for _, standuper := range standupers {
+		if standuper.ChannelID == channelID && !standuper.SubmittedStandupToday {
+			nonReportersIDs = append(nonReportersIDs, "<@"+standuper.UserID+">")
+		}
+
 	}
 
 	payload := translation.Payload{bot.bundle, bot.properties.Language, "Minutes", int(bot.properties.ReminderTime), map[string]interface{}{"time": bot.properties.ReminderTime}}
@@ -71,7 +78,7 @@ func (bot *Bot) SendWarning(channelID string) error {
 		}).Error("Failed to translate message!")
 	}
 
-	payload = translation.Payload{bot.bundle, bot.properties.Language, "WarnNonReporters", len(nonReporters), map[string]interface{}{"user": nonReportersIDs[0], "users": strings.Join(nonReportersIDs, ", "), "minutes": minutes}}
+	payload = translation.Payload{bot.bundle, bot.properties.Language, "WarnNonReporters", len(nonReportersIDs), map[string]interface{}{"user": nonReportersIDs[0], "users": strings.Join(nonReportersIDs, ", "), "minutes": minutes}}
 	warnNonReporters, err := translation.Translate(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -93,20 +100,20 @@ func (bot *Bot) SendWarning(channelID string) error {
 
 //SendChannelNotification starts standup reminders and direct reminders to users
 func (bot *Bot) SendChannelNotification(channelID string) {
-	members, err := bot.db.ListChannelMembers(channelID)
+	standupers, err := bot.db.ListChannelStandupers(channelID)
 	if err != nil {
-		log.Errorf("notifier: bot.db.ListChannelMembers failed: %v\n", err)
+		log.Errorf("notifier: bot.db.ListChannelStandupers failed: %v\n", err)
 		return
 	}
-	if len(members) == 0 {
-		log.Info("No standupers in this channel\n")
-		return
+
+	nonReporters := []string{}
+	for _, standuper := range standupers {
+		if standuper.ChannelID == channelID && !standuper.SubmittedStandupToday {
+			nonReporters = append(nonReporters, fmt.Sprintf("<@%v>", standuper.UserID))
+		}
+
 	}
-	nonReporters, err := bot.getCurrentDayNonReporters(channelID)
-	if err != nil {
-		log.Errorf("notifier: n.getCurrentDayNonReporters failed: %v\n", err)
-		return
-	}
+
 	if len(nonReporters) == 0 {
 		log.Info("len(nonReporters) == 0")
 		return
@@ -121,7 +128,7 @@ func (bot *Bot) SendChannelNotification(channelID string) {
 	var repeats int
 
 	notifyNotAll := func() error {
-		err := bot.notifyNotAll(channel, &repeats)
+		err := bot.notifyNotAll(channel, nonReporters, &repeats)
 		if err != nil {
 			return err
 		}
@@ -135,23 +142,11 @@ func (bot *Bot) SendChannelNotification(channelID string) {
 	}
 }
 
-func (bot *Bot) notifyNotAll(channel model.Channel, repeats *int) error {
-
-	nonReporters, err := bot.getCurrentDayNonReporters(channel.ChannelID)
-	if err != nil {
-		log.Errorf("notifier: n.getCurrentDayNonReporters failed: %v\n", err)
-		return err
-	}
-
-	nonReportersSlackIDs := []string{}
-	for _, nonReporter := range nonReporters {
-		nonReportersSlackIDs = append(nonReportersSlackIDs, fmt.Sprintf("<@%v>", nonReporter.UserID))
-	}
-	log.Infof("notifier: Notifier non reporters: %v", nonReporters)
+func (bot *Bot) notifyNotAll(channel model.Channel, nonReporters []string, repeats *int) error {
 
 	if *repeats < bot.properties.ReminderRepeatsMax && len(nonReporters) > 0 {
 
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "TagNonReporters", len(nonReporters), map[string]interface{}{"user": nonReportersSlackIDs[0], "users": strings.Join(nonReportersSlackIDs, ", ")}}
+		payload := translation.Payload{bot.bundle, bot.properties.Language, "TagNonReporters", len(nonReporters), map[string]interface{}{"user": nonReporters[0], "users": strings.Join(nonReporters, ", ")}}
 		tagNonReporters, err := translation.Translate(payload)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -168,35 +163,6 @@ func (bot *Bot) notifyNotAll(channel model.Channel, repeats *int) error {
 		err = errors.New("Continue backoff")
 		return err
 	}
-	// othervise Direct Message non reporters
-	for _, nonReporter := range nonReporters {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "DirectMessage", len(nonReporters), map[string]interface{}{"user": nonReporter.UserID, "channelID": channel.ChannelID, "channelName": channel.ChannelName}}
-		directMessage, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-		}
 
-		err = bot.SendUserMessage(nonReporter.UserID, directMessage)
-		if err != nil {
-			log.Errorf("notifier: s.SendMessage failed: %v\n", err)
-		}
-	}
 	return nil
-}
-
-// getNonReporters returns a list of standupers that did not write standups
-func (bot *Bot) getCurrentDayNonReporters(channelID string) ([]model.Standuper, error) {
-	timeFrom := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
-	nonReporters, err := bot.db.GetNonReporters(channelID, timeFrom, time.Now())
-	if err != nil && err != errors.New("no rows in result set") {
-		log.Errorf("notifier: GetNonReporters failed: %v\n", err)
-		return nil, err
-	}
-	return nonReporters, nil
 }

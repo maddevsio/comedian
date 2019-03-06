@@ -40,13 +40,13 @@ type Channel struct {
 
 // Standuper model used for serialization/deserialization stored ChannelMembers
 type Standuper struct {
-	ID            int64     `db:"id" json:"id"`
-	TeamID        string    `db:"team_id" json:"team_id"`
-	UserID        string    `db:"user_id" json:"user_id"`
-	ChannelID     string    `db:"channel_id" json:"channel_id"`
-	RoleInChannel string    `db:"role_in_channel" json:"role_in_channel"`
-	StandupTime   int64     `db:"standup_time" json:"member_standup_time"`
-	Created       time.Time `db:"created" json:"created"`
+	ID                    int64     `db:"id" json:"id"`
+	TeamID                string    `db:"team_id" json:"team_id"`
+	UserID                string    `db:"user_id" json:"user_id"`
+	ChannelID             string    `db:"channel_id" json:"channel_id"`
+	RoleInChannel         string    `db:"role_in_channel" json:"role_in_channel"`
+	SubmittedStandupToday bool      `db:"submitted_standup_today" json:"submitted_standup_today"`
+	Created               time.Time `db:"created" json:"created"`
 }
 
 // BotSettings is used for updating and storing different bot configuration parameters
@@ -123,7 +123,17 @@ func (s Standuper) Validate() error {
 	return nil
 }
 
-//IsAdmin returns user status
+//IsAdmin returns true if user has admin role
 func (u User) IsAdmin() bool {
 	return u.Role == "admin"
+}
+
+//IsPM returns true if standuper has pm status
+func (s Standuper) IsPM() bool {
+	return s.RoleInChannel == "pm"
+}
+
+//IsDesigner returns true if standuper has designer status
+func (s Standuper) IsDesigner() bool {
+	return s.RoleInChannel == "designer"
 }

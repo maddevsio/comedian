@@ -63,22 +63,6 @@ func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error
 	return s, nil
 }
 
-// SelectStandupsByChannelIDForPeriod selects standup entrys by channel ID and time period from database
-func (m *MySQL) SelectStandupsByChannelIDForPeriod(channelID string, dateStart, dateEnd time.Time) ([]model.Standup, error) {
-	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standups` WHERE channel_id=? AND created BETWEEN ? AND ?",
-		channelID, dateStart, dateEnd)
-	return items, err
-}
-
-// SelectStandupsFiltered selects standup entrys by channel ID and time period from database
-func (m *MySQL) SelectStandupsFiltered(userID, channelID string, dateStart, dateEnd time.Time) (model.Standup, error) {
-	items := model.Standup{}
-	err := m.conn.Get(&items, "SELECT * FROM `standups` WHERE channel_id=? AND user_id =? AND created BETWEEN ? AND ? limit 1",
-		channelID, userID, dateStart, dateEnd)
-	return items, err
-}
-
 // ListStandups returns array of standup entries from database
 func (m *MySQL) ListStandups() ([]model.Standup, error) {
 	items := []model.Standup{}

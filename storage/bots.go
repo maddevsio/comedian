@@ -34,7 +34,8 @@ func (m *MySQL) GetAllBotSettings() ([]model.BotSettings, error) {
 	return bs, nil
 }
 
-//GetBotSettings returns a particular bot
+//GetBotSettingsByTeamName returns a particular bot
+// When dashboard is ready - DELETE!
 func (m *MySQL) GetBotSettingsByTeamName(teamName string) (model.BotSettings, error) {
 	var bs model.BotSettings
 	err := m.conn.Get(&bs, "SELECT * FROM `bot_settings` where team_name=?", teamName)
@@ -44,7 +45,7 @@ func (m *MySQL) GetBotSettingsByTeamName(teamName string) (model.BotSettings, er
 	return bs, nil
 }
 
-//GetBotSettingsByID returns a particular bot
+//GetBotSettings returns a particular bot
 func (m *MySQL) GetBotSettings(id int64) (model.BotSettings, error) {
 	var bs model.BotSettings
 	err := m.conn.Get(&bs, "SELECT * FROM `bot_settings` where id=?", id)
@@ -71,8 +72,8 @@ func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings
 	return BotSettings, err
 }
 
-//DeleteBotByID deletes bot
-func (m *MySQL) DeleteBotByID(id int64) error {
+//DeleteBotSettingsByID deletes bot
+func (m *MySQL) DeleteBotSettingsByID(id int64) error {
 	_, err := m.conn.Exec("DELETE FROM `bot_settings` WHERE id=?", id)
 	return err
 }
