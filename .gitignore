@@ -6,4 +6,4 @@ comedian
 /docker/
 ./docker-deploy/configs/nginx/certs/*
 ./docker-deploy/.env
-vendor
+/vendor
