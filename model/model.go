@@ -164,6 +164,11 @@ func (ch Channel) Validate() error {
 
 // Validate validates Standuper struct
 func (s Standuper) Validate() error {
+	if s.TeamID == "" {
+		err := errors.New("team ID cannot be empty")
+		return err
+	}
+
 	if s.UserID == "" {
 		err := errors.New("user ID cannot be empty")
 		return err
@@ -174,15 +179,16 @@ func (s Standuper) Validate() error {
 		return err
 	}
 
-	if s.TeamID == "" {
-		err := errors.New("team ID cannot be empty")
-		return err
-	}
 	return nil
 }
 
 // Validate validates User struct
 func (u User) Validate() error {
+	if u.TeamID == "" {
+		err := errors.New("team ID cannot be empty")
+		return err
+	}
+
 	if u.UserName == "" {
 		err := errors.New("user name cannot be empty")
 		return err
@@ -193,10 +199,6 @@ func (u User) Validate() error {
 		return err
 	}
 
-	if u.TeamID == "" {
-		err := errors.New("team ID cannot be empty")
-		return err
-	}
 	return nil
 }
 
