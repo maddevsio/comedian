@@ -47,9 +47,9 @@ func main() {
 		log.Fatalf("Get config failed: %v", err)
 	}
 
-	db, err := storage.NewMySQL(config)
+	db, err := storage.NewDB(config)
 	if err != nil {
-		log.Fatalf("NewMySQL failed: %v", err)
+		log.Fatalf("NewDB failed: %v", err)
 	}
 
 	comedian := comedianbot.New(bundle, db)

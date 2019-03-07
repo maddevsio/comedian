@@ -9,20 +9,19 @@ import (
 	"gitlab.com/team-monitoring/comedian/config"
 )
 
-// MySQL provides api for work with mysql database
-type MySQL struct {
-	conn *sqlx.DB
+// DB provides api for work with DB database
+type DB struct {
+	*sqlx.DB
 }
 
-// NewMySQL creates a new instance of database API
-func NewMySQL(c *config.Config) (*MySQL, error) {
-	conn, err := sqlx.Open("mysql", c.DatabaseURL)
+// NewDB creates a new instance of database API
+func NewDB(c *config.Config) (*DB, error) {
+	con, err := sqlx.Connect("mysql", c.DatabaseURL)
 	if err != nil {
 		return nil, err
 	}
-	conn.SetConnMaxLifetime(time.Second)
-	m := &MySQL{}
-	m.conn = conn
+	con.SetConnMaxLifetime(time.Second)
+	db := &DB{con}
 
-	return m, nil
+	return db, nil
 }

@@ -8,7 +8,7 @@ import (
 )
 
 //CreateBotSettings creates bot properties for the newly created bot
-func (m *MySQL) CreateBotSettings(token, teamID, teamName string) (model.BotSettings, error) {
+func (m *DB) CreateBotSettings(token, teamID, teamName string) (model.BotSettings, error) {
 	bs := model.BotSettings{
 		NotifierInterval:   30,
 		Language:           "en_US",
@@ -25,7 +25,7 @@ func (m *MySQL) CreateBotSettings(token, teamID, teamName string) (model.BotSett
 		return bs, err
 	}
 
-	_, err = m.conn.Exec(
+	_, err = m.DB.Exec(
 		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.TeamID, bs.TeamName, bs.Password)
 	if err != nil {
@@ -41,9 +41,9 @@ func (m *MySQL) CreateBotSettings(token, teamID, teamName string) (model.BotSett
 }
 
 //GetAllBotSettings returns all bots
-func (m *MySQL) GetAllBotSettings() ([]model.BotSettings, error) {
+func (m *DB) GetAllBotSettings() ([]model.BotSettings, error) {
 	var bs []model.BotSettings
-	err := m.conn.Select(&bs, "SELECT * FROM `bot_settings`")
+	err := m.DB.Select(&bs, "SELECT * FROM `bot_settings`")
 	if err != nil {
 		return bs, err
 	}
@@ -52,9 +52,9 @@ func (m *MySQL) GetAllBotSettings() ([]model.BotSettings, error) {
 
 //GetBotSettingsByTeamName returns a particular bot
 // When dashboard is ready - DELETE!
-func (m *MySQL) GetBotSettingsByTeamName(teamName string) (model.BotSettings, error) {
+func (m *DB) GetBotSettingsByTeamName(teamName string) (model.BotSettings, error) {
 	var bs model.BotSettings
-	err := m.conn.Get(&bs, "SELECT * FROM `bot_settings` where team_name=?", teamName)
+	err := m.DB.Get(&bs, "SELECT * FROM `bot_settings` where team_name=?", teamName)
 	if err != nil {
 		return bs, err
 	}
@@ -62,9 +62,9 @@ func (m *MySQL) GetBotSettingsByTeamName(teamName string) (model.BotSettings, er
 }
 
 //GetBotSettings returns a particular bot
-func (m *MySQL) GetBotSettings(id int64) (model.BotSettings, error) {
+func (m *DB) GetBotSettings(id int64) (model.BotSettings, error) {
 	var bs model.BotSettings
-	err := m.conn.Get(&bs, "SELECT * FROM `bot_settings` where id=?", id)
+	err := m.DB.Get(&bs, "SELECT * FROM `bot_settings` where id=?", id)
 	if err != nil {
 		return bs, err
 	}
@@ -72,8 +72,8 @@ func (m *MySQL) GetBotSettings(id int64) (model.BotSettings, error) {
 }
 
 //UpdateBotSettings updates bot
-func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
-	_, err := m.conn.Exec(
+func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
+	_, err := m.DB.Exec(
 		"UPDATE `bot_settings` set notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, password=? where id=?",
 		settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.Password, settings.ID,
 	)
@@ -81,7 +81,7 @@ func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings
 		return settings, err
 	}
 	var bs model.BotSettings
-	err = m.conn.Get(&bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
+	err = m.DB.Get(&bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
 	if err != nil {
 		return settings, err
 	}
@@ -89,13 +89,13 @@ func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings
 }
 
 //DeleteBotSettingsByID deletes bot
-func (m *MySQL) DeleteBotSettingsByID(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `bot_settings` WHERE id=?", id)
+func (m *DB) DeleteBotSettingsByID(id int64) error {
+	_, err := m.DB.Exec("DELETE FROM `bot_settings` WHERE id=?", id)
 	return err
 }
 
 //DeleteBotSettings deletes bot
-func (m *MySQL) DeleteBotSettings(teamID string) error {
-	_, err := m.conn.Exec("DELETE FROM `bot_settings` WHERE team_id=?", teamID)
+func (m *DB) DeleteBotSettings(teamID string) error {
+	_, err := m.DB.Exec("DELETE FROM `bot_settings` WHERE team_id=?", teamID)
 	return err
 }

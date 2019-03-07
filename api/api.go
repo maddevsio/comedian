@@ -22,7 +22,7 @@ import (
 type ComedianAPI struct {
 	echo     *echo.Echo
 	comedian *comedianbot.Comedian
-	db       *storage.MySQL
+	db       storage.Storage
 	config   *config.Config
 }
 
@@ -32,8 +32,12 @@ type Event struct {
 	Type      string `json:"type"`
 }
 
+type RESTAPI struct {
+	db storage.Storage
+}
+
 // NewComedianAPI creates API for Slack commands
-func NewComedianAPI(config *config.Config, db *storage.MySQL, comedian *comedianbot.Comedian) (ComedianAPI, error) {
+func NewComedianAPI(config *config.Config, db storage.Storage, comedian *comedianbot.Comedian) (ComedianAPI, error) {
 
 	echo := echo.New()
 
@@ -48,33 +52,35 @@ func NewComedianAPI(config *config.Config, db *storage.MySQL, comedian *comedian
 		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/templates/*.html")),
 	}
 
-	restAPI := echo.Group("/v1")
+	v1 := echo.Group("/v1")
 
-	restAPI.GET("/healthcheck", api.healthcheck)
+	restAPI := RESTAPI{api.db}
 
-	restAPI.GET("/standups", api.listStandups)
-	restAPI.GET("/standups/:id", api.getStandup)
-	restAPI.POST("/standups/:id", api.updateStandup)
-	restAPI.DELETE("/standups/:id", api.deleteStandup)
+	v1.GET("/healthcheck", restAPI.healthcheck)
 
-	restAPI.GET("/users", api.listUsers)
-	restAPI.GET("/users/:id", api.getUser)
-	restAPI.POST("/users/:id", api.updateUser)
+	v1.GET("/standups", restAPI.listStandups)
+	v1.GET("/standups/:id", restAPI.getStandup)
+	v1.POST("/standups/:id", restAPI.updateStandup)
+	v1.DELETE("/standups/:id", restAPI.deleteStandup)
 
-	restAPI.GET("/channels", api.listChannels)
-	restAPI.GET("/channels/:id", api.getChannel)
-	restAPI.POST("/channels/:id", api.updateChannel)
-	restAPI.DELETE("/channels/:id", api.deleteChannel)
+	v1.GET("/users", restAPI.listUsers)
+	v1.GET("/users/:id", restAPI.getUser)
+	v1.POST("/users/:id", restAPI.updateUser)
 
-	restAPI.GET("/standupers", api.listStandupers)
-	restAPI.GET("/standupers/:id", api.getStanduper)
-	restAPI.POST("/standupers/:id", api.updateStanduper)
-	restAPI.DELETE("/standupers/:id", api.deleteStanduper)
+	v1.GET("/channels", restAPI.listChannels)
+	v1.GET("/channels/:id", restAPI.getChannel)
+	v1.POST("/channels/:id", restAPI.updateChannel)
+	v1.DELETE("/channels/:id", restAPI.deleteChannel)
 
-	restAPI.GET("/bots", api.listBots)
-	restAPI.GET("/bots/:id", api.getBot)
-	restAPI.POST("/bots/:id", api.updateBot)
-	restAPI.DELETE("/bots/:id", api.deleteBot)
+	v1.GET("/standupers", restAPI.listStandupers)
+	v1.GET("/standupers/:id", restAPI.getStanduper)
+	v1.POST("/standupers/:id", restAPI.updateStanduper)
+	v1.DELETE("/standupers/:id", restAPI.deleteStanduper)
+
+	v1.GET("/bots", restAPI.listBots)
+	v1.GET("/bots/:id", restAPI.getBot)
+	v1.POST("/bots/:id", restAPI.updateBot)
+	v1.DELETE("/bots/:id", restAPI.deleteBot)
 
 	echo.Renderer = t
 	echo.GET("/login", api.renderLoginPage)

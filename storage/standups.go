@@ -9,12 +9,12 @@ import (
 )
 
 // CreateStandup creates standup entry in database
-func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
+func (m *DB) CreateStandup(s model.Standup) (model.Standup, error) {
 	err := s.Validate()
 	if err != nil {
 		return s, err
 	}
-	res, err := m.conn.Exec(
+	res, err := m.DB.Exec(
 		"INSERT INTO `standups` (team_id, created, modified, comment, channel_id, user_id, message_ts) VALUES (?,?, ?, ?, ?, ?, ?)",
 		s.TeamID, time.Now().UTC(), time.Now().UTC(), s.Comment, s.ChannelID, s.UserID, s.MessageTS,
 	)
@@ -31,8 +31,8 @@ func (m *MySQL) CreateStandup(s model.Standup) (model.Standup, error) {
 }
 
 // UpdateStandup updates standup entry in database
-func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
-	_, err := m.conn.Exec(
+func (m *DB) UpdateStandup(s model.Standup) (model.Standup, error) {
+	_, err := m.DB.Exec(
 		"UPDATE `standups` SET modified=?, comment=?, message_ts=? WHERE id=?",
 		time.Now().UTC(), s.Comment, s.MessageTS, s.ID,
 	)
@@ -40,13 +40,13 @@ func (m *MySQL) UpdateStandup(s model.Standup) (model.Standup, error) {
 		return s, err
 	}
 	var i model.Standup
-	err = m.conn.Get(&i, "SELECT * FROM `standups` WHERE id=?", s.ID)
+	err = m.DB.Get(&i, "SELECT * FROM `standups` WHERE id=?", s.ID)
 	return i, err
 }
 
-func (m *MySQL) GetStandup(id int64) (model.Standup, error) {
+func (m *DB) GetStandup(id int64) (model.Standup, error) {
 	var s model.Standup
-	err := m.conn.Get(&s, "SELECT * FROM `standups` WHERE id=?", id)
+	err := m.DB.Get(&s, "SELECT * FROM `standups` WHERE id=?", id)
 	if err != nil {
 		return s, err
 	}
@@ -54,9 +54,9 @@ func (m *MySQL) GetStandup(id int64) (model.Standup, error) {
 }
 
 // SelectStandupByMessageTS selects standup entry from database filtered by MessageTS parameter
-func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
+func (m *DB) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
 	var s model.Standup
-	err := m.conn.Get(&s, "SELECT * FROM `standups` WHERE message_ts=?", messageTS)
+	err := m.DB.Get(&s, "SELECT * FROM `standups` WHERE message_ts=?", messageTS)
 	if err != nil {
 		return s, err
 	}
@@ -64,14 +64,14 @@ func (m *MySQL) SelectStandupByMessageTS(messageTS string) (model.Standup, error
 }
 
 // ListStandups returns array of standup entries from database
-func (m *MySQL) ListStandups() ([]model.Standup, error) {
+func (m *DB) ListStandups() ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.conn.Select(&items, "SELECT * FROM `standups`")
+	err := m.DB.Select(&items, "SELECT * FROM `standups`")
 	return items, err
 }
 
 // DeleteStandup deletes standup entry from database
-func (m *MySQL) DeleteStandup(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `standups` WHERE id=?", id)
+func (m *DB) DeleteStandup(id int64) error {
+	_, err := m.DB.Exec("DELETE FROM `standups` WHERE id=?", id)
 	return err
 }

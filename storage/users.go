@@ -8,12 +8,12 @@ import (
 )
 
 // CreateUser creates standup entry in database
-func (m *MySQL) CreateUser(u model.User) (model.User, error) {
+func (m *DB) CreateUser(u model.User) (model.User, error) {
 	err := u.Validate()
 	if err != nil {
 		return u, err
 	}
-	res, err := m.conn.Exec(
+	res, err := m.DB.Exec(
 		"INSERT INTO `users` (team_id, user_name, user_id, role, real_name) VALUES (?, ?, ?, ?, ?)",
 		u.TeamID, u.UserName, u.UserID, u.Role, u.RealName,
 	)
@@ -30,9 +30,9 @@ func (m *MySQL) CreateUser(u model.User) (model.User, error) {
 }
 
 // SelectUser selects User entry from database
-func (m *MySQL) SelectUser(userID string) (model.User, error) {
+func (m *DB) SelectUser(userID string) (model.User, error) {
 	var c model.User
-	err := m.conn.Get(&c, "SELECT * FROM `users` WHERE user_id=?", userID)
+	err := m.DB.Get(&c, "SELECT * FROM `users` WHERE user_id=?", userID)
 	if err != nil {
 		return c, err
 	}
@@ -40,9 +40,9 @@ func (m *MySQL) SelectUser(userID string) (model.User, error) {
 }
 
 // GetUser selects User entry from database
-func (m *MySQL) GetUser(id int64) (model.User, error) {
+func (m *DB) GetUser(id int64) (model.User, error) {
 	var c model.User
-	err := m.conn.Get(&c, "SELECT * FROM `users` WHERE id=?", id)
+	err := m.DB.Get(&c, "SELECT * FROM `users` WHERE id=?", id)
 	if err != nil {
 		return c, err
 	}
@@ -50,8 +50,8 @@ func (m *MySQL) GetUser(id int64) (model.User, error) {
 }
 
 // UpdateUser updates User entry in database
-func (m *MySQL) UpdateUser(u model.User) (model.User, error) {
-	_, err := m.conn.Exec(
+func (m *DB) UpdateUser(u model.User) (model.User, error) {
+	_, err := m.DB.Exec(
 		"UPDATE `users` SET role=?, real_name=? WHERE id=?",
 		u.Role, u.RealName, u.ID,
 	)
@@ -59,14 +59,14 @@ func (m *MySQL) UpdateUser(u model.User) (model.User, error) {
 		return u, err
 	}
 	var i model.User
-	err = m.conn.Get(&i, "SELECT * FROM `users` WHERE id=?", u.ID)
+	err = m.DB.Get(&i, "SELECT * FROM `users` WHERE id=?", u.ID)
 	return i, err
 }
 
 // ListUsers selects Users from database
-func (m *MySQL) ListUsers() ([]model.User, error) {
+func (m *DB) ListUsers() ([]model.User, error) {
 	var u []model.User
-	err := m.conn.Select(&u, "SELECT * FROM `users`")
+	err := m.DB.Select(&u, "SELECT * FROM `users`")
 	if err != nil {
 		return u, err
 	}
@@ -74,7 +74,7 @@ func (m *MySQL) ListUsers() ([]model.User, error) {
 }
 
 // DeleteUser deletes User entry from database
-func (m *MySQL) DeleteUser(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `users` WHERE id=?", id)
+func (m *DB) DeleteUser(id int64) error {
+	_, err := m.DB.Exec("DELETE FROM `users` WHERE id=?", id)
 	return err
 }

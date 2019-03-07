@@ -32,11 +32,11 @@ type Bot struct {
 	slack      *slack.Client
 	rtm        *slack.RTM
 	properties model.BotSettings
-	db         *storage.MySQL
+	db         storage.Storage
 	bundle     *i18n.Bundle
 }
 
-func New(bundle *i18n.Bundle, settings model.BotSettings, db *storage.MySQL) *Bot {
+func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *Bot {
 	bot := &Bot{}
 	bot.slack = slack.New(settings.AccessToken)
 	bot.rtm = bot.slack.NewRTM()
