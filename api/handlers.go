@@ -48,7 +48,7 @@ func (api *RESTAPI) updateBot(c echo.Context) error {
 
 	res, err := api.db.UpdateBotSettings(bot)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -63,7 +63,7 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 
 	err = api.db.DeleteBotSettingsByID(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, "deleted")
