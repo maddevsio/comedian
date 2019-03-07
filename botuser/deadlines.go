@@ -44,14 +44,17 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 
 	r, err := w.Parse(params, time.Now())
 	if err != nil {
+		log.Error("Failed to parse params", err)
 		return somethingWentWrong
 	}
 	if r == nil {
+		log.Error("r is nil", err)
 		return somethingWentWrong
 	}
 
 	channel, err := bot.db.SelectChannel(channelID)
 	if err != nil {
+		log.Error("failed to select channel", err)
 		return somethingWentWrong
 	}
 
@@ -59,6 +62,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 
 	_, err = bot.db.UpdateChannel(channel)
 	if err != nil {
+		log.Error("failed to update channel", err)
 		return somethingWentWrong
 	}
 

@@ -23,7 +23,7 @@ type ComedianAPI struct {
 	echo     *echo.Echo
 	comedian *comedianbot.Comedian
 	db       *storage.MySQL
-	config   config.Config
+	config   *config.Config
 }
 
 type Event struct {
@@ -33,7 +33,7 @@ type Event struct {
 }
 
 // NewComedianAPI creates API for Slack commands
-func NewComedianAPI(config config.Config, db *storage.MySQL, comedian *comedianbot.Comedian) (ComedianAPI, error) {
+func NewComedianAPI(config *config.Config, db *storage.MySQL, comedian *comedianbot.Comedian) (ComedianAPI, error) {
 
 	echo := echo.New()
 

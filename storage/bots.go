@@ -9,13 +9,29 @@ import (
 
 //CreateBotSettings creates bot properties for the newly created bot
 func (m *MySQL) CreateBotSettings(token, teamID, teamName string) (model.BotSettings, error) {
-	var bs model.BotSettings
-	_, err := m.conn.Exec(
-		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		30, "en_US", 3, int64(10), token, teamID, teamName, teamName)
-	if err != nil {
-		return model.BotSettings{}, err
+	bs := model.BotSettings{
+		NotifierInterval:   30,
+		Language:           "en_US",
+		ReminderRepeatsMax: 3,
+		ReminderTime:       int64(10),
+		AccessToken:        token,
+		TeamID:             teamID,
+		TeamName:           teamName,
+		Password:           teamName,
 	}
+
+	err := bs.Validate()
+	if err != nil {
+		return bs, err
+	}
+
+	_, err = m.conn.Exec(
+		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.TeamID, bs.TeamName, bs.Password)
+	if err != nil {
+		return bs, err
+	}
+
 	bs, err = m.GetBotSettingsByTeamName(teamName)
 	if err != nil {
 		return bs, err
@@ -64,12 +80,12 @@ func (m *MySQL) UpdateBotSettings(settings model.BotSettings) (model.BotSettings
 	if err != nil {
 		return settings, err
 	}
-	var BotSettings model.BotSettings
-	err = m.conn.Get(&settings, "SELECT * FROM `bot_settings`")
+	var bs model.BotSettings
+	err = m.conn.Get(&bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
 	if err != nil {
 		return settings, err
 	}
-	return BotSettings, err
+	return bs, err
 }
 
 //DeleteBotSettingsByID deletes bot

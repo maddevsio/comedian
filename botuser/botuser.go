@@ -147,7 +147,6 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 	if err != nil {
 		return err
 	}
-
 	log.Infof("Standup created #id:%v\n", standup.ID)
 	item := slack.ItemRef{
 		Channel:   msg.Channel,
@@ -156,6 +155,11 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		Comment:   "",
 	}
 	bot.slack.AddReaction("heavy_check_mark", item)
+	standuper.SubmittedStandupToday = true
+	_, err = bot.db.UpdateStanduper(standuper)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -209,6 +213,11 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 			Comment:   "",
 		}
 		bot.slack.AddReaction("heavy_check_mark", item)
+		standuper.SubmittedStandupToday = true
+		_, err = bot.db.UpdateStanduper(standuper)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -469,6 +478,7 @@ func (bot *Bot) UpdateUsersList() {
 				continue
 			}
 		}
+
 		if !user.Deleted {
 			u.UserName = user.Name
 			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
@@ -496,14 +506,12 @@ func (bot *Bot) UpdateUsersList() {
 			}
 		}
 	}
+
 	log.Info("Users list updated successfully")
 }
 
 func (bot *Bot) Suits(team string) bool {
-	if team == bot.properties.TeamID || team == bot.properties.TeamName {
-		return true
-	}
-	return false
+	return team == bot.properties.TeamID || team == bot.properties.TeamName
 }
 
 func (bot *Bot) SetProperties(settings model.BotSettings) model.BotSettings {

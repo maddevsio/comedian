@@ -14,9 +14,9 @@ type Config struct {
 }
 
 // Get method processes env variables and fills Config struct
-func Get() (Config, error) {
-	var c Config
-	err := envconfig.Process("comedian", &c)
+func Get() (*Config, error) {
+	c := &Config{}
+	err := envconfig.Process("comedian", c)
 	if err != nil {
 		return c, err
 	}

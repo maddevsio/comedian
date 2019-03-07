@@ -15,7 +15,7 @@ type MySQL struct {
 }
 
 // NewMySQL creates a new instance of database API
-func NewMySQL(c config.Config) (*MySQL, error) {
+func NewMySQL(c *config.Config) (*MySQL, error) {
 	conn, err := sqlx.Open("mysql", c.DatabaseURL)
 	if err != nil {
 		return nil, err

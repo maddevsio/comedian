@@ -115,6 +115,46 @@ func (c Standup) Validate() error {
 }
 
 // Validate validates StandupUser struct
+func (bs BotSettings) Validate() error {
+	if bs.TeamID == "" {
+		err := errors.New("team ID cannot be empty")
+		return err
+	}
+
+	if bs.TeamName == "" {
+		err := errors.New("team name cannot be empty")
+		return err
+	}
+
+	if bs.AccessToken == "" {
+		err := errors.New("accessToken cannot be empty")
+		return err
+	}
+
+	return nil
+}
+
+// Validate validates StandupUser struct
+func (ch Channel) Validate() error {
+	if ch.TeamID == "" {
+		err := errors.New("team ID cannot be empty")
+		return err
+	}
+
+	if ch.ChannelName == "" {
+		err := errors.New("channel name cannot be empty")
+		return err
+	}
+
+	if ch.ChannelID == "" {
+		err := errors.New("channel ID cannot be empty")
+		return err
+	}
+
+	return nil
+}
+
+// Validate validates StandupUser struct
 func (s Standuper) Validate() error {
 	if s.UserID == "" && s.ChannelID == "" {
 		err := errors.New("User/Channel cannot be empty")

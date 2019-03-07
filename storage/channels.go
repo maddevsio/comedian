@@ -8,21 +8,25 @@ import (
 )
 
 // CreateChannel creates standup entry in database
-func (m *MySQL) CreateChannel(c model.Channel) (model.Channel, error) {
+func (m *MySQL) CreateChannel(ch model.Channel) (model.Channel, error) {
+	err := ch.Validate()
+	if err != nil {
+		return ch, err
+	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `channels` (team_id, channel_name, channel_id, channel_standup_time) VALUES (?, ?, ?, ?)",
-		c.TeamID, c.ChannelName, c.ChannelID, 0,
+		ch.TeamID, ch.ChannelName, ch.ChannelID, 0,
 	)
 	if err != nil {
-		return c, err
+		return ch, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return c, err
+		return ch, err
 	}
-	c.ID = id
+	ch.ID = id
 
-	return c, nil
+	return ch, nil
 }
 
 // UpdateChannel updates Channel entry in database
@@ -57,9 +61,9 @@ func (m *MySQL) SelectChannel(channelID string) (model.Channel, error) {
 }
 
 // GetChannel selects Channel entry from database with specific id
-func (m *MySQL) GetChannel(id int64) ([]model.Channel, error) {
-	var c []model.Channel
-	err := m.conn.Select(&c, "SELECT * FROM `channels` where id=?", id)
+func (m *MySQL) GetChannel(id int64) (model.Channel, error) {
+	var c model.Channel
+	err := m.conn.Get(&c, "SELECT * FROM `channels` where id=?", id)
 	if err != nil {
 		return c, err
 	}
