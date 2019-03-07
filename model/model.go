@@ -102,19 +102,27 @@ type AttachmentItem struct {
 }
 
 // Validate validates Standup struct
-func (c Standup) Validate() error {
-	if c.UserID == "" {
-		err := errors.New("User cannot be empty")
+func (st Standup) Validate() error {
+	if st.TeamID == "" {
+		err := errors.New("team ID cannot be empty")
 		return err
 	}
-	if c.ChannelID == "" {
-		err := errors.New("Channel cannot be empty")
+	if st.UserID == "" {
+		err := errors.New("user ID cannot be empty")
+		return err
+	}
+	if st.ChannelID == "" {
+		err := errors.New("channel ID cannot be empty")
+		return err
+	}
+	if st.MessageTS == "" {
+		err := errors.New("MessageTS cannot be empty")
 		return err
 	}
 	return nil
 }
 
-// Validate validates StandupUser struct
+// Validate validates BotSettings struct
 func (bs BotSettings) Validate() error {
 	if bs.TeamID == "" {
 		err := errors.New("team ID cannot be empty")
@@ -134,7 +142,7 @@ func (bs BotSettings) Validate() error {
 	return nil
 }
 
-// Validate validates StandupUser struct
+// Validate validates Channel struct
 func (ch Channel) Validate() error {
 	if ch.TeamID == "" {
 		err := errors.New("team ID cannot be empty")
@@ -154,10 +162,39 @@ func (ch Channel) Validate() error {
 	return nil
 }
 
-// Validate validates StandupUser struct
+// Validate validates Standuper struct
 func (s Standuper) Validate() error {
-	if s.UserID == "" && s.ChannelID == "" {
-		err := errors.New("User/Channel cannot be empty")
+	if s.UserID == "" {
+		err := errors.New("user ID cannot be empty")
+		return err
+	}
+
+	if s.ChannelID == "" {
+		err := errors.New("channel ID cannot be empty")
+		return err
+	}
+
+	if s.TeamID == "" {
+		err := errors.New("team ID cannot be empty")
+		return err
+	}
+	return nil
+}
+
+// Validate validates User struct
+func (u User) Validate() error {
+	if u.UserName == "" {
+		err := errors.New("user name cannot be empty")
+		return err
+	}
+
+	if u.UserID == "" {
+		err := errors.New("user ID cannot be empty")
+		return err
+	}
+
+	if u.TeamID == "" {
+		err := errors.New("team ID cannot be empty")
 		return err
 	}
 	return nil

@@ -8,21 +8,25 @@ import (
 )
 
 // CreateUser creates standup entry in database
-func (m *MySQL) CreateUser(c model.User) (model.User, error) {
+func (m *MySQL) CreateUser(u model.User) (model.User, error) {
+	err := u.Validate()
+	if err != nil {
+		return u, err
+	}
 	res, err := m.conn.Exec(
 		"INSERT INTO `users` (team_id, user_name, user_id, role, real_name) VALUES (?, ?, ?, ?, ?)",
-		c.TeamID, c.UserName, c.UserID, c.Role, c.RealName,
+		u.TeamID, u.UserName, u.UserID, u.Role, u.RealName,
 	)
 	if err != nil {
-		return c, err
+		return u, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return c, err
+		return u, err
 	}
-	c.ID = id
+	u.ID = id
 
-	return c, nil
+	return u, nil
 }
 
 // SelectUser selects User entry from database
@@ -46,16 +50,16 @@ func (m *MySQL) GetUser(id int64) (model.User, error) {
 }
 
 // UpdateUser updates User entry in database
-func (m *MySQL) UpdateUser(c model.User) (model.User, error) {
+func (m *MySQL) UpdateUser(u model.User) (model.User, error) {
 	_, err := m.conn.Exec(
-		"UPDATE `users` SET role=?, real_name=?, team_id=? WHERE id=?",
-		c.Role, c.RealName, c.TeamID, c.ID,
+		"UPDATE `users` SET role=?, real_name=? WHERE id=?",
+		u.Role, u.RealName, u.ID,
 	)
 	if err != nil {
-		return c, err
+		return u, err
 	}
 	var i model.User
-	err = m.conn.Get(&i, "SELECT * FROM `users` WHERE id=?", c.ID)
+	err = m.conn.Get(&i, "SELECT * FROM `users` WHERE id=?", u.ID)
 	return i, err
 }
 

@@ -60,7 +60,7 @@ func (m *MySQL) ListStandupers() ([]model.Standuper, error) {
 //GetStanduper returns a standuper
 func (m *MySQL) GetStanduper(id int64) (model.Standuper, error) {
 	standuper := model.Standuper{}
-	err := m.conn.Get(&standuper, `SELECT * FROM channel_members where id=?)`, id)
+	err := m.conn.Get(&standuper, "SELECT * FROM channel_members where id=?", id)
 	return standuper, err
 }
 
@@ -73,6 +73,6 @@ func (m *MySQL) ListChannelStandupers(channelID string) ([]model.Standuper, erro
 
 // DeleteStanduper deletes channel_members entry from database
 func (m *MySQL) DeleteStanduper(id int64) error {
-	_, err := m.conn.Exec("DELETE FROM `channel_members` id=?", id)
+	_, err := m.conn.Exec("DELETE FROM `channel_members` WHERE id=?", id)
 	return err
 }
