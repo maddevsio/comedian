@@ -1,0 +1,648 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "Mad Devs Comedian"
+  contact:
+    email: "fedorenko.tolik@gmail.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "staging.comedian.maddevs.co"
+basePath: "/v1/"
+tags:
+- name: "standups"
+  description: "Everything about standups"
+- name: "users"
+  description: "Slack team users"
+- name: "channels"
+  description: "Slack team channels (aka projects) tracked by Comedian"
+- name: "standupers"
+  description: "Project standupers tracked by Comedian"
+- name: "bots"
+  description: "Slack team bot settings (configuration)"
+schemes:
+  - "https"
+  - "http"
+paths:
+  healthcheck:
+    get:
+      summary: "Check if Comedian is healthy"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+  /login:
+    get:
+      summary: "Renders login page"
+      responses:
+        200:
+          description: "OK"
+  /event:
+    post:
+      summary: "Handles Slack events"
+      description: "Handles different Slack triggers such as bot removal, or URL verification"
+      responses:
+        200:
+          description: "Success"
+        500:
+          description: "Error"
+        400:
+          description: "Incorrect data"
+  /admin:
+    get:
+      summary: "Renders admin page"
+      responses:
+        200:
+          description: "OK"
+        403:
+          description: "Password does not match"
+        404:
+          description: "Wrong account"
+        500:
+          description: "Could not read form data"
+  /config:
+    post:
+      summary: "Updates config and renders admin page"
+  /service-message:
+    post:
+      summary: "Handles messages from different Comedian services"
+      responses:
+        200:
+          description: "Message handled!"
+  /commands:
+    post:
+      summary: "Handles Slack slash commands requests"
+      responses:
+        200:
+          description: "Message from Comedian to Slack"
+  /auth:
+    get:
+      summary: "Handles Comedian distribution into other Slack Teams"
+      responses:
+        200:
+          description: "Renders login page"
+  bots:
+    get:
+      tags:
+      - "bots"
+      summary: "Returns all bots"
+      description: "Returns a map of bot settings"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "success"
+          schema:
+            $ref: "#/definitions/Bot"
+        404:
+          description: "no bots found"
+  bots/{id}:
+    get:
+      tags:
+      - "bots"
+      summary: "Find bot by id"
+      description: "Returns a single bot"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of bot to return"
+        required: true
+        type: "integer"
+      responses:
+        200:
+          description: "success"
+          schema:
+            $ref: "#/definitions/Bot"
+        406:
+          description: "Invalid id format"
+        404:
+          description: "Bot not found"
+    post:
+      tags:
+      - "bots"
+      summary: "Updates a bot in the database with form data"
+      description: ""
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of bot that needs to be updated"
+        required: true
+        type: "integer"
+      - name: "password"
+        in: "formData"
+        description: "Update password of the bot"
+        required: true
+        type: "string"
+      - name: "language"
+        in: "formData"
+        description: "Update language of the bot"
+        required: true
+        type: "string"
+      - name: "notifier_interval"
+        in: "formData"
+        description: "Update notifier interval of the bot"
+        required: true
+        type: "integer"
+        maximum: 59
+        minimum: 1
+        format: "int"
+      - name: "reminder_time"
+        in: "formData"
+        description: "Update reminder time (in minutes) of the bot"
+        required: true
+        type: "integer"
+        minimum: 1
+        format: "int"
+      - name: "reminder_repeat_max"
+        in: "formData"
+        description: "Update maximum reminder attempts of the bot"
+        required: true
+        type: "integer"
+        minimum: 1
+        format: "int"
+      responses:
+        406:
+          description: "Invalid input"
+        404:
+          description: "Bot not found"
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Bot"
+    delete:
+      tags:
+      - "bots"
+      summary: "Deletes a bot"
+      description: "Turns off the bot in someone's slack"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Bot id to delete"
+        required: true
+        type: "integer"
+        format: "int"
+      responses:
+        406:
+          description: "Invalid ID format"
+        404:
+          description: "Bot not found"
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Bot"
+  users:
+    get:
+      tags:
+      - "users"
+      summary: "Returns all users"
+      description: "Returns a map of user objects"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/User"
+        404:
+          description: "no users found"
+  users/{id}:
+    get:
+      tags:
+      - "users"
+      summary: "Returns user by its ID"
+      description: "Returns user object"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of user to return"
+        required: true
+        type: "integer"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/User"
+        406:
+          description: "Invalid id format"
+        404:
+          description: "User not found"
+    post:
+      tags:
+      - "users"
+      summary: "Updates a user in the database with form data"
+      description: ""
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of user to return"
+        required: true
+        type: "integer"
+      - name: "role"
+        in: "formData"
+        description: "User role"
+        required: true
+        type: "string"
+      responses:
+        406:
+          description: "Invalid input"
+        404:
+          description: "User not found"
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/User"
+  channels:
+    get:
+      tags:
+      - "channels"
+      summary: "Returns all channels"
+      description: "Returns a map of channel objects"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Channel"
+        404:
+          description: "no channels found"
+  channels/{id}:
+    get:
+      tags:
+      - "channels"
+      summary: "Find channel by id"
+      description: "Returns a single channel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of a channel to return"
+        required: true
+        type: "integer"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Channel"
+        406:
+          description: "Invalid id format"
+        404:
+          description: "Channel not found"
+    post:
+      tags:
+      - "channels"
+      summary: "Updates a channel in the database with form data"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of channel that needs to be updated"
+        required: true
+        type: "integer"
+      - name: "channel_standup_time"
+        in: "formData"
+        description: "Update standuptime of the channel"
+        required: true
+        type: "integer"
+        format: "bigint"
+      responses:
+        406:
+          description: "Invalid input"
+        404:
+          description: "Channel not found"
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Channel"
+    delete:
+      tags:
+      - "channels"
+      summary: "Deletes a channel"
+      description: "Removes comedian fro the channel in someone's slack"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of channel that needs to be deleted"
+        required: true
+        type: "integer"
+      - name: "channel_id"
+        in: "path"
+        description: "channel id to delete"
+        required: true
+        type: "integer"
+        format: "int"
+      responses:
+        406:
+          description: "Invalid ID format"
+        404:
+          description: "channel not found"
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Channel"
+  standupers:
+    get:
+      tags:
+      - "standupers"
+      summary: "Returns all standupers"
+      description: "Returns a map of standuper objects"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Standuper"
+        404: 
+          description: "No standupers found"
+  standupers/{id}:
+    get:
+      tags:
+      - "standupers"
+      summary: "Find standuper by id"
+      description: "Returns a single standuper"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of a standuper to return"
+        required: true
+        type: "integer"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Standuper"
+        406:
+          description: "Invalid id format"
+        404:
+          description: "Standuper not found"
+    post:
+      tags:
+      - "standupers"
+      summary: "Updates a standuper in the database with form data"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of standuper that needs to be updated"
+        required: true
+        type: "integer"
+      - name: "member_standup_time"
+        in: "formData"
+        description: "Update standup time of the standuper"
+        required: true
+        type: "integer"
+        format: "bigint"
+      - name: "role_in_channel"
+        in: "formData"
+        description: "Update role in channel of the standuper"
+        required: true
+        type: "string"
+      responses:
+        406:
+          description: "Invalid input"
+        404: 
+          description: "Standuper not found"
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Standuper"
+    delete:
+      tags:
+      - "standupers"
+      summary: "Deletes a standuper"
+      description: "Untracks user in channel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "standuper id to delete"
+        required: true
+        type: "integer"
+        format: "int"
+      responses:
+        406:
+          description: "Invalid ID format"
+        404:
+          description: "standuper not found"
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Standuper"
+  standups:
+    get:
+      tags:
+      - "standups"
+      summary: "Returns all standups"
+      description: "Returns a map of standup objects"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Standup"
+        404: 
+          description: "no standups found"
+  standups/{id}:
+    get:
+      tags:
+      - "standups"
+      summary: "Find standup by id"
+      description: "Returns a single standup"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of a standup to return"
+        required: true
+        type: "integer"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Standup"
+        406:
+          description: "Invalid id format"
+        404:
+          description: "Standup not found"
+    post:
+      tags:
+      - "standups"
+      summary: "Updates a standup in the database with form data"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of standup that needs to be updated"
+        required: true
+        type: "integer"
+      - name: "comment"
+        in: "formData"
+        description: "Update standup body"
+        required: true
+        type: "string"
+        format: "text"
+      responses:
+        406:
+          description: "Invalid input"
+        404:
+          description: "Standup not found"
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Standup"
+    delete:
+      tags:
+      - "standups"
+      summary: "Deletes a standup"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "standup id to delete"
+        required: true
+        type: "integer"
+        format: "int"
+      responses:
+        406:
+          description: "Invalid ID format"
+        404:
+          description: "Standup not found"
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Standup"
+definitions:
+  User:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      user_name:
+        type: "string"
+      userID:
+        type: "string"
+      role:
+        type: "string"
+      realName:
+        type: "string"
+  Channel:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      channelName:
+        type: "string"
+      channel_id:
+        type: "string"
+      channel_standup_time:
+        type: "integer"
+        format: "bigint"
+  Standuper:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      userId:
+        type: "string"
+      channel_id:
+        type: "string"
+      submitted_standup_today:
+        type: "bool"
+      created:
+        type: "string"
+      role_in_channel:
+        type: "string"
+  Standup:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      userId:
+        type: "string"
+      channel_id:
+        type: "string"
+      comment:
+        type: "string"
+        format: "text"
+      created:
+        type: "string"
+      modified:
+        type: "string"
+      message_ts:
+        type: "string"
+      team_id:
+        type: "string"
+  Bot:
+    type: "object"
+    required:
+    - "name"
+    - "photoUrls"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      team_id:
+        type: "string"
+        example: "TB9KS3E13"
+      team_name:
+        type: "string"
+        example: "example"
+      password:
+        type: "string"
+        example: "example"
+      bot_access_token:
+        type: "string"
+        example: "xoxb-383672116046-561658401305-mCNz8ybjHbD60L7gPUuPjYdp"
+      language:
+        type: "string"
+        description: "bot language"
+        enum:
+        - "ru_Ru"
+        - "en_US"
+      notifier_interval:
+        type: "integer"
+        format: "int64"
+      reminder_repeat_max:
+        type: "integer"
+        format: "int64"
+      reminder_time:
+        type: "integer"
+        format: "int64"

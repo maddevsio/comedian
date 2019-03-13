@@ -44,23 +44,34 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 
 	r, err := w.Parse(params, time.Now())
 	if err != nil {
+		log.Error("Failed to parse params", err)
 		return somethingWentWrong
 	}
 	if r == nil {
+		log.Error("r is nil", err)
 		return somethingWentWrong
 	}
 
-	err = bot.db.CreateStandupTime(r.Time.Unix(), channelID)
+	channel, err := bot.db.SelectChannel(channelID)
 	if err != nil {
+		log.Error("failed to select channel", err)
 		return somethingWentWrong
 	}
 
-	channelMembers, err := bot.db.ListChannelMembers(channelID)
+	channel.StandupTime = r.Time.Unix()
+
+	_, err = bot.db.UpdateChannel(channel)
 	if err != nil {
-		log.Errorf("BotAPI: ListChannelMembers failed: %v\n", err)
+		log.Error("failed to update channel", err)
+		return somethingWentWrong
 	}
 
-	if len(channelMembers) == 0 {
+	standupers, err := bot.db.ListChannelStandupers(channelID)
+	if err != nil {
+		log.Errorf("BotAPI: ListChannelStandupers failed: %v\n", err)
+	}
+
+	if len(standupers) == 0 {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "AddStandupTimeNoUsers", 0, map[string]interface{}{"timeInt": r.Time.Unix()}}
 		addStandupTimeNoUsers, err := translation.Translate(payload)
 		if err != nil {
@@ -105,7 +116,26 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 		return accessAtLeastPM
 	}
 
-	err := bot.db.DeleteStandupTime(channelID)
+	channel, err := bot.db.SelectChannel(channelID)
+	if err != nil {
+		payload := translation.Payload{bot.bundle, bot.properties.Language, "SomethingWentWrong", 0, nil}
+		somethingWentWrong, err := translation.Translate(payload)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"TeamName":     bot.properties.TeamName,
+				"Language":     payload.Lang,
+				"MessageID":    payload.MessageID,
+				"Count":        payload.Count,
+				"TemplateData": payload.TemplateData,
+			}).Error("Failed to translate message!")
+		}
+		return somethingWentWrong
+	}
+
+	channel.StandupTime = int64(0)
+
+	_, err = bot.db.UpdateChannel(channel)
+
 	if err != nil {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "SomethingWentWrong", 0, nil}
 		somethingWentWrong, err := translation.Translate(payload)
@@ -121,7 +151,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 		return somethingWentWrong
 
 	}
-	st, err := bot.db.ListChannelMembers(channelID)
+	st, err := bot.db.ListChannelStandupers(channelID)
 	if len(st) != 0 {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "RemoveStandupTimeWithUsers", 0, nil}
 		removeStandupTimeWithUsers, err := translation.Translate(payload)
@@ -152,8 +182,8 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 }
 
 func (bot *Bot) showTime(channelID string) string {
-	standupTime, err := bot.db.GetChannelStandupTime(channelID)
-	if err != nil || standupTime == int64(0) {
+	channel, err := bot.db.SelectChannel(channelID)
+	if err != nil || channel.StandupTime == int64(0) {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "ShowNoStandupTime", 0, nil}
 		showNoStandupTime, err := translation.Translate(payload)
 		if err != nil {
@@ -168,7 +198,7 @@ func (bot *Bot) showTime(channelID string) string {
 		return showNoStandupTime
 	}
 
-	payload := translation.Payload{bot.bundle, bot.properties.Language, "ShowStandupTime", 0, map[string]interface{}{"standuptime": standupTime}}
+	payload := translation.Payload{bot.bundle, bot.properties.Language, "ShowStandupTime", 0, map[string]interface{}{"standuptime": channel.StandupTime}}
 	showStandupTime, err := translation.Translate(payload)
 	if err != nil {
 		log.WithFields(log.Fields{

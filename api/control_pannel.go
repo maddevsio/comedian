@@ -29,7 +29,7 @@ func (api *ComedianAPI) renderControlPannel(c echo.Context) error {
 		return c.Render(http.StatusInternalServerError, "login", nil)
 	}
 
-	settings, err := api.db.GetBotSettings(form.Get("team_name"))
+	settings, err := api.db.GetBotSettingsByTeamName(form.Get("team_name"))
 	if err != nil {
 		return c.Render(http.StatusNotFound, "login", nil)
 	}

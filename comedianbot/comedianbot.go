@@ -12,13 +12,13 @@ import (
 // Comedian is the main struct of the project
 type Comedian struct {
 	bots     []*botuser.Bot
-	db       *storage.MySQL
+	db       storage.Storage
 	botsChan chan *botuser.Bot
 	bundle   *i18n.Bundle
 }
 
 //New makes new Comedian
-func New(bundle *i18n.Bundle, db *storage.MySQL) *Comedian {
+func New(bundle *i18n.Bundle, db *storage.DB) *Comedian {
 	comedian := Comedian{}
 	comedian.bots = []*botuser.Bot{}
 	comedian.botsChan = make(chan *botuser.Bot)

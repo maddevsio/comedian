@@ -47,18 +47,18 @@ func main() {
 		log.Fatalf("Get config failed: %v", err)
 	}
 
-	db, err := storage.NewMySQL(config)
+	db, err := storage.New(config)
 	if err != nil {
-		log.Fatalf("NewMySQL failed: %v", err)
+		log.Fatalf("New storage failed: %v", err)
 	}
 
 	comedian := comedianbot.New(bundle, db)
 
 	go comedian.StartBots()
 
-	api, err := api.NewComedianAPI(config, db, comedian)
+	api := api.New(config, db, comedian)
 	if err != nil {
-		log.Fatalf("NewComedianAPI failed: %v", err)
+		log.Fatalf("New API failed: %v", err)
 	}
 
 	api.Start()

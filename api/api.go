@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
@@ -22,8 +23,22 @@ import (
 type ComedianAPI struct {
 	echo     *echo.Echo
 	comedian *comedianbot.Comedian
-	db       *storage.MySQL
-	config   config.Config
+	db       storage.Storage
+	config   *config.Config
+}
+
+type swagger struct {
+	Swagger  string
+	Info     map[string]interface{}
+	Host     string
+	BasePath string `yaml:"basePath"`
+	Tags     []struct {
+		Name        string
+		Description string
+	}
+	Schemes     []string
+	Paths       map[string]interface{}
+	Definitions map[string]interface{}
 }
 
 type Event struct {
@@ -32,8 +47,14 @@ type Event struct {
 	Type      string `json:"type"`
 }
 
-// NewComedianAPI creates API for Slack commands
-func NewComedianAPI(config config.Config, db *storage.MySQL, comedian *comedianbot.Comedian) (ComedianAPI, error) {
+type RESTAPI struct {
+	db storage.Storage
+}
+
+var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>.*)`)
+
+// New creates API
+func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedian) ComedianAPI {
 
 	echo := echo.New()
 
@@ -48,23 +69,51 @@ func NewComedianAPI(config config.Config, db *storage.MySQL, comedian *comedianb
 		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/templates/*.html")),
 	}
 
+	restAPI := RESTAPI{api.db}
+
+	echo.GET("/v1/healthcheck", restAPI.healthcheck)
+
+	echo.GET("/v1/standups", restAPI.listStandups)
+	echo.GET("/v1/standups/:id", restAPI.getStandup)
+	echo.POST("/v1/standups/:id", restAPI.updateStandup)
+	echo.DELETE("/v1/standups/:id", restAPI.deleteStandup)
+
+	echo.GET("/v1/users", restAPI.listUsers)
+	echo.GET("/v1/users/:id", restAPI.getUser)
+	echo.POST("/v1/users/:id", restAPI.updateUser)
+
+	echo.GET("/v1/channels", restAPI.listChannels)
+	echo.GET("/v1/channels/:id", restAPI.getChannel)
+	echo.POST("/v1/channels/:id", restAPI.updateChannel)
+	echo.DELETE("/v1/channels/:id", restAPI.deleteChannel)
+
+	echo.GET("/v1/standupers", restAPI.listStandupers)
+	echo.GET("/v1/standupers/:id", restAPI.getStanduper)
+	echo.POST("/v1/standupers/:id", restAPI.updateStanduper)
+	echo.DELETE("/v1/standupers/:id", restAPI.deleteStanduper)
+
+	echo.GET("/v1/bots", restAPI.listBots)
+	echo.GET("/v1/bots/:id", restAPI.getBot)
+	echo.POST("/v1/bots/:id", restAPI.updateBot)
+	echo.DELETE("/v1/bots/:id", restAPI.deleteBot)
+
 	echo.Renderer = t
 	echo.GET("/login", api.renderLoginPage)
 	echo.POST("/event", api.handleEvent)
 	echo.GET("/admin", api.renderControlPannel)
 	echo.POST("/config", api.updateConfig)
 	echo.POST("/service-message", api.handleServiceMessage)
-
 	echo.POST("/commands", api.handleCommands)
 	echo.GET("/auth", api.auth)
-
-	err := comedian.SetBots()
-
-	return api, err
+	return api
 }
 
 // Start starts http server
 func (api *ComedianAPI) Start() error {
+	err := api.comedian.SetBots()
+	if err != nil {
+		return err
+	}
 	return api.echo.Start(api.config.HTTPBindAddr)
 }
 
@@ -74,12 +123,12 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	//Need for enabling of Event Subscriptions.
@@ -90,12 +139,12 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 	if incomingEvent.Type == slackevents.CallbackEvent {
 		err = json.Unmarshal(body, &event)
 		if err != nil {
-			return err
+			return c.JSON(http.StatusInternalServerError, err)
 		}
 
 		err = api.db.DeleteBotSettings(event.TeamID)
 		if err != nil {
-			return err
+			return c.JSON(http.StatusInternalServerError, err)
 		}
 
 		return c.String(http.StatusOK, "Success")
@@ -123,7 +172,7 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 		return err
 	}
 
-	return nil
+	return c.JSON(http.StatusOK, "Message handled!")
 }
 
 func (api *ComedianAPI) handleCommands(c echo.Context) error {

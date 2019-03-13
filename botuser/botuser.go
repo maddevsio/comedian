@@ -24,6 +24,7 @@ const (
 	adminAccess       = 2
 	pmAccess          = 3
 	regularUserAccess = 4
+	noAccess          = 0
 )
 
 // Bot struct used for storing and communicating with slack api
@@ -31,11 +32,11 @@ type Bot struct {
 	slack      *slack.Client
 	rtm        *slack.RTM
 	properties model.BotSettings
-	db         *storage.MySQL
+	db         storage.Storage
 	bundle     *i18n.Bundle
 }
 
-func New(bundle *i18n.Bundle, settings model.BotSettings, db *storage.MySQL) *Bot {
+func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *Bot {
 	bot := &Bot{}
 	bot.slack = slack.New(settings.AccessToken)
 	bot.rtm = bot.slack.NewRTM()
@@ -120,7 +121,8 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		return errors.New("Fail to save message as standup. Standup is not complete")
 	}
 
-	if bot.db.SubmittedStandupToday(msg.User, msg.Channel) {
+	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
+	if standuper.SubmittedStandupToday {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay, err := translation.Translate(payload)
 		if err != nil {
@@ -145,7 +147,6 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 	if err != nil {
 		return err
 	}
-
 	log.Infof("Standup created #id:%v\n", standup.ID)
 	item := slack.ItemRef{
 		Channel:   msg.Channel,
@@ -154,6 +155,11 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		Comment:   "",
 	}
 	bot.slack.AddReaction("heavy_check_mark", item)
+	standuper.SubmittedStandupToday = true
+	_, err = bot.db.UpdateStanduper(standuper)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -170,7 +176,8 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 			return errors.New("Fail to save edited message as standup. Standup is not complete")
 		}
 
-		if bot.db.SubmittedStandupToday(msg.SubMessage.User, msg.Channel) {
+		standuper, err := bot.db.FindStansuperByUserID(msg.SubMessage.User, msg.Channel)
+		if standuper.SubmittedStandupToday {
 			payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 			oneStandupPerDay, err := translation.Translate(payload)
 			if err != nil {
@@ -206,6 +213,11 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 			Comment:   "",
 		}
 		bot.slack.AddReaction("heavy_check_mark", item)
+		standuper.SubmittedStandupToday = true
+		_, err = bot.db.UpdateStanduper(standuper)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -363,6 +375,7 @@ func (bot *Bot) HandleJoin(channelID, teamID string) {
 	channel, err := bot.slack.GetConversationInfo(channelID, true)
 	if err != nil {
 		log.Errorf("GetConversationInfo failed: %v", err)
+		return
 	}
 	createdChannel, err := bot.db.CreateChannel(model.Channel{
 		TeamID:      teamID,
@@ -407,15 +420,22 @@ func (bot *Bot) ImplementCommands(form model.FullSlackForm) string {
 func (bot *Bot) getAccessLevel(userID, channelID string) (int, error) {
 	user, err := bot.db.SelectUser(userID)
 	if err != nil {
-		return 0, err
+		return noAccess, err
 	}
 	if user.IsAdmin() {
-		return 2, nil
+		return adminAccess, nil
 	}
-	if bot.db.UserIsPMForProject(userID, channelID) {
-		return 3, nil
+
+	standuper, err := bot.db.FindStansuperByUserID(userID, channelID)
+	if err != nil {
+		return regularUserAccess, nil
 	}
-	return 4, nil
+
+	if standuper.IsPM() {
+		return pmAccess, nil
+	}
+
+	return regularUserAccess, nil
 }
 
 //UpdateUsersList updates users in workspace
@@ -458,6 +478,7 @@ func (bot *Bot) UpdateUsersList() {
 				continue
 			}
 		}
+
 		if !user.Deleted {
 			u.UserName = user.Name
 			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
@@ -474,23 +495,23 @@ func (bot *Bot) UpdateUsersList() {
 
 		if user.Deleted {
 			bot.db.DeleteUser(u.ID)
-			cm, err := bot.db.FindMembersByUserID(u.UserID)
+			standupers, err := bot.db.ListStandupers()
 			if err != nil {
 				continue
 			}
-			for _, member := range cm {
-				bot.db.DeleteChannelMember(member.UserID, member.ChannelID)
+			for _, standuper := range standupers {
+				if u.UserID == standuper.UserID {
+					bot.db.DeleteStanduper(standuper.ID)
+				}
 			}
 		}
 	}
+
 	log.Info("Users list updated successfully")
 }
 
 func (bot *Bot) Suits(team string) bool {
-	if team == bot.properties.TeamID || team == bot.properties.TeamName {
-		return true
-	}
-	return false
+	return team == bot.properties.TeamID || team == bot.properties.TeamName
 }
 
 func (bot *Bot) SetProperties(settings model.BotSettings) model.BotSettings {

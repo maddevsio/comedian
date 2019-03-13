@@ -18,7 +18,7 @@ func TestNew(t *testing.T) {
 	config, err := config.Get()
 	assert.NoError(t, err)
 
-	db, err := storage.NewMySQL(config)
+	db, err := storage.New(config)
 	assert.NoError(t, err)
 
 	comedian := New(bundle, db)
@@ -31,7 +31,7 @@ func TestBots(t *testing.T) {
 	config, err := config.Get()
 	assert.NoError(t, err)
 
-	db, err := storage.NewMySQL(config)
+	db, err := storage.New(config)
 	assert.NoError(t, err)
 
 	comedian := New(bundle, db)
@@ -65,7 +65,7 @@ func TestHandleEvent(t *testing.T) {
 	config, err := config.Get()
 	assert.NoError(t, err)
 
-	db, err := storage.NewMySQL(config)
+	db, err := storage.New(config)
 	assert.NoError(t, err)
 
 	comedian := New(bundle, db)
