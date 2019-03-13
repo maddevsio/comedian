@@ -1,6 +1,7 @@
 package botuser
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/BurntSushi/toml"
@@ -11,6 +12,24 @@ import (
 	"gitlab.com/team-monitoring/comedian/storage"
 	"golang.org/x/text/language"
 )
+
+type MockedDB struct {
+	storage.Storage
+
+	SelectedUser   model.User
+	FoundStanduper model.Standuper
+
+	SelectedUserError   error
+	FoundStanduperError error
+}
+
+func (m MockedDB) SelectUser(string) (model.User, error) {
+	return m.SelectedUser, m.SelectedUserError
+}
+
+func (m MockedDB) FindStansuperByUserID(string, string) (model.Standuper, error) {
+	return m.FoundStanduper, m.FoundStanduperError
+}
 
 func TestNew(t *testing.T) {
 	c, err := config.Get()
@@ -93,6 +112,48 @@ func TestAnalizeStandup(t *testing.T) {
 	for _, tt := range testCasesErr {
 		problem := bot.analizeStandup(tt.Message)
 		assert.Equal(t, tt.Problem, problem)
+	}
+}
+
+func TestGetAccessLevel(t *testing.T) {
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		UserID:   "TESTUSERID",
+		Language: "en_US",
+	}
+
+	testCases := []struct {
+		SelectedUser        model.User
+		FoundStanduper      model.Standuper
+		AccessLevel         int
+		SelectedUserError   error
+		FoundStanduperError error
+	}{
+		{model.User{}, model.Standuper{}, 0, errors.New("not found"), nil},
+		{model.User{UserID: "Foo", Role: "admin"}, model.Standuper{}, 2, nil, nil},
+		{model.User{UserID: "Foo", Role: ""}, model.Standuper{}, 4, nil, errors.New("not found")},
+		{model.User{UserID: "Foo", Role: ""}, model.Standuper{UserID: "Foo", RoleInChannel: "pm"}, 3, nil, nil},
+		{model.User{UserID: "Foo", Role: ""}, model.Standuper{UserID: "Foo", RoleInChannel: "developer"}, 4, nil, nil},
+	}
+
+	for _, tt := range testCases {
+		bot := New(bundle, settings, MockedDB{
+			SelectedUser:        tt.SelectedUser,
+			FoundStanduper:      tt.FoundStanduper,
+			SelectedUserError:   tt.SelectedUserError,
+			FoundStanduperError: tt.FoundStanduperError,
+		})
+
+		accessLevel, err := bot.getAccessLevel("Foo", "Bar")
+		if err != nil {
+			assert.Equal(t, tt.SelectedUserError, err)
+		}
+		assert.Equal(t, tt.AccessLevel, accessLevel)
 	}
 }
 
