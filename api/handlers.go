@@ -14,10 +14,6 @@ func (api *RESTAPI) healthcheck(c echo.Context) error {
 	return c.JSON(http.StatusOK, "successful operation")
 }
 
-func (api *RESTAPI) notImplemented(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, "")
-}
-
 func (api *RESTAPI) listBots(c echo.Context) error {
 
 	bots, err := api.db.GetAllBotSettings()
@@ -107,7 +103,7 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 
 	res, err := api.db.UpdateStandup(standup)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -121,7 +117,7 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 
 	err = api.db.DeleteStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, "deleted")
@@ -159,7 +155,7 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 
 	res, err := api.db.UpdateUser(user)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -197,7 +193,7 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 
 	res, err := api.db.UpdateChannel(channel)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -211,7 +207,7 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 
 	err = api.db.DeleteChannel(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, "deleted")
@@ -243,13 +239,13 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 func (api *RESTAPI) updateStanduper(c echo.Context) error {
 	standuper := model.Standuper{}
 
-	if err := c.Bind(standuper); err != nil {
+	if err := c.Bind(&standuper); err != nil {
 		return c.JSON(http.StatusNotAcceptable, err)
 	}
 
 	res, err := api.db.UpdateStanduper(standuper)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -263,7 +259,7 @@ func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 
 	err = api.db.DeleteStanduper(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, "deleted")

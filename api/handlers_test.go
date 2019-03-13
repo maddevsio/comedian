@@ -712,7 +712,7 @@ func TestUpdateStanduper(t *testing.T) {
 	}{
 		{model.Standuper{}, errors.New("err"), "", map[string]string{}, 406},
 		{model.Standuper{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
-		{model.Standuper{}, nil, "1", map[string]string{"password": "foo"}, 200},
+		{model.Standuper{}, nil, "1", map[string]string{"team_id": "foo"}, 200},
 	}
 
 	for _, tt := range testCases {
