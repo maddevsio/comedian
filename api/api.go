@@ -31,7 +31,7 @@ type ComedianAPI struct {
 
 type swagger struct {
 	Swagger  string
-	Info     string
+	Info     map[string]interface{}
 	Host     string
 	BasePath string
 	Tags     []struct {

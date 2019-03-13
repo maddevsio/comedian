@@ -1,5 +1,12 @@
 package api
 
+import (
+	"testing"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+)
+
 // func TestSwaggerRoutesExistInEcho(t *testing.T) {
 // 	c, err := config.Get()
 // 	assert.NoError(t, err)
@@ -72,3 +79,9 @@ package api
 // 		}
 // 	}
 // }
+
+func TestGetSwagger(t *testing.T) {
+	swagger, err := getSwagger()
+	assert.NoError(t, err)
+	log.Info(swagger.Paths)
+}
