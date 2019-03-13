@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -18,7 +17,6 @@ import (
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // ComedianAPI struct used to handle slack requests (slash commands)
@@ -56,7 +54,7 @@ type RESTAPI struct {
 var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>.*)`)
 
 // New creates API
-func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedian) (ComedianAPI, error) {
+func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedian) ComedianAPI {
 
 	echo := echo.New()
 
@@ -110,14 +108,15 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 
 	echo.POST("/commands", api.handleCommands)
 	echo.GET("/auth", api.auth)
-
-	err := comedian.SetBots()
-
-	return api, err
+	return api
 }
 
 // Start starts http server
 func (api *ComedianAPI) Start() error {
+	err := api.comedian.SetBots()
+	if err != nil {
+		return err
+	}
 	return api.echo.Start(api.config.HTTPBindAddr)
 }
 
@@ -233,22 +232,4 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	api.comedian.AddBot(cp)
 
 	return api.renderLoginPage(c)
-}
-
-func getSwagger() (swagger, error) {
-	var sw swagger
-	data, err := ioutil.ReadFile("swagger.yaml")
-	if err != nil {
-		return sw, err
-	}
-	err = yaml.Unmarshal(data, &sw)
-	return sw, err
-}
-
-func replaceParams(route string) string {
-	if !echoRouteRegex.MatchString(route) {
-		return route
-	}
-	matches := echoRouteRegex.FindAllStringSubmatch(route, -1)
-	return fmt.Sprintf("%s{%s}%s", matches[0][1], matches[0][2], matches[0][3])
 }

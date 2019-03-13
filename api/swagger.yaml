@@ -368,7 +368,7 @@ paths:
         type: "integer"
       - name: "member_standup_time"
         in: "formData"
-        description: "Update standup time of the stnaduper"
+        description: "Update standup time of the standuper"
         required: true
         type: "integer"
         format: "bigint"
@@ -381,7 +381,7 @@ paths:
         406:
           description: "Invalid input"
         404: 
-          description: ""Standuper not found""
+          description: "Standuper not found"
         200:
           description: "successful operation"
           schema:

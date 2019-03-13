@@ -56,7 +56,7 @@ func main() {
 
 	go comedian.StartBots()
 
-	api, err := api.New(config, db, comedian)
+	api := api.New(config, db, comedian)
 	if err != nil {
 		log.Fatalf("New API failed: %v", err)
 	}

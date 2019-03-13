@@ -1,47 +1,54 @@
 package api
 
 import (
+	"fmt"
+	"io/ioutil"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/storage"
+	yaml "gopkg.in/yaml.v2"
 )
 
-// func TestSwaggerRoutesExistInEcho(t *testing.T) {
-// 	c, err := config.Get()
-// 	assert.NoError(t, err)
-// 	sw, err := getSwagger()
-// 	assert.NoError(t, err)
-// 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
-// 	db, err := storage.New(c)
-// 	assert.NoError(t, err)
-// 	comedian := comedianbot.New(bundle, db)
-// 	api, err := New(c, db, comedian)
-// 	assert.NoError(t, err)
-// 	routes := api.echo.Routes()
+func TestSwaggerRoutesExistInEcho(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+	sw, err := getSwagger()
+	assert.NoError(t, err)
+	db, err := storage.New(c)
+	assert.NoError(t, err)
+	api := New(c, db, nil)
+	routes := api.echo.Routes()
 
-// 	for k, v := range sw.Paths {
-// 		m := v.(map[interface{}]interface{})
-// 		for method := range m {
-// 			found := false
-// 			for _, route := range routes {
-// 				if route.Path == "/swagger.yaml" {
-// 					continue
-// 				}
-// 				path := replaceParams(route.Path)
-// 				m := method.(string)
+	log.Info(routes)
 
-// 				s := strings.ToLower(route.Method)
-// 				if strings.Contains(path, k) && m == s {
-// 					found = true
-// 				}
-// 			}
-// 			if !found {
-// 				t.Errorf("could not find %v in routes for method %v", k, method)
-// 			}
-// 		}
-// 	}
-// }
+	for k, v := range sw.Paths {
+		log.Info(k)
+		log.Info(v)
+
+		// m := v.(map[interface{}]interface{})
+		// for method := range m {
+		// 	found := false
+		// 	for _, route := range routes {
+		// 		if route.Path == "/swagger.yaml" {
+		// 			continue
+		// 		}
+		// 		path := replaceParams(route.Path)
+		// 		m := method.(string)
+
+		// 		s := strings.ToLower(route.Method)
+		// 		if strings.Contains(path, k) && m == s {
+		// 			found = true
+		// 		}
+		// 	}
+		// 	if !found {
+		// 		t.Errorf("could not find %v in routes for method %v", k, method)
+		// 	}
+		// }
+	}
+}
 
 // func TestEchoRoutesExistInSwagger(t *testing.T) {
 // 	c, err := config.Get()
@@ -81,7 +88,24 @@ import (
 // }
 
 func TestGetSwagger(t *testing.T) {
-	swagger, err := getSwagger()
+	_, err := getSwagger()
 	assert.NoError(t, err)
-	log.Info(swagger.Paths)
+}
+
+func getSwagger() (swagger, error) {
+	var sw swagger
+	data, err := ioutil.ReadFile("swagger.yaml")
+	if err != nil {
+		return sw, err
+	}
+	err = yaml.Unmarshal(data, &sw)
+	return sw, err
+}
+
+func replaceParams(route string) string {
+	if !echoRouteRegex.MatchString(route) {
+		return route
+	}
+	matches := echoRouteRegex.FindAllStringSubmatch(route, -1)
+	return fmt.Sprintf("%s{%s}%s", matches[0][1], matches[0][2], matches[0][3])
 }
