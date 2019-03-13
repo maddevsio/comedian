@@ -31,7 +31,7 @@ type swagger struct {
 	Swagger  string
 	Info     map[string]interface{}
 	Host     string
-	BasePath string
+	BasePath string `yaml:"basePath"`
 	Tags     []struct {
 		Name        string
 		Description string
@@ -103,7 +103,6 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	echo.GET("/admin", api.renderControlPannel)
 	echo.POST("/config", api.updateConfig)
 	echo.POST("/service-message", api.handleServiceMessage)
-
 	echo.POST("/commands", api.handleCommands)
 	echo.GET("/auth", api.auth)
 	return api
@@ -124,12 +123,12 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	//Need for enabling of Event Subscriptions.
@@ -140,12 +139,12 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 	if incomingEvent.Type == slackevents.CallbackEvent {
 		err = json.Unmarshal(body, &event)
 		if err != nil {
-			return err
+			return c.JSON(http.StatusInternalServerError, err)
 		}
 
 		err = api.db.DeleteBotSettings(event.TeamID)
 		if err != nil {
-			return err
+			return c.JSON(http.StatusInternalServerError, err)
 		}
 
 		return c.String(http.StatusOK, "Success")
@@ -173,7 +172,7 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 		return err
 	}
 
-	return nil
+	return c.JSON(http.StatusOK, "Message handled!")
 }
 
 func (api *ComedianAPI) handleCommands(c echo.Context) error {

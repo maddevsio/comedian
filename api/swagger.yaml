@@ -8,7 +8,7 @@ info:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
 host: "staging.comedian.maddevs.co"
-basePath: "/v1"
+basePath: "/v1/"
 tags:
 - name: "standups"
   description: "Everything about standups"
@@ -24,7 +24,7 @@ schemes:
   - "https"
   - "http"
 paths:
-  /healthcheck:
+  healthcheck:
     get:
       summary: "Check if Comedian is healthy"
       produces:
@@ -32,7 +32,57 @@ paths:
       responses:
         200:
           description: "successful operation"
-  /bots:
+  /login:
+    get:
+      summary: "Renders login page"
+      responses:
+        200:
+          description: "OK"
+  /event:
+    post:
+      summary: "Handles Slack events"
+      description: "Handles different Slack triggers such as bot removal, or URL verification"
+      responses:
+        200:
+          description: "Success"
+        500:
+          description: "Error"
+        400:
+          description: "Incorrect data"
+  /admin:
+    get:
+      summary: "Renders admin page"
+      responses:
+        200:
+          description: "OK"
+        403:
+          description: "Password does not match"
+        404:
+          description: "Wrong account"
+        500:
+          description: "Could not read form data"
+  /config:
+    post:
+      summary: "Updates config and renders admin page"
+  /service-message:
+    post:
+      summary: "Handles messages from different Comedian services"
+      responses:
+        200:
+          description: "Message handled!"
+  /commands:
+    post:
+      summary: "Handles Slack slash commands requests"
+      responses:
+        200:
+          description: "Message from Comedian to Slack"
+  /auth:
+    get:
+      summary: "Handles Comedian distribution into other Slack Teams"
+      responses:
+        200:
+          description: "Renders login page"
+  bots:
     get:
       tags:
       - "bots"
@@ -47,7 +97,7 @@ paths:
             $ref: "#/definitions/Bot"
         404:
           description: "no bots found"
-  /bots/{id}:
+  bots/{id}:
     get:
       tags:
       - "bots"
@@ -149,7 +199,7 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Bot"
-  /users:
+  users:
     get:
       tags:
       - "users"
@@ -165,7 +215,7 @@ paths:
             $ref: "#/definitions/User"
         404:
           description: "no users found"
-  /users/{id}:
+  users/{id}:
     get:
       tags:
       - "users"
@@ -217,7 +267,7 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/User"
-  /channels:
+  channels:
     get:
       tags:
       - "channels"
@@ -233,7 +283,7 @@ paths:
             $ref: "#/definitions/Channel"
         404:
           description: "no channels found"
-  /channels/{id}:
+  channels/{id}:
     get:
       tags:
       - "channels"
@@ -313,7 +363,7 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Channel"
-  /standupers:
+  standupers:
     get:
       tags:
       - "standupers"
@@ -329,7 +379,7 @@ paths:
             $ref: "#/definitions/Standuper"
         404: 
           description: "No standupers found"
-  /standupers/{id}:
+  standupers/{id}:
     get:
       tags:
       - "standupers"
@@ -409,7 +459,7 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Standuper"
-  /standups:
+  standups:
     get:
       tags:
       - "standups"
@@ -425,7 +475,7 @@ paths:
             $ref: "#/definitions/Standup"
         404: 
           description: "no standups found"
-  /standups/{id}:
+  standups/{id}:
     get:
       tags:
       - "standups"

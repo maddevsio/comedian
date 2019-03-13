@@ -57,19 +57,19 @@ func TestEchoRoutesExistInSwagger(t *testing.T) {
 	routes := api.echo.Routes()
 
 	for _, route := range routes {
-		log.Info("Route path! ", route.Path)
 		path := replaceParams(route.Path)
 		found := false
 		if path == "/swagger.yaml" {
 			found = true
 		}
 		path = strings.Replace(path, sw.BasePath, "", -1)
+
+		log.Info(path)
 		d, ok := sw.Paths[path]
 		if !ok && !found {
 			t.Errorf("could not find any documentation for %s path", path)
 		}
 		var method interface{}
-		log.Info("Route Method! ", route.Method)
 		method = strings.ToLower(route.Method)
 		route, ok := d.(map[interface{}]interface{})
 		if !ok && !found {
