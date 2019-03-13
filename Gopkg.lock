@@ -189,6 +189,14 @@
   version = "v0.8.1"
 
 [[projects]]
+  digest = "1:cfa0d7741863a0e1d30e0ccdd4b48a96a471cdb47892303de8b92c3713af3e77"
+  name = "github.com/pkg/profile"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5b67d428864e92711fcbd2f8629456121a56d91f"
+  version = "v1.2.1"
+
+[[projects]]
   digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
@@ -272,6 +280,14 @@
   revision = "e9657d882bb81064595ca3b56cbe2546bbabf7b1"
   version = "v1.4.0"
 
+[[projects]]
+  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
+  version = "v2.2.2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -291,9 +307,11 @@
     "github.com/olebedev/when",
     "github.com/olebedev/when/rules/en",
     "github.com/olebedev/when/rules/ru",
+    "github.com/pkg/profile",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "golang.org/x/text/language",
+    "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
