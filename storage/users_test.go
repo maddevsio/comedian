@@ -14,7 +14,7 @@ import (
 func TestCreateUser(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	_, err = mysql.CreateUser(model.User{})
@@ -34,7 +34,7 @@ func TestCreateUser(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	u, err := mysql.CreateUser(model.User{
@@ -65,7 +65,7 @@ func TestGetUser(t *testing.T) {
 func TestUpdateUser(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	u, err := mysql.CreateUser(model.User{

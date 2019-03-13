@@ -14,6 +14,10 @@ func (api *RESTAPI) healthcheck(c echo.Context) error {
 	return c.JSON(http.StatusOK, "successful operation")
 }
 
+func (api *RESTAPI) notImplemented(c echo.Context) error {
+	return c.JSON(http.StatusNotImplemented, "")
+}
+
 func (api *RESTAPI) listBots(c echo.Context) error {
 
 	bots, err := api.db.GetAllBotSettings()

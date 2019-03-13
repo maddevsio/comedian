@@ -14,8 +14,8 @@ type DB struct {
 	*sqlx.DB
 }
 
-// NewDB creates a new instance of database API
-func NewDB(c *config.Config) (*DB, error) {
+// New creates a new instance of database API
+func New(c *config.Config) (*DB, error) {
 	con, err := sqlx.Connect("mysql", c.DatabaseURL)
 	if err != nil {
 		return nil, err

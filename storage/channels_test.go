@@ -13,7 +13,7 @@ import (
 func TestCreateChannel(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	_, err = mysql.CreateChannel(model.Channel{})
@@ -33,7 +33,7 @@ func TestCreateChannel(t *testing.T) {
 func TestGetChannels(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	ch, err := mysql.CreateChannel(model.Channel{
@@ -64,7 +64,7 @@ func TestGetChannels(t *testing.T) {
 func TestUpdateChannels(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	ch, err := mysql.CreateChannel(model.Channel{

@@ -13,7 +13,7 @@ import (
 func TestCreateBotSettings(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	bot, err := mysql.CreateBotSettings("", "", "")
@@ -30,7 +30,7 @@ func TestCreateBotSettings(t *testing.T) {
 func TestBotSettings(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	_, err = mysql.GetAllBotSettings()
@@ -60,7 +60,7 @@ func TestBotSettings(t *testing.T) {
 func TestUpdateAndDeleteBotSettings(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	bot, err := mysql.CreateBotSettings("token", "teamID", "foo")

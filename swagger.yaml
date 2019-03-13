@@ -525,7 +525,6 @@ definitions:
       channel_standup_time:
         type: "integer"
         format: "bigint"
-
   Standuper:
     type: "object"
     properties:
@@ -535,14 +534,12 @@ definitions:
         type: "string"
       channel_id:
         type: "string"
-      standupTime:
-        type: "integer"
-        format: "bigint"
+      submitted_standup_today:
+        type: "bool"
       created:
         type: "string"
-      roleInChannel:
+      role_in_channel:
         type: "string"
-
   Standup:
     type: "object"
     properties:

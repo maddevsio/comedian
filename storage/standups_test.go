@@ -14,7 +14,7 @@ import (
 func TestCreateStandup(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	_, err = mysql.CreateStandup(model.Standup{})
@@ -35,7 +35,7 @@ func TestCreateStandup(t *testing.T) {
 func TestGetStandups(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	st, err := mysql.CreateStandup(model.Standup{
@@ -67,7 +67,7 @@ func TestGetStandups(t *testing.T) {
 func TestUpdateStandup(t *testing.T) {
 	c, err := config.Get()
 	assert.NoError(t, err)
-	mysql, err := NewMySQL(c)
+	mysql, err := New(c)
 	assert.NoError(t, err)
 
 	st, err := mysql.CreateStandup(model.Standup{

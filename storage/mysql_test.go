@@ -9,8 +9,8 @@ import (
 	"gitlab.com/team-monitoring/comedian/config"
 )
 
-func TestNewMySQL(t *testing.T) {
+func TestNew(t *testing.T) {
 	c := &config.Config{}
-	_, err := NewMySQL(c)
+	_, err := New(c)
 	assert.NoError(t, err)
 }
