@@ -7,6 +7,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/jarcoal/httpmock"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
@@ -26,6 +27,15 @@ type MockedDB struct {
 	CreatedChannel       model.Channel
 	SelectedChannelError error
 	CreatedChannelError  error
+
+	CreatedUser          model.User
+	UpdatedUser          model.User
+	Standupers           []model.Standuper
+	CreatedUserError     error
+	UpdatedUserError     error
+	DeleteUserError      error
+	ListStandupersError  error
+	DeleteStanduperError error
 }
 
 func (m MockedDB) SelectUser(string) (model.User, error) {
@@ -42,6 +52,26 @@ func (m MockedDB) SelectChannel(string) (model.Channel, error) {
 
 func (m MockedDB) CreateChannel(model.Channel) (model.Channel, error) {
 	return m.CreatedChannel, m.CreatedChannelError
+}
+
+func (m MockedDB) CreateUser(model.User) (model.User, error) {
+	return m.CreatedUser, m.CreatedUserError
+}
+
+func (m MockedDB) UpdateUser(model.User) (model.User, error) {
+	return m.UpdatedUser, m.UpdatedUserError
+}
+
+func (m MockedDB) ListStandupers() ([]model.Standuper, error) {
+	return m.Standupers, m.ListStandupersError
+}
+
+func (m MockedDB) DeleteUser(int64) error {
+	return m.DeleteUserError
+}
+
+func (m MockedDB) DeleteStanduper(int64) error {
+	return m.DeleteStanduperError
 }
 
 func TestNew(t *testing.T) {
@@ -297,6 +327,63 @@ func TestSetProperties(t *testing.T) {
 
 	bot.SetProperties(newSettings)
 	assert.Equal(t, "Bar", bot.properties.TeamID)
+}
+
+func TestUpdateUser(t *testing.T) {
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		UserID:   "TESTUSERID",
+		Language: "en_US",
+	}
+
+	testCases := []struct {
+		User                 slack.User
+		SelectedUser         model.User
+		CreatedUser          model.User
+		UpdatedUser          model.User
+		Standupers           []model.Standuper
+		SelectedUserError    error
+		CreatedUserError     error
+		UpdatedUserError     error
+		ListStandupersError  error
+		DeleteUserError      error
+		DeleteStanduperError error
+	}{
+		{slack.User{IsBot: true}, model.User{}, model.User{}, model.User{}, []model.Standuper{}, nil, nil, nil, nil, nil, nil},
+		{slack.User{Name: "slackbot"}, model.User{}, model.User{}, model.User{}, []model.Standuper{}, nil, nil, nil, nil, nil, nil},
+		{slack.User{Deleted: false, IsAdmin: true, Name: "Foo"}, model.User{}, model.User{}, model.User{}, []model.Standuper{}, nil, nil, errors.New("update user error"), nil, nil, nil},
+		{slack.User{Deleted: true}, model.User{ID: int64(1)}, model.User{}, model.User{}, []model.Standuper{}, nil, nil, nil, nil, errors.New("delete user error"), nil},
+		{slack.User{Deleted: true}, model.User{ID: int64(1)}, model.User{}, model.User{}, []model.Standuper{}, nil, nil, nil, errors.New("list standupers error"), nil, nil},
+		{slack.User{Deleted: true}, model.User{ID: int64(1), UserID: "FOO123"}, model.User{}, model.User{}, []model.Standuper{{UserID: "FOO123"}}, nil, nil, nil, nil, nil, errors.New("delete standuper error")},
+		{slack.User{Deleted: false}, model.User{}, model.User{}, model.User{}, []model.Standuper{}, errors.New("select user error"), errors.New("create user error"), nil, nil, nil, nil},
+		{slack.User{Deleted: false, IsAdmin: true}, model.User{}, model.User{}, model.User{}, []model.Standuper{}, errors.New("select user error"), errors.New("create user error"), nil, nil, nil, nil},
+		{slack.User{Deleted: false, IsAdmin: true}, model.User{}, model.User{}, model.User{}, []model.Standuper{}, errors.New("select user error"), nil, nil, nil, nil, nil},
+	}
+
+	for _, tt := range testCases {
+		bot := New(bundle, settings, MockedDB{
+			SelectedUser:         tt.SelectedUser,
+			CreatedUser:          tt.CreatedUser,
+			UpdatedUser:          tt.UpdatedUser,
+			Standupers:           tt.Standupers,
+			SelectedUserError:    tt.SelectedUserError,
+			CreatedUserError:     tt.CreatedUserError,
+			UpdatedUserError:     tt.UpdatedUserError,
+			ListStandupersError:  tt.ListStandupersError,
+			DeleteUserError:      tt.DeleteUserError,
+			DeleteStanduperError: tt.DeleteStanduperError,
+		})
+
+		err := bot.updateUser(tt.User)
+		if err != nil {
+			assert.Error(t, err)
+		}
+	}
 }
 
 //httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", r)

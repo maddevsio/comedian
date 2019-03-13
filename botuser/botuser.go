@@ -449,68 +449,84 @@ func (bot *Bot) UpdateUsersList() {
 		return
 	}
 	for _, user := range users {
-		if user.IsBot || user.Name == "slackbot" {
-			continue
+		err := bot.updateUser(user)
+		if err != nil {
+			log.Error(err)
 		}
+	}
 
-		u, err := bot.db.SelectUser(user.ID)
-		if err != nil && !user.Deleted {
-			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
-				u, err = bot.db.CreateUser(model.User{
-					TeamID:   user.TeamID,
-					UserName: user.Name,
-					UserID:   user.ID,
-					Role:     "admin",
-					RealName: user.RealName,
-				})
-				if err != nil {
-					log.Errorf("CreateUser failed %v", err)
-					continue
-				}
-				continue
-			}
+	log.Info("Users list updated successfully")
+}
+
+func (bot *Bot) updateUser(user slack.User) error {
+	if user.IsBot || user.Name == "slackbot" {
+		return nil
+	}
+
+	u, err := bot.db.SelectUser(user.ID)
+	if err != nil && !user.Deleted {
+		if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
 			u, err = bot.db.CreateUser(model.User{
 				TeamID:   user.TeamID,
 				UserName: user.Name,
 				UserID:   user.ID,
-				Role:     "",
+				Role:     "admin",
 				RealName: user.RealName,
 			})
 			if err != nil {
-				log.Errorf("CreateUser with no role failed %v", err)
-				continue
+				return err
 			}
+			return nil
+		}
+		u, err = bot.db.CreateUser(model.User{
+			TeamID:   user.TeamID,
+			UserName: user.Name,
+			UserID:   user.ID,
+			Role:     "",
+			RealName: user.RealName,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if !user.Deleted {
+		u.UserName = user.Name
+		if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
+			u.Role = "admin"
+		}
+		u.RealName = user.RealName
+		u.TeamID = user.TeamID
+		_, err = bot.db.UpdateUser(u)
+		if err != nil {
+			return err
+		}
+	}
+
+	if user.Deleted {
+		err := bot.db.DeleteUser(u.ID)
+		if err != nil {
+			return err
 		}
 
-		if !user.Deleted {
-			u.UserName = user.Name
-			if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
-				u.Role = "admin"
-			}
-			u.RealName = user.RealName
-			u.TeamID = user.TeamID
-			_, err = bot.db.UpdateUser(u)
-			if err != nil {
-				log.Errorf("Update User failed %v", err)
-				continue
-			}
+		standupers, err := bot.db.ListStandupers()
+		if err != nil {
+			return err
 		}
-
-		if user.Deleted {
-			bot.db.DeleteUser(u.ID)
-			standupers, err := bot.db.ListStandupers()
-			if err != nil {
-				continue
-			}
-			for _, standuper := range standupers {
-				if u.UserID == standuper.UserID {
-					bot.db.DeleteStanduper(standuper.ID)
+		for _, standuper := range standupers {
+			log.Info(u.UserID == standuper.UserID)
+			log.Info(u.UserID)
+			log.Info(standuper.UserID)
+			if u.UserID == standuper.UserID {
+				err := bot.db.DeleteStanduper(standuper.ID)
+				if err != nil {
+					log.Error(err)
 				}
 			}
 		}
 	}
 
-	log.Info("Users list updated successfully")
+	return nil
 }
 
 func (bot *Bot) Suits(team string) bool {
