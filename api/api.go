@@ -69,35 +69,33 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/templates/*.html")),
 	}
 
-	v1 := echo.Group("/v1")
-
 	restAPI := RESTAPI{api.db}
 
-	v1.GET("/healthcheck", restAPI.healthcheck)
+	echo.GET("/v1/healthcheck", restAPI.healthcheck)
 
-	v1.GET("/standups", restAPI.listStandups)
-	v1.GET("/standups/:id", restAPI.getStandup)
-	v1.POST("/standups/:id", restAPI.updateStandup)
-	v1.DELETE("/standups/:id", restAPI.deleteStandup)
+	echo.GET("/v1/standups", restAPI.listStandups)
+	echo.GET("/v1/standups/:id", restAPI.getStandup)
+	echo.POST("/v1/standups/:id", restAPI.updateStandup)
+	echo.DELETE("/v1/standups/:id", restAPI.deleteStandup)
 
-	v1.GET("/users", restAPI.listUsers)
-	v1.GET("/users/:id", restAPI.getUser)
-	v1.POST("/users/:id", restAPI.updateUser)
+	echo.GET("/v1/users", restAPI.listUsers)
+	echo.GET("/v1/users/:id", restAPI.getUser)
+	echo.POST("/v1/users/:id", restAPI.updateUser)
 
-	v1.GET("/channels", restAPI.listChannels)
-	v1.GET("/channels/:id", restAPI.getChannel)
-	v1.POST("/channels/:id", restAPI.updateChannel)
-	v1.DELETE("/channels/:id", restAPI.deleteChannel)
+	echo.GET("/v1/channels", restAPI.listChannels)
+	echo.GET("/v1/channels/:id", restAPI.getChannel)
+	echo.POST("/v1/channels/:id", restAPI.updateChannel)
+	echo.DELETE("/v1/channels/:id", restAPI.deleteChannel)
 
-	v1.GET("/standupers", restAPI.listStandupers)
-	v1.GET("/standupers/:id", restAPI.getStanduper)
-	v1.POST("/standupers/:id", restAPI.updateStanduper)
-	v1.DELETE("/standupers/:id", restAPI.deleteStanduper)
+	echo.GET("/v1/standupers", restAPI.listStandupers)
+	echo.GET("/v1/standupers/:id", restAPI.getStanduper)
+	echo.POST("/v1/standupers/:id", restAPI.updateStanduper)
+	echo.DELETE("/v1/standupers/:id", restAPI.deleteStanduper)
 
-	v1.GET("/bots", restAPI.listBots)
-	v1.GET("/bots/:id", restAPI.getBot)
-	v1.POST("/bots/:id", restAPI.updateBot)
-	v1.DELETE("/bots/:id", restAPI.deleteBot)
+	echo.GET("/v1/bots", restAPI.listBots)
+	echo.GET("/v1/bots/:id", restAPI.getBot)
+	echo.POST("/v1/bots/:id", restAPI.updateBot)
+	echo.DELETE("/v1/bots/:id", restAPI.deleteBot)
 
 	echo.Renderer = t
 	echo.GET("/login", api.renderLoginPage)
