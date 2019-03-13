@@ -386,69 +386,102 @@ func TestUpdateUser(t *testing.T) {
 	}
 }
 
-//httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", r)
-/*
-r := httpmock.NewStringResponder(200, `{
-	"ok": true,
-	"members": [
-		{
-			"id": "USER1D1",
-			"team_id": "TEAMID1",
-			"name": "UserAdmin",
-			"deleted": false,
-			"color": "9f69e7",
-			"real_name": "admin",
-			"is_admin": true,
-			"is_owner": true,
-			"is_primary_owner": true,
-			"is_restricted": false,
-			"is_ultra_restricted": false,
-			"is_bot": false
-		},
-		{
-			"id": "BOTID",
-			"team_id": "TEAMID1",
-			"name": "comedian",
-			"deleted": false,
-			"color": "4bbe2e",
-			"real_name": "comedian",
-			"tz": "America\/Los_Angeles",
-			"tz_label": "Pacific Daylight Time",
-			"tz_offset": -25200,
-			"is_admin": false,
-			"is_owner": false,
-			"is_primary_owner": false,
-			"is_restricted": false,
-			"is_ultra_restricted": false,
-			"is_bot": true,
-			"is_app_user": false,
-			"updated": 1529488035
-		},
-		{
-			"id": "UBEGJBB9A",
-			"team_id": "TEAMID1",
-			"name": "anot",
-			"deleted": false,
-			"color": "674b1b",
-			"real_name": "Anot",
-			"is_restricted": false,
-			"is_ultra_restricted": false,
-			"is_bot": false,
-			"is_app_user": false
-		},
-		{
-			"id": "xxx",
-			"team_id": "TEAMID1",
-			"name": "deleted user",
-			"deleted": true,
-			"color": "674b1b",
-			"real_name": "test user",
-			"is_restricted": false,
-			"is_ultra_restricted": false,
-			"is_bot": false,
-			"is_app_user": false
-		}
-	]
-}`)
+func TestUpdateUsersList(t *testing.T) {
+	success := httpmock.NewStringResponder(200, `{
+		"ok": true,
+		"members": [
+			{
+				"id": "USER1D1",
+				"team_id": "TEAMID1",
+				"name": "UserAdmin",
+				"deleted": false,
+				"color": "9f69e7",
+				"real_name": "admin",
+				"is_admin": false,
+				"is_owner": false,
+				"is_primary_owner": false,
+				"is_restricted": false,
+				"is_ultra_restricted": false,
+				"is_bot": false
+			}
+		]
+	}`)
 
-*/
+	fail := httpmock.NewStringResponder(404, `{"error":true, "members":[]}`)
+
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		UserID:   "TESTUSERID",
+		Language: "en_US",
+	}
+
+	httpmock.Activate()
+	httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", fail)
+
+	bot := New(bundle, settings, MockedDB{CreatedUserError: nil})
+
+	bot.UpdateUsersList()
+	httpmock.DeactivateAndReset()
+
+	httpmock.Activate()
+	httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", success)
+
+	bot = New(bundle, settings, MockedDB{CreatedUserError: errors.New("err"), SelectedUserError: errors.New("err")})
+
+	bot.UpdateUsersList()
+	httpmock.DeactivateAndReset()
+}
+
+func TestSendMessage(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postEphemeral", httpmock.NewStringResponder(200, `{"ok": true}`))
+
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		UserID:   "TESTUSERID",
+		Language: "en_US",
+	}
+
+	bot := New(bundle, settings, MockedDB{})
+	err = bot.SendMessage("YYYZZZVVV", "Hey!", nil)
+	assert.NoError(t, err)
+
+	err = bot.SendEphemeralMessage("YYYZZZVVV", "USER!", "Hey!")
+	assert.NoError(t, err)
+}
+
+func TestSendUserMessage(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", "https://slack.com/api/im.open", httpmock.NewStringResponder(200, `{"ok": true}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `{"ok": true}`))
+
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		UserID:   "TESTUSERID",
+		Language: "en_US",
+	}
+
+	bot := New(bundle, settings, MockedDB{})
+
+	err = bot.SendUserMessage("USLACKBOT", "MSG to User!")
+	assert.NoError(t, err)
+}
