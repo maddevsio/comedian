@@ -74,7 +74,11 @@ func (bot *Bot) Start() {
 				log.Info(message)
 				bot.properties.UserID = bot.rtm.GetInfo().User.ID
 			case *slack.MemberJoinedChannelEvent:
-				bot.HandleJoin(ev.Channel, ev.Team)
+				ch, err := bot.HandleJoin(ev.Channel, ev.Team)
+				if err != nil {
+					log.Error(err)
+				}
+				log.Info("New channel created: ", ch)
 			}
 		}
 	}(bot)
@@ -366,28 +370,27 @@ func (bot *Bot) SendUserMessage(userID, message string) error {
 }
 
 //HandleJoin handles comedian joining channel
-func (bot *Bot) HandleJoin(channelID, teamID string) {
-	_, err := bot.db.SelectChannel(channelID)
+func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
+	newChannel := model.Channel{}
+	newChannel, err := bot.db.SelectChannel(channelID)
 	if err == nil {
-		return
+		return newChannel, nil
 	}
 
 	channel, err := bot.slack.GetConversationInfo(channelID, true)
 	if err != nil {
-		log.Errorf("GetConversationInfo failed: %v", err)
-		return
+		return newChannel, err
 	}
-	createdChannel, err := bot.db.CreateChannel(model.Channel{
+	newChannel, err = bot.db.CreateChannel(model.Channel{
 		TeamID:      teamID,
 		ChannelName: channel.Name,
 		ChannelID:   channel.ID,
 		StandupTime: int64(0),
 	})
 	if err != nil {
-		log.Errorf("CreateChannel failed: %v", err)
-		return
+		return newChannel, err
 	}
-	log.Infof("New Channel Created: %v", createdChannel)
+	return newChannel, nil
 }
 
 func (bot *Bot) ImplementCommands(form model.FullSlackForm) string {
