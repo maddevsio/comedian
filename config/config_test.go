@@ -10,7 +10,7 @@ import (
 func TestConfig(t *testing.T) {
 	os.Clearenv()
 	conf, err := Get()
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	os.Setenv("COMEDIAN_DATABASE", "DB")
 	os.Setenv("COMEDIAN_HTTP_BIND_ADDR", "0.0.0.0:8080")

@@ -10,7 +10,8 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	c := &config.Config{}
-	_, err := New(c)
+	c, err := config.Get()
+	assert.NoError(t, err)
+	_, err = New(c)
 	assert.NoError(t, err)
 }
