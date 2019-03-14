@@ -1,26 +1,26 @@
 stages:
-#  - tests
+  - tests
   - build
   - deploy
 services:
   - docker:dind
 
 
-# tests: 
-#   stage: tests
-#   image: halfb00t/docker-compose:1.22
-#   tags:
-#     - docker
-#   script:
-#     - docker network create comedian_comedian
-#     - docker-compose -f ./docker-compose-test.yml up -d db
-#     - docker-compose -f ./docker-compose-test.yml up -d golang 
-#     - docker exec -i golang-test ls
-#     - sleep 10
-#     - docker exec -i golang-test make run_tests
-#   allow_failure: true
-#   only:
-#     - master
+tests: 
+  stage: tests
+  image: halfb00t/docker-compose:1.22
+  tags:
+    - docker
+  script:
+    - docker network create comedian_comedian
+    - docker-compose -f ./docker-compose-test.yml up -d db
+    - docker-compose -f ./docker-compose-test.yml up -d golang 
+    - docker exec -i golang-test ls
+    - sleep 10
+    - docker exec -i golang-test make run_tests
+  allow_failure: true
+  only:
+    - master
   
 
 build:
