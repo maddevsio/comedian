@@ -3,6 +3,7 @@ package botuser
 import (
 	"errors"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -33,6 +34,7 @@ type Bot struct {
 	properties model.BotSettings
 	db         storage.Storage
 	bundle     *i18n.Bundle
+	wg         sync.WaitGroup
 }
 
 func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *Bot {
@@ -48,29 +50,27 @@ func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *B
 }
 
 func (bot *Bot) Start() {
-	bot.UpdateUsersList()
+	bot.wg.Add(1)
+	go func() {
+		bot.UpdateUsersList()
+		bot.wg.Done()
+	}()
 
-	go func(bot *Bot) {
+	bot.wg.Add(1)
+	go func() {
+		defer bot.wg.Done()
+		bot.rtm.ManageConnection()
+	}()
 
-		go bot.rtm.ManageConnection()
+	bot.wg.Add(1)
+	go func() {
+		defer bot.wg.Done()
 		for msg := range bot.rtm.IncomingEvents {
 			switch ev := msg.Data.(type) {
 			case *slack.MessageEvent:
 				bot.HandleMessage(ev)
 			case *slack.ConnectedEvent:
-				payload := translation.Payload{bot.bundle, bot.properties.Language, "Reconnected", 0, nil}
-				message, err := translation.Translate(payload)
-				if err != nil {
-					log.WithFields(log.Fields{
-						"TeamName":     bot.properties.TeamName,
-						"Language":     payload.Lang,
-						"MessageID":    payload.MessageID,
-						"Count":        payload.Count,
-						"TemplateData": payload.TemplateData,
-					}).Error("Failed to translate message!")
-					continue
-				}
-				log.Info(message)
+				log.Info("reconnected!")
 				bot.properties.UserID = bot.rtm.GetInfo().User.ID
 			case *slack.MemberJoinedChannelEvent:
 				ch, err := bot.HandleJoin(ev.Channel, ev.Team)
@@ -80,14 +80,16 @@ func (bot *Bot) Start() {
 				log.Info("New channel created: ", ch)
 			}
 		}
-	}(bot)
+	}()
 
-	go func(bot *Bot) {
+	bot.wg.Add(1)
+	go func() {
+		defer bot.wg.Done()
 		counter := time.NewTicker(time.Second * 60).C
 		for time := range counter {
 			bot.NotifyChannels(time)
 		}
-	}(bot)
+	}()
 }
 
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent) {
@@ -477,9 +479,6 @@ func (bot *Bot) updateUser(user slack.User) error {
 			return err
 		}
 		for _, standuper := range standupers {
-			log.Info(u.UserID == standuper.UserID)
-			log.Info(u.UserID)
-			log.Info(standuper.UserID)
 			if u.UserID == standuper.UserID {
 				err := bot.db.DeleteStanduper(standuper.ID)
 				if err != nil {
