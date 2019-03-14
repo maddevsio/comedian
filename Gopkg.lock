@@ -82,6 +82,14 @@
   version = "v1.4.0"
 
 [[projects]]
+  branch = "v1"
+  digest = "1:628e0b0440dd467e26b26575195ff5c6eb1477a51b05f46afdfb6c1970e0138c"
+  name = "github.com/jarcoal/httpmock"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c8b53f8af6a91ef7252d80af22daa67a244c8850"
+
+[[projects]]
   branch = "master"
   digest = "1:d8715388cdd077d4b5e477e92e93e8c2c16c5f8cdc1f79b0ef2616ef8ea09f9f"
   name = "github.com/jmoiron/sqlx"
@@ -298,6 +306,7 @@
     "github.com/getsentry/raven-go",
     "github.com/go-sql-driver/mysql",
     "github.com/gorilla/schema",
+    "github.com/jarcoal/httpmock",
     "github.com/jmoiron/sqlx",
     "github.com/kelseyhightower/envconfig",
     "github.com/labstack/echo",
