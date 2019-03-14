@@ -125,22 +125,7 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		return errors.New("Fail to save message as standup. Standup is not complete")
 	}
 
-	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
-	if standuper.SubmittedStandupToday {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		oneStandupPerDay, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-		}
-		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
-		return errors.New("Fail to save message as standup. User already submitted standup today")
-	}
+	// check for submitted standup
 	standup, err := bot.db.CreateStandup(model.Standup{
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
@@ -159,6 +144,11 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		Comment:   "",
 	}
 	bot.slack.AddReaction("heavy_check_mark", item)
+
+	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
+	if err != nil {
+		return err
+	}
 	standuper.SubmittedStandupToday = true
 	_, err = bot.db.UpdateStanduper(standuper)
 	if err != nil {
@@ -172,71 +162,52 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 		return errors.New("bot is not mentioned and no #standup in the message body")
 	}
 
-	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
-	if err != nil {
-		problem := bot.analizeStandup(msg.SubMessage.Text)
-		if problem != "" {
-			bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
-			return errors.New("Fail to save edited message as standup. Standup is not complete")
-		}
-
-		standuper, err := bot.db.FindStansuperByUserID(msg.SubMessage.User, msg.Channel)
-		if standuper.SubmittedStandupToday {
-			payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-			oneStandupPerDay, err := translation.Translate(payload)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"TeamName":     bot.properties.TeamName,
-					"Language":     payload.Lang,
-					"MessageID":    payload.MessageID,
-					"Count":        payload.Count,
-					"TemplateData": payload.TemplateData,
-				}).Error("Failed to translate message!")
-			}
-			bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
-			return errors.New("Fail to save edited message as standup. User already submitted standup today")
-		}
-
-		standup, err := bot.db.CreateStandup(model.Standup{
-			TeamID:    msg.Team,
-			ChannelID: msg.Channel,
-			UserID:    msg.SubMessage.User,
-			Comment:   msg.SubMessage.Text,
-			MessageTS: msg.SubMessage.Timestamp,
-		})
-		if err != nil {
-			return err
-		}
-
-		log.Infof("Standup created #id:%v\n", standup.ID)
-
-		item := slack.ItemRef{
-			Channel:   msg.Channel,
-			Timestamp: msg.SubMessage.Timestamp,
-			File:      "",
-			Comment:   "",
-		}
-		bot.slack.AddReaction("heavy_check_mark", item)
-		standuper.SubmittedStandupToday = true
-		_, err = bot.db.UpdateStanduper(standuper)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
 	problem := bot.analizeStandup(msg.SubMessage.Text)
 	if problem != "" {
 		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
 		return errors.New("Fail to save edited message as standup. Standup is not complete")
 	}
 
-	standup.Comment = msg.SubMessage.Text
-	st, err := bot.db.UpdateStandup(standup)
+	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
+	if err == nil {
+		standup.Comment = msg.SubMessage.Text
+		st, err := bot.db.UpdateStandup(standup)
+		if err != nil {
+			return err
+		}
+		log.Infof("Standup updated #id:%v\n", st.ID)
+		return nil
+	}
+	// check for submitted standup
+	standup, err = bot.db.CreateStandup(model.Standup{
+		TeamID:    msg.Team,
+		ChannelID: msg.Channel,
+		UserID:    msg.SubMessage.User,
+		Comment:   msg.SubMessage.Text,
+		MessageTS: msg.SubMessage.Timestamp,
+	})
 	if err != nil {
 		return err
 	}
-	log.Infof("Standup updated #id:%v\n", st.ID)
+
+	log.Infof("Standup created #id:%v\n", standup.ID)
+
+	item := slack.ItemRef{
+		Channel:   msg.Channel,
+		Timestamp: msg.SubMessage.Timestamp,
+		File:      "",
+		Comment:   "",
+	}
+	bot.slack.AddReaction("heavy_check_mark", item)
+	standuper, err := bot.db.FindStansuperByUserID(msg.SubMessage.User, msg.Channel)
+	if err != nil {
+		return err
+	}
+	standuper.SubmittedStandupToday = true
+	_, err = bot.db.UpdateStanduper(standuper)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -537,3 +508,35 @@ func (bot *Bot) SetProperties(settings model.BotSettings) model.BotSettings {
 	bot.properties = settings
 	return bot.properties
 }
+
+// if bot.db.UserSubmittedStandupToday(msg.Channel, msg.User) {
+// 	payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+// 	oneStandupPerDay, err := translation.Translate(payload)
+// 	if err != nil {
+// 		log.WithFields(log.Fields{
+// 			"TeamName":     bot.properties.TeamName,
+// 			"Language":     payload.Lang,
+// 			"MessageID":    payload.MessageID,
+// 			"Count":        payload.Count,
+// 			"TemplateData": payload.TemplateData,
+// 		}).Error("Failed to translate message!")
+// 	}
+// 	bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
+// 	return errors.New("Fail to save message as standup. User already submitted standup today")
+// }
+
+// if bot.db.UserSubmittedStandupToday(msg.Channel, msg.User) {
+// 	payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+// 	oneStandupPerDay, err := translation.Translate(payload)
+// 	if err != nil {
+// 		log.WithFields(log.Fields{
+// 			"TeamName":     bot.properties.TeamName,
+// 			"Language":     payload.Lang,
+// 			"MessageID":    payload.MessageID,
+// 			"Count":        payload.Count,
+// 			"TemplateData": payload.TemplateData,
+// 		}).Error("Failed to translate message!")
+// 	}
+// 	bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
+// 	return errors.New("Fail to save edited message as standup. User already submitted standup today")
+// }

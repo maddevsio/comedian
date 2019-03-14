@@ -36,6 +36,16 @@ type MockedDB struct {
 	DeleteUserError      error
 	ListStandupersError  error
 	DeleteStanduperError error
+
+	SelectedStandupByMessageTS    model.Standup
+	UpdatedStanduper              model.Standuper
+	CreatedStandup                model.Standup
+	UpdatedStandup                model.Standup
+	CreateStandupError            error
+	UpdateStandupError            error
+	SelectStandupByMessageTSError error
+	UpdateStanduperError          error
+	DeleteStandupError            error
 }
 
 func (m MockedDB) SelectUser(string) (model.User, error) {
@@ -72,6 +82,26 @@ func (m MockedDB) DeleteUser(int64) error {
 
 func (m MockedDB) DeleteStanduper(int64) error {
 	return m.DeleteStanduperError
+}
+
+func (m MockedDB) DeleteStandup(int64) error {
+	return m.DeleteStandupError
+}
+
+func (m MockedDB) SelectStandupByMessageTS(string) (model.Standup, error) {
+	return m.SelectedStandupByMessageTS, m.SelectStandupByMessageTSError
+}
+
+func (m MockedDB) CreateStandup(model.Standup) (model.Standup, error) {
+	return m.CreatedStandup, m.CreateStandupError
+}
+
+func (m MockedDB) UpdateStandup(model.Standup) (model.Standup, error) {
+	return m.UpdatedStandup, m.UpdateStandupError
+}
+
+func (m MockedDB) UpdateStanduper(model.Standuper) (model.Standuper, error) {
+	return m.UpdatedStanduper, m.UpdateStanduperError
 }
 
 func TestNew(t *testing.T) {
@@ -484,4 +514,97 @@ func TestSendUserMessage(t *testing.T) {
 
 	err = bot.SendUserMessage("USLACKBOT", "MSG to User!")
 	assert.NoError(t, err)
+}
+
+func TestHandleMessage(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postMessage", httpmock.NewStringResponder(200, `"ok": true`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/reactions.add", httpmock.NewStringResponder(200, `{"ok": true}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/im.open", httpmock.NewStringResponder(200, `{"ok": true}`))
+	httpmock.RegisterResponder("POST", "https://slack.com/api/chat.postEphemeral", httpmock.NewStringResponder(200, `{"ok": true}`))
+
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		UserID:   "TESTUSERID",
+		Language: "en_US",
+	}
+
+	testCases := []struct {
+		text                          string
+		subType                       string
+		SelectedStandupByMessageTS    model.Standup
+		FoundStanduper                model.Standuper
+		UpdatedStanduper              model.Standuper
+		CreatedStandup                model.Standup
+		UpdatedStandup                model.Standup
+		SelectStandupByMessageTSError error
+		FoundStanduperError           error
+		UpdateStanduperError          error
+		DeleteStandupError            error
+		CreateStandupError            error
+		UpdateStandupError            error
+	}{
+		{"Lorem ipsum...", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
+		{"TESTUSERID Lorem ipsum...", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, errors.New("create standup"), nil},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{ID: int64(1)}, model.Standup{}, nil, errors.New("standuper not found"), nil, nil, nil, nil},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{ID: int64(1)}, model.Standuper{}, model.Standup{ID: int64(1)}, model.Standup{}, nil, nil, errors.New("update standuper"), nil, nil, nil},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{ID: int64(1)}, model.Standuper{}, model.Standup{ID: int64(1)}, model.Standup{}, nil, nil, nil, nil, nil, nil},
+
+		{"Lorem ipsum...", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
+		{"TESTUSERID Lorem ipsum...", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, errors.New("update standup")},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, errors.New("create standup"), nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), errors.New("standuper not found"), nil, nil, nil, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, errors.New("update standuper"), nil, nil, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil},
+
+		{"Lorem ipsum...", typeDeleteMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil},
+		{"Lorem ipsum...", typeDeleteMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, errors.New("err"), nil, nil},
+		{"Lorem ipsum...", typeDeleteMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
+	}
+
+	for _, tt := range testCases {
+		bot := New(bundle, settings, MockedDB{
+			FoundStanduper:                tt.FoundStanduper,
+			SelectedStandupByMessageTS:    tt.SelectedStandupByMessageTS,
+			UpdatedStanduper:              tt.UpdatedStanduper,
+			SelectStandupByMessageTSError: tt.SelectStandupByMessageTSError,
+			UpdateStanduperError:          tt.UpdateStanduperError,
+			DeleteStandupError:            tt.DeleteStandupError,
+			FoundStanduperError:           tt.FoundStanduperError,
+			CreatedStandup:                tt.CreatedStandup,
+			CreateStandupError:            tt.CreateStandupError,
+			UpdateStandupError:            tt.UpdateStandupError,
+		})
+
+		msg := &slack.MessageEvent{}
+		msg.Text = tt.text
+		msg.User = "Foo"
+		msg.Channel = "Bar"
+		msg.Timestamp = "15000"
+		msg.SubType = tt.subType
+
+		if tt.subType == typeEditMessage {
+			msg = &slack.MessageEvent{
+				SubMessage: &slack.Msg{
+					User:      "Foo",
+					Text:      tt.text,
+					Timestamp: "15000",
+				},
+			}
+			msg.Channel = "Bar"
+			msg.SubType = tt.subType
+		}
+
+		bot.HandleMessage(msg)
+	}
 }
