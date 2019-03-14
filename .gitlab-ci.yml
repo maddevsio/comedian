@@ -18,7 +18,7 @@ tests:
     - docker exec -i golang-test ls
     - sleep 10
     - docker exec -i golang-test make run_tests
-  allow_failure: true
+  allow_failure: false
   only:
     - master
   
@@ -35,8 +35,8 @@ build:
     - docker push registry.gitlab.com/team-monitoring/comedian:staging
   only:
     - master
-  when:
-    manual
+  # when:
+  #   manual
   allow_failure: false
 
 
