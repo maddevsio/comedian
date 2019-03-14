@@ -646,3 +646,20 @@ func TestImplementCommands(t *testing.T) {
 	}
 
 }
+
+func TestStart(t *testing.T) {
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		UserID:   "TESTUSERID",
+		Language: "en_US",
+	}
+
+	bot := New(bundle, settings, MockedDB{})
+
+	bot.Start()
+}

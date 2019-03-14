@@ -66,19 +66,7 @@ func (bot *Bot) Start() {
 	go func() {
 		defer bot.wg.Done()
 		for msg := range bot.rtm.IncomingEvents {
-			switch ev := msg.Data.(type) {
-			case *slack.MessageEvent:
-				bot.HandleMessage(ev)
-			case *slack.ConnectedEvent:
-				log.Info("reconnected!")
-				bot.properties.UserID = bot.rtm.GetInfo().User.ID
-			case *slack.MemberJoinedChannelEvent:
-				ch, err := bot.HandleJoin(ev.Channel, ev.Team)
-				if err != nil {
-					log.Error(err)
-				}
-				log.Info("New channel created: ", ch)
-			}
+			bot.HandleSlackEvent(msg)
 		}
 	}()
 
@@ -90,6 +78,22 @@ func (bot *Bot) Start() {
 			bot.NotifyChannels(time)
 		}
 	}()
+}
+
+func (bot *Bot) HandleSlackEvent(msg slack.RTMEvent) {
+	switch ev := msg.Data.(type) {
+	case *slack.MessageEvent:
+		bot.HandleMessage(ev)
+	case *slack.ConnectedEvent:
+		log.Info("reconnected!")
+		bot.properties.UserID = bot.rtm.GetInfo().User.ID
+	case *slack.MemberJoinedChannelEvent:
+		ch, err := bot.HandleJoin(ev.Channel, ev.Team)
+		if err != nil {
+			log.Error(err)
+		}
+		log.Info("New channel created: ", ch)
+	}
 }
 
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent) {
