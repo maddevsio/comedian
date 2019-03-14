@@ -222,7 +222,7 @@ func TestGetAccessLevel(t *testing.T) {
 			FoundStanduperError: tt.FoundStanduperError,
 		})
 
-		accessLevel, err := bot.getAccessLevel("Foo", "Bar")
+		accessLevel, err := bot.GetAccessLevel("Foo", "Bar")
 		if err != nil {
 			assert.Equal(t, tt.SelectedUserError, err)
 		}
@@ -607,4 +607,42 @@ func TestHandleMessage(t *testing.T) {
 
 		bot.HandleMessage(msg)
 	}
+}
+
+func TestImplementCommands(t *testing.T) {
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		UserID:   "TESTUSERID",
+		Language: "en_US",
+	}
+
+	bot := New(bundle, settings, MockedDB{
+		SelectedChannelError: errors.New("no channel"),
+	})
+
+	testCases := []struct {
+		command     string
+		params      string
+		accessLevel int
+		expected    string
+	}{
+		{"foo", "", 0, "All help!"},
+		{"add", "", 4, "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"show", "foo", 0, "To view members use `show` command. If you provide a role name, you will see members with this role. _admin, pm, developer, designer_. "},
+		{"remove", "", 4, "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"add_deadline", "", 4, "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"remove_deadline", "", 4, "Access Denied! You need to be at least PM in this project to use this command!"},
+		{"show_deadline", "", 0, "No standup time set for this channel yet! Please, add a standup time using `/comedian add_deadline` command!"},
+	}
+
+	for _, tt := range testCases {
+		message := bot.ImplementCommands("Foo", tt.command, tt.params, tt.accessLevel)
+		assert.Equal(t, tt.expected, message)
+	}
+
 }

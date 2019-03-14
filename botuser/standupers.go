@@ -12,7 +12,6 @@ import (
 )
 
 func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
-
 	payload := translation.Payload{bot.bundle, bot.properties.Language, "AccessAtLeastAdmin", 0, nil}
 	accessAtLeastAdmin, err := translation.Translate(payload)
 	if err != nil {
@@ -37,6 +36,10 @@ func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
 		}).Error("Failed to translate help message!")
 	}
 
+	if accessLevel > pmAccess {
+		return accessAtLeastPM
+	}
+
 	var role string
 	var members []string
 	if strings.Contains(params, "/") {
@@ -55,19 +58,10 @@ func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
 		}
 		return bot.addAdmins(members)
 	case "developer", "разработчик", "":
-		if accessLevel > pmAccess {
-			return accessAtLeastPM
-		}
 		return bot.addMembers(members, "developer", channelID)
 	case "designer", "дизайнер":
-		if accessLevel > pmAccess {
-			return accessAtLeastPM
-		}
 		return bot.addMembers(members, "designer", channelID)
 	case "pm", "пм":
-		if accessLevel > adminAccess {
-			return accessAtLeastAdmin
-		}
 		return bot.addMembers(members, "pm", channelID)
 	default:
 		return bot.DisplayHelpText("add")
@@ -113,6 +107,10 @@ func (bot *Bot) deleteCommand(accessLevel int, channelID, params string) string 
 		}).Error("Failed to translate help message!")
 	}
 
+	if accessLevel > pmAccess {
+		return accessAtLeastPM
+	}
+
 	var role string
 	var members []string
 	if strings.Contains(params, "/") {
@@ -131,9 +129,6 @@ func (bot *Bot) deleteCommand(accessLevel int, channelID, params string) string 
 		}
 		return bot.deleteAdmins(members)
 	case "developer", "разработчик", "pm", "пм", "":
-		if accessLevel > pmAccess {
-			return accessAtLeastPM
-		}
 		return bot.deleteMembers(members, channelID)
 	default:
 		return bot.DisplayHelpText("remove")

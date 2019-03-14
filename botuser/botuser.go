@@ -11,7 +11,6 @@ import (
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
 	"gitlab.com/team-monitoring/comedian/translation"
-	"gitlab.com/team-monitoring/comedian/utils"
 )
 
 var (
@@ -364,34 +363,27 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 	return newChannel, nil
 }
 
-func (bot *Bot) ImplementCommands(form model.FullSlackForm) string {
-
-	accessLevel, err := bot.getAccessLevel(form.UserID, form.ChannelID)
-	if err != nil {
-		return err.Error()
-	}
-
-	command, params := utils.CommandParsing(form.Text)
+func (bot *Bot) ImplementCommands(channelID, command, params string, accessLevel int) string {
 
 	switch command {
 	case "add":
-		return bot.addCommand(accessLevel, form.ChannelID, params)
+		return bot.addCommand(accessLevel, channelID, params)
 	case "show":
-		return bot.showCommand(form.ChannelID, params)
+		return bot.showCommand(channelID, params)
 	case "remove":
-		return bot.deleteCommand(accessLevel, form.ChannelID, params)
+		return bot.deleteCommand(accessLevel, channelID, params)
 	case "add_deadline":
-		return bot.addTime(accessLevel, form.ChannelID, params)
+		return bot.addTime(accessLevel, channelID, params)
 	case "remove_deadline":
-		return bot.removeTime(accessLevel, form.ChannelID)
+		return bot.removeTime(accessLevel, channelID)
 	case "show_deadline":
-		return bot.showTime(form.ChannelID)
+		return bot.showTime(channelID)
 	default:
 		return bot.DisplayHelpText("")
 	}
 }
 
-func (bot *Bot) getAccessLevel(userID, channelID string) (int, error) {
+func (bot *Bot) GetAccessLevel(userID, channelID string) (int, error) {
 	user, err := bot.db.SelectUser(userID)
 	if err != nil {
 		return noAccess, err

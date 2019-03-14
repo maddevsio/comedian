@@ -17,6 +17,7 @@ import (
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
+	"gitlab.com/team-monitoring/comedian/utils"
 )
 
 // ComedianAPI struct used to handle slack requests (slash commands)
@@ -199,7 +200,14 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 		return err
 	}
 
-	message := bot.ImplementCommands(form)
+	accessLevel, err := bot.GetAccessLevel(form.UserID, form.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	command, params := utils.CommandParsing(form.Text)
+
+	message := bot.ImplementCommands(form.ChannelID, command, params, accessLevel)
 
 	return c.String(http.StatusOK, message)
 

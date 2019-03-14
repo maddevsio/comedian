@@ -11,18 +11,19 @@ import (
 )
 
 func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
+	payload := translation.Payload{bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
+	accessAtLeastPM, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
+
 	if accessLevel > pmAccess {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
-		accessAtLeastPM, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-		}
 		return accessAtLeastPM
 	}
 
@@ -30,7 +31,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 	w.Add(en.All...)
 	w.Add(ru.All...)
 
-	payload := translation.Payload{bot.bundle, bot.properties.Language, "SomethingWentWrong", 0, nil}
+	payload = translation.Payload{bot.bundle, bot.properties.Language, "SomethingWentWrong", 0, nil}
 	somethingWentWrong, err := translation.Translate(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -101,18 +102,19 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 }
 
 func (bot *Bot) removeTime(accessLevel int, channelID string) string {
+	payload := translation.Payload{bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
+	accessAtLeastPM, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
+
 	if accessLevel > pmAccess {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
-		accessAtLeastPM, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-		}
 		return accessAtLeastPM
 	}
 
@@ -167,7 +169,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 		return removeStandupTimeWithUsers
 	}
 
-	payload := translation.Payload{bot.bundle, bot.properties.Language, "RemoveStandupTime", 0, nil}
+	payload = translation.Payload{bot.bundle, bot.properties.Language, "RemoveStandupTime", 0, nil}
 	removeStandupTime, err := translation.Translate(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -183,6 +185,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 
 func (bot *Bot) showTime(channelID string) string {
 	channel, err := bot.db.SelectChannel(channelID)
+	// need to check error first, because it is misleading!
 	if err != nil || channel.StandupTime == int64(0) {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "ShowNoStandupTime", 0, nil}
 		showNoStandupTime, err := translation.Translate(payload)
