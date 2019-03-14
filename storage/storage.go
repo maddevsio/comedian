@@ -96,4 +96,7 @@ type Storage interface {
 
 	// DeleteUser deletes User entry from database
 	DeleteUser(id int64) error
+
+	//UserSubmittedStandupToday checks if user already has standup in the channel
+	UserSubmittedStandupToday(string, string) (bool, error)
 }

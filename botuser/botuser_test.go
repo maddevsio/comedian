@@ -41,6 +41,8 @@ type MockedDB struct {
 	UpdatedStanduper              model.Standuper
 	CreatedStandup                model.Standup
 	UpdatedStandup                model.Standup
+	SubmittedStandupTodayResult   bool
+	SubmittedStandupTodayError    error
 	CreateStandupError            error
 	UpdateStandupError            error
 	SelectStandupByMessageTSError error
@@ -102,6 +104,10 @@ func (m MockedDB) UpdateStandup(model.Standup) (model.Standup, error) {
 
 func (m MockedDB) UpdateStanduper(model.Standuper) (model.Standuper, error) {
 	return m.UpdatedStanduper, m.UpdateStanduperError
+}
+
+func (m MockedDB) UserSubmittedStandupToday(string, string) (bool, error) {
+	return m.SubmittedStandupTodayResult, m.SubmittedStandupTodayError
 }
 
 func TestNew(t *testing.T) {
@@ -550,26 +556,32 @@ func TestHandleMessage(t *testing.T) {
 		DeleteStandupError            error
 		CreateStandupError            error
 		UpdateStandupError            error
+		SubmittedStandupTodayResult   bool
+		SubmittedStandupTodayError    error
 	}{
-		{"Lorem ipsum...", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
-		{"TESTUSERID Lorem ipsum...", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
-		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, errors.New("create standup"), nil},
-		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{ID: int64(1)}, model.Standup{}, nil, errors.New("standuper not found"), nil, nil, nil, nil},
-		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{ID: int64(1)}, model.Standuper{}, model.Standup{ID: int64(1)}, model.Standup{}, nil, nil, errors.New("update standuper"), nil, nil, nil},
-		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{ID: int64(1)}, model.Standuper{}, model.Standup{ID: int64(1)}, model.Standup{}, nil, nil, nil, nil, nil, nil},
+		{"Lorem ipsum...", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil, false, nil},
+		{"TESTUSERID Lorem ipsum...", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil, false, nil},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil, true, errors.New("submitted standup")},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil, true, nil},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, errors.New("create standup"), nil, false, nil},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{ID: int64(1)}, model.Standup{}, nil, errors.New("standuper not found"), nil, nil, nil, nil, false, nil},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{ID: int64(1)}, model.Standuper{}, model.Standup{ID: int64(1)}, model.Standup{}, nil, nil, errors.New("update standuper"), nil, nil, nil, false, nil},
+		{"TESTUSERID yesterday, today, problems", typeMessage, model.Standup{}, model.Standuper{ID: int64(1)}, model.Standuper{}, model.Standup{ID: int64(1)}, model.Standup{}, nil, nil, nil, nil, nil, nil, false, nil},
 
-		{"Lorem ipsum...", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
-		{"TESTUSERID Lorem ipsum...", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil},
-		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, errors.New("update standup")},
-		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
-		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, errors.New("create standup"), nil},
-		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), errors.New("standuper not found"), nil, nil, nil, nil},
-		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, errors.New("update standuper"), nil, nil, nil},
-		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil},
+		{"Lorem ipsum...", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil, false, nil},
+		{"TESTUSERID Lorem ipsum...", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil, false, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, errors.New("update standup"), false, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil, false, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil, true, errors.New("submitted standup")},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil, true, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, errors.New("create standup"), nil, false, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), errors.New("standuper not found"), nil, nil, nil, nil, false, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, errors.New("update standuper"), nil, nil, nil, false, nil},
+		{"TESTUSERID yesterday, today, problems", typeEditMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil, false, nil},
 
-		{"Lorem ipsum...", typeDeleteMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil},
-		{"Lorem ipsum...", typeDeleteMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, errors.New("err"), nil, nil},
-		{"Lorem ipsum...", typeDeleteMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil},
+		{"Lorem ipsum...", typeDeleteMessage, model.Standup{}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, errors.New("err"), nil, nil, nil, nil, nil, false, nil},
+		{"Lorem ipsum...", typeDeleteMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, errors.New("err"), nil, nil, false, nil},
+		{"Lorem ipsum...", typeDeleteMessage, model.Standup{ID: int64(1)}, model.Standuper{}, model.Standuper{}, model.Standup{}, model.Standup{}, nil, nil, nil, nil, nil, nil, false, nil},
 	}
 
 	for _, tt := range testCases {
@@ -584,6 +596,8 @@ func TestHandleMessage(t *testing.T) {
 			CreatedStandup:                tt.CreatedStandup,
 			CreateStandupError:            tt.CreateStandupError,
 			UpdateStandupError:            tt.UpdateStandupError,
+			SubmittedStandupTodayResult:   tt.SubmittedStandupTodayResult,
+			SubmittedStandupTodayError:    tt.SubmittedStandupTodayError,
 		})
 
 		msg := &slack.MessageEvent{}
