@@ -58,3 +58,76 @@ func TestNotifyChannels(t *testing.T) {
 		bot.NotifyChannels(tt.time)
 	}
 }
+
+func TestSendWarning(t *testing.T) {
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		TeamID:       "comedian",
+		UserID:       "TESTUSERID",
+		Language:     "en_US",
+		ReminderTime: int64(0),
+	}
+
+	testCases := []struct {
+		dry                 bool
+		Standupers          []model.Standuper
+		ListStandupersError error
+		err                 error
+	}{
+		{false, []model.Standuper{}, errors.New("list standupers error"), errors.New("list standupers error")},
+		{false, []model.Standuper{}, nil, nil},
+		{false, []model.Standuper{{}}, nil, nil},
+		{false, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, errors.New("Could not post message to a channel")},
+		{true, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
+	}
+
+	for _, tt := range testCases {
+		dry = tt.dry
+		bot := New(bundle, settings, MockedDB{
+			Standupers:          tt.Standupers,
+			ListStandupersError: tt.ListStandupersError,
+		})
+		err := bot.SendWarning("Foo")
+		assert.Equal(t, tt.err, err)
+	}
+}
+
+func TestSendWarningBundleFail(t *testing.T) {
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	settings := model.BotSettings{
+		TeamID:       "comedian",
+		UserID:       "TESTUSERID",
+		Language:     "en_US",
+		ReminderTime: int64(0),
+	}
+
+	testCases := []struct {
+		dry                 bool
+		Standupers          []model.Standuper
+		ListStandupersError error
+		err                 error
+	}{
+		{false, []model.Standuper{}, errors.New("list standupers error"), errors.New("list standupers error")},
+		{false, []model.Standuper{}, nil, nil},
+		{false, []model.Standuper{{}}, nil, nil},
+		{false, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, errors.New("Could not post message to a channel")},
+		{true, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
+	}
+
+	for _, tt := range testCases {
+		dry = tt.dry
+		bot := New(bundle, settings, MockedDB{
+			Standupers:          tt.Standupers,
+			ListStandupersError: tt.ListStandupersError,
+		})
+		err := bot.SendWarning("Foo")
+		assert.Equal(t, tt.err, err)
+	}
+}

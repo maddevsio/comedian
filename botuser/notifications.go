@@ -68,7 +68,10 @@ func (bot *Bot) SendWarning(channelID string) error {
 		if standuper.ChannelID == channelID && !standuper.SubmittedStandupToday {
 			nonReportersIDs = append(nonReportersIDs, "<@"+standuper.UserID+">")
 		}
+	}
 
+	if len(nonReportersIDs) == 0 {
+		return nil
 	}
 
 	payload := translation.Payload{bot.bundle, bot.properties.Language, "Minutes", int(bot.properties.ReminderTime), map[string]interface{}{"time": bot.properties.ReminderTime}}
@@ -97,7 +100,8 @@ func (bot *Bot) SendWarning(channelID string) error {
 
 	err = bot.SendMessage(channelID, warnNonReporters, nil)
 	if err != nil {
-		return err
+		log.Error(err)
+		return errors.New("Could not post message to a channel")
 	}
 
 	return nil
