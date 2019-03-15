@@ -8,7 +8,6 @@ import (
 
 	"github.com/cenkalti/backoff"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/translation"
 )
 
@@ -45,7 +44,10 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 		if t.Hour() == standupTime.Hour() && t.Minute() == standupTime.Minute() {
 			bot.wg.Add(1)
 			go func() {
-				bot.SendChannelNotification(channel.ChannelID)
+				err := bot.SendChannelNotification(channel.ChannelID)
+				if err != nil {
+					log.Error(err)
+				}
 				bot.wg.Done()
 			}()
 		}
@@ -108,11 +110,14 @@ func (bot *Bot) SendWarning(channelID string) error {
 }
 
 //SendChannelNotification starts standup reminders and direct reminders to users
-func (bot *Bot) SendChannelNotification(channelID string) {
+func (bot *Bot) SendChannelNotification(channelID string) error {
 	standupers, err := bot.db.ListChannelStandupers(channelID)
 	if err != nil {
-		log.Errorf("notifier: bot.db.ListChannelStandupers failed: %v\n", err)
-		return
+		return err
+	}
+
+	if len(standupers) == 0 {
+		return nil
 	}
 
 	nonReporters := []string{}
@@ -125,19 +130,13 @@ func (bot *Bot) SendChannelNotification(channelID string) {
 
 	if len(nonReporters) == 0 {
 		log.Info("len(nonReporters) == 0")
-		return
-	}
-
-	channel, err := bot.db.SelectChannel(channelID)
-	if err != nil {
-		log.Errorf("notifier: SelectChannel failed: %v\n", err)
-		return
+		return nil
 	}
 
 	var repeats int
 
 	notifyNotAll := func() error {
-		err := bot.notifyNotAll(channel, nonReporters, &repeats)
+		err := bot.notifyNotAll(channelID, nonReporters, &repeats)
 		if err != nil {
 			return err
 		}
@@ -148,10 +147,12 @@ func (bot *Bot) SendChannelNotification(channelID string) {
 	err = backoff.Retry(notifyNotAll, b)
 	if err != nil {
 		log.Errorf("notifier: backoff.Retry failed: %v\n", err)
+		return errors.New("BackOff failed")
 	}
+	return nil
 }
 
-func (bot *Bot) notifyNotAll(channel model.Channel, nonReporters []string, repeats *int) error {
+func (bot *Bot) notifyNotAll(channelID string, nonReporters []string, repeats *int) error {
 
 	if *repeats < bot.properties.ReminderRepeatsMax && len(nonReporters) > 0 {
 
@@ -167,7 +168,7 @@ func (bot *Bot) notifyNotAll(channel model.Channel, nonReporters []string, repea
 			}).Error("Failed to translate message!")
 		}
 
-		bot.SendMessage(channel.ChannelID, tagNonReporters, nil)
+		bot.SendMessage(channelID, tagNonReporters, nil)
 		*repeats++
 		err = errors.New("Continue backoff")
 		return err
