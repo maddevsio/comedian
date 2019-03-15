@@ -7,7 +7,6 @@ import (
 	"github.com/evalphobia/logrus_sentry"
 	raven "github.com/getsentry/raven-go"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/pkg/profile"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/api"
 	"gitlab.com/team-monitoring/comedian/comedianbot"
@@ -31,7 +30,7 @@ func init() {
 }
 
 func main() {
-	defer profile.Start().Stop()
+	//defer profile.Start().Stop()
 	//defer profile.Start(profile.MemProfile).Stop()
 
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
