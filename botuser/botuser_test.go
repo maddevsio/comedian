@@ -22,6 +22,8 @@ type MockedDB struct {
 	FoundStanduper      model.Standuper
 	SelectedUserError   error
 	FoundStanduperError error
+	ListedUser          []model.User
+	ListedUserError     error
 
 	SelectedChannel      model.Channel
 	UpdatedChannel       model.Channel
@@ -45,10 +47,12 @@ type MockedDB struct {
 	SelectedStandupByMessageTS    model.Standup
 	UpdatedStanduper              model.Standuper
 	CreatedStandup                model.Standup
+	CreatedStanduper              model.Standuper
 	UpdatedStandup                model.Standup
 	SubmittedStandupTodayResult   bool
 	SubmittedStandupTodayError    error
 	CreateStandupError            error
+	CreateStanduperError          error
 	UpdateStandupError            error
 	SelectStandupByMessageTSError error
 	UpdateStanduperError          error
@@ -77,6 +81,10 @@ func (m MockedDB) UpdateChannel(model.Channel) (model.Channel, error) {
 
 func (m MockedDB) CreateUser(model.User) (model.User, error) {
 	return m.CreatedUser, m.CreatedUserError
+}
+
+func (m MockedDB) listUsers() ([]model.User, error) {
+	return m.ListedUser, m.ListedUserError
 }
 
 func (m MockedDB) UpdateUser(model.User) (model.User, error) {
@@ -109,6 +117,9 @@ func (m MockedDB) SelectStandupByMessageTS(string) (model.Standup, error) {
 
 func (m MockedDB) CreateStandup(model.Standup) (model.Standup, error) {
 	return m.CreatedStandup, m.CreateStandupError
+}
+func (m MockedDB) CreateStanduper(model.Standuper) (model.Standuper, error) {
+	return m.CreatedStanduper, m.CreateStanduperError
 }
 
 func (m MockedDB) UpdateStandup(model.Standup) (model.Standup, error) {
