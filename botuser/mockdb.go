@@ -22,6 +22,8 @@ type MockedDB struct {
 	CreatedChannelError  error
 	SelectedChannel      model.Channel
 	SelectedChannelError error
+	ListedChannels       []model.Channel
+	ListedChannelsError  error
 	UpdatedChannel       model.Channel
 	UpdatedChannelError  error
 
@@ -71,6 +73,9 @@ func (m MockedDB) DeleteUser(int64) error {
 
 func (m MockedDB) CreateChannel(model.Channel) (model.Channel, error) {
 	return m.CreatedChannel, m.CreatedChannelError
+}
+func (m MockedDB) ListChannels() ([]model.Channel, error) {
+	return m.ListedChannels, m.ListedChannelsError
 }
 
 func (m MockedDB) SelectChannel(string) (model.Channel, error) {

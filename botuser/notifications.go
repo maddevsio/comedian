@@ -32,6 +32,7 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 		if channel.StandupTime == 0 {
 			continue
 		}
+
 		standupTime := time.Unix(channel.StandupTime, 0)
 		warningTime := time.Unix(channel.StandupTime-bot.properties.ReminderTime*60, 0)
 		if t.Hour() == warningTime.Hour() && t.Minute() == warningTime.Minute() {
@@ -42,7 +43,11 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 		}
 
 		if t.Hour() == standupTime.Hour() && t.Minute() == standupTime.Minute() {
-			go bot.SendChannelNotification(channel.ChannelID)
+			bot.wg.Add(1)
+			go func() {
+				bot.SendChannelNotification(channel.ChannelID)
+				bot.wg.Done()
+			}()
 		}
 	}
 }
