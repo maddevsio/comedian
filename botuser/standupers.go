@@ -556,7 +556,6 @@ func (bot *Bot) deleteAdmins(users []string) string {
 			continue
 		}
 		user.Role = ""
-		bot.db.UpdateUser(user)
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "AdminRemoved", 0, nil}
 		adminRemoved, err := translation.Translate(payload)
 		if err != nil {
@@ -568,7 +567,11 @@ func (bot *Bot) deleteAdmins(users []string) string {
 				"TemplateData": payload.TemplateData,
 			}).Error("Failed to translate help message!")
 		}
-
+		_, err = bot.db.UpdateUser(user)
+		if err != nil {
+			failed = append(failed, u)
+			continue
+		}
 		err = bot.SendUserMessage(userID, adminRemoved)
 		if err != nil {
 			log.Errorf("rest: SendUserMessage failed: %v\n", err)
