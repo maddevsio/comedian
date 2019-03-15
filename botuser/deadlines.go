@@ -31,32 +31,20 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 	w.Add(en.All...)
 	w.Add(ru.All...)
 
-	payload = translation.Payload{bot.bundle, bot.properties.Language, "SomethingWentWrong", 0, nil}
-	somethingWentWrong, err := translation.Translate(payload)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"TeamName":     bot.properties.TeamName,
-			"Language":     payload.Lang,
-			"MessageID":    payload.MessageID,
-			"Count":        payload.Count,
-			"TemplateData": payload.TemplateData,
-		}).Error("Failed to translate message!")
-	}
-
 	r, err := w.Parse(params, time.Now())
 	if err != nil {
 		log.Error("Failed to parse params", err)
-		return somethingWentWrong
+		return "Unable to recognize time for a deadline"
 	}
 	if r == nil {
 		log.Error("r is nil", err)
-		return somethingWentWrong
+		return "Unable to recognize time for a deadline"
 	}
 
 	channel, err := bot.db.SelectChannel(channelID)
 	if err != nil {
 		log.Error("failed to select channel", err)
-		return somethingWentWrong
+		return "could not recognize channel, please add me to the channel and try again"
 	}
 
 	channel.StandupTime = r.Time.Unix()
@@ -64,7 +52,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 	_, err = bot.db.UpdateChannel(channel)
 	if err != nil {
 		log.Error("failed to update channel", err)
-		return somethingWentWrong
+		return "could not set channel deadline"
 	}
 
 	standupers, err := bot.db.ListChannelStandupers(channelID)
@@ -120,18 +108,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 
 	channel, err := bot.db.SelectChannel(channelID)
 	if err != nil {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "SomethingWentWrong", 0, nil}
-		somethingWentWrong, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-		}
-		return somethingWentWrong
+		return "could not recognize channel, please add me to the channel and try again"
 	}
 
 	channel.StandupTime = int64(0)
@@ -139,19 +116,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 	_, err = bot.db.UpdateChannel(channel)
 
 	if err != nil {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "SomethingWentWrong", 0, nil}
-		somethingWentWrong, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-		}
-		return somethingWentWrong
-
+		return "could not remove channel deadline"
 	}
 	st, err := bot.db.ListChannelStandupers(channelID)
 	if len(st) != 0 {

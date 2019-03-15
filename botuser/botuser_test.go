@@ -24,9 +24,14 @@ type MockedDB struct {
 	FoundStanduperError error
 
 	SelectedChannel      model.Channel
+	UpdatedChannel       model.Channel
 	CreatedChannel       model.Channel
 	SelectedChannelError error
 	CreatedChannelError  error
+	UpdatedChannelError  error
+
+	ChannelStandupers          []model.Standuper
+	ListChannelStandupersError error
 
 	CreatedUser          model.User
 	UpdatedUser          model.User
@@ -66,6 +71,10 @@ func (m MockedDB) CreateChannel(model.Channel) (model.Channel, error) {
 	return m.CreatedChannel, m.CreatedChannelError
 }
 
+func (m MockedDB) UpdateChannel(model.Channel) (model.Channel, error) {
+	return m.UpdatedChannel, m.UpdatedChannelError
+}
+
 func (m MockedDB) CreateUser(model.User) (model.User, error) {
 	return m.CreatedUser, m.CreatedUserError
 }
@@ -76,6 +85,10 @@ func (m MockedDB) UpdateUser(model.User) (model.User, error) {
 
 func (m MockedDB) ListStandupers() ([]model.Standuper, error) {
 	return m.Standupers, m.ListStandupersError
+}
+
+func (m MockedDB) ListChannelStandupers(string) ([]model.Standuper, error) {
+	return m.ChannelStandupers, m.ListChannelStandupersError
 }
 
 func (m MockedDB) DeleteUser(int64) error {
