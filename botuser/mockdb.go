@@ -53,7 +53,7 @@ func (m MockedDB) CreateUser(model.User) (model.User, error) {
 	return m.CreatedUser, m.CreatedUserError
 }
 
-func (m MockedDB) listUsers() ([]model.User, error) {
+func (m MockedDB) ListUsers() ([]model.User, error) {
 	return m.ListedUsers, m.ListedUsersError
 }
 

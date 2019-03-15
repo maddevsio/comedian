@@ -1,7 +1,6 @@
 package botuser
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -367,7 +366,7 @@ func (bot *Bot) listMembers(channelID, role string) string {
 
 	standupers, err := bot.db.ListChannelStandupers(channelID)
 	if err != nil {
-		return fmt.Sprintf("failed to list members :%v\n", err)
+		return "could not list members"
 	}
 	var userIDs []string
 	for _, standuper := range standupers {
@@ -441,7 +440,7 @@ func (bot *Bot) listAdmins() string {
 
 	users, err := bot.db.ListUsers()
 	if err != nil {
-		return fmt.Sprintf("failed to list users :%v\n", err)
+		return "could not list users"
 	}
 	var userNames []string
 	for _, user := range users {
