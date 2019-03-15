@@ -295,10 +295,10 @@ func (bot *Bot) addAdmins(users []string) string {
 			continue
 		}
 		user.Role = "admin"
-		bot.db.UpdateUser(user)
 
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "AdminAssigned", 0, nil}
 		adminAssigned, err := translation.Translate(payload)
+		_, err = bot.db.UpdateUser(user)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"TeamName":     bot.properties.TeamName,
@@ -307,6 +307,8 @@ func (bot *Bot) addAdmins(users []string) string {
 				"Count":        payload.Count,
 				"TemplateData": payload.TemplateData,
 			}).Error("Failed to translate help message!")
+			failed = append(failed, u)
+			continue
 		}
 		err = bot.SendUserMessage(userID, adminAssigned)
 		if err != nil {

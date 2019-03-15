@@ -36,8 +36,8 @@ other = "Members {{.users}} already have roles."
 
 [AddMembersFailed]
 description = "Displays a message when errors occur when assigning users"
-one = "Could not assign member: {{.user}} . Wrong username."
-other = "Could not assign members: {{.users}} . Wrong usernames."
+one = "Could not assign member: {{.user}}."
+other = "Could not assign members: {{.users}}."
 
 [AddPMsAdded]
 description = "Displays a message when users successfully assigning as PMs"
@@ -51,8 +51,8 @@ other = "Users {{.PMs}} already have roles."
 
 [AddPMsFailed]
 description = "Displays a message when errors occur when assigning users as PM"
-one =  "Could not assign user as PM: {{.PM}}. Wrong username."
-other = "Could not assign users as PMs: {{.PMs}}. Wrong usernames."
+one =  "Could not assign user as PM: {{.PM}}."
+other = "Could not assign users as PMs: {{.PMs}}."
 
 [AddStandupTime]
 description = "Displays a message when a standup time is successfully added for a channel"
