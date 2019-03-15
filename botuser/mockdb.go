@@ -10,10 +10,10 @@ type MockedDB struct {
 
 	CreatedUser       model.User
 	CreatedUserError  error
-	UpdatedUser       model.User
-	UpdatedUserError  error
 	SelectedUser      model.User
 	SelectedUserError error
+	UpdatedUser       model.User
+	UpdatedUserError  error
 	ListedUsers       []model.User
 	ListedUsersError  error
 	DeleteUserError   error

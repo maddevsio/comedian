@@ -44,6 +44,9 @@ func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
 	var members []string
 	if strings.Contains(params, "/") {
 		dividedText := strings.Split(params, "/")
+		if len(dividedText) != 2 {
+			return "wrong username. Try again with correct username"
+		}
 		role = strings.TrimSpace(dividedText[1])
 		members = strings.Fields(dividedText[0])
 	} else {
@@ -164,6 +167,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 			})
 			if err != nil {
 				log.Error(err)
+				failed = append(failed, u)
 				continue
 			}
 			log.Infof("ChannelMember created! ID:%v", standuper.ID)
@@ -275,6 +279,7 @@ func (bot *Bot) addAdmins(users []string) string {
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 
 	for _, u := range users {
+		// <@foo> passes this check... need to fix it later
 		if !rg.MatchString(u) {
 			failed = append(failed, u)
 			continue
