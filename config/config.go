@@ -16,11 +16,6 @@ type Config struct {
 // Get method processes env variables and fills Config struct
 func Get() (*Config, error) {
 	c := &Config{}
-
 	err := envconfig.Process("comedian", c)
-	if err != nil {
-		return c, err
-	}
-
-	return c, nil
+	return c, err
 }
