@@ -21,7 +21,16 @@ func (api *RESTAPI) listBots(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, err)
 	}
 
-	return c.JSON(http.StatusOK, bots)
+	// temporary sequrity feature
+	var fBots []model.BotSettings
+	for _, bot := range bots {
+		bot.AccessToken = ""
+		fBots = append(fBots, bot)
+	}
+
+	log.Info(fBots)
+
+	return c.JSON(http.StatusOK, fBots)
 }
 
 func (api *RESTAPI) getBot(c echo.Context) error {
@@ -35,6 +44,8 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)
 	}
+	// temporary sequrity feature
+	bot.AccessToken = ""
 
 	return c.JSON(http.StatusOK, bot)
 }
