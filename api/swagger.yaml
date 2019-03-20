@@ -631,9 +631,6 @@ definitions:
       password:
         type: "string"
         example: "example"
-      bot_access_token:
-        type: "string"
-        example: "xoxb-383672116046-561658401305-mCNz8ybjHbD60L7gPUuPjYdp"
       language:
         type: "string"
         description: "bot language"
