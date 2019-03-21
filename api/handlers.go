@@ -88,7 +88,7 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, err)
 	}
 
-	return c.JSON(http.StatusOK, "deleted")
+	return c.JSON(http.StatusOK, id)
 }
 
 func (api *RESTAPI) listStandups(c echo.Context) error {
@@ -149,7 +149,7 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, err)
 	}
 
-	return c.JSON(http.StatusOK, "deleted")
+	return c.JSON(http.StatusOK, id)
 }
 
 func (api *RESTAPI) listUsers(c echo.Context) error {
@@ -253,7 +253,7 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, err)
 	}
 
-	return c.JSON(http.StatusOK, "deleted")
+	return c.JSON(http.StatusOK, id)
 }
 
 func (api *RESTAPI) listStandupers(c echo.Context) error {
@@ -312,5 +312,5 @@ func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, err)
 	}
 
-	return c.JSON(http.StatusOK, "deleted")
+	return c.JSON(http.StatusOK, id)
 }

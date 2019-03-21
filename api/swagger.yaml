@@ -200,8 +200,6 @@ paths:
           description: "Bot not found"
         200:
           description: "successful operation"
-          schema:
-            $ref: "#/definitions/Bot"
   /users:
     get:
       tags:
@@ -364,8 +362,6 @@ paths:
           description: "channel not found"
         200:
           description: "successful operation"
-          schema:
-            $ref: "#/definitions/Channel"
   /standupers:
     get:
       tags:
@@ -460,8 +456,6 @@ paths:
           description: "standuper not found"
         200:
           description: "successful operation"
-          schema:
-            $ref: "#/definitions/Standuper"
   /standups:
     get:
       tags:
@@ -550,8 +544,6 @@ paths:
           description: "Standup not found"
         200:
           description: "successful operation"
-          schema:
-            $ref: "#/definitions/Standup"
 definitions:
   User:
     type: "object"
