@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo"
+	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/crypto"
-	"gitlab.com/team-monitoring/comedian/model"
 )
 
 type Template struct {
@@ -65,40 +65,46 @@ func (api *ComedianAPI) renderControlPannel(c echo.Context) error {
 func (api *ComedianAPI) updateConfig(c echo.Context) error {
 	form, err := c.FormParams()
 	if err != nil {
+		logrus.Error(err)
 		return err
 	}
 
 	bot, err := api.comedian.SelectBot(form.Get("team_name"))
 	if err != nil {
+		logrus.Error(err)
 		return err
 	}
 
 	ni, err := strconv.Atoi(form.Get("notifier_interval"))
 	if err != nil {
+		logrus.Error(err)
 		return err
 	}
 
 	rrm, err := strconv.Atoi(form.Get("reminder_repeats_max"))
 	if err != nil {
+		logrus.Error(err)
 		return err
 	}
 	rt, err := strconv.ParseInt(form.Get("reminder_time"), 10, 64)
 	if err != nil {
+		logrus.Error(err)
 		return err
 	}
 
-	settings := model.BotSettings{
-		NotifierInterval:   ni,
-		Language:           form.Get("language"),
-		ReminderRepeatsMax: rrm,
-		ReminderTime:       rt,
-		Password:           form.Get("password"),
-	}
+	settings := bot.Settings()
+
+	settings.NotifierInterval = ni
+	settings.Language = form.Get("language")
+	settings.ReminderRepeatsMax = rrm
+	settings.ReminderTime = rt
+	settings.Password = form.Get("password")
 
 	bot.SetProperties(settings)
 
 	_, err = api.db.UpdateBotSettings(settings)
 	if err != nil {
+		logrus.Error(err)
 		return err
 	}
 

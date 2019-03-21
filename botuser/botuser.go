@@ -549,6 +549,10 @@ func (bot *Bot) Suits(team string) bool {
 	return team == bot.properties.TeamID || team == bot.properties.TeamName
 }
 
+func (bot *Bot) Settings() model.BotSettings {
+	return bot.properties
+}
+
 func (bot *Bot) SetProperties(settings model.BotSettings) model.BotSettings {
 	bot.properties = settings
 	return bot.properties
