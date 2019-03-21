@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/storage"
@@ -63,8 +62,6 @@ func TestEchoRoutesExistInSwagger(t *testing.T) {
 			found = true
 		}
 		path = strings.Replace(path, sw.BasePath, "", -1)
-
-		log.Info(path)
 		d, ok := sw.Paths[path]
 		if !ok && !found {
 			t.Errorf("could not find any documentation for %s path", path)
@@ -73,11 +70,11 @@ func TestEchoRoutesExistInSwagger(t *testing.T) {
 		method = strings.ToLower(route.Method)
 		route, ok := d.(map[interface{}]interface{})
 		if !ok && !found {
-			t.Errorf("could not find documentation for %s path and %s method", path, method)
+			t.Errorf("[route] could not find documentation for %s path and %s method", path, method)
 		}
 		_, ok = route[method]
 		if !ok && !found {
-			t.Errorf("could not find documentation for %s path and %s method", path, method)
+			t.Errorf("[method] could not find documentation for %s path and %s method", path, method)
 		}
 	}
 }
