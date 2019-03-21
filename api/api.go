@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 	log "github.com/sirupsen/logrus"
@@ -58,6 +59,7 @@ var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>
 func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedian) ComedianAPI {
 
 	echo := echo.New()
+	echo.Use(middleware.CORS())
 
 	api := ComedianAPI{
 		echo:     echo,
