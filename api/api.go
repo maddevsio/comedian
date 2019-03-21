@@ -60,6 +60,7 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 
 	echo := echo.New()
 	echo.Use(middleware.CORS())
+	echo.Pre(middleware.RemoveTrailingSlash())
 
 	api := ComedianAPI{
 		echo:     echo,
