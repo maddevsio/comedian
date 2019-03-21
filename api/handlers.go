@@ -70,6 +70,7 @@ func (api *RESTAPI) updateBot(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, err)
 	}
 
+	// temporary sequrity feature
 	res.AccessToken = ""
 
 	return c.JSON(http.StatusOK, res)
@@ -116,11 +117,18 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 }
 
 func (api *RESTAPI) updateStandup(c echo.Context) error {
+	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
+	if err != nil {
+		return c.JSON(http.StatusNotAcceptable, err)
+	}
+
 	standup := model.Standup{}
 
 	if err := c.Bind(&standup); err != nil {
 		return c.JSON(http.StatusNotAcceptable, err)
 	}
+
+	standup.ID = id
 
 	res, err := api.db.UpdateStandup(standup)
 	if err != nil {
@@ -168,11 +176,18 @@ func (api *RESTAPI) getUser(c echo.Context) error {
 }
 
 func (api *RESTAPI) updateUser(c echo.Context) error {
+	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
+	if err != nil {
+		return c.JSON(http.StatusNotAcceptable, err)
+	}
+
 	user := model.User{}
 
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusNotAcceptable, err)
 	}
+
+	user.ID = id
 
 	res, err := api.db.UpdateUser(user)
 	if err != nil {
@@ -206,11 +221,18 @@ func (api *RESTAPI) getChannel(c echo.Context) error {
 }
 
 func (api *RESTAPI) updateChannel(c echo.Context) error {
+	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
+	if err != nil {
+		return c.JSON(http.StatusNotAcceptable, err)
+	}
+
 	channel := model.Channel{}
 
 	if err := c.Bind(&channel); err != nil {
 		return c.JSON(http.StatusNotAcceptable, err)
 	}
+
+	channel.ID = id
 
 	res, err := api.db.UpdateChannel(channel)
 	if err != nil {
@@ -258,11 +280,18 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 }
 
 func (api *RESTAPI) updateStanduper(c echo.Context) error {
+	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
+	if err != nil {
+		return c.JSON(http.StatusNotAcceptable, err)
+	}
+
 	standuper := model.Standuper{}
 
 	if err := c.Bind(&standuper); err != nil {
 		return c.JSON(http.StatusNotAcceptable, err)
 	}
+
+	standuper.ID = id
 
 	res, err := api.db.UpdateStanduper(standuper)
 	if err != nil {
