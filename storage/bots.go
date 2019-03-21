@@ -4,11 +4,17 @@ import (
 
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
+	"gitlab.com/team-monitoring/comedian/crypto"
 	"gitlab.com/team-monitoring/comedian/model"
 )
 
 //CreateBotSettings creates bot properties for the newly created bot
 func (m *DB) CreateBotSettings(token, teamID, teamName string) (model.BotSettings, error) {
+	password, err := crypto.Generate(teamName)
+	if err != nil {
+		return model.BotSettings{}, err
+	}
+
 	bs := model.BotSettings{
 		NotifierInterval:   30,
 		Language:           "en_US",
@@ -17,10 +23,10 @@ func (m *DB) CreateBotSettings(token, teamID, teamName string) (model.BotSetting
 		AccessToken:        token,
 		TeamID:             teamID,
 		TeamName:           teamName,
-		Password:           teamName,
+		Password:           password,
 	}
 
-	err := bs.Validate()
+	err = bs.Validate()
 	if err != nil {
 		return bs, err
 	}
@@ -73,9 +79,13 @@ func (m *DB) GetBotSettings(id int64) (model.BotSettings, error) {
 
 //UpdateBotSettings updates bot
 func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
-	_, err := m.DB.Exec(
+	password, err := crypto.Generate(settings.Password)
+	if err != nil {
+		return settings, err
+	}
+	_, err = m.DB.Exec(
 		"UPDATE `bot_settings` set notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, password=? where id=?",
-		settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.Password, settings.ID,
+		settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, password, settings.ID,
 	)
 	if err != nil {
 		return settings, err

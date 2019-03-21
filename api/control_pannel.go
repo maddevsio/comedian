@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo"
+	"gitlab.com/team-monitoring/comedian/crypto"
 	"gitlab.com/team-monitoring/comedian/model"
 )
 
@@ -34,7 +35,9 @@ func (api *ComedianAPI) renderControlPannel(c echo.Context) error {
 		return c.Render(http.StatusNotFound, "login", nil)
 	}
 
-	if form.Get("password") != settings.Password {
+	err = crypto.Compare(settings.Password, form.Get("password"))
+
+	if err != nil {
 		return c.Render(http.StatusForbidden, "login", nil)
 	}
 
