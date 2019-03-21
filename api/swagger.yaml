@@ -34,14 +34,14 @@ paths:
           description: "successful operation"
   /login:
     get:
-      summary: "Renders login page"
+      summary: "Renders login page. Have no connections with UI"
       responses:
         200:
           description: "OK"
   /event:
     post:
       summary: "Handles Slack events"
-      description: "Handles different Slack triggers such as bot removal, or URL verification"
+      description: "Handles different Slack triggers such as bot removal, or URL verification, does not belong to UI"
       responses:
         200:
           description: "Success"
@@ -51,7 +51,7 @@ paths:
           description: "Incorrect data"
   /admin:
     get:
-      summary: "Renders admin page"
+      summary: "Renders admin page. Does not belong to UI"
       responses:
         200:
           description: "OK"
@@ -63,25 +63,25 @@ paths:
           description: "Could not read form data"
   /config:
     post:
+      summary: "Updates config and renders admin page, does not belong to UI at all. Should be removed."
       responses:
           200:
-            description: "Config updated!"
-      summary: "Updates config and renders admin page"
+            description: "Config updated!"     
   /service-message:
     post:
-      summary: "Handles messages from different Comedian services"
+      summary: "Handles messages from different Comedian services. Does not belong to UI. Needed for services only"
       responses:
         200:
           description: "Message handled!"
   /commands:
     post:
-      summary: "Handles Slack slash commands requests"
+      summary: "Handles Slack slash commands requests, does not belong to UI. Used to integration with Slack API"
       responses:
         200:
           description: "Message from Comedian to Slack"
   /auth:
     get:
-      summary: "Handles Comedian distribution into other Slack Teams"
+      summary: "Handles Comedian distribution into other Slack Teams. Does not belong to UI. This endpoint handles Slack API Requests"
       responses:
         200:
           description: "Renders login page"
@@ -90,7 +90,7 @@ paths:
       tags:
       - "bots"
       summary: "Returns all bots"
-      description: "Returns a map of bot settings"
+      description: "Returns a map of bot settings, currently bot access token is empty in response for security reasons"
       produces:
       - "application/json"
       responses:

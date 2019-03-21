@@ -51,16 +51,26 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 }
 
 func (api *RESTAPI) updateBot(c echo.Context) error {
-	bot := model.BotSettings{}
-
-	if err := c.Bind(&bot); err != nil {
+	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
+	if err != nil {
 		return c.JSON(http.StatusNotAcceptable, err)
 	}
 
+	bot := model.BotSettings{}
+
+	if err := c.Bind(&bot); err != nil {
+		log.Error(err)
+		return c.JSON(http.StatusNotAcceptable, err)
+	}
+	bot.ID = id
+
 	res, err := api.db.UpdateBotSettings(bot)
 	if err != nil {
+		log.Error(err)
 		return c.JSON(http.StatusNotFound, err)
 	}
+
+	res.AccessToken = ""
 
 	return c.JSON(http.StatusOK, res)
 }
