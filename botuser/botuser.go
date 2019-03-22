@@ -64,7 +64,6 @@ func (bot *Bot) Start() {
 			time.Sleep(60 * time.Second)
 		}
 	}()
-	bot.wg.Wait()
 }
 
 func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
