@@ -1,6 +1,7 @@
 package botuser
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"sync"
@@ -18,7 +19,8 @@ var (
 	typeMessage       = ""
 	typeEditMessage   = "message_changed"
 	typeDeleteMessage = "message_deleted"
-	dry               bool
+	//Dry is used to implement Dry run for bot methods
+	Dry bool
 )
 
 const (
@@ -31,7 +33,6 @@ const (
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
 	slack      *slack.Client
-	rtm        *slack.RTM
 	properties model.BotSettings
 	db         storage.Storage
 	bundle     *i18n.Bundle
@@ -41,89 +42,103 @@ type Bot struct {
 func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *Bot {
 	bot := &Bot{}
 	bot.slack = slack.New(settings.AccessToken)
-	bot.rtm = bot.slack.NewRTM()
 	bot.properties = settings
 	bot.db = db
-
 	bot.bundle = bundle
 
 	return bot
 }
 
 func (bot *Bot) Start() {
-	bot.wg.Add(1)
-	go func() {
-		bot.UpdateUsersList()
-		bot.wg.Done()
-	}()
+
+	bot.UpdateUsersList()
 
 	bot.wg.Add(1)
 	go func() {
 		defer bot.wg.Done()
-		bot.rtm.ManageConnection()
-	}()
-
-	bot.wg.Add(1)
-	go func() {
-		defer bot.wg.Done()
-		for msg := range bot.rtm.IncomingEvents {
-			bot.HandleSlackEvent(msg)
+		for {
+			bot.NotifyChannels(time.Now())
+			if Dry {
+				break
+			}
+			time.Sleep(60 * time.Second)
 		}
 	}()
-
-	bot.wg.Add(1)
-	go func() {
-		defer bot.wg.Done()
-		counter := time.NewTicker(time.Second * 60).C
-		for time := range counter {
-			bot.NotifyChannels(time)
-		}
-	}()
+	bot.wg.Wait()
 }
 
-func (bot *Bot) HandleSlackEvent(msg slack.RTMEvent) {
-	switch ev := msg.Data.(type) {
-	case *slack.MessageEvent:
-		bot.HandleMessage(ev)
-	case *slack.ConnectedEvent:
-		log.Info("reconnected!")
-		bot.properties.UserID = bot.rtm.GetInfo().User.ID
-	case *slack.MemberJoinedChannelEvent:
-		ch, err := bot.HandleJoin(ev.Channel, ev.Team)
-		if err != nil {
-			log.Error(err)
-		}
-		log.Info("New channel created: ", ch)
+func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
+	ev := map[string]string{}
+	data, err := event.MarshalJSON()
+	if err != nil {
+		return err
 	}
+
+	if err := json.Unmarshal(data, &ev); err != nil {
+		return err
+	}
+
+	log.Info(ev)
+
+	switch ev["type"] {
+	case "message":
+		log.Info("New message!")
+		message := &slack.MessageEvent{}
+		if err := json.Unmarshal(data, message); err != nil {
+			return err
+		}
+		err := bot.HandleMessage(message)
+		return err
+	case "member_joined_channel":
+		log.Info("Joined Channel!")
+		join := &slack.MemberJoinedChannelEvent{}
+		if err := json.Unmarshal(data, join); err != nil {
+			return err
+		}
+		//need to check if join.Team is teamID, not a teamName
+		_, err = bot.HandleJoin(join.Channel, join.Team)
+		return err
+	case "app_uninstalled":
+		log.Info("Uninstalled!")
+		bot.db.DeleteBotSettings(bot.properties.TeamID)
+	default:
+		log.Warning("unrecognized event!")
+		return nil
+	}
+
+	return nil
 }
 
-func (bot *Bot) HandleMessage(msg *slack.MessageEvent) {
-
+func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
+	msg.Team = bot.properties.TeamID
 	switch msg.SubType {
 	case typeMessage:
 		err := bot.HandleNewMessage(msg)
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 
 	case typeEditMessage:
 		err := bot.HandleEditMessage(msg)
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 
 	case typeDeleteMessage:
 		err := bot.HandleDeleteMessage(msg)
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 	}
+	return nil
 }
 
 func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
-	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) && !strings.Contains(msg.Msg.Text, "#standup") {
-		return errors.New("bot is not mentioned and no #standup in the message body")
+	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
+		return errors.New("bot is not mentioned in the message body")
 	}
+
+	log.Info(bot.properties.UserID)
 
 	problem := bot.analizeStandup(msg.Msg.Text)
 	if problem != "" {
@@ -133,7 +148,7 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 
 	submitted, err := bot.db.UserSubmittedStandupToday(msg.Channel, msg.User)
 	if err != nil {
-		return err
+		log.Error(err)
 	}
 
 	if submitted {
@@ -151,6 +166,7 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 		return errors.New("Fail to save message as standup. User already submitted standup today")
 	}
+	log.Info(msg)
 	standup, err := bot.db.CreateStandup(model.Standup{
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
@@ -159,6 +175,7 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		MessageTS: msg.Msg.Timestamp,
 	})
 	if err != nil {
+		log.Error("Create standup failed")
 		return err
 	}
 	log.Infof("Standup created #id:%v\n", standup.ID)
@@ -183,7 +200,7 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 }
 
 func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
-	if !strings.Contains(msg.SubMessage.Text, bot.properties.UserID) && !strings.Contains(msg.SubMessage.Text, "#standup") {
+	if !strings.Contains(msg.SubMessage.Text, bot.properties.UserID) {
 		return errors.New("bot is not mentioned and no #standup in the message body")
 	}
 
@@ -349,7 +366,7 @@ func (bot *Bot) analizeStandup(message string) string {
 
 // SendMessage posts a message in a specified channel visible for everyone
 func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachment) error {
-	if dry {
+	if Dry {
 		return nil
 	}
 	_, _, err := bot.slack.PostMessage(channel, message, slack.PostMessageParameters{
@@ -364,7 +381,7 @@ func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachm
 
 // SendEphemeralMessage posts a message in a specified channel which is visible only for selected user
 func (bot *Bot) SendEphemeralMessage(channel, user, message string) error {
-	if dry {
+	if Dry {
 		return nil
 	}
 	_, err := bot.slack.PostEphemeral(
@@ -381,7 +398,7 @@ func (bot *Bot) SendEphemeralMessage(channel, user, message string) error {
 
 // SendUserMessage Direct Message specific user
 func (bot *Bot) SendUserMessage(userID, message string) error {
-	if dry {
+	if Dry {
 		return nil
 	}
 	_, _, channelID, err := bot.slack.OpenIMChannel(userID)

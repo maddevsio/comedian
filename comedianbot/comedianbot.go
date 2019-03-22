@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/nlopes/slack/slackevents"
 	"gitlab.com/team-monitoring/comedian/botuser"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
@@ -56,6 +57,20 @@ func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 
 	err = bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
 
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (comedian *Comedian) HandleCallbackEvent(event slackevents.EventsAPICallbackEvent) error {
+	bot, err := comedian.SelectBot(event.TeamID)
+	if err != nil {
+		return err
+	}
+
+	err = bot.HandleCallBackEvent(event.InnerEvent)
 	if err != nil {
 		return err
 	}

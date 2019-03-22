@@ -87,7 +87,7 @@ func TestSendWarning(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		dry = tt.dry
+		Dry = tt.dry
 		bot := New(bundle, settings, MockedDB{
 			Standupers:          tt.Standupers,
 			ListStandupersError: tt.ListStandupersError,
@@ -122,7 +122,7 @@ func TestSendWarningBundleFail(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		dry = tt.dry
+		Dry = tt.dry
 		bot := New(bundle, settings, MockedDB{
 			Standupers:          tt.Standupers,
 			ListStandupersError: tt.ListStandupersError,
@@ -161,7 +161,7 @@ func TestSendChannelNotification(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		dry = tt.dry
+		Dry = tt.dry
 		bot := New(bundle, settings, MockedDB{
 			ChannelStandupers:          tt.ChannelStandupers,
 			ListChannelStandupersError: tt.ListChannelStandupersError,
@@ -198,7 +198,7 @@ func TestSendChannelNotificationBundleFailed(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		dry = tt.dry
+		Dry = tt.dry
 		bot := New(bundle, settings, MockedDB{
 			ChannelStandupers:          tt.ChannelStandupers,
 			ListChannelStandupersError: tt.ListChannelStandupersError,

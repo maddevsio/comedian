@@ -6,6 +6,7 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/botuser"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
@@ -36,6 +37,8 @@ func TestBots(t *testing.T) {
 
 	comedian := New(bundle, db)
 	assert.NotEqual(t, nil, comedian)
+
+	botuser.Dry = true
 
 	go comedian.StartBots()
 
@@ -86,5 +89,5 @@ func TestHandleEvent(t *testing.T) {
 	err = comedian.HandleEvent(model.ServiceEvent{
 		TeamName: "testTeam",
 	})
-	assert.Equal(t, errors.New("not_authed"), err)
+	assert.Equal(t, nil, err)
 }

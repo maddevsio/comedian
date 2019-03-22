@@ -123,7 +123,6 @@ func (api *ComedianAPI) Start() error {
 
 func (api *ComedianAPI) handleEvent(c echo.Context) error {
 	var incomingEvent Event
-	var event slackevents.EventsAPICallbackEvent
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
@@ -141,15 +140,19 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 	}
 
 	if incomingEvent.Type == slackevents.CallbackEvent {
+		var event slackevents.EventsAPICallbackEvent
 		err = json.Unmarshal(body, &event)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err)
 		}
 
-		err = api.db.DeleteBotSettings(event.TeamID)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err)
-		}
+		go func(event slackevents.EventsAPICallbackEvent) {
+			log.Info(event)
+			err = api.comedian.HandleCallbackEvent(event)
+			if err != nil {
+				log.Error(err)
+			}
+		}(event)
 
 		return c.String(http.StatusOK, "Success")
 	}
@@ -232,8 +235,9 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.TeamID, resp.TeamName)
+	cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
 	if err != nil {
+		log.Errorf("ComedianAPI: CreateBotSettings failed: %v\n", err)
 		return err
 	}
 

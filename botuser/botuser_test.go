@@ -580,36 +580,6 @@ func TestStart(t *testing.T) {
 
 	bot := New(bundle, settings, MockedDB{})
 
+	Dry = true
 	bot.Start()
-}
-
-func TestHandleSlackEvent(t *testing.T) {
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
-	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-
-	_, err := bundle.LoadMessageFile("../active.en.toml")
-	assert.NoError(t, err)
-
-	settings := model.BotSettings{
-		UserID:   "TESTUSERID",
-		Language: "en_US",
-	}
-
-	bot := New(bundle, settings, MockedDB{})
-
-	testCases := []slack.RTMEvent{
-		slack.RTMEvent{
-			Type: "MessageEvent",
-			Data: &slack.MessageEvent{},
-		},
-
-		slack.RTMEvent{
-			Type: "MemberJoinedChannelEvent",
-			Data: &slack.MemberJoinedChannelEvent{},
-		},
-	}
-
-	for _, tt := range testCases {
-		bot.HandleSlackEvent(tt)
-	}
 }
