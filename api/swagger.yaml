@@ -123,7 +123,7 @@ paths:
           description: "Invalid id format"
         404:
           description: "Bot not found"
-    post:
+    patch:
       tags:
       - "bots"
       summary: "Updates a bot in the database with form data"
@@ -198,7 +198,7 @@ paths:
           description: "Invalid ID format"
         404:
           description: "Bot not found"
-        200:
+        204:
           description: "successful operation"
   /users:
     get:
@@ -239,7 +239,7 @@ paths:
           description: "Invalid id format"
         404:
           description: "User not found"
-    post:
+    patch:
       tags:
       - "users"
       summary: "Updates a user in the database with form data"
@@ -307,7 +307,7 @@ paths:
           description: "Invalid id format"
         404:
           description: "Channel not found"
-    post:
+    patch:
       tags:
       - "channels"
       summary: "Updates a channel in the database with form data"
@@ -360,7 +360,7 @@ paths:
           description: "Invalid ID format"
         404:
           description: "channel not found"
-        200:
+        204:
           description: "successful operation"
   /standupers:
     get:
@@ -401,7 +401,7 @@ paths:
           description: "Invalid id format"
         404:
           description: "Standuper not found"
-    post:
+    patch:
       tags:
       - "standupers"
       summary: "Updates a standuper in the database with form data"
@@ -454,7 +454,7 @@ paths:
           description: "Invalid ID format"
         404:
           description: "standuper not found"
-        200:
+        204:
           description: "successful operation"
   /standups:
     get:
@@ -495,7 +495,7 @@ paths:
           description: "Invalid id format"
         404:
           description: "Standup not found"
-    post:
+    patch:
       tags:
       - "standups"
       summary: "Updates a standup in the database with form data"
@@ -542,7 +542,7 @@ paths:
           description: "Invalid ID format"
         404:
           description: "Standup not found"
-        200:
+        204:
           description: "successful operation"
 definitions:
   User:

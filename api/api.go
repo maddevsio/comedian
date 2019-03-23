@@ -79,26 +79,26 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 
 	echo.GET("/v1/standups", restAPI.listStandups)
 	echo.GET("/v1/standups/:id", restAPI.getStandup)
-	echo.POST("/v1/standups/:id", restAPI.updateStandup)
+	echo.PATCH("/v1/standups/:id", restAPI.updateStandup)
 	echo.DELETE("/v1/standups/:id", restAPI.deleteStandup)
 
 	echo.GET("/v1/users", restAPI.listUsers)
 	echo.GET("/v1/users/:id", restAPI.getUser)
-	echo.POST("/v1/users/:id", restAPI.updateUser)
+	echo.PATCH("/v1/users/:id", restAPI.updateUser)
 
 	echo.GET("/v1/channels", restAPI.listChannels)
 	echo.GET("/v1/channels/:id", restAPI.getChannel)
-	echo.POST("/v1/channels/:id", restAPI.updateChannel)
+	echo.PATCH("/v1/channels/:id", restAPI.updateChannel)
 	echo.DELETE("/v1/channels/:id", restAPI.deleteChannel)
 
 	echo.GET("/v1/standupers", restAPI.listStandupers)
 	echo.GET("/v1/standupers/:id", restAPI.getStanduper)
-	echo.POST("/v1/standupers/:id", restAPI.updateStanduper)
+	echo.PATCH("/v1/standupers/:id", restAPI.updateStanduper)
 	echo.DELETE("/v1/standupers/:id", restAPI.deleteStanduper)
 
 	echo.GET("/v1/bots", restAPI.listBots)
 	echo.GET("/v1/bots/:id", restAPI.getBot)
-	echo.POST("/v1/bots/:id", restAPI.updateBot)
+	echo.PATCH("/v1/bots/:id", restAPI.updateBot)
 	echo.DELETE("/v1/bots/:id", restAPI.deleteBot)
 
 	echo.Renderer = t

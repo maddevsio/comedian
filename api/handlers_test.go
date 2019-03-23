@@ -241,7 +241,7 @@ func TestDeleteBot(t *testing.T) {
 	}{
 		{model.BotSettings{}, errors.New("err"), "", 406},
 		{model.BotSettings{}, errors.New("err"), "1", 404},
-		{model.BotSettings{}, nil, "1", 200},
+		{model.BotSettings{}, nil, "1", 204},
 	}
 
 	for _, tt := range testCases {
@@ -377,7 +377,7 @@ func TestDeleteStandup(t *testing.T) {
 	}{
 		{model.Standup{}, errors.New("err"), "", 406},
 		{model.Standup{}, errors.New("err"), "1", 404},
-		{model.Standup{}, nil, "1", 200},
+		{model.Standup{}, nil, "1", 204},
 	}
 
 	for _, tt := range testCases {
@@ -616,7 +616,7 @@ func TestDeleteChannel(t *testing.T) {
 	}{
 		{model.Channel{}, errors.New("err"), "", 406},
 		{model.Channel{}, errors.New("err"), "1", 404},
-		{model.Channel{}, nil, "1", 200},
+		{model.Channel{}, nil, "1", 204},
 	}
 
 	for _, tt := range testCases {
@@ -752,7 +752,7 @@ func TestDeleteStanduper(t *testing.T) {
 	}{
 		{model.Standuper{}, errors.New("err"), "", 406},
 		{model.Standuper{}, errors.New("err"), "1", 404},
-		{model.Standuper{}, nil, "1", 200},
+		{model.Standuper{}, nil, "1", 204},
 	}
 
 	for _, tt := range testCases {
