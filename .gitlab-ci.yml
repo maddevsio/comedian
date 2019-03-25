@@ -14,10 +14,8 @@ tests:
   script:
     - docker network create comedian_comedian
     - docker-compose -f ./docker-compose-test.yml up -d db
-    - docker-compose -f ./docker-compose-test.yml up -d golang 
-    - docker exec -i golang-test ls
     - sleep 10
-    - docker exec -i golang-test make run_tests
+    - docker-compose -f ./docker-compose-test.yml run --rm golang  make migration-ci run_tests
   allow_failure: false
   only:
     - master
