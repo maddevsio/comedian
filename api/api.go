@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -69,38 +70,39 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 
 	restAPI := RESTAPI{api.db}
 
-	echo.GET("/v1/healthcheck", restAPI.healthcheck)
-
-	echo.GET("/v1/standups", restAPI.listStandups)
-	echo.GET("/v1/standups/:id", restAPI.getStandup)
-	echo.PATCH("/v1/standups/:id", restAPI.updateStandup)
-	echo.DELETE("/v1/standups/:id", restAPI.deleteStandup)
-
-	echo.GET("/v1/users", restAPI.listUsers)
-	echo.GET("/v1/users/:id", restAPI.getUser)
-	echo.PATCH("/v1/users/:id", restAPI.updateUser)
-
-	echo.GET("/v1/channels", restAPI.listChannels)
-	echo.GET("/v1/channels/:id", restAPI.getChannel)
-	echo.PATCH("/v1/channels/:id", restAPI.updateChannel)
-	echo.DELETE("/v1/channels/:id", restAPI.deleteChannel)
-
-	echo.GET("/v1/standupers", restAPI.listStandupers)
-	echo.GET("/v1/standupers/:id", restAPI.getStanduper)
-	echo.PATCH("/v1/standupers/:id", restAPI.updateStanduper)
-	echo.DELETE("/v1/standupers/:id", restAPI.deleteStanduper)
-
-	echo.GET("/v1/bots", restAPI.listBots)
-	echo.GET("/v1/bots/:id", restAPI.getBot)
-	echo.PATCH("/v1/bots/:id", restAPI.updateBot)
-	echo.DELETE("/v1/bots/:id", restAPI.deleteBot)
-
-	echo.POST("/v1/login", restAPI.login)
-
+	echo.GET("healthcheck", restAPI.healthcheck)
+	echo.POST("/login", restAPI.login)
 	echo.POST("/event", api.handleEvent)
 	echo.POST("/service-message", api.handleServiceMessage)
 	echo.POST("/commands", api.handleCommands)
 	echo.GET("/auth", api.auth)
+
+	r := echo.Group("/v1")
+	r.Use(middleware.JWT([]byte("secret")))
+
+	r.GET("/standups", restAPI.listStandups)
+	r.GET("/standups/:id", restAPI.getStandup)
+	r.PATCH("/standups/:id", restAPI.updateStandup)
+	r.DELETE("/standups/:id", restAPI.deleteStandup)
+
+	r.GET("/users", restAPI.listUsers)
+	r.GET("/users/:id", restAPI.getUser)
+	r.PATCH("/users/:id", restAPI.updateUser)
+
+	r.GET("/channels", restAPI.listChannels)
+	r.GET("/channels/:id", restAPI.getChannel)
+	r.PATCH("/channels/:id", restAPI.updateChannel)
+	r.DELETE("/channels/:id", restAPI.deleteChannel)
+
+	r.GET("/standupers", restAPI.listStandupers)
+	r.GET("/standupers/:id", restAPI.getStanduper)
+	r.PATCH("/standupers/:id", restAPI.updateStanduper)
+	r.DELETE("/standupers/:id", restAPI.deleteStanduper)
+
+	r.GET("/bots", restAPI.listBots)
+	r.GET("/bots/:id", restAPI.getBot)
+	r.PATCH("/bots/:id", restAPI.updateBot)
+	r.DELETE("/bots/:id", restAPI.deleteBot)
 	return api
 }
 
@@ -236,4 +238,11 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	api.comedian.AddBot(cp)
 
 	return c.Redirect(http.StatusMovedPermanently, "https://admin-staging.comedian.maddevs.co/")
+}
+
+func restricted(c echo.Context) error {
+	user := c.Get("teamname").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	name := claims["teamname"].(string)
+	return c.String(http.StatusOK, "Welcome "+name+"!")
 }

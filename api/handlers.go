@@ -40,14 +40,8 @@ func (api *RESTAPI) login(c echo.Context) error {
 	claims["teamname"] = teamname
 	claims["expire"] = time.Now().Add(time.Hour * 72).Unix()
 
-	str, err := token.SigningString()
-	if err != nil {
-		str = "secret"
-		log.Error("SigningString failed ", err)
-	}
-
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(str))
+	t, err := token.SignedString([]byte("secret"))
 	if err != nil {
 		return err
 	}
@@ -56,6 +50,8 @@ func (api *RESTAPI) login(c echo.Context) error {
 	if err != nil {
 		log.Error("Marshal settings failed ", err)
 	}
+
+	log.Info(string(s))
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"bot":   string(s),
