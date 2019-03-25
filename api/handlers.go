@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -42,7 +43,7 @@ func (api *RESTAPI) login(c echo.Context) error {
 	claims["expire"] = time.Now().Add(time.Hour * 72).Unix() // do we need it?
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte("secret"))
+	t, err := token.SignedString([]byte(os.Getenv("COMEDIAN_SLACK_CLIENT_SECRET")))
 	if err != nil {
 		return err
 	}

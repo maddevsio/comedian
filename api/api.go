@@ -78,7 +78,7 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	echo.GET("/auth", api.auth)
 
 	r := echo.Group("/v1")
-	r.Use(middleware.JWT([]byte("secret")))
+	r.Use(middleware.JWT([]byte(config.SlackClientSecret)))
 
 	r.GET("/standups", restAPI.listStandups)
 	r.GET("/standups/:id", restAPI.getStandup)
