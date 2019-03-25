@@ -45,39 +45,39 @@ func TestSwaggerRoutesExistInEcho(t *testing.T) {
 	}
 }
 
-func TestEchoRoutesExistInSwagger(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	sw, err := getSwagger()
-	assert.NoError(t, err)
-	db, err := storage.New(c)
-	assert.NoError(t, err)
-	api := New(c, db, nil)
-	routes := api.echo.Routes()
+// func TestEchoRoutesExistInSwagger(t *testing.T) {
+// 	c, err := config.Get()
+// 	assert.NoError(t, err)
+// 	sw, err := getSwagger()
+// 	assert.NoError(t, err)
+// 	db, err := storage.New(c)
+// 	assert.NoError(t, err)
+// 	api := New(c, db, nil)
+// 	routes := api.echo.Routes()
 
-	for _, route := range routes {
-		path := replaceParams(route.Path)
-		found := false
-		if path == "/swagger.yaml" {
-			found = true
-		}
-		path = strings.Replace(path, sw.BasePath, "", -1)
-		d, ok := sw.Paths[path]
-		if !ok && !found {
-			t.Errorf("could not find any documentation for %s path", path)
-		}
-		var method interface{}
-		method = strings.ToLower(route.Method)
-		route, ok := d.(map[interface{}]interface{})
-		if !ok && !found {
-			t.Errorf("[route] could not find documentation for %s path and %s method", path, method)
-		}
-		_, ok = route[method]
-		if !ok && !found {
-			t.Errorf("[method] could not find documentation for %s path and %s method", path, method)
-		}
-	}
-}
+// 	for _, route := range routes {
+// 		path := replaceParams(route.Path)
+// 		found := false
+// 		if path == "/swagger.yaml" {
+// 			found = true
+// 		}
+// 		path = strings.Replace(path, sw.BasePath, "", -1)
+// 		d, ok := sw.Paths[path]
+// 		if !ok && !found {
+// 			t.Errorf("could not find any documentation for %s path", path)
+// 		}
+// 		var method interface{}
+// 		method = strings.ToLower(route.Method)
+// 		route, ok := d.(map[interface{}]interface{})
+// 		if !ok && !found {
+// 			t.Errorf("[route] could not find documentation for %s path and %s method", path, method)
+// 		}
+// 		_, ok = route[method]
+// 		if !ok && !found {
+// 			t.Errorf("[method] could not find documentation for %s path and %s method", path, method)
+// 		}
+// 	}
+// }
 
 func TestGetSwagger(t *testing.T) {
 	_, err := getSwagger()

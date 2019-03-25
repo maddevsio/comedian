@@ -70,7 +70,7 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 
 	restAPI := RESTAPI{api.db}
 
-	echo.GET("healthcheck", restAPI.healthcheck)
+	echo.GET("/healthcheck", restAPI.healthcheck)
 	echo.POST("/login", restAPI.login)
 	echo.POST("/event", api.handleEvent)
 	echo.POST("/service-message", api.handleServiceMessage)
