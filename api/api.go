@@ -2,10 +2,8 @@ package api
 
 import (
 	"encoding/json"
-	"html/template"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"regexp"
 
 	"github.com/gorilla/schema"
@@ -69,10 +67,6 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 		config:   config,
 	}
 
-	t := &Template{
-		templates: template.Must(template.ParseGlob(os.Getenv("GOPATH") + "/src/gitlab.com/team-monitoring/comedian/templates/*.html")),
-	}
-
 	restAPI := RESTAPI{api.db}
 
 	echo.GET("/v1/healthcheck", restAPI.healthcheck)
@@ -101,11 +95,9 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	echo.PATCH("/v1/bots/:id", restAPI.updateBot)
 	echo.DELETE("/v1/bots/:id", restAPI.deleteBot)
 
-	echo.Renderer = t
-	echo.GET("/login", api.renderLoginPage)
+	echo.POST("/v1/login", restAPI.login)
+
 	echo.POST("/event", api.handleEvent)
-	echo.GET("/admin", api.renderControlPannel)
-	echo.POST("/config", api.updateConfig)
 	echo.POST("/service-message", api.handleServiceMessage)
 	echo.POST("/commands", api.handleCommands)
 	echo.GET("/auth", api.auth)
@@ -243,5 +235,5 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	api.comedian.AddBot(cp)
 
-	return api.renderLoginPage(c)
+	return c.Redirect(http.StatusMovedPermanently, "https://admin-staging.comedian.maddevs.co/")
 }

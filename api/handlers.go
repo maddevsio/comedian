@@ -1,17 +1,66 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/crypto"
 	"gitlab.com/team-monitoring/comedian/model"
 )
 
 func (api *RESTAPI) healthcheck(c echo.Context) error {
 	log.Info("Status healthy!")
 	return c.JSON(http.StatusOK, "successful operation")
+}
+
+func (api *RESTAPI) login(c echo.Context) error {
+	teamname := c.FormValue("teamname")
+	password := c.FormValue("password")
+
+	settings, err := api.db.GetBotSettingsByTeamName(teamname)
+	if err != nil {
+		return echo.ErrNotFound
+	}
+
+	err = crypto.Compare(settings.Password, password)
+	if err != nil {
+		return echo.ErrUnauthorized
+	}
+
+	// Create token
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	// Set claims
+	claims := token.Claims.(jwt.MapClaims)
+	claims["teamname"] = teamname
+	claims["expire"] = time.Now().Add(time.Hour * 72).Unix()
+
+	str, err := token.SigningString()
+	if err != nil {
+		str = "secret"
+		log.Error("SigningString failed ", err)
+	}
+
+	// Generate encoded token and send it as response.
+	t, err := token.SignedString([]byte(str))
+	if err != nil {
+		return err
+	}
+
+	s, err := json.Marshal(settings)
+	if err != nil {
+		log.Error("Marshal settings failed ", err)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"bot":   string(s),
+		"token": t,
+	})
 }
 
 func (api *RESTAPI) listBots(c echo.Context) error {

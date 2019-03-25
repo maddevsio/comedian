@@ -33,11 +33,39 @@ paths:
         200:
           description: "successful operation"
   /login:
-    get:
-      summary: "Renders login page. Have no connections with UI"
+    post:
+      summary: "check if login & pass correspond to values in DB and return JWT token"
+      consumes:
+      - "multipart/form-data"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "teamname"
+        in: "formData"
+        description: "team name to login to"
+        required: true
+        type: "string"
+      - name: "password"
+        in: "formData"
+        description: "password of the team"
+        required: true
+        type: "string"
       responses:
+        401:
+          description: "Invalid password"
+        404:
+          description: "Bot with provided team name not found"
         200:
-          description: "OK"
+          description: "successful operation"
+          schema:
+            type: object
+            properties:
+              bot:
+                type: object
+                $ref: "#/definitions/Bot"
+              token:
+                type: string
+                description: JWT access token
   /event:
     post:
       summary: "Handles Slack events"
@@ -48,25 +76,7 @@ paths:
         500:
           description: "Error"
         400:
-          description: "Incorrect data"
-  /admin:
-    get:
-      summary: "Renders admin page. Does not belong to UI"
-      responses:
-        200:
-          description: "OK"
-        403:
-          description: "Password does not match"
-        404:
-          description: "Wrong account"
-        500:
-          description: "Could not read form data"
-  /config:
-    post:
-      summary: "Updates config and renders admin page, does not belong to UI at all. Should be removed."
-      responses:
-          200:
-            description: "Config updated!"     
+          description: "Incorrect data"  
   /service-message:
     post:
       summary: "Handles messages from different Comedian services. Does not belong to UI. Needed for services only"
