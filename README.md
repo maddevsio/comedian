@@ -142,6 +142,18 @@ Assign users to submit standups
 
 Enjoy automated remote standups meetings each morning! 
 
+## Local Authentication 
+Run the code on localhost:8080 port, then send CURL request: 
+
+```
+curl -X POST -d 'teamname=beehive' -d 'password=beehive' localhost:8080/login
+```
+And then when you get your token in the responce, use it in your future CURL requests as following: 
+
+``` 
+curl localhost:8080/v1/bots -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmUiOjE1NTM3NjE4MDcsInRlYW1uYW1lIjoiYmVlaGl2ZSJ9.9nGv6UZQ4DiZdh-fXuX7G6hrchZe42aEovBlwKMda1o" 
+```
+
 ## Issues
 
 Feel free to send pull requests. Also feel free to create issues.
