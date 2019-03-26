@@ -5,7 +5,7 @@ WORKDIR /go/src/gitlab.com/team-monitoring/comedian
 # Compile comedian
 RUN make build_linux
 
-FROM debian:8.7
+FROM debian:9.8
 LABEL maintainer="Anatoliy Fedorenko <fedorenko.tolik@gmail.com>"
 RUN  apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates locales wget \
