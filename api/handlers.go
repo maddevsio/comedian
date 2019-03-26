@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 	"strconv"
@@ -9,7 +8,6 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
-	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/crypto"
 	"gitlab.com/team-monitoring/comedian/model"
 )
@@ -47,13 +45,8 @@ func (api *RESTAPI) login(c echo.Context) error {
 		return err
 	}
 
-	s, err := json.Marshal(settings)
-	if err != nil {
-		log.WithFields(log.Fields{"settings": settings, "error": err}).Error("Marshal settings failed")
-	}
-
-	return c.JSON(http.StatusOK, map[string]string{
-		"bot":   string(s),
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"bot":   settings,
 		"token": t,
 	})
 }
