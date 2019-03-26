@@ -79,6 +79,7 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 
 	switch ev["type"] {
 	case "app_mention":
+
 		message := &slack.MessageEvent{}
 		if err := json.Unmarshal(data, message); err != nil {
 			return err
@@ -140,7 +141,7 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 
 	submitted, err := bot.db.UserSubmittedStandupToday(msg.Channel, msg.User)
 	if err != nil {
-		return nil
+		log.WithFields(log.Fields{"channel": msg.Channel, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
 	if submitted {
@@ -213,7 +214,7 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 
 	submitted, err := bot.db.UserSubmittedStandupToday(msg.Channel, msg.User)
 	if err != nil {
-		return err
+		log.WithFields(log.Fields{"channel": msg.Channel, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
 	if submitted {
