@@ -38,21 +38,21 @@ func main() {
 
 	_, err := bundle.LoadMessageFile("active.en.toml")
 	if err != nil {
-		log.Fatalf("Load active.en.toml message file failed: %v", err)
+		log.WithFields(log.Fields{"error": err}).Fatal("Load active.en.toml message file failed")
 	}
 	_, err = bundle.LoadMessageFile("active.ru.toml")
 	if err != nil {
-		log.Fatalf("Load active.ru.toml message file failed: %v", err)
+		log.WithFields(log.Fields{"error": err}).Fatal("Load active.ru.toml message file failed")
 	}
 
 	config, err := config.Get()
 	if err != nil {
-		log.Fatalf("Get config failed: %v", err)
+		log.WithFields(log.Fields{"error": err}).Fatal("Get config failed")
 	}
 
 	db, err := storage.New(config)
 	if err != nil {
-		log.Fatalf("New storage failed: %v", err)
+		log.WithFields(log.Fields{"error": err}).Fatal("New storage failed")
 	}
 
 	comedian := comedianbot.New(bundle, db)
@@ -60,9 +60,9 @@ func main() {
 	go comedian.StartBots()
 
 	api := api.New(config, db, comedian)
-	if err != nil {
-		log.Fatalf("New API failed: %v", err)
-	}
 
-	api.Start()
+	err = api.Start()
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Fatal("API start failed")
+	}
 }

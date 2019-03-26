@@ -60,6 +60,9 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	echo := echo.New()
 	echo.Use(middleware.CORS())
 	echo.Pre(middleware.RemoveTrailingSlash())
+	echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "method=${method}, uri=${uri}, status=${status}\n",
+	}))
 
 	api := ComedianAPI{
 		echo:     echo,
@@ -141,10 +144,9 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 		}
 
 		go func(event slackevents.EventsAPICallbackEvent) {
-			log.Info(event)
 			err = api.comedian.HandleCallbackEvent(event)
 			if err != nil {
-				log.Error(err)
+				log.WithFields(log.Fields{"event": event, "error": err}).Error("HandleCallbackEvent failed")
 			}
 		}(event)
 
@@ -217,7 +219,6 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	urlValues, err := c.FormParams()
 	if err != nil {
-		log.Errorf("ComedianAPI: c.FormParams failed: %v\n", err)
 		return c.String(http.StatusUnauthorized, err.Error())
 	}
 
@@ -225,13 +226,11 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
 	cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
 	if err != nil {
-		log.Errorf("ComedianAPI: CreateBotSettings failed: %v\n", err)
 		return err
 	}
 

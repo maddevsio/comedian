@@ -15,7 +15,6 @@ import (
 )
 
 func (api *RESTAPI) healthcheck(c echo.Context) error {
-	log.Info("Status healthy!")
 	return c.JSON(http.StatusOK, "successful operation")
 }
 
@@ -50,10 +49,8 @@ func (api *RESTAPI) login(c echo.Context) error {
 
 	s, err := json.Marshal(settings)
 	if err != nil {
-		log.Error("Marshal settings failed ", err)
+		log.WithFields(log.Fields{"settings": settings, "error": err}).Error("Marshal settings failed")
 	}
-
-	log.Info(string(s))
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"bot":   string(s),
@@ -74,8 +71,6 @@ func (api *RESTAPI) listBots(c echo.Context) error {
 		bot.AccessToken = ""
 		fBots = append(fBots, bot)
 	}
-
-	log.Info(fBots)
 
 	return c.JSON(http.StatusOK, fBots)
 }
@@ -120,14 +115,12 @@ func (api *RESTAPI) updateBot(c echo.Context) error {
 	bot := model.BotSettings{}
 
 	if err := c.Bind(&bot); err != nil {
-		log.Error(err)
 		return c.JSON(http.StatusNotAcceptable, err)
 	}
 	bot.ID = id
 
 	res, err := api.db.UpdateBotSettings(bot)
 	if err != nil {
-		log.Error(err)
 		return c.JSON(http.StatusNotFound, err)
 	}
 
@@ -483,8 +476,6 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 
-	log.Info(teamID)
-	log.Info(standuper.TeamID)
 	if standuper.TeamID != teamID {
 		return echo.ErrNotFound
 	}

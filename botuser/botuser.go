@@ -77,11 +77,8 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		return err
 	}
 
-	log.Info(ev)
-
 	switch ev["type"] {
-	case "message":
-		log.Info("New message!")
+	case "app_mention":
 		message := &slack.MessageEvent{}
 		if err := json.Unmarshal(data, message); err != nil {
 			return err
@@ -89,7 +86,6 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		err := bot.HandleMessage(message)
 		return err
 	case "member_joined_channel":
-		log.Info("Joined Channel!")
 		join := &slack.MemberJoinedChannelEvent{}
 		if err := json.Unmarshal(data, join); err != nil {
 			return err
@@ -98,10 +94,9 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		_, err = bot.HandleJoin(join.Channel, join.Team)
 		return err
 	case "app_uninstalled":
-		log.Info("Uninstalled!")
 		bot.db.DeleteBotSettings(bot.properties.TeamID)
 	default:
-		log.Warning("unrecognized event!")
+		log.WithFields(log.Fields{"event": event}).Warning("unrecognized event!")
 		return nil
 	}
 
@@ -134,20 +129,18 @@ func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
 
 func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
-		return errors.New("bot is not mentioned in the message body")
+		return nil
 	}
-
-	log.Info(bot.properties.UserID)
 
 	problem := bot.analizeStandup(msg.Msg.Text)
 	if problem != "" {
 		bot.SendEphemeralMessage(msg.Channel, msg.User, problem)
-		return errors.New("Fail to save message as standup. Standup is not complete")
+		return nil
 	}
 
 	submitted, err := bot.db.UserSubmittedStandupToday(msg.Channel, msg.User)
 	if err != nil {
-		log.Error(err)
+		return nil
 	}
 
 	if submitted {
@@ -165,7 +158,6 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 		return errors.New("Fail to save message as standup. User already submitted standup today")
 	}
-	log.Info(msg)
 	standup, err := bot.db.CreateStandup(model.Standup{
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
@@ -174,7 +166,6 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		MessageTS: msg.Msg.Timestamp,
 	})
 	if err != nil {
-		log.Error("Create standup failed")
 		return err
 	}
 	log.Infof("Standup created #id:%v\n", standup.ID)
@@ -200,13 +191,13 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 
 func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 	if !strings.Contains(msg.SubMessage.Text, bot.properties.UserID) {
-		return errors.New("bot is not mentioned and no #standup in the message body")
+		return nil
 	}
 
 	problem := bot.analizeStandup(msg.SubMessage.Text)
 	if problem != "" {
 		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
-		return errors.New("Fail to save edited message as standup. Standup is not complete")
+		return nil
 	}
 
 	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
@@ -238,7 +229,7 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 			}).Error("Failed to translate message!")
 		}
 		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
-		return errors.New("Fail to save edited message as standup. User already submitted standup today")
+		return nil
 	}
 
 	standup, err = bot.db.CreateStandup(model.Standup{
@@ -371,10 +362,6 @@ func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachm
 	_, _, err := bot.slack.PostMessage(channel, message, slack.PostMessageParameters{
 		Attachments: attachments,
 	})
-	if err != nil {
-		log.Errorf("slack: PostMessage failed: %v\n", err)
-		return err
-	}
 	return err
 }
 
@@ -388,10 +375,6 @@ func (bot *Bot) SendEphemeralMessage(channel, user, message string) error {
 		user,
 		slack.MsgOptionText(message, true),
 	)
-	if err != nil {
-		log.Errorf("slack: PostEphemeral failed: %v\n", err)
-		return err
-	}
 	return err
 }
 
@@ -405,9 +388,6 @@ func (bot *Bot) SendUserMessage(userID, message string) error {
 		return err
 	}
 	err = bot.SendMessage(channelID, message, nil)
-	if err != nil {
-		return err
-	}
 	return err
 }
 
@@ -477,20 +457,18 @@ func (bot *Bot) GetAccessLevel(userID, channelID string) (int, error) {
 }
 
 //UpdateUsersList updates users in workspace
-func (bot *Bot) UpdateUsersList() {
+func (bot *Bot) UpdateUsersList() error {
 	users, err := bot.slack.GetUsers()
 	if err != nil {
-		log.Errorf("GetUsers failed: %v", err)
-		return
+		return err
 	}
 	for _, user := range users {
 		err := bot.updateUser(user)
 		if err != nil {
-			log.Error(err)
+			log.WithFields(log.Fields{"user": user, "bot": bot, "error": err}).Error("updateUser failed")
 		}
 	}
-
-	log.Info("Users list updated successfully")
+	return nil
 }
 
 func (bot *Bot) updateUser(user slack.User) error {
@@ -552,7 +530,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 			if u.UserID == standuper.UserID {
 				err := bot.db.DeleteStanduper(standuper.ID)
 				if err != nil {
-					log.Error(err)
+					log.WithFields(log.Fields{"user": user, "bot": bot, "standuper": standuper, "error": err}).Error("DeleteStanduper failed")
 				}
 			}
 		}
