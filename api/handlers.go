@@ -61,6 +61,10 @@ func (api *RESTAPI) login(c echo.Context) error {
 }
 
 func (api *RESTAPI) listBots(c echo.Context) error {
+	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
 
 	bots, err := api.db.GetAllBotSettings()
 	if err != nil {

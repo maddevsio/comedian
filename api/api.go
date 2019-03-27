@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"regexp"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -237,11 +236,4 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	api.comedian.AddBot(cp)
 
 	return c.Redirect(http.StatusMovedPermanently, "https://admin-staging.comedian.maddevs.co/")
-}
-
-func restricted(c echo.Context) error {
-	user := c.Get("teamname").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-	name := claims["teamname"].(string)
-	return c.String(http.StatusOK, "Welcome "+name+"!")
 }
