@@ -61,8 +61,7 @@ func (api *RESTAPI) login(c echo.Context) error {
 }
 
 func (api *RESTAPI) listBots(c echo.Context) error {
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
 
@@ -81,10 +80,10 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
@@ -108,10 +107,10 @@ func (api *RESTAPI) updateBot(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
@@ -142,10 +141,10 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
@@ -163,10 +162,11 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 }
 
 func (api *RESTAPI) listStandups(c echo.Context) error {
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
@@ -194,10 +194,10 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
@@ -219,10 +219,10 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	standup := model.Standup{ID: id}
 	if err := c.Bind(&standup); err != nil {
@@ -249,10 +249,10 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
@@ -274,10 +274,11 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 }
 
 func (api *RESTAPI) listUsers(c echo.Context) error {
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
@@ -304,10 +305,10 @@ func (api *RESTAPI) getUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
-	if u == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	u := c.Get("user").(*jwt.Token)
 
 	user, err := api.db.GetUser(id)
 	if err != nil {
@@ -329,10 +330,10 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
-	if u == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	u := c.Get("user").(*jwt.Token)
 
 	user := model.User{ID: id}
 	if err := c.Bind(&user); err != nil {
@@ -354,10 +355,11 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 }
 
 func (api *RESTAPI) listChannels(c echo.Context) error {
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
@@ -384,10 +386,10 @@ func (api *RESTAPI) getChannel(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
-	if u == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	u := c.Get("user").(*jwt.Token)
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
@@ -409,10 +411,10 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
-	if u == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	u := c.Get("user").(*jwt.Token)
 
 	channel := model.Channel{ID: id}
 	if err := c.Bind(&channel); err != nil {
@@ -439,10 +441,10 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
-	if u == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	u := c.Get("user").(*jwt.Token)
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
@@ -464,10 +466,11 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 }
 
 func (api *RESTAPI) listStandupers(c echo.Context) error {
-	user := c.Get("user").(*jwt.Token)
-	if user == nil {
+
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	user := c.Get("user").(*jwt.Token)
 
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
@@ -494,10 +497,10 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
-	if u == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	u := c.Get("user").(*jwt.Token)
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
@@ -519,10 +522,10 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
-	if u == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	u := c.Get("user").(*jwt.Token)
 
 	standuper := model.Standuper{ID: id}
 	if err := c.Bind(&standuper); err != nil {
@@ -549,10 +552,10 @@ func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
-	if u == nil {
+	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
+	u := c.Get("user").(*jwt.Token)
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {

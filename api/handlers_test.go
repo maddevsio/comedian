@@ -137,7 +137,7 @@ func TestListBots(t *testing.T) {
 		Error          error
 		StatusCode     int
 	}{
-		{[]model.BotSettings{}, errors.New("err"), 404},
+		{[]model.BotSettings{}, errors.New("err"), 500},
 		{[]model.BotSettings{model.BotSettings{}}, nil, 200},
 	}
 
@@ -151,6 +151,10 @@ func TestListBots(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/bots", strings.NewReader(""))
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
+		c.Set("user", &jwt.Token{
+			Raw:    "token",
+			Claims: jwt.MapClaims{"bot_id": float64(1)},
+		})
 
 		if assert.NoError(t, r.listBots(c)) {
 			assert.Equal(t, tt.StatusCode, rec.Code)
@@ -166,8 +170,8 @@ func TestGetBot(t *testing.T) {
 		ID          string
 		StatusCode  int
 	}{
-		{model.BotSettings{}, errors.New("err"), "", 406},
-		{model.BotSettings{}, errors.New("err"), "1", 404},
+		{model.BotSettings{}, errors.New("err"), "", 400},
+		{model.BotSettings{}, errors.New("err"), "1", 500},
 		{model.BotSettings{}, nil, "1", 200},
 	}
 
@@ -204,8 +208,8 @@ func TestUpdateBot(t *testing.T) {
 		formValues  map[string]string
 		StatusCode  int
 	}{
-		{model.BotSettings{}, errors.New("err"), "", map[string]string{}, 406},
-		{model.BotSettings{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
+		{model.BotSettings{}, errors.New("err"), "", map[string]string{}, 400},
+		{model.BotSettings{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
 		{model.BotSettings{}, nil, "1", map[string]string{"password": "foo"}, 200},
 	}
 
@@ -248,8 +252,8 @@ func TestDeleteBot(t *testing.T) {
 		ID          string
 		StatusCode  int
 	}{
-		{model.BotSettings{}, errors.New("err"), "", 406},
-		{model.BotSettings{}, errors.New("err"), "1", 404},
+		{model.BotSettings{}, errors.New("err"), "", 400},
+		{model.BotSettings{}, errors.New("err"), "1", 500},
 		{model.BotSettings{}, nil, "1", 204},
 	}
 
@@ -285,7 +289,7 @@ func TestListStandups(t *testing.T) {
 		Error       error
 		StatusCode  int
 	}{
-		{[]model.Standup{}, errors.New("err"), 404},
+		{[]model.Standup{}, errors.New("err"), 500},
 		{[]model.Standup{model.Standup{}}, nil, 200},
 	}
 
@@ -318,8 +322,8 @@ func TestGetStandup(t *testing.T) {
 		ID         string
 		StatusCode int
 	}{
-		{model.Standup{}, errors.New("err"), "", 406},
-		{model.Standup{}, errors.New("err"), "1", 404},
+		{model.Standup{}, errors.New("err"), "", 400},
+		{model.Standup{}, errors.New("err"), "1", 500},
 		{model.Standup{TeamID: "foo"}, nil, "1", 200},
 	}
 
@@ -356,8 +360,8 @@ func TestUpdateStandup(t *testing.T) {
 		formValues map[string]string
 		StatusCode int
 	}{
-		{model.Standup{TeamID: "foo"}, errors.New("err"), "", map[string]string{}, 406},
-		{model.Standup{TeamID: "foo"}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
+		{model.Standup{TeamID: "foo"}, errors.New("err"), "", map[string]string{}, 400},
+		{model.Standup{TeamID: "foo"}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
 		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 200},
 	}
 
@@ -400,8 +404,8 @@ func TestDeleteStandup(t *testing.T) {
 		ID         string
 		StatusCode int
 	}{
-		{model.Standup{}, errors.New("err"), "", 406},
-		{model.Standup{}, errors.New("err"), "1", 404},
+		{model.Standup{}, errors.New("err"), "", 400},
+		{model.Standup{}, errors.New("err"), "1", 500},
 		{model.Standup{TeamID: "foo"}, nil, "1", 204},
 	}
 
@@ -437,7 +441,7 @@ func TestListUsers(t *testing.T) {
 		Error      error
 		StatusCode int
 	}{
-		{[]model.User{}, errors.New("err"), 404},
+		{[]model.User{}, errors.New("err"), 500},
 		{[]model.User{model.User{}}, nil, 200},
 	}
 
@@ -470,8 +474,8 @@ func TestGetUser(t *testing.T) {
 		ID         string
 		StatusCode int
 	}{
-		{model.User{}, errors.New("err"), "", 406},
-		{model.User{}, errors.New("err"), "1", 404},
+		{model.User{}, errors.New("err"), "", 400},
+		{model.User{}, errors.New("err"), "1", 500},
 		{model.User{TeamID: "foo"}, nil, "1", 200},
 	}
 
@@ -508,8 +512,8 @@ func TestUpdateUser(t *testing.T) {
 		formValues map[string]string
 		StatusCode int
 	}{
-		{model.User{}, errors.New("err"), "", map[string]string{}, 406},
-		{model.User{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
+		{model.User{}, errors.New("err"), "", map[string]string{}, 400},
+		{model.User{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
 		{model.User{}, nil, "1", map[string]string{"password": "foo"}, 200},
 	}
 
@@ -552,7 +556,7 @@ func TestListChannels(t *testing.T) {
 		Error       error
 		StatusCode  int
 	}{
-		{[]model.Channel{}, errors.New("err"), 404},
+		{[]model.Channel{}, errors.New("err"), 500},
 		{[]model.Channel{model.Channel{}}, nil, 200},
 	}
 
@@ -585,8 +589,8 @@ func TestGetChannel(t *testing.T) {
 		ID         string
 		StatusCode int
 	}{
-		{model.Channel{}, errors.New("err"), "", 406},
-		{model.Channel{}, errors.New("err"), "1", 404},
+		{model.Channel{}, errors.New("err"), "", 400},
+		{model.Channel{}, errors.New("err"), "1", 500},
 		{model.Channel{TeamID: "foo"}, nil, "1", 200},
 	}
 
@@ -623,8 +627,8 @@ func TestUpdateChannel(t *testing.T) {
 		formValues map[string]string
 		StatusCode int
 	}{
-		{model.Channel{}, errors.New("err"), "", map[string]string{}, 406},
-		{model.Channel{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
+		{model.Channel{}, errors.New("err"), "", map[string]string{}, 400},
+		{model.Channel{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
 		{model.Channel{}, nil, "1", map[string]string{"password": "foo"}, 200},
 	}
 
@@ -667,8 +671,8 @@ func TestDeleteChannel(t *testing.T) {
 		ID         string
 		StatusCode int
 	}{
-		{model.Channel{}, errors.New("err"), "", 406},
-		{model.Channel{}, errors.New("err"), "1", 404},
+		{model.Channel{}, errors.New("err"), "", 400},
+		{model.Channel{}, errors.New("err"), "1", 500},
 		{model.Channel{TeamID: "foo"}, nil, "1", 204},
 	}
 
@@ -704,7 +708,7 @@ func TestListStandupers(t *testing.T) {
 		Error         error
 		StatusCode    int
 	}{
-		{[]model.Standuper{}, errors.New("err"), 404},
+		{[]model.Standuper{}, errors.New("err"), 500},
 		{[]model.Standuper{model.Standuper{}}, nil, 200},
 	}
 
@@ -737,8 +741,8 @@ func TestGetStanduper(t *testing.T) {
 		ID         string
 		StatusCode int
 	}{
-		{model.Standuper{}, errors.New("err"), "", 406},
-		{model.Standuper{}, errors.New("err"), "1", 404},
+		{model.Standuper{}, errors.New("err"), "", 400},
+		{model.Standuper{}, errors.New("err"), "1", 500},
 		{model.Standuper{TeamID: "foo"}, nil, "1", 200},
 	}
 
@@ -775,8 +779,8 @@ func TestUpdateStanduper(t *testing.T) {
 		formValues map[string]string
 		StatusCode int
 	}{
-		{model.Standuper{}, errors.New("err"), "", map[string]string{}, 406},
-		{model.Standuper{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
+		{model.Standuper{}, errors.New("err"), "", map[string]string{}, 400},
+		{model.Standuper{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
 		{model.Standuper{}, nil, "1", map[string]string{"team_id": "foo"}, 200},
 	}
 
@@ -819,8 +823,8 @@ func TestDeleteStanduper(t *testing.T) {
 		ID         string
 		StatusCode int
 	}{
-		{model.Standuper{}, errors.New("err"), "", 406},
-		{model.Standuper{}, errors.New("err"), "1", 404},
+		{model.Standuper{}, errors.New("err"), "", 400},
+		{model.Standuper{}, errors.New("err"), "1", 500},
 		{model.Standuper{TeamID: "foo"}, nil, "1", 204},
 	}
 
