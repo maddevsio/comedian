@@ -50,6 +50,7 @@ func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *B
 }
 
 func (bot *Bot) Start() {
+	log.Info("Bot started: ", bot.properties)
 
 	bot.UpdateUsersList()
 
