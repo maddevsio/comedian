@@ -12,22 +12,31 @@ import (
 	"gitlab.com/team-monitoring/comedian/model"
 )
 
+//LoginData structure is used for parsing login data that UI sends to back end
+type LoginData struct {
+	TeamName string `json:"teamname"`
+	Password string `json:"password"`
+}
+
 func (api *RESTAPI) healthcheck(c echo.Context) error {
 	return c.JSON(http.StatusOK, "successful operation")
 }
 
 func (api *RESTAPI) login(c echo.Context) error {
-	teamname := c.FormValue("teamname")
-	password := c.FormValue("password")
+	var data LoginData
 
-	settings, err := api.db.GetBotSettingsByTeamName(teamname)
-	if err != nil {
-		return echo.ErrNotFound
+	if err := c.Bind(&data); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	err = crypto.Compare(settings.Password, password)
+	settings, err := api.db.GetBotSettingsByTeamName(data.TeamName)
 	if err != nil {
-		return echo.ErrUnauthorized
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	err = crypto.Compare(settings.Password, data.Password)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	// Create token
@@ -42,7 +51,7 @@ func (api *RESTAPI) login(c echo.Context) error {
 	// Generate encoded token and send it as response.
 	t, err := token.SignedString([]byte(os.Getenv("COMEDIAN_SLACK_CLIENT_SECRET")))
 	if err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
@@ -55,37 +64,35 @@ func (api *RESTAPI) listBots(c echo.Context) error {
 
 	bots, err := api.db.GetAllBotSettings()
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	// temporary sequrity feature
-	var fBots []model.BotSettings
-	for _, bot := range bots {
-		bot.AccessToken = ""
-		fBots = append(fBots, bot)
-	}
-
-	return c.JSON(http.StatusOK, fBots)
+	return c.JSON(http.StatusOK, bots)
 }
 
 func (api *RESTAPI) getBot(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
 
 	if int64(botID) != id {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	bot, err := api.db.GetBotSettings(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		// not sure about this error. Need to check how it works
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, bot)
@@ -94,27 +101,31 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 func (api *RESTAPI) updateBot(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
 
 	if int64(botID) != id {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
-	bot := model.BotSettings{}
+	bot := model.BotSettings{ID: id}
 
 	if err := c.Bind(&bot); err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
-	bot.ID = id
 
 	res, err := api.db.UpdateBotSettings(bot)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		// maybe it would be better to find bot first...
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -124,20 +135,24 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
-
 	if int64(botID) != id {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	err = api.db.DeleteBotSettingsByID(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		//need to check if deleting bot with wrong id causes errors
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusNoContent, id)
@@ -145,12 +160,16 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 
 func (api *RESTAPI) listStandups(c echo.Context) error {
 	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 
 	standups, err := api.db.ListStandups()
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	var result []model.Standup
@@ -168,19 +187,23 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
 	}
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	user := c.Get("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standup.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	return c.JSON(http.StatusOK, standup)
@@ -189,27 +212,28 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 func (api *RESTAPI) updateStandup(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
-
-	standup := model.Standup{}
-
-	if err := c.Bind(&standup); err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
-	}
-
-	standup.ID = id
 
 	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
+	standup := model.Standup{ID: id}
+	if err := c.Bind(&standup); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standup.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	res, err := api.db.UpdateStandup(standup)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -218,24 +242,28 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 func (api *RESTAPI) deleteStandup(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
 	}
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	user := c.Get("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standup.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	err = api.db.DeleteStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusNoContent, id)
@@ -243,12 +271,16 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 
 func (api *RESTAPI) listUsers(c echo.Context) error {
 	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 
 	users, err := api.db.ListUsers()
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	var result []model.User
@@ -265,19 +297,23 @@ func (api *RESTAPI) listUsers(c echo.Context) error {
 func (api *RESTAPI) getUser(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	u := c.Get("user").(*jwt.Token)
+	if u == nil {
+		return c.JSON(http.StatusUnauthorized, "")
 	}
 
 	user, err := api.db.GetUser(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if user.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	return c.JSON(http.StatusOK, user)
@@ -286,27 +322,28 @@ func (api *RESTAPI) getUser(c echo.Context) error {
 func (api *RESTAPI) updateUser(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
-
-	user := model.User{}
-
-	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
-	}
-
-	user.ID = id
 
 	u := c.Get("user").(*jwt.Token)
+	if u == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
+	user := model.User{ID: id}
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if user.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	res, err := api.db.UpdateUser(user)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -314,12 +351,16 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 
 func (api *RESTAPI) listChannels(c echo.Context) error {
 	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 
 	channels, err := api.db.ListChannels()
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	var result []model.Channel
@@ -336,19 +377,23 @@ func (api *RESTAPI) listChannels(c echo.Context) error {
 func (api *RESTAPI) getChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	u := c.Get("user").(*jwt.Token)
+	if u == nil {
+		return c.JSON(http.StatusUnauthorized, "")
 	}
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if channel.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	return c.JSON(http.StatusOK, channel)
@@ -357,27 +402,28 @@ func (api *RESTAPI) getChannel(c echo.Context) error {
 func (api *RESTAPI) updateChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
-
-	channel := model.Channel{}
-
-	if err := c.Bind(&channel); err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
-	}
-
-	channel.ID = id
 
 	u := c.Get("user").(*jwt.Token)
+	if u == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
+	channel := model.Channel{ID: id}
+	if err := c.Bind(&channel); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if channel.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	res, err := api.db.UpdateChannel(channel)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -386,24 +432,28 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 func (api *RESTAPI) deleteChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	u := c.Get("user").(*jwt.Token)
+	if u == nil {
+		return c.JSON(http.StatusUnauthorized, "")
 	}
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if channel.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	err = api.db.DeleteChannel(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusNoContent, id)
@@ -411,12 +461,16 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 
 func (api *RESTAPI) listStandupers(c echo.Context) error {
 	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 
 	standupers, err := api.db.ListStandupers()
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	var result []model.Standuper
@@ -433,19 +487,23 @@ func (api *RESTAPI) listStandupers(c echo.Context) error {
 func (api *RESTAPI) getStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	u := c.Get("user").(*jwt.Token)
+	if u == nil {
+		return c.JSON(http.StatusUnauthorized, "")
 	}
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standuper.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	return c.JSON(http.StatusOK, standuper)
@@ -454,28 +512,28 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 func (api *RESTAPI) updateStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
-
-	standuper := model.Standuper{}
-
-	if err := c.Bind(&standuper); err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
-	}
-
-	standuper.ID = id
 
 	u := c.Get("user").(*jwt.Token)
+	if u == nil {
+		return c.JSON(http.StatusUnauthorized, "")
+	}
+
+	standuper := model.Standuper{ID: id}
+	if err := c.Bind(&standuper); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
-
 	if standuper.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	res, err := api.db.UpdateStanduper(standuper)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -484,24 +542,28 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusNotAcceptable, err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	u := c.Get("user").(*jwt.Token)
+	if u == nil {
+		return c.JSON(http.StatusUnauthorized, "")
 	}
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	u := c.Get("user").(*jwt.Token)
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standuper.TeamID != teamID {
-		return echo.ErrNotFound
+		return c.JSON(http.StatusForbidden, "")
 	}
 
 	err = api.db.DeleteStanduper(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusNoContent, id)
