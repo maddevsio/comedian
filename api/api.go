@@ -162,19 +162,19 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
 		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on ReadAll")
-		return err
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
 		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on Unmarshal body")
-		return err
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	err = api.comedian.HandleEvent(incomingEvent)
 	if err != nil {
 		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on HandleEvent")
-		return err
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, "Message handled!")
