@@ -122,7 +122,7 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
@@ -130,7 +130,8 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	//Need for enabling of Event Subscriptions.
+	// FIXME Need to check token, if not fit, deny request
+
 	if incomingEvent.Type == slackevents.URLVerification {
 		return c.String(http.StatusOK, incomingEvent.Challenge)
 	}
@@ -139,7 +140,7 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 		var event slackevents.EventsAPICallbackEvent
 		err = json.Unmarshal(body, &event)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err)
+			return c.JSON(http.StatusBadRequest, err)
 		}
 
 		go func(event slackevents.EventsAPICallbackEvent) {
@@ -185,7 +186,7 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 
 	urlValues, err := c.FormParams()
 	if err != nil {
-		return c.String(http.StatusOK, err.Error())
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	decoder := schema.NewDecoder()

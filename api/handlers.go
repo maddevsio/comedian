@@ -12,6 +12,11 @@ import (
 	"gitlab.com/team-monitoring/comedian/model"
 )
 
+var (
+	missingTokenErr = "missing token / unauthorized"
+	accessDeniedErr = "access denied"
+)
+
 //LoginData structure is used for parsing login data that UI sends to back end
 type LoginData struct {
 	TeamName string `json:"teamname"`
@@ -62,7 +67,7 @@ func (api *RESTAPI) login(c echo.Context) error {
 
 func (api *RESTAPI) listBots(c echo.Context) error {
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 
 	bots := make([]model.BotSettings, 0)
@@ -82,7 +87,7 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
@@ -90,7 +95,7 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 	botID := claims["bot_id"].(float64)
 
 	if int64(botID) != id {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	bot, err := api.db.GetBotSettings(id)
@@ -108,7 +113,7 @@ func (api *RESTAPI) updateBot(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
@@ -116,7 +121,7 @@ func (api *RESTAPI) updateBot(c echo.Context) error {
 	botID := claims["bot_id"].(float64)
 
 	if int64(botID) != id {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	bot := model.BotSettings{ID: id}
@@ -142,14 +147,14 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
 	if int64(botID) != id {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	err = api.db.DeleteBotSettingsByID(id)
@@ -164,7 +169,7 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 func (api *RESTAPI) listStandups(c echo.Context) error {
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
@@ -195,7 +200,7 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
@@ -207,7 +212,7 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standup.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	return c.JSON(http.StatusOK, standup)
@@ -220,7 +225,7 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
@@ -232,7 +237,7 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standup.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	res, err := api.db.UpdateStandup(standup)
@@ -250,7 +255,7 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
@@ -262,7 +267,7 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standup.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	err = api.db.DeleteStandup(id)
@@ -276,7 +281,7 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 func (api *RESTAPI) listUsers(c echo.Context) error {
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
@@ -306,7 +311,7 @@ func (api *RESTAPI) getUser(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
 
@@ -318,7 +323,7 @@ func (api *RESTAPI) getUser(c echo.Context) error {
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if user.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	return c.JSON(http.StatusOK, user)
@@ -331,7 +336,7 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
 
@@ -343,7 +348,7 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if user.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	res, err := api.db.UpdateUser(user)
@@ -357,7 +362,7 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 func (api *RESTAPI) listChannels(c echo.Context) error {
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
@@ -387,7 +392,7 @@ func (api *RESTAPI) getChannel(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
 
@@ -399,7 +404,7 @@ func (api *RESTAPI) getChannel(c echo.Context) error {
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if channel.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	return c.JSON(http.StatusOK, channel)
@@ -412,7 +417,7 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
 
@@ -424,7 +429,7 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if channel.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	res, err := api.db.UpdateChannel(channel)
@@ -442,7 +447,7 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
 
@@ -454,7 +459,7 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if channel.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	err = api.db.DeleteChannel(id)
@@ -468,7 +473,7 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 func (api *RESTAPI) listStandupers(c echo.Context) error {
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
 
@@ -498,7 +503,7 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
 
@@ -510,7 +515,7 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standuper.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	return c.JSON(http.StatusOK, standuper)
@@ -523,7 +528,7 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
 
@@ -535,7 +540,7 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standuper.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	res, err := api.db.UpdateStanduper(standuper)
@@ -553,7 +558,7 @@ func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 	}
 
 	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, "")
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
 
@@ -565,7 +570,7 @@ func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
 	if standuper.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, "")
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
 	err = api.db.DeleteStanduper(id)
