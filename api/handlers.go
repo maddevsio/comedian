@@ -65,6 +65,7 @@ func (api *RESTAPI) listBots(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, "")
 	}
 
+	bots := make([]model.BotSettings, 0)
 	bots, err := api.db.GetAllBotSettings()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
@@ -94,8 +95,7 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 
 	bot, err := api.db.GetBotSettings(id)
 	if err != nil {
-		// not sure about this error. Need to check how it works
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	return c.JSON(http.StatusOK, bot)
@@ -176,7 +176,7 @@ func (api *RESTAPI) listStandups(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	var result []model.Standup
+	result := make([]model.Standup, 0)
 
 	for _, standup := range standups {
 		if standup.TeamID == teamID {
@@ -201,7 +201,7 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	claims := user.Claims.(jwt.MapClaims)
@@ -288,7 +288,7 @@ func (api *RESTAPI) listUsers(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	var result []model.User
+	result := make([]model.User, 0)
 
 	for _, user := range users {
 		if user.TeamID == teamID {
@@ -312,7 +312,7 @@ func (api *RESTAPI) getUser(c echo.Context) error {
 
 	user, err := api.db.GetUser(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -369,7 +369,7 @@ func (api *RESTAPI) listChannels(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	var result []model.Channel
+	result := make([]model.Channel, 0)
 
 	for _, channel := range channels {
 		if channel.TeamID == teamID {
@@ -393,7 +393,7 @@ func (api *RESTAPI) getChannel(c echo.Context) error {
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -480,7 +480,7 @@ func (api *RESTAPI) listStandupers(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	var result []model.Standuper
+	result := make([]model.Standuper, 0)
 
 	for _, standuper := range standupers {
 		if standuper.TeamID == teamID {
@@ -504,7 +504,7 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 
 	claims := u.Claims.(jwt.MapClaims)

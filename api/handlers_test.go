@@ -171,7 +171,7 @@ func TestGetBot(t *testing.T) {
 		StatusCode  int
 	}{
 		{model.BotSettings{}, errors.New("err"), "", 400},
-		{model.BotSettings{}, errors.New("err"), "1", 500},
+		{model.BotSettings{}, errors.New("err"), "1", 404},
 		{model.BotSettings{}, nil, "1", 200},
 	}
 
@@ -323,7 +323,7 @@ func TestGetStandup(t *testing.T) {
 		StatusCode int
 	}{
 		{model.Standup{}, errors.New("err"), "", 400},
-		{model.Standup{}, errors.New("err"), "1", 500},
+		{model.Standup{}, errors.New("err"), "1", 404},
 		{model.Standup{TeamID: "foo"}, nil, "1", 200},
 	}
 
@@ -475,7 +475,7 @@ func TestGetUser(t *testing.T) {
 		StatusCode int
 	}{
 		{model.User{}, errors.New("err"), "", 400},
-		{model.User{}, errors.New("err"), "1", 500},
+		{model.User{}, errors.New("err"), "1", 404},
 		{model.User{TeamID: "foo"}, nil, "1", 200},
 	}
 
@@ -590,7 +590,7 @@ func TestGetChannel(t *testing.T) {
 		StatusCode int
 	}{
 		{model.Channel{}, errors.New("err"), "", 400},
-		{model.Channel{}, errors.New("err"), "1", 500},
+		{model.Channel{}, errors.New("err"), "1", 404},
 		{model.Channel{TeamID: "foo"}, nil, "1", 200},
 	}
 
@@ -742,7 +742,7 @@ func TestGetStanduper(t *testing.T) {
 		StatusCode int
 	}{
 		{model.Standuper{}, errors.New("err"), "", 400},
-		{model.Standuper{}, errors.New("err"), "1", 500},
+		{model.Standuper{}, errors.New("err"), "1", 404},
 		{model.Standuper{TeamID: "foo"}, nil, "1", 200},
 	}
 
