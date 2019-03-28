@@ -39,6 +39,7 @@ type Bot struct {
 	wg         sync.WaitGroup
 }
 
+//New creates new Bot instance
 func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *Bot {
 	bot := &Bot{}
 	bot.slack = slack.New(settings.AccessToken)
@@ -49,10 +50,14 @@ func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *B
 	return bot
 }
 
+//Start updates Users list and launches notifications
 func (bot *Bot) Start() {
 	log.Info("Bot started: ", bot.properties)
 
-	bot.UpdateUsersList()
+	err := bot.UpdateUsersList()
+	if err != nil {
+		log.Errorf("UpdateUsersList failed: %v", err)
+	}
 
 	bot.wg.Add(1)
 	go func() {
@@ -67,6 +72,7 @@ func (bot *Bot) Start() {
 	}()
 }
 
+//HandleCallBackEvent handles different callback events from Slack Event Subscription list
 func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 	ev := map[string]string{}
 	data, err := event.MarshalJSON()
@@ -80,13 +86,12 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 
 	switch ev["type"] {
 	case "app_mention":
-
 		message := &slack.MessageEvent{}
 		if err := json.Unmarshal(data, message); err != nil {
 			return err
 		}
-		err := bot.HandleMessage(message)
-		return err
+		return bot.HandleMessage(message)
+
 	case "member_joined_channel":
 		join := &slack.MemberJoinedChannelEvent{}
 		if err := json.Unmarshal(data, join); err != nil {
@@ -96,7 +101,10 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		_, err = bot.HandleJoin(join.Channel, join.Team)
 		return err
 	case "app_uninstalled":
-		bot.db.DeleteBotSettings(bot.properties.TeamID)
+		err := bot.db.DeleteBotSettings(bot.properties.TeamID)
+		if err != nil {
+			return err
+		}
 	default:
 		log.WithFields(log.Fields{"event": event}).Warning("unrecognized event!")
 		return nil
@@ -105,39 +113,28 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 	return nil
 }
 
+//HandleMessage handles slack message event
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
 	msg.Team = bot.properties.TeamID
 	switch msg.SubType {
 	case typeMessage:
-		err := bot.HandleNewMessage(msg)
-		if err != nil {
-			return err
-		}
-
+		return bot.handleNewMessage(msg)
 	case typeEditMessage:
-		err := bot.HandleEditMessage(msg)
-		if err != nil {
-			return err
-		}
-
+		return bot.handleEditMessage(msg)
 	case typeDeleteMessage:
-		err := bot.HandleDeleteMessage(msg)
-		if err != nil {
-			return err
-		}
+		return bot.handleDeleteMessage(msg)
 	}
 	return nil
 }
 
-func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
+func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
 		return nil
 	}
 
 	problem := bot.analizeStandup(msg.Msg.Text)
 	if problem != "" {
-		bot.SendEphemeralMessage(msg.Channel, msg.User, problem)
-		return nil
+		return bot.SendEphemeralMessage(msg.Channel, msg.User, problem)
 	}
 
 	submitted, err := bot.db.UserSubmittedStandupToday(msg.Channel, msg.User)
@@ -177,7 +174,13 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 		File:      "",
 		Comment:   "",
 	}
-	bot.slack.AddReaction("heavy_check_mark", item)
+	err = bot.slack.AddReaction("heavy_check_mark", item)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName": bot.properties.TeamName,
+			"Item":     item,
+		}).Error("Failed to AddReaction!")
+	}
 
 	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
 	if err != nil {
@@ -191,15 +194,14 @@ func (bot *Bot) HandleNewMessage(msg *slack.MessageEvent) error {
 	return nil
 }
 
-func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
+func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 	if !strings.Contains(msg.SubMessage.Text, bot.properties.UserID) {
 		return nil
 	}
 
 	problem := bot.analizeStandup(msg.SubMessage.Text)
 	if problem != "" {
-		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
-		return nil
+		return bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
 	}
 
 	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
@@ -253,7 +255,13 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 		File:      "",
 		Comment:   "",
 	}
-	bot.slack.AddReaction("heavy_check_mark", item)
+	err = bot.slack.AddReaction("heavy_check_mark", item)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName": bot.properties.TeamName,
+			"Item":     item,
+		}).Error("Failed to AddReaction!")
+	}
 	standuper, err := bot.db.FindStansuperByUserID(msg.SubMessage.User, msg.Channel)
 	if err != nil {
 		return err
@@ -266,17 +274,12 @@ func (bot *Bot) HandleEditMessage(msg *slack.MessageEvent) error {
 	return nil
 }
 
-func (bot *Bot) HandleDeleteMessage(msg *slack.MessageEvent) error {
+func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
 	standup, err := bot.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
 	if err != nil {
 		return err
 	}
-	err = bot.db.DeleteStandup(standup.ID)
-	if err != nil {
-		return err
-	}
-	log.Infof("Standup deleted #id:%v\n", standup.ID)
-	return nil
+	return bot.db.DeleteStandup(standup.ID)
 }
 
 func (bot *Bot) analizeStandup(message string) string {
@@ -389,8 +392,7 @@ func (bot *Bot) SendUserMessage(userID, message string) error {
 	if err != nil {
 		return err
 	}
-	err = bot.SendMessage(channelID, message, nil)
-	return err
+	return bot.SendMessage(channelID, message, nil)
 }
 
 //HandleJoin handles comedian joining channel
@@ -417,6 +419,7 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 	return newChannel, nil
 }
 
+//ImplementCommands implements slash commands such as adding users and managing deadlines
 func (bot *Bot) ImplementCommands(channelID, command, params string, accessLevel int) string {
 
 	switch command {
@@ -437,6 +440,7 @@ func (bot *Bot) ImplementCommands(channelID, command, params string, accessLevel
 	}
 }
 
+//GetAccessLevel returns access level to figure out if a user can use slash command
 func (bot *Bot) GetAccessLevel(userID, channelID string) (int, error) {
 	user, err := bot.db.SelectUser(userID)
 	if err != nil {
@@ -541,14 +545,17 @@ func (bot *Bot) updateUser(user slack.User) error {
 	return nil
 }
 
+//Suits returns true if found desired bot properties
 func (bot *Bot) Suits(team string) bool {
 	return team == bot.properties.TeamID || team == bot.properties.TeamName
 }
 
+//Settings just returns bot settings
 func (bot *Bot) Settings() model.BotSettings {
 	return bot.properties
 }
 
+//SetProperties updates bot settings
 func (bot *Bot) SetProperties(settings model.BotSettings) model.BotSettings {
 	bot.properties = settings
 	return bot.properties
