@@ -128,6 +128,7 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("HandleCallbackEvent failed to unmarshar incomingevent")
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
@@ -141,6 +142,7 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 		var event slackevents.EventsAPICallbackEvent
 		err = json.Unmarshal(body, &event)
 		if err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("HandleCallbackEvent failed to unmarshar callbackevent")
 			return c.JSON(http.StatusBadRequest, err)
 		}
 
@@ -187,6 +189,7 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 
 	urlValues, err := c.FormParams()
 	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"err": err})).Warning("handleCommands fails to access FormParams")
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
@@ -194,20 +197,24 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 	decoder.IgnoreUnknownKeys(true)
 
 	if err := decoder.Decode(&form, urlValues); err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"urlValues": urlValues, "err": err})).Warning("handleCommands fails to decode urlValues")
 		return c.String(http.StatusOK, err.Error())
 	}
 
 	if form.Command != "/comedian" {
+		log.WithFields(log.Fields(map[string]interface{}{"form": form})).Warning("Command is not /comedian")
 		return c.String(http.StatusBadRequest, "slash command should be `/comedian`")
 	}
 
 	bot, err := api.comedian.SelectBot(form.TeamID)
 	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"form": form, "error": err})).Error("handleCommands failed on Select Bot")
 		return err
 	}
 
 	accessLevel, err := bot.GetAccessLevel(form.UserID, form.ChannelID)
 	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"bot": bot, "form": form, "error": err})).Error("handleCommands failed on GetAccessLevel")
 		return err
 	}
 
@@ -223,6 +230,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	urlValues, err := c.FormParams()
 	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("auth failed on c.FormParams()")
 		return c.String(http.StatusUnauthorized, err.Error())
 	}
 
@@ -230,15 +238,18 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
 	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"config": api.config, "urlValues": urlValues, "error": err})).Error("auth failed on GetOAuthResponse")
 		return err
 	}
 
 	cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
 	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
 		return err
 	}
 
 	api.comedian.AddBot(cp)
 
+	//need to add proper redirect. No hadrdcoded values
 	return c.Redirect(http.StatusMovedPermanently, "https://admin-staging.comedian.maddevs.co/")
 }

@@ -49,35 +49,27 @@ func (comedian *Comedian) StartBots() {
 	}
 }
 
+//HandleEvent sends message to Slack Workspace
 func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 	bot, err := comedian.SelectBot(incomingEvent.TeamName)
 	if err != nil {
 		return err
 	}
 
-	err = bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
 }
 
+//HandleCallbackEvent choses bot to deal with event and then handles event
 func (comedian *Comedian) HandleCallbackEvent(event slackevents.EventsAPICallbackEvent) error {
 	bot, err := comedian.SelectBot(event.TeamID)
 	if err != nil {
 		return err
 	}
 
-	err = bot.HandleCallBackEvent(event.InnerEvent)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return bot.HandleCallBackEvent(event.InnerEvent)
 }
 
+//SelectBot returns bot by its team id or teamname if found
 func (comedian *Comedian) SelectBot(team string) (*botuser.Bot, error) {
 	var botuser *botuser.Bot
 
@@ -94,8 +86,8 @@ func (comedian *Comedian) SelectBot(team string) (*botuser.Bot, error) {
 	return botuser, nil
 }
 
-func (comedian *Comedian) AddBot(settings model.BotSettings) *botuser.Bot {
+//AddBot sends Bot to Comedian Channel where Bot can start its Work
+func (comedian *Comedian) AddBot(settings model.BotSettings) {
 	bot := botuser.New(comedian.bundle, settings, comedian.db)
 	comedian.botsChan <- bot
-	return bot
 }
