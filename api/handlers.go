@@ -8,6 +8,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
+	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/crypto"
 	"gitlab.com/team-monitoring/comedian/model"
 )
@@ -31,17 +32,17 @@ func (api *RESTAPI) login(c echo.Context) error {
 	var data LoginData
 
 	if err := c.Bind(&data); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, "incorrect fields or data format")
 	}
 
 	settings, err := api.db.GetBotSettingsByTeamName(data.TeamName)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusNotFound, "username does not exist")
 	}
 
 	err = crypto.Compare(settings.Password, data.Password)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, "wrong password")
 	}
 
 	// Create token
@@ -57,6 +58,7 @@ func (api *RESTAPI) login(c echo.Context) error {
 	// Generate encoded token and send it as response.
 	t, err := token.SignedString([]byte(os.Getenv("COMEDIAN_SLACK_CLIENT_SECRET")))
 	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("SignedString failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -74,6 +76,7 @@ func (api *RESTAPI) listBots(c echo.Context) error {
 	bots := make([]model.BotSettings, 0)
 	bots, err := api.db.GetAllBotSettings()
 	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("GetAllBotSettings failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -133,7 +136,7 @@ func (api *RESTAPI) updateBot(c echo.Context) error {
 
 	res, err := api.db.UpdateBotSettings(bot)
 	if err != nil {
-		// maybe it would be better to find bot first...
+		log.WithFields(log.Fields{"bot": bot, "error": err}).Error("UpdateBotSettings failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -160,7 +163,7 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 
 	err = api.db.DeleteBotSettingsByID(id)
 	if err != nil {
-		//need to check if deleting bot with wrong id causes errors
+		log.WithFields(log.Fields{"id": id, "error": err}).Error("DeleteBotSettingsByID failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -179,6 +182,7 @@ func (api *RESTAPI) listStandups(c echo.Context) error {
 
 	standups, err := api.db.ListStandups()
 	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("ListStandups failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -243,6 +247,7 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 
 	res, err := api.db.UpdateStandup(standup)
 	if err != nil {
+		log.WithFields(log.Fields{"standup": standup, "error": err}).Error("UpdateStandup failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -273,6 +278,7 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 
 	err = api.db.DeleteStandup(id)
 	if err != nil {
+		log.WithFields(log.Fields{"id": id, "error": err}).Error("DeleteStandup failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -291,6 +297,7 @@ func (api *RESTAPI) listUsers(c echo.Context) error {
 
 	users, err := api.db.ListUsers()
 	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("ListUsers failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -354,6 +361,7 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 
 	res, err := api.db.UpdateUser(user)
 	if err != nil {
+		log.WithFields(log.Fields{"user": user, "error": err}).Error("UpdateUser failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -372,6 +380,7 @@ func (api *RESTAPI) listChannels(c echo.Context) error {
 
 	channels, err := api.db.ListChannels()
 	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("ListChannels failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -435,6 +444,7 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 
 	res, err := api.db.UpdateChannel(channel)
 	if err != nil {
+		log.WithFields(log.Fields{"channel": channel, "error": err}).Error("UpdateChannel failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -454,6 +464,7 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
+		log.WithFields(log.Fields{"id": id, "error": err}).Error("GetChannel failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -483,6 +494,7 @@ func (api *RESTAPI) listStandupers(c echo.Context) error {
 
 	standupers, err := api.db.ListStandupers()
 	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("ListStandupers failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -546,6 +558,7 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 
 	res, err := api.db.UpdateStanduper(standuper)
 	if err != nil {
+		log.WithFields(log.Fields{"standuper": standuper, "error": err}).Error("UpdateStanduper failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -565,6 +578,7 @@ func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
+		log.WithFields(log.Fields{"id": id, "error": err}).Error("deleteStanduper failed at GetStanduper ")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -576,6 +590,7 @@ func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 
 	err = api.db.DeleteStanduper(id)
 	if err != nil {
+		log.WithFields(log.Fields{"id": id, "error": err}).Error("DeleteStanduper failed")
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
