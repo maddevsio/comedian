@@ -139,6 +139,11 @@ func (bs BotSettings) Validate() error {
 		return err
 	}
 
+	if bs.Password == "" {
+		err := errors.New("password cannot be empty")
+		return err
+	}
+
 	return nil
 }
 

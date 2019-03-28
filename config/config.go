@@ -18,4 +18,4 @@ func Get() (*Config, error) {
 	c := &Config{}
 	err := envconfig.Process("comedian", c)
 	return c, err
-}
+}		

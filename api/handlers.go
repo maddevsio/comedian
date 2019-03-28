@@ -50,6 +50,7 @@ func (api *RESTAPI) login(c echo.Context) error {
 	// Set claims
 	claims := token.Claims.(jwt.MapClaims)
 	claims["team_id"] = settings.TeamID
+	claims["team_name"] = settings.TeamName
 	claims["bot_id"] = settings.ID
 	claims["expire"] = time.Now().Add(time.Hour * 72).Unix() // do we need it?
 

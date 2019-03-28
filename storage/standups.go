@@ -32,7 +32,11 @@ func (m *DB) CreateStandup(s model.Standup) (model.Standup, error) {
 
 // UpdateStandup updates standup entry in database
 func (m *DB) UpdateStandup(s model.Standup) (model.Standup, error) {
-	_, err := m.DB.Exec(
+	err := s.Validate()
+	if err != nil {
+		return s, err
+	}
+	_, err = m.DB.Exec(
 		"UPDATE `standups` SET modified=?, comment=?, message_ts=? WHERE id=?",
 		time.Now().UTC(), s.Comment, s.MessageTS, s.ID,
 	)

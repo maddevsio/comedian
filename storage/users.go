@@ -51,7 +51,11 @@ func (m *DB) GetUser(id int64) (model.User, error) {
 
 // UpdateUser updates User entry in database
 func (m *DB) UpdateUser(u model.User) (model.User, error) {
-	_, err := m.DB.Exec(
+	err := u.Validate()
+	if err != nil {
+		return u, err
+	}
+	_, err = m.DB.Exec(
 		"UPDATE `users` SET role=?, real_name=? WHERE id=?",
 		u.Role, u.RealName, u.ID,
 	)

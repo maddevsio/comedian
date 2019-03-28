@@ -31,7 +31,11 @@ func (m *DB) CreateStanduper(s model.Standuper) (model.Standuper, error) {
 
 // UpdateStanduper updates Standuper entry in database
 func (m *DB) UpdateStanduper(st model.Standuper) (model.Standuper, error) {
-	_, err := m.DB.Exec(
+	err := st.Validate()
+	if err != nil {
+		return st, err
+	}
+	_, err = m.DB.Exec(
 		"UPDATE `channel_members` SET submitted_standup_today=?, role_in_channel=? WHERE id=?",
 		st.SubmittedStandupToday, st.RoleInChannel, st.ID,
 	)

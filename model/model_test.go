@@ -52,6 +52,7 @@ func TestBotSettings(t *testing.T) {
 			TeamID:      tt.teamID,
 			TeamName:    tt.teamName,
 			AccessToken: tt.accessToken,
+			Password:    "Foo",
 		}
 		err := bs.Validate()
 		if err != nil {

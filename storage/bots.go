@@ -80,6 +80,11 @@ func (m *DB) GetBotSettings(id int64) (model.BotSettings, error) {
 
 //UpdateBotSettings updates bot
 func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
+	err := settings.Validate()
+	if err != nil {
+		return settings, err
+	}
+
 	password, err := crypto.Generate(settings.Password)
 	if err != nil {
 		return settings, err

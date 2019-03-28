@@ -114,6 +114,7 @@ func (api *ComedianAPI) Start() error {
 	if err != nil {
 		return err
 	}
+
 	return api.echo.Start(api.config.HTTPBindAddr)
 }
 

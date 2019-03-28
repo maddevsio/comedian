@@ -31,7 +31,11 @@ func (m *DB) CreateChannel(ch model.Channel) (model.Channel, error) {
 
 // UpdateChannel updates Channel entry in database
 func (m *DB) UpdateChannel(ch model.Channel) (model.Channel, error) {
-	_, err := m.DB.Exec(
+	err := ch.Validate()
+	if err != nil {
+		return ch, err
+	}
+	_, err = m.DB.Exec(
 		"UPDATE `channels` SET channel_standup_time=?  WHERE id=?",
 		ch.StandupTime, ch.ID,
 	)

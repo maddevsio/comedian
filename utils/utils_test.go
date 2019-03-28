@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,28 +30,6 @@ func TestSecondsToHuman(t *testing.T) {
 	for _, test := range testCase {
 		actual := SecondsToHuman(test.secondsInt)
 		assert.Equal(t, test.secondsStr, actual)
-	}
-}
-
-func TestFormatTime(t *testing.T) {
-	testCase := []struct {
-		time  string
-		eHour int
-		eMin  int
-		err   error
-	}{
-		{"10:00", 10, 0, nil},
-		{"10", 0, 0, errors.New("time format error")},
-		{"-10:00", -10, 0, errors.New("time format error")},
-		{"24:00", 24, 0, errors.New("time format error")},
-		{"10:-01", 10, -1, errors.New("time format error")},
-		{"10:69", 10, 69, errors.New("time format error")},
-	}
-	for _, test := range testCase {
-		aHour, aMin, err := FormatTime(test.time)
-		assert.Equal(t, test.eHour, aHour)
-		assert.Equal(t, test.eMin, aMin)
-		assert.Equal(t, test.err, err)
 	}
 }
 
