@@ -600,9 +600,11 @@ func TestListChannels(t *testing.T) {
 		AllChannels []model.Channel
 		Error       error
 		StatusCode  int
+		User        string
 	}{
-		{[]model.Channel{}, errors.New("err"), 500},
-		{[]model.Channel{model.Channel{}}, nil, 200},
+		{[]model.Channel{}, errors.New("err"), 500, "user"},
+		{[]model.Channel{model.Channel{}}, nil, 200, "user"},
+		{[]model.Channel{model.Channel{}}, nil, 401, ""},
 	}
 
 	for _, tt := range testCases {
@@ -615,7 +617,7 @@ func TestListChannels(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/channels", strings.NewReader(""))
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
 			Claims: jwt.MapClaims{"team_id": "foo"},
 		})
@@ -633,10 +635,14 @@ func TestGetChannel(t *testing.T) {
 		Error      error
 		ID         string
 		StatusCode int
+		User       string
+		TeamID     string
 	}{
-		{model.Channel{}, errors.New("err"), "", 400},
-		{model.Channel{}, errors.New("err"), "1", 404},
-		{model.Channel{TeamID: "foo"}, nil, "1", 200},
+		{model.Channel{}, errors.New("err"), "", 400, "user", "foo"},
+		{model.Channel{}, errors.New("err"), "1", 404, "user", "foo"},
+		{model.Channel{TeamID: "foo"}, nil, "1", 200, "user", "foo"},
+		{model.Channel{TeamID: "foo"}, nil, "1", 401, "", "foo"},
+		{model.Channel{TeamID: "foo"}, nil, "1", 403, "user", ""},
 	}
 
 	for _, tt := range testCases {
@@ -652,9 +658,9 @@ func TestGetChannel(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.getChannel(c)) {
@@ -671,10 +677,14 @@ func TestUpdateChannel(t *testing.T) {
 		ID         string
 		formValues map[string]string
 		StatusCode int
+		User       string
+		TeamID     string
 	}{
-		{model.Channel{}, errors.New("err"), "", map[string]string{}, 400},
-		{model.Channel{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
-		{model.Channel{}, nil, "1", map[string]string{"password": "foo"}, 200},
+		{model.Channel{}, errors.New("err"), "", map[string]string{}, 400, "user", ""},
+		{model.Channel{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", ""},
+		{model.Channel{}, nil, "1", map[string]string{"password": "foo"}, 200, "user", ""},
+		{model.Channel{}, nil, "1", map[string]string{}, 401, "nouser", ""},
+		{model.Channel{}, nil, "1", map[string]string{"password": "foo"}, 403, "user", "0"},
 	}
 
 	for _, tt := range testCases {
@@ -697,9 +707,9 @@ func TestUpdateChannel(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": ""},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.updateChannel(c)) {
@@ -715,10 +725,14 @@ func TestDeleteChannel(t *testing.T) {
 		Error      error
 		ID         string
 		StatusCode int
+		User       string
+		TeamID     string
 	}{
-		{model.Channel{}, errors.New("err"), "", 400},
-		{model.Channel{}, errors.New("err"), "1", 500},
-		{model.Channel{TeamID: "foo"}, nil, "1", 204},
+		{model.Channel{}, errors.New("err"), "", 400, "user", "foo"},
+		{model.Channel{}, errors.New("err"), "1", 500, "user", "foo"},
+		{model.Channel{TeamID: "foo"}, nil, "1", 204, "user", "foo"},
+		{model.Channel{TeamID: "foo"}, nil, "1", 401, "", "foo"},
+		{model.Channel{TeamID: "foo"}, nil, "1", 403, "user", ""},
 	}
 
 	for _, tt := range testCases {
@@ -734,9 +748,9 @@ func TestDeleteChannel(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.deleteChannel(c)) {
@@ -752,9 +766,12 @@ func TestListStandupers(t *testing.T) {
 		AllStandupers []model.Standuper
 		Error         error
 		StatusCode    int
+		User          string
+		TeamID        string
 	}{
-		{[]model.Standuper{}, errors.New("err"), 500},
-		{[]model.Standuper{model.Standuper{}}, nil, 200},
+		{[]model.Standuper{}, errors.New("err"), 500, "user", "foo"},
+		{[]model.Standuper{model.Standuper{}}, nil, 200, "user", "foo"},
+		{[]model.Standuper{model.Standuper{}}, nil, 401, "", "foo"},
 	}
 
 	for _, tt := range testCases {
@@ -767,9 +784,9 @@ func TestListStandupers(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/standupers", strings.NewReader(""))
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.listStandupers(c)) {
@@ -785,10 +802,14 @@ func TestGetStanduper(t *testing.T) {
 		Error      error
 		ID         string
 		StatusCode int
+		User       string
+		TeamID     string
 	}{
-		{model.Standuper{}, errors.New("err"), "", 400},
-		{model.Standuper{}, errors.New("err"), "1", 404},
-		{model.Standuper{TeamID: "foo"}, nil, "1", 200},
+		{model.Standuper{}, errors.New("err"), "", 400, "user", "foo"},
+		{model.Standuper{}, errors.New("err"), "1", 404, "user", "foo"},
+		{model.Standuper{TeamID: "foo"}, nil, "1", 200, "user", "foo"},
+		{model.Standuper{TeamID: "foo"}, nil, "1", 401, "", "foo"},
+		{model.Standuper{TeamID: "foo"}, nil, "1", 403, "user", ""},
 	}
 
 	for _, tt := range testCases {
@@ -804,9 +825,9 @@ func TestGetStanduper(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.getStanduper(c)) {
@@ -823,10 +844,14 @@ func TestUpdateStanduper(t *testing.T) {
 		ID         string
 		formValues map[string]string
 		StatusCode int
+		User       string
+		TeamID     string
 	}{
-		{model.Standuper{}, errors.New("err"), "", map[string]string{}, 400},
-		{model.Standuper{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
-		{model.Standuper{}, nil, "1", map[string]string{"team_id": "foo"}, 200},
+		{model.Standuper{}, errors.New("err"), "", map[string]string{}, 400, "user", "foo"},
+		{model.Standuper{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", ""},
+		{model.Standuper{}, nil, "1", map[string]string{"team_id": "foo"}, 200, "user", ""},
+		{model.Standuper{}, nil, "1", map[string]string{"team_id": ""}, 401, "", "foo"},
+		{model.Standuper{}, nil, "1", map[string]string{"team_id": "foo"}, 403, "user", "abc"},
 	}
 
 	for _, tt := range testCases {
@@ -849,9 +874,9 @@ func TestUpdateStanduper(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": ""},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.updateStanduper(c)) {
@@ -867,10 +892,14 @@ func TestDeleteStanduper(t *testing.T) {
 		Error      error
 		ID         string
 		StatusCode int
+		User       string
+		TeamID     string
 	}{
-		{model.Standuper{}, errors.New("err"), "", 400},
-		{model.Standuper{}, errors.New("err"), "1", 500},
-		{model.Standuper{TeamID: "foo"}, nil, "1", 204},
+		{model.Standuper{}, errors.New("err"), "", 400, "user", "foo"},
+		{model.Standuper{}, errors.New("err"), "1", 500, "user", "foo"},
+		{model.Standuper{TeamID: "foo"}, nil, "1", 204, "user", "foo"},
+		{model.Standuper{TeamID: "foo"}, nil, "1", 401, "", "foo"},
+		{model.Standuper{TeamID: "foo"}, nil, "1", 403, "user", ""},
 	}
 
 	for _, tt := range testCases {
@@ -886,9 +915,9 @@ func TestDeleteStanduper(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.deleteStanduper(c)) {
