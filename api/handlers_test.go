@@ -116,6 +116,10 @@ func (m MockedDB) DeleteStanduper(id int64) error {
 	return m.Error
 }
 
+func (m MockedDB) GetBotSettingsByTeamName(teamName string) (model.BotSettings, error) {
+	return m.BotSettings, m.Error
+}
+
 func TestHealthCheck(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/healthcheck", strings.NewReader(""))
@@ -849,5 +853,46 @@ func TestDeleteStanduper(t *testing.T) {
 		if assert.NoError(t, r.deleteStanduper(c)) {
 			assert.Equal(t, tt.StatusCode, rec.Code)
 		}
+	}
+}
+
+func TestLogin(t *testing.T) {
+
+	var testCase = []struct {
+		BotSettings model.BotSettings
+		FormValues  map[string]string
+		Error       error
+		StatusCode  int
+	}{
+		{model.BotSettings{}, map[string]string{"teamname": "team", "password": "root"}, errors.New("err"), 404},
+		{model.BotSettings{Password: "$2a$10$paoqyMUatSfoQdVbOfD9PeVAFaa5o1oNou6OPNwR2hv2ikweVdnCC"}, map[string]string{"teamname": "testComedian", "password": "testComedian"}, nil, 200},
+		{model.BotSettings{}, map[string]string{}, errors.New("err"), 400},
+		{model.BotSettings{Password: "$2a$10$paoqyMUatSfoQdVbOfD9PeVAFaa5o1oNou6OPNwR2hv2ikweVdnCC"}, map[string]string{"teamname": "testComedian", "password": "team"}, nil, 400},
+		{model.BotSettings{Password: "$2a$10$paoqyMUatSfoQdVbOfD9PeVAFaa5o1oNou6OPNwR2hv2ikweVdnCC"}, map[string]string{"teamname": "testComedian", "password": "testComedian"}, nil, 200},
+	}
+
+	for _, tt := range testCase {
+		t.Run("TestLogin", func(t *testing.T) {
+
+			r := &RESTAPI{db: MockedDB{
+				BotSettings: tt.BotSettings,
+				Error:       tt.Error,
+			}}
+
+			e := echo.New()
+			f := make(url.Values)
+			for k, v := range tt.FormValues {
+				f.Set(k, v)
+			}
+			req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(f.Encode()))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			if assert.NoError(t, r.login(c)) {
+				assert.Equal(t, tt.StatusCode, rec.Code)
+			}
+		})
 	}
 }
