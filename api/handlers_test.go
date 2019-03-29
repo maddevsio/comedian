@@ -140,9 +140,11 @@ func TestListBots(t *testing.T) {
 		AllBotSettings []model.BotSettings
 		Error          error
 		StatusCode     int
+		User           string
 	}{
-		{[]model.BotSettings{}, errors.New("err"), 500},
-		{[]model.BotSettings{model.BotSettings{}}, nil, 200},
+		{[]model.BotSettings{}, errors.New("err"), 500, "user"},
+		{[]model.BotSettings{}, errors.New("err"), 401, ""},
+		{[]model.BotSettings{model.BotSettings{}}, nil, 200, "user"},
 	}
 
 	for _, tt := range testCases {
@@ -155,7 +157,7 @@ func TestListBots(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/bots", strings.NewReader(""))
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
 			Claims: jwt.MapClaims{"bot_id": float64(1)},
 		})
@@ -173,10 +175,14 @@ func TestGetBot(t *testing.T) {
 		Error       error
 		ID          string
 		StatusCode  int
+		BotId       int64
+		User        string
 	}{
-		{model.BotSettings{}, errors.New("err"), "", 400},
-		{model.BotSettings{}, errors.New("err"), "1", 404},
-		{model.BotSettings{}, nil, "1", 200},
+		{model.BotSettings{}, errors.New("err"), "", 400, 1, "user"},
+		{model.BotSettings{}, errors.New("err"), "1", 404, 1, "user"},
+		{model.BotSettings{}, nil, "1", 200, 1, "user"},
+		{model.BotSettings{}, errors.New("err"), "1", 403, 0, "user"},
+		{model.BotSettings{}, errors.New("err"), "1", 401, 1, ""},
 	}
 
 	for _, tt := range testCases {
@@ -192,9 +198,9 @@ func TestGetBot(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"bot_id": float64(1)},
+			Claims: jwt.MapClaims{"bot_id": float64(tt.BotId)},
 		})
 
 		if assert.NoError(t, r.getBot(c)) {
@@ -211,10 +217,15 @@ func TestUpdateBot(t *testing.T) {
 		ID          string
 		formValues  map[string]string
 		StatusCode  int
+		User        string
+		BotID       int64
 	}{
-		{model.BotSettings{}, errors.New("err"), "", map[string]string{}, 400},
-		{model.BotSettings{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
-		{model.BotSettings{}, nil, "1", map[string]string{"password": "foo"}, 200},
+		{model.BotSettings{}, errors.New("err"), "", map[string]string{}, 400, "user", 1},
+		{model.BotSettings{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", 1},
+		{model.BotSettings{}, nil, "1", map[string]string{"password": "foo"}, 200, "user", 1},
+		{model.BotSettings{}, nil, "1", map[string]string{}, 400, "user", 1},
+		{model.BotSettings{}, nil, "1", map[string]string{"password": "foo"}, 401, "", 1},
+		{model.BotSettings{}, nil, "1", map[string]string{"password": "foo"}, 403, "user", 0},
 	}
 
 	for _, tt := range testCases {
@@ -237,9 +248,9 @@ func TestUpdateBot(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"bot_id": float64(1)},
+			Claims: jwt.MapClaims{"bot_id": float64(tt.BotID)},
 		})
 
 		if assert.NoError(t, r.updateBot(c)) {
@@ -255,10 +266,14 @@ func TestDeleteBot(t *testing.T) {
 		Error       error
 		ID          string
 		StatusCode  int
+		User        string
+		BotID       int64
 	}{
-		{model.BotSettings{}, errors.New("err"), "", 400},
-		{model.BotSettings{}, errors.New("err"), "1", 500},
-		{model.BotSettings{}, nil, "1", 204},
+		{model.BotSettings{}, errors.New("err"), "", 400, "user", 1},
+		{model.BotSettings{}, errors.New("err"), "1", 500, "user", 1},
+		{model.BotSettings{}, nil, "1", 204, "user", 1},
+		{model.BotSettings{}, nil, "1", 401, "", 1},
+		{model.BotSettings{}, nil, "1", 403, "user", 0},
 	}
 
 	for _, tt := range testCases {
@@ -274,9 +289,9 @@ func TestDeleteBot(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"bot_id": float64(1)},
+			Claims: jwt.MapClaims{"bot_id": float64(tt.BotID)},
 		})
 
 		if assert.NoError(t, r.deleteBot(c)) {
@@ -292,9 +307,11 @@ func TestListStandups(t *testing.T) {
 		AllStandups []model.Standup
 		Error       error
 		StatusCode  int
+		User        string
 	}{
-		{[]model.Standup{}, errors.New("err"), 500},
-		{[]model.Standup{model.Standup{}}, nil, 200},
+		{[]model.Standup{}, errors.New("err"), 500, "user"},
+		{[]model.Standup{model.Standup{}}, nil, 200, "user"},
+		{[]model.Standup{}, errors.New("err"), 401, ""},
 	}
 
 	for _, tt := range testCases {
@@ -307,7 +324,7 @@ func TestListStandups(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/standups", strings.NewReader(""))
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
 			Claims: jwt.MapClaims{"team_id": "foo"},
 		})
@@ -325,10 +342,14 @@ func TestGetStandup(t *testing.T) {
 		Error      error
 		ID         string
 		StatusCode int
+		User       string
+		TeamID     string
 	}{
-		{model.Standup{}, errors.New("err"), "", 400},
-		{model.Standup{}, errors.New("err"), "1", 404},
-		{model.Standup{TeamID: "foo"}, nil, "1", 200},
+		{model.Standup{}, errors.New("err"), "", 400, "user", "foo"},
+		{model.Standup{}, errors.New("err"), "1", 404, "user", "foo"},
+		{model.Standup{TeamID: "foo"}, nil, "1", 200, "user", "foo"},
+		{model.Standup{TeamID: "foo"}, nil, "1", 401, "", "foo"},
+		{model.Standup{TeamID: "foo"}, nil, "1", 403, "user", ""},
 	}
 
 	for _, tt := range testCases {
@@ -344,9 +365,9 @@ func TestGetStandup(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.getStandup(c)) {
@@ -363,10 +384,15 @@ func TestUpdateStandup(t *testing.T) {
 		ID         string
 		formValues map[string]string
 		StatusCode int
+		User       string
+		TeamID     string
 	}{
-		{model.Standup{TeamID: "foo"}, errors.New("err"), "", map[string]string{}, 400},
-		{model.Standup{TeamID: "foo"}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
-		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 200},
+		{model.Standup{TeamID: "foo"}, errors.New("err"), "", map[string]string{}, 400, "user", ""},
+		{model.Standup{TeamID: "foo"}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", ""},
+		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 200, "user", ""},
+		{model.Standup{TeamID: "Hello"}, nil, "", map[string]string{}, 400, "user", ""},
+		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 401, "", ""},
+		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 403, "user", "0"},
 	}
 
 	for _, tt := range testCases {
@@ -389,9 +415,9 @@ func TestUpdateStandup(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": ""},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.updateStandup(c)) {
@@ -407,10 +433,15 @@ func TestDeleteStandup(t *testing.T) {
 		Error      error
 		ID         string
 		StatusCode int
+		User       string
+		TeamID     string
 	}{
-		{model.Standup{}, errors.New("err"), "", 400},
-		{model.Standup{}, errors.New("err"), "1", 500},
-		{model.Standup{TeamID: "foo"}, nil, "1", 204},
+		{model.Standup{}, errors.New("err"), "", 400, "user", "foo"},
+		{model.Standup{}, errors.New("err"), "1", 500, "user", "foo"},
+		{model.Standup{}, errors.New("err"), "0", 500, "user", "foo"},
+		{model.Standup{TeamID: "foo"}, nil, "1", 401, "", "foo"},
+		{model.Standup{TeamID: "foo"}, nil, "1", 204, "user", "foo"},
+		{model.Standup{TeamID: "foo"}, nil, "1", 403, "user", ""},
 	}
 
 	for _, tt := range testCases {
@@ -426,9 +457,9 @@ func TestDeleteStandup(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.deleteStandup(c)) {
@@ -444,9 +475,11 @@ func TestListUsers(t *testing.T) {
 		AllUsers   []model.User
 		Error      error
 		StatusCode int
+		User       string
 	}{
-		{[]model.User{}, errors.New("err"), 500},
-		{[]model.User{model.User{}}, nil, 200},
+		{[]model.User{}, errors.New("err"), 500, "user"},
+		{[]model.User{}, errors.New("err"), 401, ""},
+		{[]model.User{model.User{}}, nil, 200, "user"},
 	}
 
 	for _, tt := range testCases {
@@ -459,7 +492,7 @@ func TestListUsers(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/users", strings.NewReader(""))
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
 			Claims: jwt.MapClaims{"team_id": "foo"},
 		})
@@ -477,10 +510,14 @@ func TestGetUser(t *testing.T) {
 		Error      error
 		ID         string
 		StatusCode int
+		UserName   string
+		TeamID     string
 	}{
-		{model.User{}, errors.New("err"), "", 400},
-		{model.User{}, errors.New("err"), "1", 404},
-		{model.User{TeamID: "foo"}, nil, "1", 200},
+		{model.User{}, errors.New("err"), "", 400, "user", "foo"},
+		{model.User{}, errors.New("err"), "1", 404, "user", "foo"},
+		{model.User{TeamID: "foo"}, nil, "1", 200, "user", "foo"},
+		{model.User{TeamID: "foo"}, nil, "1", 401, "", "foo"},
+		{model.User{TeamID: "foo"}, nil, "1", 403, "user", ""},
 	}
 
 	for _, tt := range testCases {
@@ -496,9 +533,9 @@ func TestGetUser(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.UserName, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.getUser(c)) {
@@ -515,10 +552,14 @@ func TestUpdateUser(t *testing.T) {
 		ID         string
 		formValues map[string]string
 		StatusCode int
+		UserName   string
+		TeamID     string
 	}{
-		{model.User{}, errors.New("err"), "", map[string]string{}, 400},
-		{model.User{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
-		{model.User{}, nil, "1", map[string]string{"password": "foo"}, 200},
+		{model.User{}, errors.New("err"), "", map[string]string{}, 400, "user", ""},
+		{model.User{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", ""},
+		{model.User{}, nil, "1", map[string]string{"password": "foo"}, 200, "user", ""},
+		{model.User{}, nil, "1", map[string]string{"password": "foo"}, 401, "", ""},
+		{model.User{}, nil, "1", map[string]string{"password": "foo"}, 403, "user", "0"},
 	}
 
 	for _, tt := range testCases {
@@ -541,9 +582,9 @@ func TestUpdateUser(t *testing.T) {
 
 		c.SetParamNames("id")
 		c.SetParamValues(tt.ID)
-		c.Set("user", &jwt.Token{
+		c.Set(tt.UserName, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": ""},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID},
 		})
 
 		if assert.NoError(t, r.updateUser(c)) {
