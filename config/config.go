@@ -11,6 +11,7 @@ type Config struct {
 	TestEnvironment   bool   `envconfig:"TESTENVIRONMENT" required:"false" default:"false"`
 	SlackClientID     string `envconfig:"SLACK_CLIENT_ID" required:"false"`
 	SlackClientSecret string `envconfig:"SLACK_CLIENT_SECRET" required:"false"`
+	UIurl             string `envconfig:"COMEDIAN_UI_URL" required:"false"`
 }
 
 // Get method processes env variables and fills Config struct
@@ -18,4 +19,4 @@ func Get() (*Config, error) {
 	c := &Config{}
 	err := envconfig.Process("comedian", c)
 	return c, err
-}		
+}

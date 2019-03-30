@@ -250,6 +250,5 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	api.comedian.AddBot(cp)
 
-	//need to add proper redirect. No hadrdcoded values
-	return c.Redirect(http.StatusMovedPermanently, "https://admin-staging.comedian.maddevs.co/")
+	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 }
