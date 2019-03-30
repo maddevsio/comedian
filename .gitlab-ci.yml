@@ -56,7 +56,7 @@ staging_deploy:
     - master
 
 
-deploy:
+deploy_old:
   stage: deploy
   image: halfb00t/alpine:3.7
   before_script:
@@ -69,6 +69,25 @@ deploy:
   script:
     - scp docker-deploy/docker-compose.yml gitlab@$DEPLOY_SERVER_IP:/opt/docker/comedian/
     - ssh gitlab@$DEPLOY_SERVER_IP "$DEPLOY_COMMAND"
+    - ssh-agent -k
+  only:
+    - master
+  when:
+    manual
+
+deploy_new:
+  stage: deploy
+  image: halfb00t/alpine:3.7
+  before_script:
+    - eval "$(ssh-agent -s)"
+    - echo "$DEPLOY_SERVER_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $DEPLOY_SERVER_IP >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - scp docker-deploy/docker-compose-new.yml gitlab@$DEPLOY_SERVER_IP:/opt/docker/new-comedian/docker-compose.yml
+    - ssh gitlab@$DEPLOY_SERVER_IP "$NEW_DEPLOY_COMMAND"
     - ssh-agent -k
   only:
     - master
