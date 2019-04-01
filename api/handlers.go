@@ -59,7 +59,7 @@ func (api *RESTAPI) login(c echo.Context) error {
 	t, err := token.SignedString([]byte(os.Getenv("COMEDIAN_SLACK_CLIENT_SECRET")))
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("SignedString failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
@@ -77,7 +77,7 @@ func (api *RESTAPI) listBots(c echo.Context) error {
 	bots, err := api.db.GetAllBotSettings()
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("GetAllBotSettings failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, bots)
@@ -87,7 +87,7 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -104,7 +104,7 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 
 	bot, err := api.db.GetBotSettings(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusNotFound, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, bot)
@@ -113,7 +113,7 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 func (api *RESTAPI) updateBot(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -128,16 +128,19 @@ func (api *RESTAPI) updateBot(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
-	bot := model.BotSettings{ID: id}
+	bot, err := api.db.GetBotSettings(id)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
 
 	if err := c.Bind(&bot); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	res, err := api.db.UpdateBotSettings(bot)
 	if err != nil {
 		log.WithFields(log.Fields{"bot": bot, "error": err}).Error("UpdateBotSettings failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -147,7 +150,7 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -164,7 +167,7 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 	err = api.db.DeleteBotSettingsByID(id)
 	if err != nil {
 		log.WithFields(log.Fields{"id": id, "error": err}).Error("DeleteBotSettingsByID failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusNoContent, id)
@@ -183,7 +186,7 @@ func (api *RESTAPI) listStandups(c echo.Context) error {
 	standups, err := api.db.ListStandups()
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("ListStandups failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	result := make([]model.Standup, 0)
@@ -201,7 +204,7 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -211,7 +214,7 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusNotFound, err.Error())
 	}
 
 	claims := user.Claims.(jwt.MapClaims)
@@ -226,7 +229,7 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 func (api *RESTAPI) updateStandup(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -234,9 +237,13 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 	}
 	user := c.Get("user").(*jwt.Token)
 
-	standup := model.Standup{ID: id}
+	standup, err := api.db.GetStandup(id)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, err.Error())
+	}
+
 	if err := c.Bind(&standup); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	claims := user.Claims.(jwt.MapClaims)
@@ -248,7 +255,7 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 	res, err := api.db.UpdateStandup(standup)
 	if err != nil {
 		log.WithFields(log.Fields{"standup": standup, "error": err}).Error("UpdateStandup failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -257,7 +264,7 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 func (api *RESTAPI) deleteStandup(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -267,7 +274,7 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	claims := user.Claims.(jwt.MapClaims)
@@ -279,7 +286,7 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 	err = api.db.DeleteStandup(id)
 	if err != nil {
 		log.WithFields(log.Fields{"id": id, "error": err}).Error("DeleteStandup failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusNoContent, id)
@@ -298,7 +305,7 @@ func (api *RESTAPI) listUsers(c echo.Context) error {
 	users, err := api.db.ListUsers()
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("ListUsers failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	result := make([]model.User, 0)
@@ -315,7 +322,7 @@ func (api *RESTAPI) listUsers(c echo.Context) error {
 func (api *RESTAPI) getUser(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -325,7 +332,7 @@ func (api *RESTAPI) getUser(c echo.Context) error {
 
 	user, err := api.db.GetUser(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusNotFound, err.Error())
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -340,7 +347,7 @@ func (api *RESTAPI) getUser(c echo.Context) error {
 func (api *RESTAPI) updateUser(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -348,9 +355,13 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 	}
 	u := c.Get("user").(*jwt.Token)
 
-	user := model.User{ID: id}
+	user, err := api.db.GetUser(id)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, err.Error())
+	}
+
 	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -362,7 +373,7 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 	res, err := api.db.UpdateUser(user)
 	if err != nil {
 		log.WithFields(log.Fields{"user": user, "error": err}).Error("UpdateUser failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -381,7 +392,7 @@ func (api *RESTAPI) listChannels(c echo.Context) error {
 	channels, err := api.db.ListChannels()
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("ListChannels failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	result := make([]model.Channel, 0)
@@ -398,7 +409,7 @@ func (api *RESTAPI) listChannels(c echo.Context) error {
 func (api *RESTAPI) getChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -408,7 +419,7 @@ func (api *RESTAPI) getChannel(c echo.Context) error {
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusNotFound, err.Error())
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -423,7 +434,7 @@ func (api *RESTAPI) getChannel(c echo.Context) error {
 func (api *RESTAPI) updateChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -431,9 +442,13 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 	}
 	u := c.Get("user").(*jwt.Token)
 
-	channel := model.Channel{ID: id}
+	channel, err := api.db.GetChannel(id)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, err.Error())
+	}
+
 	if err := c.Bind(&channel); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -445,7 +460,7 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 	res, err := api.db.UpdateChannel(channel)
 	if err != nil {
 		log.WithFields(log.Fields{"channel": channel, "error": err}).Error("UpdateChannel failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -454,7 +469,7 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 func (api *RESTAPI) deleteChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -465,7 +480,7 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
 		log.WithFields(log.Fields{"id": id, "error": err}).Error("GetChannel failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -476,7 +491,7 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 
 	err = api.db.DeleteChannel(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusNoContent, id)
@@ -495,7 +510,7 @@ func (api *RESTAPI) listStandupers(c echo.Context) error {
 	standupers, err := api.db.ListStandupers()
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("ListStandupers failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	result := make([]model.Standuper, 0)
@@ -512,7 +527,7 @@ func (api *RESTAPI) listStandupers(c echo.Context) error {
 func (api *RESTAPI) getStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -522,7 +537,7 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return c.JSON(http.StatusNotFound, err.Error())
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -537,7 +552,7 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 func (api *RESTAPI) updateStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -545,9 +560,13 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 	}
 	u := c.Get("user").(*jwt.Token)
 
-	standuper := model.Standuper{ID: id}
+	standuper, err := api.db.GetStanduper(id)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, err.Error())
+	}
+
 	if err := c.Bind(&standuper); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -559,7 +578,7 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 	res, err := api.db.UpdateStanduper(standuper)
 	if err != nil {
 		log.WithFields(log.Fields{"standuper": standuper, "error": err}).Error("UpdateStanduper failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -568,7 +587,7 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if c.Get("user") == nil {
@@ -579,7 +598,7 @@ func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
 		log.WithFields(log.Fields{"id": id, "error": err}).Error("deleteStanduper failed at GetStanduper ")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	claims := u.Claims.(jwt.MapClaims)
@@ -591,7 +610,7 @@ func (api *RESTAPI) deleteStanduper(c echo.Context) error {
 	err = api.db.DeleteStanduper(id)
 	if err != nil {
 		log.WithFields(log.Fields{"id": id, "error": err}).Error("DeleteStanduper failed")
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusNoContent, id)
