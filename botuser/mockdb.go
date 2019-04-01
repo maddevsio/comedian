@@ -125,7 +125,3 @@ func (m MockedDB) ListChannelStandupers(string) ([]model.Standuper, error) {
 func (m MockedDB) DeleteStanduper(int64) error {
 	return m.DeleteStanduperError
 }
-
-func (m MockedDB) UserSubmittedStandupToday(string, string) (bool, error) {
-	return m.SubmittedStandupTodayResult, m.SubmittedStandupTodayError
-}

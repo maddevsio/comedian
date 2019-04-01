@@ -153,12 +153,12 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		return bot.SendEphemeralMessage(msg.Channel, msg.User, problem)
 	}
 
-	submitted, err := bot.db.UserSubmittedStandupToday(msg.Channel, msg.User)
+	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
 	if err != nil {
-		log.WithFields(log.Fields{"channel": msg.Channel, "user": msg.User}).Warning("Non standuper submitted standup")
+		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
-	if submitted {
+	if standuper.SubmittedStandupToday {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay, err := translation.Translate(payload)
 		if err != nil {
@@ -198,10 +198,6 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		}).Error("Failed to AddReaction!")
 	}
 
-	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
-	if err != nil {
-		return err
-	}
 	standuper.SubmittedStandupToday = true
 	_, err = bot.db.UpdateStanduper(standuper)
 	if err != nil {
@@ -230,13 +226,12 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 		log.Infof("Standup updated #id:%v\n", st.ID)
 		return nil
 	}
-
-	submitted, err := bot.db.UserSubmittedStandupToday(msg.Channel, msg.User)
+	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
 	if err != nil {
-		log.WithFields(log.Fields{"channel": msg.Channel, "user": msg.User}).Warning("Non standuper submitted standup")
+		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
-	if submitted {
+	if standuper.SubmittedStandupToday {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay, err := translation.Translate(payload)
 		if err != nil {
@@ -277,10 +272,6 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 			"TeamName": bot.properties.TeamName,
 			"Item":     item,
 		}).Error("Failed to AddReaction!")
-	}
-	standuper, err := bot.db.FindStansuperByUserID(msg.SubMessage.User, msg.Channel)
-	if err != nil {
-		return err
 	}
 	standuper.SubmittedStandupToday = true
 	_, err = bot.db.UpdateStanduper(standuper)
