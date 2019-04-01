@@ -93,7 +93,7 @@ func TestAddCommandBundleFail(t *testing.T) {
 	}{
 		{"", 4, "", model.Standuper{}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "@foo", model.Standuper{}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
-		{"All help!", 3, "@foo / bar", model.Standuper{}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
+		{"\n\n\n\n\n\n", 3, "@foo / bar", model.Standuper{}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "<@foo|bar>", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "<@foo|bar> /pm", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "<@foo|bar> /designer", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
@@ -190,7 +190,7 @@ func TestShowCommandBundleFail(t *testing.T) {
 		ChannelStandupers          []model.Standuper
 		ListChannelStandupersError error
 	}{
-		{"All help!", "foo", []model.User{}, nil, []model.Standuper{}, nil},
+		{"\n\n\n\n\n\n", "foo", []model.User{}, nil, []model.Standuper{}, nil},
 		{"could not list users", "admin", []model.User{}, errors.New("err"), []model.Standuper{}, nil},
 		{"could not list members", "developer", []model.User{}, errors.New("err"), []model.Standuper{}, errors.New("err")},
 		{"could not list members", "designer", []model.User{}, errors.New("err"), []model.Standuper{}, errors.New("err")},
@@ -293,7 +293,7 @@ func TestDeleteCommandBundleFailed(t *testing.T) {
 	}{
 		{"", 4, "", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "@foo", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
-		{"All help!", 3, "@foo / bar", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
+		{"\n\n\n\n\n\n", 3, "@foo / bar", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "<@foo|bar> /admin", model.Standuper{}, errors.New("select standuper"), nil, model.User{}, nil, model.User{}, nil},
 		{"", 2, "@foo /admin", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
 		{"", 2, "<@foo|bar> /admin", model.Standuper{}, nil, nil, model.User{}, errors.New("select user"), model.User{}, nil},

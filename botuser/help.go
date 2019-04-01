@@ -9,7 +9,6 @@ import (
 func (bot *Bot) DisplayHelpText(command string) string {
 
 	helpText := map[string]string{
-		"":                "",
 		"add":             "AddMembers",
 		"show":            "ShowMembers",
 		"remove":          "RemoveMembers",
@@ -20,7 +19,7 @@ func (bot *Bot) DisplayHelpText(command string) string {
 
 	message, err := bot.generateHelpText(helpText[command])
 	if err != nil {
-		return displayDefaultHelpText()
+		return bot.displayDefaultHelpText()
 	}
 	return message
 }
@@ -43,6 +42,17 @@ func (bot *Bot) generateHelpText(messageID string) (string, error) {
 	return message, nil
 }
 
-func displayDefaultHelpText() string {
-	return "All help!"
+func (bot *Bot) displayDefaultHelpText() string {
+	var message string
+	helpOptions := []string{"AddMembers", "ShowMembers", "RemoveMembers", "AddDeadline", "ShowDeadline", "RemoveDeadline"}
+
+	for _, msg := range helpOptions {
+		text, err := bot.generateHelpText(msg)
+		if err != nil {
+			log.Error(err)
+		}
+		message += text + "\n"
+	}
+
+	return message
 }
