@@ -209,7 +209,7 @@ func TestUpdateBot(t *testing.T) {
 		StatusCode  int
 	}{
 		{model.BotSettings{}, errors.New("err"), "", map[string]string{}, 400},
-		{model.BotSettings{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
+		{model.BotSettings{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 400},
 		{model.BotSettings{}, nil, "1", map[string]string{"password": "foo"}, 200},
 	}
 
@@ -361,8 +361,8 @@ func TestUpdateStandup(t *testing.T) {
 		StatusCode int
 	}{
 		{model.Standup{TeamID: "foo"}, errors.New("err"), "", map[string]string{}, 400},
-		{model.Standup{TeamID: "foo"}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
-		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 200},
+		{model.Standup{TeamID: "foo"}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
+		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 403},
 	}
 
 	for _, tt := range testCases {
@@ -513,7 +513,7 @@ func TestUpdateUser(t *testing.T) {
 		StatusCode int
 	}{
 		{model.User{}, errors.New("err"), "", map[string]string{}, 400},
-		{model.User{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
+		{model.User{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
 		{model.User{}, nil, "1", map[string]string{"password": "foo"}, 200},
 	}
 
@@ -628,7 +628,7 @@ func TestUpdateChannel(t *testing.T) {
 		StatusCode int
 	}{
 		{model.Channel{}, errors.New("err"), "", map[string]string{}, 400},
-		{model.Channel{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
+		{model.Channel{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
 		{model.Channel{}, nil, "1", map[string]string{"password": "foo"}, 200},
 	}
 
@@ -780,7 +780,7 @@ func TestUpdateStanduper(t *testing.T) {
 		StatusCode int
 	}{
 		{model.Standuper{}, errors.New("err"), "", map[string]string{}, 400},
-		{model.Standuper{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500},
+		{model.Standuper{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404},
 		{model.Standuper{}, nil, "1", map[string]string{"team_id": "foo"}, 200},
 	}
 
