@@ -11,6 +11,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/comedianbot"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
 )
@@ -126,7 +127,7 @@ func TestHealthCheck(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	r := &RESTAPI{db: MockedDB{}}
+	r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{}}
 
 	if assert.NoError(t, r.healthcheck(c)) {
 		assert.Equal(t, 200, rec.Code)
@@ -148,7 +149,7 @@ func TestListBots(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			AllBotSettings: tt.AllBotSettings,
 			Error:          tt.Error,
 		}}
@@ -186,7 +187,7 @@ func TestGetBot(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			BotSettings: tt.BotSettings,
 			Error:       tt.Error,
 		}}
@@ -228,12 +229,15 @@ func TestUpdateBot(t *testing.T) {
 		{model.BotSettings{}, nil, "1", map[string]string{"password": "foo"}, 403, "user", 0},
 	}
 
+	fakeComedian := comedianbot.New(nil, nil)
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: fakeComedian, config: nil, db: MockedDB{
 			BotSettings: tt.BotSettings,
 			Error:       tt.Error,
 		}}
 
+		go fakeComedian.StartBots()
+		fakeComedian.AddBot(model.BotSettings{ID: int64(1)})
 		e := echo.New()
 		f := make(url.Values)
 		for k, v := range tt.formValues {
@@ -276,11 +280,16 @@ func TestDeleteBot(t *testing.T) {
 		{model.BotSettings{}, nil, "1", 403, "user", 0},
 	}
 
+	fakeComedian := comedianbot.New(nil, nil)
+
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: fakeComedian, config: nil, db: MockedDB{
 			BotSettings: tt.BotSettings,
 			Error:       tt.Error,
 		}}
+
+		go fakeComedian.StartBots()
+		fakeComedian.AddBot(model.BotSettings{ID: int64(1)})
 
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodDelete, "/bots", strings.NewReader(""))
@@ -315,7 +324,7 @@ func TestListStandups(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			AllStandups: tt.AllStandups,
 			Error:       tt.Error,
 		}}
@@ -353,7 +362,7 @@ func TestGetStandup(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			Standup: tt.Standup,
 			Error:   tt.Error,
 		}}
@@ -396,7 +405,7 @@ func TestUpdateStandup(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			Standup: tt.Standup,
 			Error:   tt.Error,
 		}}
@@ -445,7 +454,7 @@ func TestDeleteStandup(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			Standup: tt.Standup,
 			Error:   tt.Error,
 		}}
@@ -483,7 +492,7 @@ func TestListUsers(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			AllUsers: tt.AllUsers,
 			Error:    tt.Error,
 		}}
@@ -521,7 +530,7 @@ func TestGetUser(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			User:  tt.User,
 			Error: tt.Error,
 		}}
@@ -563,7 +572,7 @@ func TestUpdateUser(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			User:  tt.User,
 			Error: tt.Error,
 		}}
@@ -608,7 +617,7 @@ func TestListChannels(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			AllChannels: tt.AllChannels,
 			Error:       tt.Error,
 		}}
@@ -646,7 +655,7 @@ func TestGetChannel(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			Channel: tt.Channel,
 			Error:   tt.Error,
 		}}
@@ -688,7 +697,7 @@ func TestUpdateChannel(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			Channel: tt.Channel,
 			Error:   tt.Error,
 		}}
@@ -736,7 +745,7 @@ func TestDeleteChannel(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			Channel: tt.Channel,
 			Error:   tt.Error,
 		}}
@@ -775,7 +784,7 @@ func TestListStandupers(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			AllStandupers: tt.AllStandupers,
 			Error:         tt.Error,
 		}}
@@ -813,7 +822,7 @@ func TestGetStanduper(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			Standuper: tt.Standuper,
 			Error:     tt.Error,
 		}}
@@ -855,7 +864,7 @@ func TestUpdateStanduper(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			Standuper: tt.Standuper,
 			Error:     tt.Error,
 		}}
@@ -903,7 +912,7 @@ func TestDeleteStanduper(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		r := &RESTAPI{db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 			Standuper: tt.Standuper,
 			Error:     tt.Error,
 		}}
@@ -944,7 +953,7 @@ func TestLogin(t *testing.T) {
 	for _, tt := range testCase {
 		t.Run("TestLogin", func(t *testing.T) {
 
-			r := &RESTAPI{db: MockedDB{
+			r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
 				BotSettings: tt.BotSettings,
 				Error:       tt.Error,
 			}}
