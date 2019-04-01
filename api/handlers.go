@@ -24,11 +24,11 @@ type LoginData struct {
 	Password string `json:"password"`
 }
 
-func (api *RESTAPI) healthcheck(c echo.Context) error {
+func (api *ComedianAPI) healthcheck(c echo.Context) error {
 	return c.JSON(http.StatusOK, "successful operation")
 }
 
-func (api *RESTAPI) login(c echo.Context) error {
+func (api *ComedianAPI) login(c echo.Context) error {
 	var data LoginData
 
 	if err := c.Bind(&data); err != nil {
@@ -68,7 +68,7 @@ func (api *RESTAPI) login(c echo.Context) error {
 	})
 }
 
-func (api *RESTAPI) listBots(c echo.Context) error {
+func (api *ComedianAPI) listBots(c echo.Context) error {
 	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
@@ -83,7 +83,7 @@ func (api *RESTAPI) listBots(c echo.Context) error {
 	return c.JSON(http.StatusOK, bots)
 }
 
-func (api *RESTAPI) getBot(c echo.Context) error {
+func (api *ComedianAPI) getBot(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
@@ -110,7 +110,7 @@ func (api *RESTAPI) getBot(c echo.Context) error {
 	return c.JSON(http.StatusOK, bot)
 }
 
-func (api *RESTAPI) updateBot(c echo.Context) error {
+func (api *ComedianAPI) updateBot(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -143,10 +143,17 @@ func (api *RESTAPI) updateBot(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
+	settings, err := api.comedian.SelectBot(bot.TeamName)
+	if err != nil {
+		log.WithFields(log.Fields{"bot": bot, "error": err}).Error("Could not select bot")
+		return c.JSON(http.StatusOK, res)
+	}
+	settings.SetProperties(res)
+
 	return c.JSON(http.StatusOK, res)
 }
 
-func (api *RESTAPI) deleteBot(c echo.Context) error {
+func (api *ComedianAPI) deleteBot(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
@@ -170,10 +177,23 @@ func (api *RESTAPI) deleteBot(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
+	settings, err := api.db.GetBotSettings(id)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	bot, err := api.comedian.SelectBot(settings.TeamName)
+	if err != nil {
+		log.WithFields(log.Fields{"bot": bot, "error": err}).Error("Could not select bot")
+		return c.JSON(http.StatusOK, id)
+	}
+
+	bot.Stop()
+
 	return c.JSON(http.StatusNoContent, id)
 }
 
-func (api *RESTAPI) listStandups(c echo.Context) error {
+func (api *ComedianAPI) listStandups(c echo.Context) error {
 
 	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
@@ -200,7 +220,7 @@ func (api *RESTAPI) listStandups(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-func (api *RESTAPI) getStandup(c echo.Context) error {
+func (api *ComedianAPI) getStandup(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
@@ -226,7 +246,7 @@ func (api *RESTAPI) getStandup(c echo.Context) error {
 	return c.JSON(http.StatusOK, standup)
 }
 
-func (api *RESTAPI) updateStandup(c echo.Context) error {
+func (api *ComedianAPI) updateStandup(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -261,7 +281,7 @@ func (api *RESTAPI) updateStandup(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func (api *RESTAPI) deleteStandup(c echo.Context) error {
+func (api *ComedianAPI) deleteStandup(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -292,7 +312,7 @@ func (api *RESTAPI) deleteStandup(c echo.Context) error {
 	return c.JSON(http.StatusNoContent, id)
 }
 
-func (api *RESTAPI) listUsers(c echo.Context) error {
+func (api *ComedianAPI) listUsers(c echo.Context) error {
 
 	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
@@ -319,7 +339,7 @@ func (api *RESTAPI) listUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-func (api *RESTAPI) getUser(c echo.Context) error {
+func (api *ComedianAPI) getUser(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -344,7 +364,7 @@ func (api *RESTAPI) getUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
-func (api *RESTAPI) updateUser(c echo.Context) error {
+func (api *ComedianAPI) updateUser(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -379,7 +399,7 @@ func (api *RESTAPI) updateUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func (api *RESTAPI) listChannels(c echo.Context) error {
+func (api *ComedianAPI) listChannels(c echo.Context) error {
 
 	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
@@ -406,7 +426,7 @@ func (api *RESTAPI) listChannels(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-func (api *RESTAPI) getChannel(c echo.Context) error {
+func (api *ComedianAPI) getChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -431,7 +451,7 @@ func (api *RESTAPI) getChannel(c echo.Context) error {
 	return c.JSON(http.StatusOK, channel)
 }
 
-func (api *RESTAPI) updateChannel(c echo.Context) error {
+func (api *ComedianAPI) updateChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -466,7 +486,7 @@ func (api *RESTAPI) updateChannel(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func (api *RESTAPI) deleteChannel(c echo.Context) error {
+func (api *ComedianAPI) deleteChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -497,7 +517,7 @@ func (api *RESTAPI) deleteChannel(c echo.Context) error {
 	return c.JSON(http.StatusNoContent, id)
 }
 
-func (api *RESTAPI) listStandupers(c echo.Context) error {
+func (api *ComedianAPI) listStandupers(c echo.Context) error {
 
 	if c.Get("user") == nil {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
@@ -524,7 +544,7 @@ func (api *RESTAPI) listStandupers(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-func (api *RESTAPI) getStanduper(c echo.Context) error {
+func (api *ComedianAPI) getStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -549,7 +569,7 @@ func (api *RESTAPI) getStanduper(c echo.Context) error {
 	return c.JSON(http.StatusOK, standuper)
 }
 
-func (api *RESTAPI) updateStanduper(c echo.Context) error {
+func (api *ComedianAPI) updateStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -584,7 +604,7 @@ func (api *RESTAPI) updateStanduper(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func (api *RESTAPI) deleteStanduper(c echo.Context) error {
+func (api *ComedianAPI) deleteStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())

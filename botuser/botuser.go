@@ -37,15 +37,19 @@ type Bot struct {
 	db         storage.Storage
 	bundle     *i18n.Bundle
 	wg         sync.WaitGroup
+	QuitChan   chan struct{}
 }
 
 //New creates new Bot instance
 func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *Bot {
+	quit := make(chan struct{})
+
 	bot := &Bot{}
 	bot.slack = slack.New(settings.AccessToken)
 	bot.properties = settings
 	bot.db = db
 	bot.bundle = bundle
+	bot.QuitChan = quit
 
 	return bot
 }
@@ -61,15 +65,26 @@ func (bot *Bot) Start() {
 
 	bot.wg.Add(1)
 	go func() {
-		defer bot.wg.Done()
+		ticker := time.NewTicker(time.Second * 10).C
 		for {
-			bot.NotifyChannels(time.Now())
-			if Dry {
-				break
+			select {
+			case <-ticker:
+				bot.NotifyChannels(time.Now())
+				if Dry {
+					break
+				}
+			case <-bot.QuitChan:
+				log.Infof("Mission completed, gbye!!! Truly yours, %v bot", bot.properties.TeamName)
+				bot.wg.Done()
+				return
 			}
-			time.Sleep(60 * time.Second)
 		}
 	}()
+}
+
+//Stop closes bot QuitChan making bot goroutine to exit
+func (bot *Bot) Stop() {
+	close(bot.QuitChan)
 }
 
 //HandleCallBackEvent handles different callback events from Slack Event Subscription list
@@ -101,6 +116,7 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		_, err = bot.HandleJoin(join.Channel, join.Team)
 		return err
 	case "app_uninstalled":
+		bot.Stop()
 		err := bot.db.DeleteBotSettings(bot.properties.TeamID)
 		if err != nil {
 			return err

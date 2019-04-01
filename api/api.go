@@ -47,10 +47,6 @@ type Event struct {
 	Type      string `json:"type"`
 }
 
-type RESTAPI struct {
-	db storage.Storage
-}
-
 var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>.*)`)
 
 // New creates API
@@ -70,10 +66,8 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 		config:   config,
 	}
 
-	restAPI := RESTAPI{api.db}
-
-	echo.GET("/healthcheck", restAPI.healthcheck)
-	echo.POST("/login", restAPI.login)
+	echo.GET("/healthcheck", api.healthcheck)
+	echo.POST("/login", api.login)
 	echo.POST("/event", api.handleEvent)
 	echo.POST("/service-message", api.handleServiceMessage)
 	echo.POST("/commands", api.handleCommands)
@@ -82,29 +76,29 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	r := echo.Group("/v1")
 	r.Use(middleware.JWT([]byte(config.SlackClientSecret)))
 
-	r.GET("/standups", restAPI.listStandups)
-	r.GET("/standups/:id", restAPI.getStandup)
-	r.PATCH("/standups/:id", restAPI.updateStandup)
-	r.DELETE("/standups/:id", restAPI.deleteStandup)
+	r.GET("/standups", api.listStandups)
+	r.GET("/standups/:id", api.getStandup)
+	r.PATCH("/standups/:id", api.updateStandup)
+	r.DELETE("/standups/:id", api.deleteStandup)
 
-	r.GET("/users", restAPI.listUsers)
-	r.GET("/users/:id", restAPI.getUser)
-	r.PATCH("/users/:id", restAPI.updateUser)
+	r.GET("/users", api.listUsers)
+	r.GET("/users/:id", api.getUser)
+	r.PATCH("/users/:id", api.updateUser)
 
-	r.GET("/channels", restAPI.listChannels)
-	r.GET("/channels/:id", restAPI.getChannel)
-	r.PATCH("/channels/:id", restAPI.updateChannel)
-	r.DELETE("/channels/:id", restAPI.deleteChannel)
+	r.GET("/channels", api.listChannels)
+	r.GET("/channels/:id", api.getChannel)
+	r.PATCH("/channels/:id", api.updateChannel)
+	r.DELETE("/channels/:id", api.deleteChannel)
 
-	r.GET("/standupers", restAPI.listStandupers)
-	r.GET("/standupers/:id", restAPI.getStanduper)
-	r.PATCH("/standupers/:id", restAPI.updateStanduper)
-	r.DELETE("/standupers/:id", restAPI.deleteStanduper)
+	r.GET("/standupers", api.listStandupers)
+	r.GET("/standupers/:id", api.getStanduper)
+	r.PATCH("/standupers/:id", api.updateStanduper)
+	r.DELETE("/standupers/:id", api.deleteStanduper)
 
-	r.GET("/bots", restAPI.listBots)
-	r.GET("/bots/:id", restAPI.getBot)
-	r.PATCH("/bots/:id", restAPI.updateBot)
-	r.DELETE("/bots/:id", restAPI.deleteBot)
+	r.GET("/bots", api.listBots)
+	r.GET("/bots/:id", api.getBot)
+	r.PATCH("/bots/:id", api.updateBot)
+	r.DELETE("/bots/:id", api.deleteBot)
 	return api
 }
 
