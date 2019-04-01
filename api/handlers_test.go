@@ -221,7 +221,7 @@ func TestUpdateBot(t *testing.T) {
 		BotID       int64
 	}{
 		{model.BotSettings{}, errors.New("err"), "", map[string]string{}, 400, "user", 1},
-		{model.BotSettings{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", 1},
+		{model.BotSettings{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 400, "user", 1},
 		{model.BotSettings{}, nil, "1", map[string]string{"password": "foo"}, 200, "user", 1},
 		{model.BotSettings{}, nil, "1", map[string]string{}, 400, "user", 1},
 		{model.BotSettings{}, nil, "1", map[string]string{"password": "foo"}, 401, "", 1},
@@ -388,8 +388,8 @@ func TestUpdateStandup(t *testing.T) {
 		TeamID     string
 	}{
 		{model.Standup{TeamID: "foo"}, errors.New("err"), "", map[string]string{}, 400, "user", ""},
-		{model.Standup{TeamID: "foo"}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", ""},
-		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 200, "user", ""},
+		{model.Standup{TeamID: "foo"}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404, "user", ""},
+		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 200, "user", "foo"},
 		{model.Standup{TeamID: "Hello"}, nil, "", map[string]string{}, 400, "user", ""},
 		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 401, "", ""},
 		{model.Standup{TeamID: "foo"}, nil, "1", map[string]string{"password": "foo"}, 403, "user", "0"},
@@ -556,7 +556,7 @@ func TestUpdateUser(t *testing.T) {
 		TeamID     string
 	}{
 		{model.User{}, errors.New("err"), "", map[string]string{}, 400, "user", ""},
-		{model.User{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", ""},
+		{model.User{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404, "user", ""},
 		{model.User{}, nil, "1", map[string]string{"password": "foo"}, 200, "user", ""},
 		{model.User{}, nil, "1", map[string]string{"password": "foo"}, 401, "", ""},
 		{model.User{}, nil, "1", map[string]string{"password": "foo"}, 403, "user", "0"},
@@ -681,7 +681,7 @@ func TestUpdateChannel(t *testing.T) {
 		TeamID     string
 	}{
 		{model.Channel{}, errors.New("err"), "", map[string]string{}, 400, "user", ""},
-		{model.Channel{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", ""},
+		{model.Channel{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404, "user", ""},
 		{model.Channel{}, nil, "1", map[string]string{"password": "foo"}, 200, "user", ""},
 		{model.Channel{}, nil, "1", map[string]string{}, 401, "nouser", ""},
 		{model.Channel{}, nil, "1", map[string]string{"password": "foo"}, 403, "user", "0"},
@@ -848,7 +848,7 @@ func TestUpdateStanduper(t *testing.T) {
 		TeamID     string
 	}{
 		{model.Standuper{}, errors.New("err"), "", map[string]string{}, 400, "user", "foo"},
-		{model.Standuper{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 500, "user", ""},
+		{model.Standuper{}, errors.New("err"), "1", map[string]string{"pass": "foo"}, 404, "user", ""},
 		{model.Standuper{}, nil, "1", map[string]string{"team_id": "foo"}, 200, "user", ""},
 		{model.Standuper{}, nil, "1", map[string]string{"team_id": ""}, 401, "", "foo"},
 		{model.Standuper{}, nil, "1", map[string]string{"team_id": "foo"}, 403, "user", "abc"},

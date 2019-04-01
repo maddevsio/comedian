@@ -1,0 +1,54 @@
+version: '2.2'
+networks:
+  comedian_comedian:
+    external: true
+
+services:
+
+  new-comedian-db:
+    image: percona/percona-server:5.7
+    container_name: new-comedian-db
+    restart: on-failure
+    command: --max_allowed_packet=32505856                                                                                                                                                     
+    environment:                                                                                                                                                                               
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}                                                                                                                                             
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    networks:
+      - comedian_comedian
+    volumes:
+      - ./percona:/var/lib/mysql:rw
+    logging:
+      driver: syslog
+      options:
+        tag: "docker/new-comedian-db"
+
+  new-comedian:
+    image: registry.gitlab.com/team-monitoring/comedian:latest
+    container_name: new-comedian
+    restart: on-failure
+    links:
+      - new-comedian-db:new-comedian-db
+    networks:
+      - comedian_comedian
+    expose: 
+      - 8080
+    environment:
+      - TZ=Asia/Bishkek
+      - COMEDIAN_DATABASE=${MADDEVS_COMEDIAN_DATABASE}
+      - COMEDIAN_HTTP_BIND_ADDR=0.0.0.0:8080
+      - COMEDIAN_SLACK_CLIENT_ID=${MADDEVS_COMEDIAN_SLACK_CLIENT_ID}
+      - COMEDIAN_SLACK_CLIENT_SECRET=${MADDEVS_COMEDIAN_SLACK_CLIENT_SECRET}
+      - COMEDIAN_UI_URL=${MADDEVS_COMEDIAN_UI_URL}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_ENVIRONMENT=comedian
+      - VIRTUAL_HOST=comedian-new.maddevs.co
+      - LETSENCRYPT_HOST=comedian-new.maddevs.co
+      - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
+    depends_on:
+      - new-comedian-db
+    logging:
+      driver: syslog
+      options:
+        tag: "docker/new-comedian"

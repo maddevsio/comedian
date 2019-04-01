@@ -17,7 +17,7 @@ func TestDisplayHelpText(t *testing.T) {
 		command       string
 		outputMessage string
 	}{
-		{"en_US", "", "All help!"},
+		{"en_US", "", "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, default is a developer role, if the role is not selected. \nTo view members use `show` command. If you provide a role name, you will see members with this role. _admin, pm, developer, designer_. \nTo remove members use `remove` command. If you provide a role name, you will remove members with this role. _admin, pm, developer, designer_. \nTo set standup deadline use `add_deadline` command. You need to provide it with hours and minutes in the 24hour format like 13:54. \nTo view standup deadline in the channel use `show_deadline` command. \nTo remove standup deadline in the channel use `remove_deadline` command. \n"},
 		{"en_US", "add", "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, default is a developer role, if the role is not selected. "},
 		{"ru_RU", "add", "Для добавления нового пользователя используйте команду `add`. Вот пример: `add @user @user1 / admin` Вы можете добавлять участников с ролями: _admin, pm, developer, designer_. Если роль не указана, то по умолчанию будет developer."},
 		{"en_US", "show", "To view members use `show` command. If you provide a role name, you will see members with this role. _admin, pm, developer, designer_. "},
