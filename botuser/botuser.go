@@ -65,7 +65,7 @@ func (bot *Bot) Start() {
 
 	bot.wg.Add(1)
 	go func() {
-		ticker := time.NewTicker(time.Second * 10).C
+		ticker := time.NewTicker(time.Second * 60).C
 		for {
 			select {
 			case <-ticker:
