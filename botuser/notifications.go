@@ -8,6 +8,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/translation"
 )
 
@@ -120,10 +121,10 @@ func (bot *Bot) SendChannelNotification(channelID string) error {
 		return nil
 	}
 
-	nonReporters := []string{}
+	nonReporters := []model.Standuper{}
 	for _, standuper := range standupers {
 		if standuper.ChannelID == channelID && !standuper.SubmittedStandupToday {
-			nonReporters = append(nonReporters, fmt.Sprintf("<@%v>", standuper.UserID))
+			nonReporters = append(nonReporters, standuper)
 		}
 
 	}
@@ -152,27 +153,43 @@ func (bot *Bot) SendChannelNotification(channelID string) error {
 	return nil
 }
 
-func (bot *Bot) notifyNotAll(channelID string, nonReporters []string, repeats *int) error {
+func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, repeats *int) error {
 
-	if *repeats < bot.properties.ReminderRepeatsMax && len(nonReporters) > 0 {
-
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "TagNonReporters", len(nonReporters), map[string]interface{}{"user": nonReporters[0], "users": strings.Join(nonReporters, ", ")}}
-		tagNonReporters, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-		}
-
-		bot.SendMessage(channelID, tagNonReporters, nil)
-		*repeats++
-		err = errors.New("Continue backoff")
-		return err
+	if *repeats > bot.properties.ReminderRepeatsMax || len(nonReporters) < 1 {
+		log.Info("Finish Backoff")
+		return nil
 	}
 
-	return nil
+	roundNonReporters := []string{}
+	for _, st := range nonReporters {
+		standuper, err := bot.db.GetStanduper(st.ID)
+		if err != nil {
+			continue
+		}
+		if !standuper.SubmittedStandupToday {
+			roundNonReporters = append(roundNonReporters, fmt.Sprintf("<@%v>", standuper.UserID))
+		}
+	}
+
+	if len(roundNonReporters) == 0 {
+		return nil
+	}
+
+	payload := translation.Payload{bot.bundle, bot.properties.Language, "TagNonReporters", len(roundNonReporters), map[string]interface{}{"user": roundNonReporters[0], "users": strings.Join(roundNonReporters, ", ")}}
+	tagNonReporters, err := translation.Translate(payload)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName":     bot.properties.TeamName,
+			"Language":     payload.Lang,
+			"MessageID":    payload.MessageID,
+			"Count":        payload.Count,
+			"TemplateData": payload.TemplateData,
+		}).Error("Failed to translate message!")
+	}
+
+	bot.SendMessage(channelID, tagNonReporters, nil)
+	*repeats++
+	err = errors.New("Continue backoff")
+	return err
+
 }

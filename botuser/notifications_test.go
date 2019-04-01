@@ -132,79 +132,79 @@ func TestSendWarningBundleFail(t *testing.T) {
 	}
 }
 
-func TestSendChannelNotification(t *testing.T) {
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
-	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+// func TestSendChannelNotification(t *testing.T) {
+// 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+// 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
-	assert.NoError(t, err)
+// 	_, err := bundle.LoadMessageFile("../active.en.toml")
+// 	assert.NoError(t, err)
 
-	settings := model.BotSettings{
-		TeamID:       "comedian",
-		UserID:       "TESTUSERID",
-		Language:     "en_US",
-		ReminderTime: int64(0),
-	}
+// 	settings := model.BotSettings{
+// 		TeamID:       "comedian",
+// 		UserID:       "TESTUSERID",
+// 		Language:     "en_US",
+// 		ReminderTime: int64(0),
+// 	}
 
-	testCases := []struct {
-		dry                        bool
-		ReminderRepeatsMax         int
-		ChannelStandupers          []model.Standuper
-		ListChannelStandupersError error
-		err                        error
-	}{
-		{false, 0, []model.Standuper{}, errors.New("list standupers error"), errors.New("list standupers error")},
-		{false, 0, []model.Standuper{}, nil, nil},
-		{false, 0, []model.Standuper{{}}, nil, nil},
-		{true, 0, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
-		{true, 1, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
-	}
+// 	testCases := []struct {
+// 		dry                        bool
+// 		ReminderRepeatsMax         int
+// 		ChannelStandupers          []model.Standuper
+// 		ListChannelStandupersError error
+// 		err                        error
+// 	}{
+// 		{false, 0, []model.Standuper{}, errors.New("list standupers error"), errors.New("list standupers error")},
+// 		{false, 0, []model.Standuper{}, nil, nil},
+// 		{false, 0, []model.Standuper{{}}, nil, nil},
+// 		{true, 0, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
+// 		{true, 1, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
+// 	}
 
-	for _, tt := range testCases {
-		Dry = tt.dry
-		bot := New(bundle, settings, MockedDB{
-			ChannelStandupers:          tt.ChannelStandupers,
-			ListChannelStandupersError: tt.ListChannelStandupersError,
-		})
-		bot.properties.ReminderRepeatsMax = tt.ReminderRepeatsMax
-		err := bot.SendChannelNotification("Foo")
-		assert.Equal(t, tt.err, err)
-	}
-}
+// 	for _, tt := range testCases {
+// 		Dry = tt.dry
+// 		bot := New(bundle, settings, MockedDB{
+// 			ChannelStandupers:          tt.ChannelStandupers,
+// 			ListChannelStandupersError: tt.ListChannelStandupersError,
+// 		})
+// 		bot.properties.ReminderRepeatsMax = tt.ReminderRepeatsMax
+// 		err := bot.SendChannelNotification("Foo")
+// 		assert.Equal(t, tt.err, err)
+// 	}
+// }
 
-func TestSendChannelNotificationBundleFailed(t *testing.T) {
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
-	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+// func TestSendChannelNotificationBundleFailed(t *testing.T) {
+// 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+// 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
-	settings := model.BotSettings{
-		TeamID:       "comedian",
-		UserID:       "TESTUSERID",
-		Language:     "en_US",
-		ReminderTime: int64(0),
-	}
+// 	settings := model.BotSettings{
+// 		TeamID:       "comedian",
+// 		UserID:       "TESTUSERID",
+// 		Language:     "en_US",
+// 		ReminderTime: int64(0),
+// 	}
 
-	testCases := []struct {
-		dry                        bool
-		ReminderRepeatsMax         int
-		ChannelStandupers          []model.Standuper
-		ListChannelStandupersError error
-		err                        error
-	}{
-		{false, 0, []model.Standuper{}, errors.New("list standupers error"), errors.New("list standupers error")},
-		{false, 0, []model.Standuper{}, nil, nil},
-		{false, 0, []model.Standuper{{}}, nil, nil},
-		{true, 0, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
-		{true, 1, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
-	}
+// 	testCases := []struct {
+// 		dry                        bool
+// 		ReminderRepeatsMax         int
+// 		ChannelStandupers          []model.Standuper
+// 		ListChannelStandupersError error
+// 		err                        error
+// 	}{
+// 		{false, 0, []model.Standuper{}, errors.New("list standupers error"), errors.New("list standupers error")},
+// 		{false, 0, []model.Standuper{}, nil, nil},
+// 		{false, 0, []model.Standuper{{}}, nil, nil},
+// 		{true, 0, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
+// 		{true, 1, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
+// 	}
 
-	for _, tt := range testCases {
-		Dry = tt.dry
-		bot := New(bundle, settings, MockedDB{
-			ChannelStandupers:          tt.ChannelStandupers,
-			ListChannelStandupersError: tt.ListChannelStandupersError,
-		})
-		bot.properties.ReminderRepeatsMax = tt.ReminderRepeatsMax
-		err := bot.SendChannelNotification("Foo")
-		assert.Equal(t, tt.err, err)
-	}
-}
+// 	for _, tt := range testCases {
+// 		Dry = tt.dry
+// 		bot := New(bundle, settings, MockedDB{
+// 			ChannelStandupers:          tt.ChannelStandupers,
+// 			ListChannelStandupersError: tt.ListChannelStandupersError,
+// 		})
+// 		bot.properties.ReminderRepeatsMax = tt.ReminderRepeatsMax
+// 		err := bot.SendChannelNotification("Foo")
+// 		assert.Equal(t, tt.err, err)
+// 	}
+// }
