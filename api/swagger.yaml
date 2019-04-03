@@ -648,6 +648,14 @@ paths:
           description: "No access to resource"
         500:
           description: "Internal Error"
+  /logout:
+    post:
+      summary: "logs user out"
+      responses:
+        401:
+          description: "Unauthorzed"
+        201:
+          description: "successful operation"
 definitions:
   User:
     type: "object"

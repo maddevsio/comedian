@@ -700,3 +700,17 @@ func (api *ComedianAPI) deleteStanduper(c echo.Context) error {
 
 	return c.JSON(http.StatusNoContent, id)
 }
+
+func (api *ComedianAPI) logout(c echo.Context) error {
+	if c.Get("user") == nil {
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
+	}
+	u := c.Get("user").(*jwt.Token)
+
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+
+	log.Info("log out user with bot team id : ", teamID)
+
+	return c.JSON(http.StatusCreated, "logged out")
+}

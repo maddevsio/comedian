@@ -104,6 +104,8 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	r.PATCH("/bots/:id", api.updateBot)
 	r.POST("/bots/:id/update-password", api.changePassword)
 	r.DELETE("/bots/:id", api.deleteBot)
+
+	r.POST("/logout", api.logout)
 	return api
 }
 
