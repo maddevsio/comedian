@@ -19,6 +19,9 @@ type Storage interface {
 	//UpdateBotSettings updates bot
 	UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error)
 
+	//UpdateBotPassword updates bot pass
+	UpdateBotPassword(settings model.BotSettings) (model.BotSettings, error)
+
 	//DeleteBotSettingsByID deletes bot
 	DeleteBotSettingsByID(id int64) error
 

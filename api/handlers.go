@@ -26,8 +26,8 @@ type LoginData struct {
 
 //ChangePasswordData is used to change password
 type ChangePasswordData struct {
-	OldPassword string
-	NewPassword string
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
 }
 
 func (api *ComedianAPI) healthcheck(c echo.Context) error {
@@ -195,16 +195,11 @@ func (api *ComedianAPI) changePassword(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "current password does not match")
 	}
 
-	encriptedPass, err := crypto.Generate(data.NewPassword)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "cannot generate secure password")
-	}
+	settings.Password = data.NewPassword
 
-	settings.Password = encriptedPass
-
-	res, err := api.db.UpdateBotSettings(settings)
+	res, err := api.db.UpdateBotPassword(settings)
 	if err != nil {
-		log.WithFields(log.Fields{"settings": settings, "error": err}).Error("UpdateBotSettings failed")
+		log.WithFields(log.Fields{"settings": settings, "error": err}).Error("UpdateBotPassword failed")
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 

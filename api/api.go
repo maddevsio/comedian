@@ -241,7 +241,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	pass, err := password.Generate(26, 10, 10, false, false)
+	pass, err := password.Generate(26, 10, 0, false, false)
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	}
 
 	bot := botuser.New(api.comedian.Bundle, cp, api.comedian.DB)
-	message := fmt.Sprintf("Thank you for adding me to your workspace! Login at %v with: \n username: %v\n password: %v", api.config.UIurl, resp.TeamName, pass)
+	message := fmt.Sprintf("Thank you for adding me to your workspace! Login at %v with: \n username: `%v`\n password: `%v`", api.config.UIurl, resp.TeamName, pass)
 	bot.SendUserMessage(resp.UserID, message)
 	api.comedian.AddBot(bot)
 

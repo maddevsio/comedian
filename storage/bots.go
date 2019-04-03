@@ -80,6 +80,28 @@ func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, e
 		return settings, err
 	}
 
+	_, err = m.DB.Exec(
+		"UPDATE `bot_settings` set notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=? where id=?",
+		settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.ID,
+	)
+	if err != nil {
+		return settings, err
+	}
+	var bs model.BotSettings
+	err = m.DB.Get(&bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
+	if err != nil {
+		return settings, err
+	}
+	return bs, err
+}
+
+//UpdateBotPassword updates bot pass
+func (m *DB) UpdateBotPassword(settings model.BotSettings) (model.BotSettings, error) {
+	err := settings.Validate()
+	if err != nil {
+		return settings, err
+	}
+
 	password, err := crypto.Generate(settings.Password)
 	if err != nil {
 		return settings, err
