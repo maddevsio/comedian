@@ -484,6 +484,20 @@ func (bot *Bot) UpdateUsersList() error {
 	return nil
 }
 
+//SendMessageToSuperAdmins messages all users in workspace
+func (bot *Bot) SendMessageToSuperAdmins(message string) error {
+	users, err := bot.db.ListUsers()
+	if err != nil {
+		return err
+	}
+	for _, user := range users {
+		if user.TeamID == bot.properties.TeamID && user.Role == "super-admin" {
+			bot.SendUserMessage(user.UserID, message)
+		}
+	}
+	return nil
+}
+
 func (bot *Bot) updateUser(user slack.User) error {
 	if user.IsBot || user.Name == "slackbot" {
 		return nil
@@ -491,7 +505,20 @@ func (bot *Bot) updateUser(user slack.User) error {
 
 	u, err := bot.db.SelectUser(user.ID)
 	if err != nil && !user.Deleted {
-		if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
+		if user.IsOwner || user.IsPrimaryOwner {
+			u, err = bot.db.CreateUser(model.User{
+				TeamID:   user.TeamID,
+				UserName: user.Name,
+				UserID:   user.ID,
+				Role:     "super-admin",
+				RealName: user.RealName,
+			})
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		if user.IsAdmin {
 			u, err = bot.db.CreateUser(model.User{
 				TeamID:   user.TeamID,
 				UserName: user.Name,
@@ -504,6 +531,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 			}
 			return nil
 		}
+
 		u, err = bot.db.CreateUser(model.User{
 			TeamID:   user.TeamID,
 			UserName: user.Name,
@@ -518,8 +546,11 @@ func (bot *Bot) updateUser(user slack.User) error {
 
 	if !user.Deleted {
 		u.UserName = user.Name
-		if user.IsAdmin || user.IsOwner || user.IsPrimaryOwner {
+		if user.IsAdmin {
 			u.Role = "admin"
+		}
+		if user.IsOwner || user.IsPrimaryOwner {
+			u.Role = "super-admin"
 		}
 		u.RealName = user.RealName
 		u.TeamID = user.TeamID
