@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -256,7 +257,8 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	}
 
 	bot := botuser.New(api.comedian.Bundle, cp, api.comedian.DB)
-	bot.SendUserMessage(resp.UserID, pass)
+	message := fmt.Sprintf("Thank you for adding me to your workspace! Login at %v with: \n username: %v\n password: %v", api.config.UIurl, resp.TeamName, pass)
+	bot.SendUserMessage(resp.UserID, message)
 	api.comedian.AddBot(bot)
 
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
