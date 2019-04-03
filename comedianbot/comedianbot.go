@@ -56,6 +56,10 @@ func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 		return err
 	}
 
+	if bot.Settings().AccessToken != incomingEvent.AccessToken {
+		return errors.New("Wrong access token")
+	}
+
 	return bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
 }
 
