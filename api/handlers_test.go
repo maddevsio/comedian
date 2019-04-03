@@ -143,8 +143,8 @@ func TestListBots(t *testing.T) {
 		StatusCode     int
 		User           string
 	}{
-		{[]model.BotSettings{}, errors.New("err"), 500, "user"},
-		{[]model.BotSettings{}, errors.New("err"), 401, ""},
+		{[]model.BotSettings{}, errors.New("err"), 200, "user"},
+		{[]model.BotSettings{}, errors.New("err"), 200, ""},
 		{[]model.BotSettings{model.BotSettings{}}, nil, 200, "user"},
 	}
 
