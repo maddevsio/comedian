@@ -24,6 +24,12 @@ type LoginData struct {
 	Password string `json:"password"`
 }
 
+//ChangePasswordData is used to change password
+type ChangePasswordData struct {
+	OldPassword string
+	NewPassword string
+}
+
 func (api *ComedianAPI) healthcheck(c echo.Context) error {
 	return c.JSON(http.StatusOK, "successful operation")
 }
@@ -37,12 +43,12 @@ func (api *ComedianAPI) login(c echo.Context) error {
 
 	settings, err := api.db.GetBotSettingsByTeamName(data.TeamName)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, "username does not exist")
+		return c.JSON(http.StatusBadRequest, "wrong username or password")
 	}
 
 	err = crypto.Compare(settings.Password, data.Password)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, "wrong password")
+		return c.JSON(http.StatusBadRequest, "wrong username or password")
 	}
 
 	// Create token
@@ -152,6 +158,64 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 	settings.SetProperties(res)
 
 	return c.JSON(http.StatusOK, res)
+}
+
+func (api *ComedianAPI) changePassword(c echo.Context) error {
+
+	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	if c.Get("user") == nil {
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
+	}
+	user := c.Get("user").(*jwt.Token)
+
+	claims := user.Claims.(jwt.MapClaims)
+	botID := claims["bot_id"].(float64)
+
+	if int64(botID) != id {
+		return c.JSON(http.StatusForbidden, accessDeniedErr)
+	}
+
+	settings, err := api.db.GetBotSettings(id)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	data := &ChangePasswordData{}
+
+	if err := c.Bind(data); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	err = crypto.Compare(settings.Password, data.OldPassword)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "current password does not match")
+	}
+
+	encriptedPass, err := crypto.Generate(data.NewPassword)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "cannot generate secure password")
+	}
+
+	settings.Password = encriptedPass
+
+	res, err := api.db.UpdateBotSettings(settings)
+	if err != nil {
+		log.WithFields(log.Fields{"settings": settings, "error": err}).Error("UpdateBotSettings failed")
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	bot, err := api.comedian.SelectBot(settings.TeamName)
+	if err != nil {
+		log.WithFields(log.Fields{"bot": bot, "error": err}).Error("Could not select bot")
+		return c.JSON(http.StatusCreated, res)
+	}
+	bot.SetProperties(res)
+
+	return c.JSON(http.StatusCreated, res)
 }
 
 func (api *ComedianAPI) deleteBot(c echo.Context) error {

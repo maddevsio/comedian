@@ -36,7 +36,7 @@ paths:
     post:
       summary: "check if login & pass correspond to values in DB and return JWT token"
       consumes:
-      - "multipart/form-data"
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -224,7 +224,8 @@ paths:
           description: "No access to resource"
         500:
           description: "Internal Error"   
-  /users:
+  
+          /users:
     get:
       tags:
       - "users"
@@ -242,6 +243,33 @@ paths:
           description: "Unauthorized"
         500:
           description: "Internal Error"
+  /bots/{id}/update-password:
+    post:
+      summary: "updates bot password"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "old_password"
+        in: "formData"
+        description: "current password"
+        required: true
+        type: "string"
+      - name: "new_password"
+        in: "formData"
+        description: "desired password"
+        required: true
+        type: "string"
+      responses:
+        400:
+          description: "Invalid data"
+        403:
+          description: "Access Denied"
+        500:
+          description: "Internal Error"
+        201:
+          description: "successful operation"
   /users/{id}:
     get:
       tags:

@@ -946,7 +946,7 @@ func TestLogin(t *testing.T) {
 		Error       error
 		StatusCode  int
 	}{
-		{model.BotSettings{}, map[string]string{"teamname": "team", "password": "root"}, errors.New("err"), 404},
+		{model.BotSettings{}, map[string]string{"teamname": "team", "password": "root"}, errors.New("err"), 400},
 		{model.BotSettings{Password: "$2a$10$paoqyMUatSfoQdVbOfD9PeVAFaa5o1oNou6OPNwR2hv2ikweVdnCC"}, map[string]string{"teamname": "testComedian", "password": "testComedian"}, nil, 200},
 		{model.BotSettings{}, map[string]string{}, errors.New("err"), 400},
 		{model.BotSettings{Password: "$2a$10$paoqyMUatSfoQdVbOfD9PeVAFaa5o1oNou6OPNwR2hv2ikweVdnCC"}, map[string]string{"teamname": "testComedian", "password": "team"}, nil, 400},
