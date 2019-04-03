@@ -16,11 +16,11 @@ func TestCreateBotSettings(t *testing.T) {
 	mysql, err := New(c)
 	assert.NoError(t, err)
 
-	bot, err := mysql.CreateBotSettings("", "", "", "")
+	bot, err := mysql.CreateBotSettings("", "", "", "", "")
 	assert.Error(t, err)
 	assert.Equal(t, int64(0), bot.ID)
 
-	bot, err = mysql.CreateBotSettings("token", "", "teamID", "foo")
+	bot, err = mysql.CreateBotSettings("token", "pass", "", "teamID", "foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 
@@ -36,7 +36,7 @@ func TestBotSettings(t *testing.T) {
 	_, err = mysql.GetAllBotSettings()
 	assert.NoError(t, err)
 
-	bot, err := mysql.CreateBotSettings("token", "", "teamID", "foo")
+	bot, err := mysql.CreateBotSettings("token", "pass", "", "teamID", "foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 
@@ -63,7 +63,7 @@ func TestUpdateAndDeleteBotSettings(t *testing.T) {
 	mysql, err := New(c)
 	assert.NoError(t, err)
 
-	bot, err := mysql.CreateBotSettings("token", "", "teamID", "foo")
+	bot, err := mysql.CreateBotSettings("token", "pass", "", "teamID", "foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 	assert.Equal(t, "en_US", bot.Language)

@@ -4,7 +4,7 @@ import "gitlab.com/team-monitoring/comedian/model"
 
 type Storage interface {
 	//CreateBotSettings creates bot properties for the newly created bot
-	CreateBotSettings(token, userID, teamID, teamName string) (model.BotSettings, error)
+	CreateBotSettings(token, password, userID, teamID, teamName string) (model.BotSettings, error)
 
 	//GetAllBotSettings returns all bots
 	GetAllBotSettings() ([]model.BotSettings, error)

@@ -11,6 +11,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/botuser"
 	"gitlab.com/team-monitoring/comedian/comedianbot"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
@@ -237,7 +238,8 @@ func TestUpdateBot(t *testing.T) {
 		}}
 
 		go fakeComedian.StartBots()
-		fakeComedian.AddBot(model.BotSettings{ID: int64(1)})
+		bot := botuser.New(nil, model.BotSettings{ID: int64(1)}, nil)
+		fakeComedian.AddBot(bot)
 		e := echo.New()
 		f := make(url.Values)
 		for k, v := range tt.formValues {
@@ -289,7 +291,8 @@ func TestDeleteBot(t *testing.T) {
 		}}
 
 		go fakeComedian.StartBots()
-		fakeComedian.AddBot(model.BotSettings{ID: int64(1)})
+		bot := botuser.New(nil, model.BotSettings{ID: int64(1)}, nil)
+		fakeComedian.AddBot(bot)
 
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodDelete, "/bots", strings.NewReader(""))

@@ -11,9 +11,12 @@ import (
 	"github.com/labstack/echo/middleware"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
+	"github.com/sethvargo/go-password/password"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/botuser"
 	"gitlab.com/team-monitoring/comedian/comedianbot"
 	"gitlab.com/team-monitoring/comedian/config"
+	"gitlab.com/team-monitoring/comedian/crypto"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
 	"gitlab.com/team-monitoring/comedian/utils"
@@ -236,13 +239,25 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
+	pass, err := password.Generate(26, 10, 10, false, false)
+	if err != nil {
+		return err
+	}
+
+	encriptedPass, err := crypto.Generate(pass)
+	if err != nil {
+		return err
+	}
+
+	cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, encriptedPass, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
 	if err != nil {
 		log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
 		return err
 	}
 
-	api.comedian.AddBot(cp)
+	bot := botuser.New(api.comedian.Bundle, cp, api.comedian.DB)
+	bot.SendUserMessage(resp.UserID, pass)
+	api.comedian.AddBot(bot)
 
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 }

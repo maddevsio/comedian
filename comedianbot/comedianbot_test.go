@@ -48,8 +48,8 @@ func TestBots(t *testing.T) {
 
 	assert.Equal(t, 0, len(comedian.bots))
 
-	comedian.AddBot(botSettings)
-	assert.NoError(t, err)
+	bot := botuser.New(nil, botSettings, nil)
+	comedian.AddBot(bot)
 	assert.Equal(t, 1, len(comedian.bots))
 
 	_, err = comedian.SelectBot("randombot")
@@ -78,9 +78,15 @@ func TestHandleEvent(t *testing.T) {
 	})
 	assert.Equal(t, errors.New("no bot found to implement the request"), err)
 
-	comedian.AddBot(model.BotSettings{
+	botSettings := model.BotSettings{
 		TeamID: "testTeam",
-	})
+	}
+
+	assert.Equal(t, 0, len(comedian.bots))
+
+	bot := botuser.New(nil, botSettings, nil)
+
+	comedian.AddBot(bot)
 	assert.Equal(t, 1, len(comedian.bots))
 
 	err = comedian.HandleEvent(model.ServiceEvent{

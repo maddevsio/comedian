@@ -9,12 +9,7 @@ import (
 )
 
 //CreateBotSettings creates bot properties for the newly created bot
-func (m *DB) CreateBotSettings(token, userID, teamID, teamName string) (model.BotSettings, error) {
-	password, err := crypto.Generate(teamName)
-	if err != nil {
-		return model.BotSettings{}, err
-	}
-
+func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string) (model.BotSettings, error) {
 	bs := model.BotSettings{
 		NotifierInterval:   30,
 		Language:           "en_US",
@@ -27,7 +22,7 @@ func (m *DB) CreateBotSettings(token, userID, teamID, teamName string) (model.Bo
 		Password:           password,
 	}
 
-	err = bs.Validate()
+	err := bs.Validate()
 	if err != nil {
 		return bs, err
 	}

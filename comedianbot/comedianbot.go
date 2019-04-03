@@ -13,9 +13,9 @@ import (
 // Comedian is the main struct of the project
 type Comedian struct {
 	bots     []*botuser.Bot
-	db       storage.Storage
+	DB       storage.Storage
 	botsChan chan *botuser.Bot
-	bundle   *i18n.Bundle
+	Bundle   *i18n.Bundle
 }
 
 //New makes new Comedian
@@ -23,20 +23,21 @@ func New(bundle *i18n.Bundle, db *storage.DB) *Comedian {
 	comedian := Comedian{}
 	comedian.bots = []*botuser.Bot{}
 	comedian.botsChan = make(chan *botuser.Bot)
-	comedian.db = db
-	comedian.bundle = bundle
+	comedian.DB = db
+	comedian.Bundle = bundle
 	return &comedian
 }
 
 //SetBots populates Comedian with bots
 func (comedian Comedian) SetBots() error {
-	settings, err := comedian.db.GetAllBotSettings()
+	settings, err := comedian.DB.GetAllBotSettings()
 	if err != nil {
 		return err
 	}
 
 	for _, s := range settings {
-		comedian.AddBot(s)
+		bot := botuser.New(comedian.Bundle, s, comedian.DB)
+		comedian.AddBot(bot)
 	}
 	return nil
 }
@@ -91,7 +92,6 @@ func (comedian *Comedian) SelectBot(team string) (*botuser.Bot, error) {
 }
 
 //AddBot sends Bot to Comedian Channel where Bot can start its Work
-func (comedian *Comedian) AddBot(settings model.BotSettings) {
-	bot := botuser.New(comedian.bundle, settings, comedian.db)
+func (comedian *Comedian) AddBot(bot *botuser.Bot) {
 	comedian.botsChan <- bot
 }
