@@ -70,6 +70,7 @@ func (bot *Bot) Start() {
 			select {
 			case <-ticker:
 				bot.NotifyChannels(time.Now())
+				bot.SetStandupsCounterToZero()
 				if Dry {
 					break
 				}
@@ -85,6 +86,22 @@ func (bot *Bot) Start() {
 //Stop closes bot QuitChan making bot goroutine to exit
 func (bot *Bot) Stop() {
 	close(bot.QuitChan)
+}
+
+func (bot *Bot) SetStandupsCounterToZero() error {
+	if (time.Now().Hour() != 23) && (time.Now().Minute() != 59) {
+		return nil
+	}
+	log.Info("Started to set submitted standups to 0 for all standupers")
+	standupers, err := bot.db.ListStandupersByTeamID(bot.properties.TeamID)
+	if err != nil {
+		return err
+	}
+	for _, standuper := range standupers {
+		standuper.SubmittedStandupToday = false
+		bot.db.UpdateStanduper(standuper)
+	}
+	return nil
 }
 
 //HandleCallBackEvent handles different callback events from Slack Event Subscription list
@@ -158,7 +175,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
-	if standuper.SubmittedStandupToday {
+	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.User) {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay, err := translation.Translate(payload)
 		if err != nil {
@@ -231,7 +248,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
-	if standuper.SubmittedStandupToday {
+	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.SubMessage.User) {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay, err := translation.Translate(payload)
 		if err != nil {
@@ -287,6 +304,20 @@ func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
 		return err
 	}
 	return bot.db.DeleteStandup(standup.ID)
+}
+
+func (bot *Bot) submittedStandupToday(userID string) bool {
+	log.Info("Start checking if user submitted standup today!", userID)
+	standup, err := bot.db.SelectLatestStandupByUser(userID)
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+	log.Info("standup.Modified.Day() == time.Now().Day() ", standup.Modified.Day() == time.Now().Day())
+	if standup.Modified.Day() == time.Now().Day() {
+		return true
+	}
+	return false
 }
 
 func (bot *Bot) analizeStandup(message string) string {

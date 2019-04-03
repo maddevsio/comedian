@@ -75,6 +75,13 @@ func (m *DB) ListChannelStandupers(channelID string) ([]model.Standuper, error) 
 	return items, err
 }
 
+// ListStandupersByTeamID returns array of standupers which belongs to one team
+func (m *DB) ListStandupersByTeamID(teamID string) ([]model.Standuper, error) {
+	items := []model.Standuper{}
+	err := m.DB.Select(&items, "SELECT * FROM `channel_members` WHERE team_id=?", teamID)
+	return items, err
+}
+
 // DeleteStanduper deletes channel_members entry from database
 func (m *DB) DeleteStanduper(id int64) error {
 	_, err := m.DB.Exec("DELETE FROM `channel_members` WHERE id=?", id)

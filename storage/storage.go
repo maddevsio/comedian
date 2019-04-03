@@ -58,6 +58,9 @@ type Storage interface {
 	// ListStandupers returns array of standup entries from database
 	ListStandupers() ([]model.Standuper, error)
 
+	// ListStandupers returns array of standup entries from database
+	ListStandupersByTeamID(string) ([]model.Standuper, error)
+
 	//GetStanduper returns a standuper
 	GetStanduper(id int64) (model.Standuper, error)
 
@@ -69,6 +72,8 @@ type Storage interface {
 
 	// CreateStandup creates standup entry in database
 	CreateStandup(s model.Standup) (model.Standup, error)
+
+	SelectLatestStandupByUser(string) (model.Standup, error)
 
 	// UpdateStandup updates standup entry in database
 	UpdateStandup(s model.Standup) (model.Standup, error)

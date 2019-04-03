@@ -27,13 +27,15 @@ type MockedDB struct {
 	UpdatedChannel       model.Channel
 	UpdatedChannelError  error
 
-	CreatedStandup                model.Standup
-	CreateStandupError            error
-	UpdatedStandup                model.Standup
-	UpdateStandupError            error
-	SelectedStandupByMessageTS    model.Standup
-	SelectStandupByMessageTSError error
-	DeleteStandupError            error
+	CreatedStandup                   model.Standup
+	CreateStandupError               error
+	UpdatedStandup                   model.Standup
+	UpdateStandupError               error
+	SelectedStandupByMessageTS       model.Standup
+	SelectStandupByMessageTSError    error
+	DeleteStandupError               error
+	SelectedLatestStandupByUser      model.Standup
+	SelectedLatestStandupByUserError error
 
 	CreatedStanduper           model.Standuper
 	CreateStanduperError       error
@@ -88,6 +90,10 @@ func (m MockedDB) UpdateChannel(model.Channel) (model.Channel, error) {
 
 func (m MockedDB) CreateStandup(model.Standup) (model.Standup, error) {
 	return m.CreatedStandup, m.CreateStandupError
+}
+
+func (m MockedDB) SelectLatestStandupByUser(string) (model.Standup, error) {
+	return m.SelectedLatestStandupByUser, m.SelectedLatestStandupByUserError
 }
 
 func (m MockedDB) UpdateStandup(model.Standup) (model.Standup, error) {

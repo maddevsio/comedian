@@ -67,6 +67,16 @@ func (m *DB) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
 	return s, nil
 }
 
+// SelectLatestStandupByUser selects standup entry from database filtered by user
+func (m *DB) SelectLatestStandupByUser(userID string) (model.Standup, error) {
+	var s model.Standup
+	err := m.DB.Get(&s, "select * from standups where user_id=? order by id desc limit 1", userID)
+	if err != nil {
+		return s, err
+	}
+	return s, nil
+}
+
 // ListStandups returns array of standup entries from database
 func (m *DB) ListStandups() ([]model.Standup, error) {
 	items := []model.Standup{}
