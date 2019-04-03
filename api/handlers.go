@@ -69,18 +69,19 @@ func (api *ComedianAPI) login(c echo.Context) error {
 }
 
 func (api *ComedianAPI) listBots(c echo.Context) error {
-	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, missingTokenErr)
-	}
+	return nil
+	// if c.Get("user") == nil {
+	// 	return c.JSON(http.StatusUnauthorized, missingTokenErr)
+	// }
 
-	bots := make([]model.BotSettings, 0)
-	bots, err := api.db.GetAllBotSettings()
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("GetAllBotSettings failed")
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
+	// bots := make([]model.BotSettings, 0)
+	// bots, err := api.db.GetAllBotSettings()
+	// if err != nil {
+	// 	log.WithFields(log.Fields{"error": err}).Error("GetAllBotSettings failed")
+	// 	return c.JSON(http.StatusInternalServerError, err.Error())
+	// }
 
-	return c.JSON(http.StatusOK, bots)
+	// return c.JSON(http.StatusOK, bots)
 }
 
 func (api *ComedianAPI) getBot(c echo.Context) error {
