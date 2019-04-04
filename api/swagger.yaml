@@ -41,12 +41,12 @@ paths:
       - "application/json"
       parameters:
       - name: "teamname"
-        in: "formData"
+        in: "query"
         description: "team name to login to"
         required: true
         type: "string"
       - name: "password"
-        in: "formData"
+        in: "query"
         description: "password of the team"
         required: true
         type: "string"
@@ -155,17 +155,17 @@ paths:
         required: true
         type: "integer"
       - name: "password"
-        in: "formData"
+        in: "query"
         description: "Update password of the bot"
         required: true
         type: "string"
       - name: "language"
-        in: "formData"
+        in: "query"
         description: "Update language of the bot"
         required: true
         type: "string"
       - name: "notifier_interval"
-        in: "formData"
+        in: "query"
         description: "Update notifier interval of the bot"
         required: true
         type: "integer"
@@ -173,14 +173,14 @@ paths:
         minimum: 1
         format: "int"
       - name: "reminder_time"
-        in: "formData"
+        in: "query"
         description: "Update reminder time (in minutes) of the bot"
         required: true
         type: "integer"
         minimum: 1
         format: "int"
       - name: "reminder_repeat_max"
-        in: "formData"
+        in: "query"
         description: "Update maximum reminder attempts of the bot"
         required: true
         type: "integer"
@@ -224,25 +224,6 @@ paths:
           description: "No access to resource"
         500:
           description: "Internal Error"   
-  
-          /users:
-    get:
-      tags:
-      - "users"
-      summary: "Returns all users"
-      description: "Returns a map of user objects"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
-        401: 
-          description: "Unauthorized"
-        500:
-          description: "Internal Error"
   /bots/{id}/update-password:
     post:
       summary: "updates bot password"
@@ -251,13 +232,19 @@ paths:
       produces:
       - "application/json"
       parameters:
+      - name: "id"
+        in: "path"
+        description: "Bot id to change password for"
+        required: true
+        type: "integer"
+        format: "int"
       - name: "old_password"
-        in: "formData"
+        in: "query"
         description: "current password"
         required: true
         type: "string"
       - name: "new_password"
-        in: "formData"
+        in: "query"
         description: "desired password"
         required: true
         type: "string"
@@ -313,7 +300,7 @@ paths:
         required: true
         type: "integer"
       - name: "role"
-        in: "formData"
+        in: "query"
         description: "User role"
         required: true
         type: "string"
@@ -390,7 +377,7 @@ paths:
         required: true
         type: "integer"
       - name: "channel_standup_time"
-        in: "formData"
+        in: "query"
         description: "Update standuptime of the channel"
         required: true
         type: "integer"
@@ -498,13 +485,13 @@ paths:
         required: true
         type: "integer"
       - name: "member_standup_time"
-        in: "formData"
+        in: "query"
         description: "Update standup time of the standuper"
         required: true
         type: "integer"
         format: "bigint"
       - name: "role_in_channel"
-        in: "formData"
+        in: "query"
         description: "Update role in channel of the standuper"
         required: true
         type: "string"
@@ -606,7 +593,7 @@ paths:
         required: true
         type: "integer"
       - name: "comment"
-        in: "formData"
+        in: "query"
         description: "Update standup body"
         required: true
         type: "string"
