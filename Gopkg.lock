@@ -82,6 +82,14 @@
   version = "v1.4.1"
 
 [[projects]]
+  branch = "v2"
+  digest = "1:b6539350da50de0d3c9b83ae587c06b89be9cb5750443bdd887f1c4077f57776"
+  name = "github.com/go-validator/validator"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "135c24b11c19e52befcae2ec3fca5d9b78c4e98e"
+
+[[projects]]
   digest = "1:f7463b67871bf7fe475e2c69fb0d21ead07de5188b8d7f8abf8fc961965ed841"
   name = "github.com/gorilla/schema"
   packages = ["."]
@@ -330,6 +338,7 @@
     "github.com/evalphobia/logrus_sentry",
     "github.com/getsentry/raven-go",
     "github.com/go-sql-driver/mysql",
+    "github.com/go-validator/validator",
     "github.com/gorilla/schema",
     "github.com/jarcoal/httpmock",
     "github.com/jmoiron/sqlx",

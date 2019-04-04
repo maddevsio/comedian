@@ -7,6 +7,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/go-validator/validator"
 	"github.com/labstack/echo"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/crypto"
@@ -26,8 +27,8 @@ type LoginData struct {
 
 //ChangePasswordData is used to change password
 type ChangePasswordData struct {
-	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password"`
+	OldPassword string `json:"old_password" validate:"min=8,max=40,regexp=^[a-zA-Z0-9]*$"`
+	NewPassword string `json:"new_password" validate:"min=8,max=40,regexp=^[a-zA-Z0-9]*$"`
 }
 
 func (api *ComedianAPI) healthcheck(c echo.Context) error {
@@ -196,9 +197,13 @@ func (api *ComedianAPI) changePassword(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	data := &ChangePasswordData{}
+	data := ChangePasswordData{}
 
-	if err := c.Bind(data); err != nil {
+	if err := c.Bind(&data); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	if err = validator.Validate(data); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
