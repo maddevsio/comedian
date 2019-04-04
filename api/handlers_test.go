@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
@@ -202,7 +203,7 @@ func TestGetBot(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"bot_id": float64(tt.BotId)},
+			Claims: jwt.MapClaims{"bot_id": float64(tt.BotId), "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.getBot(c)) {
@@ -256,7 +257,7 @@ func TestUpdateBot(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"bot_id": float64(tt.BotID)},
+			Claims: jwt.MapClaims{"bot_id": float64(tt.BotID), "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.updateBot(c)) {
@@ -303,7 +304,7 @@ func TestDeleteBot(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"bot_id": float64(tt.BotID)},
+			Claims: jwt.MapClaims{"bot_id": float64(tt.BotID), "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.deleteBot(c)) {
@@ -338,7 +339,7 @@ func TestListStandups(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": "foo", "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.listStandups(c)) {
@@ -379,7 +380,7 @@ func TestGetStandup(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.getStandup(c)) {
@@ -429,7 +430,7 @@ func TestUpdateStandup(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.updateStandup(c)) {
@@ -471,7 +472,7 @@ func TestDeleteStandup(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.deleteStandup(c)) {
@@ -506,7 +507,7 @@ func TestListUsers(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": "foo", "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.listUsers(c)) {
@@ -547,7 +548,7 @@ func TestGetUser(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.UserName, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.getUser(c)) {
@@ -596,7 +597,7 @@ func TestUpdateUser(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.UserName, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.updateUser(c)) {
@@ -631,7 +632,7 @@ func TestListChannels(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": "foo"},
+			Claims: jwt.MapClaims{"team_id": "foo", "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.listChannels(c)) {
@@ -672,7 +673,7 @@ func TestGetChannel(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.getChannel(c)) {
@@ -721,7 +722,7 @@ func TestUpdateChannel(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.updateChannel(c)) {
@@ -762,7 +763,7 @@ func TestDeleteChannel(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.deleteChannel(c)) {
@@ -798,7 +799,7 @@ func TestListStandupers(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.listStandupers(c)) {
@@ -839,7 +840,7 @@ func TestGetStanduper(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.getStanduper(c)) {
@@ -888,7 +889,7 @@ func TestUpdateStanduper(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.updateStanduper(c)) {
@@ -929,7 +930,7 @@ func TestDeleteStanduper(t *testing.T) {
 		c.SetParamValues(tt.ID)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"team_id": tt.TeamID},
+			Claims: jwt.MapClaims{"team_id": tt.TeamID, "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.deleteStanduper(c)) {

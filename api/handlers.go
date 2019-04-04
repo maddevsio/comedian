@@ -60,7 +60,7 @@ func (api *ComedianAPI) login(c echo.Context) error {
 	claims["team_id"] = settings.TeamID
 	claims["team_name"] = settings.TeamName
 	claims["bot_id"] = settings.ID
-	claims["expire"] = time.Now().Add(time.Hour * 72).Unix() // do we need it?
+	claims["expire"] = time.Now().Add(time.Minute * 30).Unix()
 
 	// Generate encoded token and send it as response.
 	t, err := token.SignedString([]byte(os.Getenv("COMEDIAN_SLACK_CLIENT_SECRET")))
@@ -105,6 +105,10 @@ func (api *ComedianAPI) getBot(c echo.Context) error {
 
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	if int64(botID) != id {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
@@ -131,6 +135,10 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	if int64(botID) != id {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
@@ -175,6 +183,10 @@ func (api *ComedianAPI) changePassword(c echo.Context) error {
 
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	if int64(botID) != id {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
@@ -232,6 +244,11 @@ func (api *ComedianAPI) deleteBot(c echo.Context) error {
 
 	claims := user.Claims.(jwt.MapClaims)
 	botID := claims["bot_id"].(float64)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
+
 	if int64(botID) != id {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -267,6 +284,10 @@ func (api *ComedianAPI) listStandups(c echo.Context) error {
 
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	standups, err := api.db.ListStandups()
 	if err != nil {
@@ -296,14 +317,18 @@ func (api *ComedianAPI) getStandup(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err.Error())
 	}
 
-	claims := user.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if standup.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -321,6 +346,12 @@ func (api *ComedianAPI) updateStandup(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
@@ -331,8 +362,6 @@ func (api *ComedianAPI) updateStandup(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	claims := user.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if standup.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -356,14 +385,18 @@ func (api *ComedianAPI) deleteStandup(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	claims := user.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if standup.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -386,6 +419,10 @@ func (api *ComedianAPI) listUsers(c echo.Context) error {
 
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	users, err := api.db.ListUsers()
 	if err != nil {
@@ -414,14 +451,18 @@ func (api *ComedianAPI) getUser(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	user, err := api.db.GetUser(id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err.Error())
 	}
 
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if user.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -439,6 +480,12 @@ func (api *ComedianAPI) updateUser(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	user, err := api.db.GetUser(id)
 	if err != nil {
@@ -449,8 +496,6 @@ func (api *ComedianAPI) updateUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if user.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -473,6 +518,10 @@ func (api *ComedianAPI) listChannels(c echo.Context) error {
 
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	channels, err := api.db.ListChannels()
 	if err != nil {
@@ -501,14 +550,18 @@ func (api *ComedianAPI) getChannel(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err.Error())
 	}
 
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if channel.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -526,6 +579,12 @@ func (api *ComedianAPI) updateChannel(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
@@ -536,8 +595,6 @@ func (api *ComedianAPI) updateChannel(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if channel.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -561,6 +618,12 @@ func (api *ComedianAPI) deleteChannel(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
@@ -568,8 +631,6 @@ func (api *ComedianAPI) deleteChannel(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if channel.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -591,6 +652,10 @@ func (api *ComedianAPI) listStandupers(c echo.Context) error {
 
 	claims := user.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	standupers, err := api.db.ListStandupers()
 	if err != nil {
@@ -619,14 +684,18 @@ func (api *ComedianAPI) getStanduper(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err.Error())
 	}
 
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if standuper.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -644,6 +713,12 @@ func (api *ComedianAPI) updateStanduper(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
@@ -654,8 +729,6 @@ func (api *ComedianAPI) updateStanduper(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if standuper.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -679,6 +752,12 @@ func (api *ComedianAPI) deleteStanduper(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, missingTokenErr)
 	}
 	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
@@ -686,8 +765,6 @@ func (api *ComedianAPI) deleteStanduper(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	if standuper.TeamID != teamID {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
@@ -709,6 +786,10 @@ func (api *ComedianAPI) logout(c echo.Context) error {
 
 	claims := u.Claims.(jwt.MapClaims)
 	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
 
 	log.Info("log out user with bot team id : ", teamID)
 
