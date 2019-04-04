@@ -706,9 +706,6 @@ definitions:
         type: "string"
   Bot:
     type: "object"
-    required:
-    - "name"
-    - "photoUrls"
     properties:
       id:
         type: "integer"
