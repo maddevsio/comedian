@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/gorilla/schema"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/nlopes/slack"
@@ -188,45 +187,37 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 }
 
 func (api *ComedianAPI) handleCommands(c echo.Context) error {
-	var form model.FullSlackForm
-
-	urlValues, err := c.FormParams()
+	slachCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"err": err})).Warning("handleCommands fails to access FormParams")
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	decoder := schema.NewDecoder()
-	decoder.IgnoreUnknownKeys(true)
-
-	if err := decoder.Decode(&form, urlValues); err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"urlValues": urlValues, "err": err})).Warning("handleCommands fails to decode urlValues")
-		return c.String(http.StatusOK, err.Error())
+	if !slachCommand.ValidateToken(api.config.SlackVerificationToken) {
+		return c.String(http.StatusBadRequest, "could not understand request")
 	}
 
-	if form.Command != "/comedian" {
-		log.WithFields(log.Fields(map[string]interface{}{"form": form})).Warning("Command is not /comedian")
+	if slachCommand.Command != "/comedian" {
+		log.WithFields(log.Fields(map[string]interface{}{"slachCommand": slachCommand})).Warning("Command is not /comedian")
 		return c.String(http.StatusBadRequest, "slash command should be `/comedian`")
 	}
 
-	bot, err := api.comedian.SelectBot(form.TeamID)
+	bot, err := api.comedian.SelectBot(slachCommand.TeamID)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"form": form, "error": err})).Error("handleCommands failed on Select Bot")
+		log.WithFields(log.Fields(map[string]interface{}{"slachCommand": slachCommand, "error": err})).Error("handleCommands failed on Select Bot")
 		return err
 	}
 
-	accessLevel, err := bot.GetAccessLevel(form.UserID, form.ChannelID)
+	accessLevel, err := bot.GetAccessLevel(slachCommand.UserID, slachCommand.ChannelID)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"bot": bot, "form": form, "error": err})).Error("handleCommands failed on GetAccessLevel")
+		log.WithFields(log.Fields(map[string]interface{}{"bot": bot, "slachCommand": slachCommand, "error": err})).Error("handleCommands failed on GetAccessLevel")
 		return err
 	}
 
-	command, params := utils.CommandParsing(form.Text)
+	command, params := utils.CommandParsing(slachCommand.Text)
 
-	message := bot.ImplementCommands(form.ChannelID, command, params, accessLevel)
+	message := bot.ImplementCommands(slachCommand.ChannelID, command, params, accessLevel)
 
 	return c.String(http.StatusOK, message)
-
 }
 
 func (api *ComedianAPI) auth(c echo.Context) error {

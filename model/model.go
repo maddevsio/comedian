@@ -63,18 +63,6 @@ type BotSettings struct {
 	Password           string `db:"password" json:"password" `
 }
 
-// FullSlackForm struct used for parsing full payload from slack
-type FullSlackForm struct {
-	Command     string `schema:"command"`
-	Text        string `schema:"text"`
-	ChannelID   string `schema:"channel_id"`
-	ChannelName string `schema:"channel_name"`
-	UserID      string `schema:"user_id"`
-	UserName    string `schema:"user_name"`
-	TeamID      string `schema:"team_id"`
-	TeamDomain  string `schema:"team_domain"`
-}
-
 // ServiceEvent event coming from services
 type ServiceEvent struct {
 	TeamName    string             `json:"team_name"`
