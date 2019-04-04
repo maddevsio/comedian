@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -222,10 +221,6 @@ func (api *ComedianAPI) changePassword(c echo.Context) error {
 		return c.JSON(http.StatusCreated, res)
 	}
 	bot.SetProperties(res)
-
-	message := fmt.Sprintf("Password for Comedian Admin Pannel was changed! Login at %v with: \n username: `%v`\n password: `%v`", api.config.UIurl, settings.TeamName, data.NewPassword)
-
-	bot.SendMessageToSuperAdmins(message)
 
 	return c.JSON(http.StatusCreated, res)
 }
