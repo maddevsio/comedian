@@ -2,7 +2,6 @@ package botuser
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 	"sync"
 	"time"
@@ -188,7 +187,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 			}).Error("Failed to translate message!")
 		}
 		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
-		return errors.New("Fail to save message as standup. User already submitted standup today")
+		return nil
 	}
 	standup, err := bot.db.CreateStandup(model.Standup{
 		TeamID:    msg.Team,

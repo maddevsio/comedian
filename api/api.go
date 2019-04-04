@@ -133,7 +133,9 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	// FIXME Need to check token, if not fit, deny request
+	if incomingEvent.Token != api.config.SlackVerificationToken {
+		return c.JSON(http.StatusForbidden, "verification token does not match")
+	}
 
 	if incomingEvent.Type == slackevents.URLVerification {
 		return c.String(http.StatusOK, incomingEvent.Challenge)
