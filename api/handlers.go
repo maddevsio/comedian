@@ -27,7 +27,7 @@ type LoginData struct {
 
 //ChangePasswordData is used to change password
 type ChangePasswordData struct {
-	OldPassword string `json:"old_password" validate:"min=8,max=40,regexp=^[a-zA-Z0-9]*$"`
+	OldPassword string `json:"old_password"`
 	NewPassword string `json:"new_password" validate:"min=8,max=40,regexp=^[a-zA-Z0-9]*$"`
 }
 
