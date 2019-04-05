@@ -23,6 +23,7 @@ var (
 )
 
 const (
+	superAdminAccess  = 1
 	adminAccess       = 2
 	pmAccess          = 3
 	regularUserAccess = 4

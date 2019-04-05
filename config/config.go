@@ -13,6 +13,7 @@ type Config struct {
 	SlackClientSecret      string `envconfig:"SLACK_CLIENT_SECRET" required:"false"`
 	SlackVerificationToken string `envconfig:"COMEDIAN_VERIFICATION_TOKEN" required:"false"`
 	UIurl                  string `envconfig:"COMEDIAN_UI_URL" required:"false"`
+	OwnerSlackTeamID       string `envconfig:"OWNER_SLACK_TEAM_ID" required:"false"`
 }
 
 // Get method processes env variables and fills Config struct

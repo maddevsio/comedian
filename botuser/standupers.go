@@ -444,7 +444,7 @@ func (bot *Bot) listAdmins() string {
 	}
 	var userNames []string
 	for _, user := range users {
-		if user.IsAdmin() {
+		if user.IsAdmin() && user.TeamID == bot.properties.TeamID {
 			userNames = append(userNames, "<@"+user.UserName+">")
 		}
 	}
@@ -490,6 +490,7 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 		}
 		userID, _ := utils.SplitUser(u)
 
+		// need to make sure people have different userID across teams
 		member, err := bot.db.FindStansuperByUserID(userID, channelID)
 		if err != nil {
 			log.Errorf("rest: FindStansuperByUserID failed: %v\n", err)

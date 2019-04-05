@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/team-monitoring/comedian/botuser"
 	"gitlab.com/team-monitoring/comedian/comedianbot"
+	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
 )
@@ -138,20 +140,23 @@ func TestHealthCheck(t *testing.T) {
 
 /* Bots functionaliy */
 func TestListBots(t *testing.T) {
-
+	os.Setenv("COMEDIAN_OWNER_SLACK_TEAM_ID", "foo")
 	testCases := []struct {
 		AllBotSettings []model.BotSettings
 		Error          error
 		StatusCode     int
 		User           string
 	}{
-		{[]model.BotSettings{}, errors.New("err"), 200, "user"},
-		{[]model.BotSettings{}, errors.New("err"), 200, ""},
+		{[]model.BotSettings{}, errors.New("err"), 500, "user"},
+		{[]model.BotSettings{}, errors.New("err"), 401, ""},
 		{[]model.BotSettings{model.BotSettings{}}, nil, 200, "user"},
 	}
 
+	c, err := config.Get()
+	assert.NoError(t, err)
+
 	for _, tt := range testCases {
-		r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
+		r := &ComedianAPI{echo: nil, comedian: nil, config: c, db: MockedDB{
 			AllBotSettings: tt.AllBotSettings,
 			Error:          tt.Error,
 		}}
@@ -162,7 +167,7 @@ func TestListBots(t *testing.T) {
 		c := e.NewContext(req, rec)
 		c.Set(tt.User, &jwt.Token{
 			Raw:    "token",
-			Claims: jwt.MapClaims{"bot_id": float64(1)},
+			Claims: jwt.MapClaims{"team_id": "foo", "expire": float64(time.Now().Add(time.Minute * 1).Unix())},
 		})
 
 		if assert.NoError(t, r.listBots(c)) {

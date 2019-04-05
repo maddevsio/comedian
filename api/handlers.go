@@ -76,19 +76,31 @@ func (api *ComedianAPI) login(c echo.Context) error {
 }
 
 func (api *ComedianAPI) listBots(c echo.Context) error {
-	return nil
-	// if c.Get("user") == nil {
-	// 	return c.JSON(http.StatusUnauthorized, missingTokenErr)
-	// }
+	if c.Get("user") == nil {
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
+	}
+	user := c.Get("user").(*jwt.Token)
 
-	// bots := make([]model.BotSettings, 0)
-	// bots, err := api.db.GetAllBotSettings()
-	// if err != nil {
-	// 	log.WithFields(log.Fields{"error": err}).Error("GetAllBotSettings failed")
-	// 	return c.JSON(http.StatusInternalServerError, err.Error())
-	// }
+	claims := user.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
 
-	// return c.JSON(http.StatusOK, bots)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
+
+	if teamID != api.config.OwnerSlackTeamID {
+		return c.JSON(http.StatusForbidden, "Not allowed action for you")
+	}
+
+	bots := make([]model.BotSettings, 0)
+	bots, err := api.db.GetAllBotSettings()
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("GetAllBotSettings failed")
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, bots)
 }
 
 func (api *ComedianAPI) getBot(c echo.Context) error {
