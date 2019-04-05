@@ -131,7 +131,6 @@ func (bot *Bot) SendChannelNotification(channelID string) error {
 		if standuper.ChannelID == channelID && !standuper.SubmittedStandupToday {
 			nonReporters = append(nonReporters, standuper)
 		}
-
 	}
 
 	if len(nonReporters) == 0 {
@@ -169,6 +168,7 @@ func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, r
 	for _, st := range nonReporters {
 		standuper, err := bot.db.GetStanduper(st.ID)
 		if err != nil {
+			log.Error("notifyNotAll failed at GetStanduper: ", err)
 			continue
 		}
 		if !standuper.SubmittedStandupToday {
@@ -177,6 +177,7 @@ func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, r
 	}
 
 	if len(roundNonReporters) == 0 {
+		log.Info("No non reporters in notifyNotAll")
 		return nil
 	}
 
@@ -192,7 +193,10 @@ func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, r
 		}).Error("Failed to translate message!")
 	}
 
-	bot.SendMessage(channelID, tagNonReporters, nil)
+	err = bot.SendMessage(channelID, tagNonReporters, nil)
+	if err != nil {
+		log.Error("SendMessage in notify not all failed: ", err)
+	}
 	*repeats++
 	err = errors.New("Continue backoff")
 	return err
