@@ -254,7 +254,10 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	bot := botuser.New(api.comedian.Bundle, cp, api.comedian.DB)
 	message := fmt.Sprintf("Thank you for adding me to your workspace! Login at %v with: \n username: `%v`\n password: `%v`", api.config.UIurl, resp.TeamName, pass)
-	bot.SendUserMessage(resp.UserID, message)
+	err = bot.SendUserMessage(resp.UserID, message)
+	if err != nil {
+		log.Error("SendUserMessage failed in Auth: ", err)
+	}
 	api.comedian.AddBot(bot)
 
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)

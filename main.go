@@ -30,29 +30,27 @@ func init() {
 }
 
 func main() {
-	//defer profile.Start().Stop()
-	//defer profile.Start(profile.MemProfile).Stop()
 
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
 	_, err := bundle.LoadMessageFile("active.en.toml")
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Fatal("Load active.en.toml message file failed")
+		log.Fatal("Load active.en.toml message file failed: ", err)
 	}
 	_, err = bundle.LoadMessageFile("active.ru.toml")
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Fatal("Load active.ru.toml message file failed")
+		log.Fatal("Load active.ru.toml message file failed: ", err)
 	}
 
 	config, err := config.Get()
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Fatal("Get config failed")
+		log.Fatal("Get config failed: ", err)
 	}
 
 	db, err := storage.New(config)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Fatal("New storage failed")
+		log.Fatal("New storage failed: ", err)
 	}
 
 	comedian := comedianbot.New(bundle, db)
@@ -63,6 +61,6 @@ func main() {
 
 	err = api.Start()
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Fatal("API start failed")
+		log.Fatal("API start failed: ", err)
 	}
 }
