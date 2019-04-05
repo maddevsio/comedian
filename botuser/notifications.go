@@ -44,13 +44,13 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 
 		if t.Hour() == standupTime.Hour() && t.Minute() == standupTime.Minute() {
 			bot.wg.Add(1)
-			go func() {
+			go func(channel model.Channel) {
 				err := bot.SendChannelNotification(channel.ChannelID)
 				if err != nil {
 					log.Error(err)
 				}
 				bot.wg.Done()
-			}()
+			}(channel)
 		}
 	}
 }
@@ -198,7 +198,6 @@ func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, r
 		log.Error("SendMessage in notify not all failed: ", err)
 	}
 	*repeats++
-	err = errors.New("Continue backoff")
-	return err
+	return errors.New("Continue backoff")
 
 }
