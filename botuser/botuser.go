@@ -89,17 +89,17 @@ func (bot *Bot) Stop() {
 }
 
 func (bot *Bot) SetStandupsCounterToZero() error {
-	if (time.Now().Hour() != 23) && (time.Now().Minute() != 59) {
+	if time.Now().Hour() == 23 && time.Now().Minute() == 59 {
+		log.Info("Started to set submitted standups to 0 for all standupers")
+		standupers, err := bot.db.ListStandupersByTeamID(bot.properties.TeamID)
+		if err != nil {
+			return err
+		}
+		for _, standuper := range standupers {
+			standuper.SubmittedStandupToday = false
+			bot.db.UpdateStanduper(standuper)
+		}
 		return nil
-	}
-	log.Info("Started to set submitted standups to 0 for all standupers")
-	standupers, err := bot.db.ListStandupersByTeamID(bot.properties.TeamID)
-	if err != nil {
-		return err
-	}
-	for _, standuper := range standupers {
-		standuper.SubmittedStandupToday = false
-		bot.db.UpdateStanduper(standuper)
 	}
 	return nil
 }
