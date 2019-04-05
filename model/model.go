@@ -198,7 +198,10 @@ func (u User) Validate() error {
 
 //IsAdmin returns true if user has admin role
 func (u User) IsAdmin() bool {
-	return u.Role == "admin"
+	if u.Role == "admin" || u.Role == "super-admin" {
+		return true
+	}
+	return false
 }
 
 //IsPM returns true if standuper has pm status
