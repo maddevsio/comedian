@@ -57,12 +57,14 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 
 // SendWarning reminds users in chat about upcoming standups
 func (bot *Bot) SendWarning(channelID string) error {
+	log.Info("SendWarning for channel: ", channelID)
 	standupers, err := bot.db.ListStandupers()
 	if err != nil {
 		return err
 	}
 
 	if len(standupers) == 0 {
+		log.Info("No standupers to warn for channel: ", channelID)
 		return nil
 	}
 
@@ -74,6 +76,7 @@ func (bot *Bot) SendWarning(channelID string) error {
 	}
 
 	if len(nonReportersIDs) == 0 {
+		log.Info("No non reporters to warn for channel: ", channelID)
 		return nil
 	}
 
@@ -112,12 +115,14 @@ func (bot *Bot) SendWarning(channelID string) error {
 
 //SendChannelNotification starts standup reminders and direct reminders to users
 func (bot *Bot) SendChannelNotification(channelID string) error {
+	log.Info("SendChannelNotification for channel: ", channelID)
 	standupers, err := bot.db.ListChannelStandupers(channelID)
 	if err != nil {
 		return err
 	}
 
 	if len(standupers) == 0 {
+		log.Info("No standupers in channel: ", channelID)
 		return nil
 	}
 
