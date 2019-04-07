@@ -462,7 +462,7 @@ Other = "To remove members use `remove` command. If you provide a role name, you
 
 [AddDeadline]
 Description = "Displays usage of add_deadline command"
-Other = "To set standup deadline use `add_deadline` command. You need to provide it with hours and minutes in the 24hour format like 13:54. "
+Other = "To set standup deadline use `add_deadline` command."
 
 [ShowDeadline]
 Description = "Displays usage of show_deadline command"

@@ -441,7 +441,7 @@ Other = "Чтобы удалить пользователя используйт
 
 [AddDeadline]
 Description = "Displays usage of add_deadline command"
-Other = "Чтобы установить время сдачи стэндапов в канале используйте команду `add_deadline`. Вы должны указать время в 24-часовом формате. Например, 13:54. "
+Other = "Чтобы установить время сдачи стэндапов в канале используйте команду `add_deadline`."
 
 [ShowDeadline]
 Description = "Displays usage of show_deadline command"
