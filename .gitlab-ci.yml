@@ -1,8 +1,7 @@
 stages:
   - tests
   - build
-  - staging_deploy
-  - deploy_new
+  - deploy
 services:
   - docker:dind
 
@@ -75,4 +74,4 @@ deploy_new:
     - master
   when:
     manual
-    - master
+  allow_failure: false
