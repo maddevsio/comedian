@@ -25,7 +25,7 @@ services:
         tag: "docker/new-comedian-db"
 
   new-comedian:
-    image: registry.gitlab.com/team-monitoring/comedian:latest
+    image: registry.gitlab.com/team-monitoring/comedian:new
     container_name: new-comedian
     restart: on-failure
     links:
