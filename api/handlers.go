@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -63,7 +62,7 @@ func (api *ComedianAPI) login(c echo.Context) error {
 	claims["expire"] = time.Now().Add(time.Minute * 60).Unix()
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(os.Getenv("COMEDIAN_SLACK_CLIENT_SECRET")))
+	t, err := token.SignedString([]byte(api.config.SlackClientSecret))
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("SignedString failed")
 		return c.JSON(http.StatusInternalServerError, err.Error())

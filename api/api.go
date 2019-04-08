@@ -73,6 +73,7 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	echo.POST("/login", api.login)
 	echo.POST("/event", api.handleEvent)
 	echo.POST("/service-message", api.handleServiceMessage)
+	echo.POST("/info-message", api.handleInfoMessage)
 	echo.POST("/commands", api.handleCommands)
 	echo.GET("/auth", api.auth)
 
@@ -184,6 +185,31 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, "Message handled!")
+}
+
+func (api *ComedianAPI) handleInfoMessage(c echo.Context) error {
+
+	var incomingEvent model.InfoEvent
+
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on ReadAll")
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	err = json.Unmarshal(body, &incomingEvent)
+	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on Unmarshal body")
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	err = api.comedian.HandleInfoEvent(incomingEvent)
+	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on HandleEvent")
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, "Info Message handled!")
 }
 
 func (api *ComedianAPI) handleCommands(c echo.Context) error {

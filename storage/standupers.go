@@ -16,7 +16,7 @@ func (m *DB) CreateStanduper(s model.Standuper) (model.Standuper, error) {
 	}
 	res, err := m.DB.Exec(
 		"INSERT INTO `channel_members` (team_id, user_id, channel_id, submitted_standup_today, role_in_channel, created) VALUES (?,?,?,?,?,?)",
-		s.TeamID, s.UserID, s.ChannelID, true, s.RoleInChannel, time.Now())
+		s.TeamID, s.UserID, s.ChannelID, s.SubmittedStandupToday, s.RoleInChannel, time.Now())
 	if err != nil {
 		return s, err
 	}

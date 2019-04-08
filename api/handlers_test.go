@@ -961,8 +961,10 @@ func TestLogin(t *testing.T) {
 
 	for _, tt := range testCase {
 		t.Run("TestLogin", func(t *testing.T) {
+			config, err := config.Get()
+			assert.NoError(t, err)
 
-			r := &ComedianAPI{echo: nil, comedian: nil, config: nil, db: MockedDB{
+			r := &ComedianAPI{echo: nil, comedian: nil, config: config, db: MockedDB{
 				BotSettings: tt.BotSettings,
 				Error:       tt.Error,
 			}}

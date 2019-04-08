@@ -72,6 +72,15 @@ type ServiceEvent struct {
 	Attachments []slack.Attachment `json:"attachments"`
 }
 
+// InfoEvent event coming from services
+type InfoEvent struct {
+	TeamName    string `json:"team_name"`
+	InfoType    string `json:"info_type"`
+	AccessToken string `json:"bot_access_token"`
+	Channel     string `json:"channel"`
+	Message     string `json:"message"`
+}
+
 //Report used to generate report structure
 type Report struct {
 	ReportHead string

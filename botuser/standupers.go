@@ -159,10 +159,11 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 
 		if err != nil {
 			standuper, err := bot.db.CreateStanduper(model.Standuper{
-				TeamID:        bot.properties.TeamID,
-				UserID:        userID,
-				ChannelID:     channel,
-				RoleInChannel: role,
+				TeamID:                bot.properties.TeamID,
+				UserID:                userID,
+				ChannelID:             channel,
+				RoleInChannel:         role,
+				SubmittedStandupToday: false,
 			})
 			if err != nil {
 				log.Error(err)

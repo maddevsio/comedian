@@ -64,6 +64,20 @@ func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 	return bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
 }
 
+//HandleInfoEvent sends message to Slack Workspace
+func (comedian *Comedian) HandleInfoEvent(incomingEvent model.InfoEvent) error {
+	bot, err := comedian.SelectBot(incomingEvent.TeamName)
+	if err != nil {
+		return err
+	}
+
+	if bot.Settings().AccessToken != incomingEvent.AccessToken {
+		return errors.New("Wrong access token")
+	}
+
+	return bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, nil)
+}
+
 //HandleCallbackEvent choses bot to deal with event and then handles event
 func (comedian *Comedian) HandleCallbackEvent(event slackevents.EventsAPICallbackEvent) error {
 	bot, err := comedian.SelectBot(event.TeamID)
