@@ -25,6 +25,10 @@ migration-ci:
 migrate:
 	goose -dir migrations mysql "comedian:comedian@tcp(db:3306)/comedian"  up
 
+migrate_localy:
+	goose -dir migrations mysql "root:root@/comedian"  up
+
+
 c_migration:
 	goose -dir migrations create migration_name sql
 	

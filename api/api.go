@@ -272,7 +272,12 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, encriptedPass, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
+	var admin bool
+	if resp.TeamID == api.config.OwnerSlackTeamID {
+		admin = true
+	}
+
+	cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, encriptedPass, resp.Bot.BotUserID, resp.TeamID, resp.TeamName, admin)
 	if err != nil {
 		log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
 		return err

@@ -60,6 +60,7 @@ type BotSettings struct {
 	AccessToken        string `db:"bot_access_token" json:"bot_access_token" `
 	TeamID             string `db:"team_id" json:"team_id" `
 	TeamName           string `db:"team_name" json:"team_name" `
+	Admin              bool   `db:"admin" json:"admin" `
 	Password           string `db:"password" json:"password" `
 }
 

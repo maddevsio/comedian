@@ -9,7 +9,7 @@ import (
 )
 
 //CreateBotSettings creates bot properties for the newly created bot
-func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string) (model.BotSettings, error) {
+func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string, admin bool) (model.BotSettings, error) {
 	bs := model.BotSettings{
 		NotifierInterval:   30,
 		Language:           "en_US",
@@ -20,6 +20,7 @@ func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string)
 		TeamID:             teamID,
 		TeamName:           teamName,
 		Password:           password,
+		Admin:              admin,
 	}
 
 	err := bs.Validate()
@@ -28,8 +29,8 @@ func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string)
 	}
 
 	_, err = m.DB.Exec(
-		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, user_id, team_id, team_name, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.UserID, bs.TeamID, bs.TeamName, bs.Password)
+		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, user_id, team_id, team_name, admin, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.UserID, bs.TeamID, bs.TeamName, bs.Admin, bs.Password)
 	if err != nil {
 		return bs, err
 	}
