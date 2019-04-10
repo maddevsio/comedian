@@ -92,7 +92,7 @@ func (m MockedDB) CreateStandup(model.Standup) (model.Standup, error) {
 	return m.CreatedStandup, m.CreateStandupError
 }
 
-func (m MockedDB) SelectLatestStandupByUser(string) (model.Standup, error) {
+func (m MockedDB) SelectLatestStandupByUser(string, string) (model.Standup, error) {
 	return m.SelectedLatestStandupByUser, m.SelectedLatestStandupByUserError
 }
 

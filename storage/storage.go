@@ -73,7 +73,7 @@ type Storage interface {
 	// CreateStandup creates standup entry in database
 	CreateStandup(s model.Standup) (model.Standup, error)
 
-	SelectLatestStandupByUser(string) (model.Standup, error)
+	SelectLatestStandupByUser(string, string) (model.Standup, error)
 
 	// UpdateStandup updates standup entry in database
 	UpdateStandup(s model.Standup) (model.Standup, error)

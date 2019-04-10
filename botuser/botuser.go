@@ -175,7 +175,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
-	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.User) {
+	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.User, msg.Channel) {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay, err := translation.Translate(payload)
 		if err != nil {
@@ -248,7 +248,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
-	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.SubMessage.User) {
+	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.SubMessage.User, msg.Channel) {
 		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay, err := translation.Translate(payload)
 		if err != nil {
@@ -306,9 +306,9 @@ func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
 	return bot.db.DeleteStandup(standup.ID)
 }
 
-func (bot *Bot) submittedStandupToday(userID string) bool {
+func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 	log.Info("Start checking if user submitted standup today!", userID)
-	standup, err := bot.db.SelectLatestStandupByUser(userID)
+	standup, err := bot.db.SelectLatestStandupByUser(userID, channelID)
 	if err != nil {
 		log.Error(err)
 		return false
