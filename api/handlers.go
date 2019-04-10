@@ -790,19 +790,19 @@ func (api *ComedianAPI) deleteStanduper(c echo.Context) error {
 }
 
 func (api *ComedianAPI) logout(c echo.Context) error {
-	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, missingTokenErr)
-	}
-	u := c.Get("user").(*jwt.Token)
+	// if c.Get("user") == nil {
+	// 	return c.JSON(http.StatusUnauthorized, missingTokenErr)
+	// }
+	// u := c.Get("user").(*jwt.Token)
 
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
-	expire := claims["expire"].(float64)
-	if time.Now().Unix() > int64(expire) {
-		return c.JSON(http.StatusForbidden, "Token expired")
-	}
+	// claims := u.Claims.(jwt.MapClaims)
+	// teamID := claims["team_id"].(string)
+	// expire := claims["expire"].(float64)
+	// if time.Now().Unix() > int64(expire) {
+	// 	return c.JSON(http.StatusForbidden, "Token expired")
+	// }
 
-	log.Info("log out user with bot team id : ", teamID)
+	// log.Info("log out user with bot team id : ", teamID)
 
 	return c.JSON(http.StatusCreated, "logged out")
 }
