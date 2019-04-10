@@ -26,7 +26,6 @@ schemes:
 securityDefinitions:
   JWT:
     description: "insert as follows: Bearer + JWT from login responce"
-    example: "Bearer kjfdslkfkfsjdfklsdj.dsfjsdlkfsjdlfksf"
     type: apiKey
     name: Authorization
     in: header
@@ -154,7 +153,7 @@ paths:
       tags:
       - "bots"
       summary: "Updates a bot in the database with form data"
-      description: ""
+      description: "Update language, notifier_interval, reminder_repeat_max and reminder_time of the bot"
       consumes:
       - "application/json"
       produces:
@@ -246,6 +245,27 @@ paths:
           description: "Internal Error"
         201:
           description: "successful operation"
+  /v1/users:
+    get:
+      security:
+        - JWT: []
+      tags:
+      - "users"
+      summary: "Returns all users belonging to one slack team"
+      description: "Returns a map of users"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "success"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/User"
+        401: 
+          description: "Unauthorized"
+        500:
+          description: "Internal Error"
   /v1/users/{id}:
     get:
       security:
@@ -469,7 +489,7 @@ paths:
       - in: body
         name: body
         required: true
-        description: Standuper params that needs to be updated. Currently only standup time and role can be modified
+        description: Standuper params that needs to be updated. Currently only role can be modified
         schema:
             $ref: '#/definitions/Standuper'
       responses:
