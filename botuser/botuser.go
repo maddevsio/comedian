@@ -73,6 +73,15 @@ func (bot *Bot) Start() {
 			select {
 			case <-ticker:
 				bot.NotifyChannels(time.Now())
+				err = bot.CallDisplayYesterdayTeamReport()
+				if err != nil {
+					log.Error("CallDisplayYesterdayTeamReport failed: ", err)
+				}
+
+				err = bot.CallDisplayWeeklyTeamReport()
+				if err != nil {
+					log.Error("CallDisplayWeeklyTeamReport failed: ", err)
+				}
 				bot.setStandupsCounterToZero()
 				if Dry {
 					break

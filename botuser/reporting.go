@@ -32,6 +32,10 @@ type AttachmentItem struct {
 
 // CallDisplayYesterdayTeamReport calls displayYesterdayTeamReport
 func (bot *Bot) CallDisplayYesterdayTeamReport() error {
+	if bot.properties.ReportingTime == "" {
+		log.Info("Report time is empty")
+		return nil
+	}
 	w := when.New(nil)
 	w.Add(en.All...)
 	w.Add(ru.All...)
@@ -55,6 +59,10 @@ func (bot *Bot) CallDisplayYesterdayTeamReport() error {
 // CallDisplayWeeklyTeamReport calls displayWeeklyTeamReport
 func (bot *Bot) CallDisplayWeeklyTeamReport() error {
 	if int(time.Now().Weekday()) != 0 {
+		return nil
+	}
+
+	if bot.properties.ReportingTime == "" {
 		return nil
 	}
 
@@ -141,6 +149,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 
 			//if there is nothing to show, do not create attachment
 			if fieldValue == "" {
+				log.Info("Nothing to show... skip channel! ", channel.ChannelID)
 				continue
 			}
 
@@ -186,6 +195,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 		}
 
 		if len(attachmentsPull) == 0 {
+			log.Info("len(attachmentsPull) == 0 for channel ", channel.ChannelID)
 			continue
 		}
 
@@ -201,10 +211,14 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 	}
 
 	if len(allReports) == 0 {
+		log.Info("len(allReports) == 0")
 		return
 	}
 
-	bot.SendMessage(bot.properties.ReportingChannel, reportHeader, allReports)
+	err = bot.SendMessage(bot.properties.ReportingChannel, reportHeader, allReports)
+	if err != nil {
+		log.Error(err)
+	}
 	FinalReport = fmt.Sprintf(reportHeader, allReports)
 	return FinalReport, nil
 }
@@ -315,7 +329,12 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 
 		attachments = bot.sortReportEntries(attachmentsPull)
 
-		bot.SendMessage(channel.ChannelID, reportHeaderWeekly, attachments)
+		if bot.properties.IndividualReportsOn {
+			err := bot.SendMessage(channel.ChannelID, reportHeaderWeekly, attachments)
+			if err != nil {
+				log.Error("Send weekly report individual message failed: ", err, channel.ChannelID)
+			}
+		}
 
 		allReports = append(allReports, attachments...)
 	}
@@ -324,7 +343,10 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		return FinalReport, nil
 	}
 
-	bot.SendMessage(bot.properties.ReportingChannel, reportHeaderWeekly, allReports)
+	err = bot.SendMessage(bot.properties.ReportingChannel, reportHeaderWeekly, allReports)
+	if err != nil {
+		log.Error("Send weekly report message failed: ", err, bot.properties.ReportingChannel)
+	}
 	FinalReport = fmt.Sprintf(reportHeaderWeekly, allReports)
 	return FinalReport, nil
 }
