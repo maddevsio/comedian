@@ -781,12 +781,12 @@ definitions:
       reminder_time:
         type: "integer"
         format: "int64"
-      ReportingChannel:
+      reporting_channel:
         type: "string"
         example: "TBA234GH"
-      ReportingTime:
+      reporting_time:
         type: "string"
         example: "9:00"
-      IndividualReportsOn: 
+      individual_reports_on: 
         type: "boolean"
         example: false
