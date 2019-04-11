@@ -118,7 +118,7 @@ func (bot *Bot) setStandupsCounterToZero() error {
 
 //HandleCallBackEvent handles different callback events from Slack Event Subscription list
 func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
-	ev := map[string]string{}
+	ev := map[string]interface{}{}
 	data, err := event.MarshalJSON()
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 	}
 
 	switch ev["type"] {
-	case "app_mention":
+	case "message":
 		message := &slack.MessageEvent{}
 		if err := json.Unmarshal(data, message); err != nil {
 			return err
@@ -151,7 +151,7 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 			return err
 		}
 	default:
-		log.WithFields(log.Fields{"event": event}).Warning("unrecognized event!")
+		log.WithFields(log.Fields{"event": string(data)}).Warning("unrecognized event!")
 		return nil
 	}
 
@@ -187,7 +187,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
-	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.User, msg.Channel) {
+	if bot.submittedStandupToday(msg.User, msg.Channel) {
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay := translation.Translate(payload)
 		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
@@ -251,7 +251,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
-	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.SubMessage.User, msg.Channel) {
+	if bot.submittedStandupToday(msg.SubMessage.User, msg.Channel) {
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
 		oneStandupPerDay := translation.Translate(payload)
 		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
@@ -293,6 +293,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 }
 
 func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
+	log.Info("delete message!!!")
 	standup, err := bot.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
 	if err != nil {
 		return err
@@ -307,8 +308,8 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 		log.Error(err)
 		return false
 	}
-	log.Info("standup.Modified.Day() == time.Now().Day() ", standup.Modified.Day() == time.Now().Day())
-	if standup.Modified.Day() == time.Now().Day() {
+	log.Info("standup.Modified.Day() == time.Now().Day() ", standup.Created.Day() == time.Now().Day())
+	if standup.Created.Day() == time.Now().Day() {
 		return true
 	}
 	return false
