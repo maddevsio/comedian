@@ -680,13 +680,13 @@ definitions:
   ServiceMessage: 
     type: "object"
     properties:
-      TeamName:
+      team_name:
         type: "string"
-      AccessToken:
+      bot_access_token:
         type: "string"
-      Channel:
+      channel:
         type: "string"
-      Message:
+      message:
         type: "string"
   User:
     type: "object"
