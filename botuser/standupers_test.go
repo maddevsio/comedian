@@ -7,6 +7,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"golang.org/x/text/language"
 )
@@ -16,6 +17,9 @@ func TestAddCommand(t *testing.T) {
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
 	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	c, err := config.Get()
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -53,7 +57,7 @@ func TestAddCommand(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			FoundStanduper:       tt.FoundStanduper,
 			FoundStanduperError:  tt.FoundStanduperError,
 			CreatedStanduper:     tt.CreatedStanduper,
@@ -72,6 +76,9 @@ func TestAddCommand(t *testing.T) {
 func TestAddCommandBundleFail(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	c, err := config.Get()
+	assert.NoError(t, err)
 
 	settings := model.BotSettings{
 		UserID:   "TESTUSERID",
@@ -93,7 +100,7 @@ func TestAddCommandBundleFail(t *testing.T) {
 	}{
 		{"", 4, "", model.Standuper{}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "@foo", model.Standuper{}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
-		{"\n\n\n\n\n\n", 3, "@foo / bar", model.Standuper{}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
+		{"", 3, "@foo / bar", model.Standuper{}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "<@foo|bar>", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "<@foo|bar> /pm", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "<@foo|bar> /designer", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
@@ -110,7 +117,7 @@ func TestAddCommandBundleFail(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			FoundStanduper:       tt.FoundStanduper,
 			FoundStanduperError:  tt.FoundStanduperError,
 			CreatedStanduper:     tt.CreatedStanduper,
@@ -131,6 +138,9 @@ func TestShowCommand(t *testing.T) {
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
 	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	c, err := config.Get()
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -161,7 +171,7 @@ func TestShowCommand(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			ListedUsers:                tt.ListedUsers,
 			ListedUsersError:           tt.ListedUsersError,
 			ChannelStandupers:          tt.ChannelStandupers,
@@ -190,7 +200,7 @@ func TestShowCommandBundleFail(t *testing.T) {
 		ChannelStandupers          []model.Standuper
 		ListChannelStandupersError error
 	}{
-		{"\n\n\n\n\n\n", "foo", []model.User{}, nil, []model.Standuper{}, nil},
+		{"", "foo", []model.User{}, nil, []model.Standuper{}, nil},
 		{"could not list users", "admin", []model.User{}, errors.New("err"), []model.Standuper{}, nil},
 		{"could not list members", "developer", []model.User{}, errors.New("err"), []model.Standuper{}, errors.New("err")},
 		{"could not list members", "designer", []model.User{}, errors.New("err"), []model.Standuper{}, errors.New("err")},
@@ -204,8 +214,11 @@ func TestShowCommandBundleFail(t *testing.T) {
 		{"", "pm", []model.User{}, nil, []model.Standuper{}, nil},
 	}
 
+	c, err := config.Get()
+	assert.NoError(t, err)
+
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			ListedUsers:                tt.ListedUsers,
 			ListedUsersError:           tt.ListedUsersError,
 			ChannelStandupers:          tt.ChannelStandupers,
@@ -222,6 +235,9 @@ func TestDeleteCommand(t *testing.T) {
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
 	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	c, err := config.Get()
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -255,7 +271,7 @@ func TestDeleteCommand(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			FoundStanduper:       tt.FoundStanduper,
 			FoundStanduperError:  tt.FoundStanduperError,
 			DeleteStanduperError: tt.DeleteStanduperError,
@@ -293,7 +309,7 @@ func TestDeleteCommandBundleFailed(t *testing.T) {
 	}{
 		{"", 4, "", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "@foo", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
-		{"\n\n\n\n\n\n", 3, "@foo / bar", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
+		{"", 3, "@foo / bar", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
 		{"", 3, "<@foo|bar> /admin", model.Standuper{}, errors.New("select standuper"), nil, model.User{}, nil, model.User{}, nil},
 		{"", 2, "@foo /admin", model.Standuper{}, nil, nil, model.User{}, nil, model.User{}, nil},
 		{"", 2, "<@foo|bar> /admin", model.Standuper{}, nil, nil, model.User{}, errors.New("select user"), model.User{}, nil},
@@ -304,8 +320,11 @@ func TestDeleteCommandBundleFailed(t *testing.T) {
 		{"", 3, "<@foo|bar>", model.Standuper{ChannelID: "Foo", UserID: "foo"}, nil, nil, model.User{}, nil, model.User{}, nil},
 	}
 
+	c, err := config.Get()
+	assert.NoError(t, err)
+
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			FoundStanduper:       tt.FoundStanduper,
 			FoundStanduperError:  tt.FoundStanduperError,
 			DeleteStanduperError: tt.DeleteStanduperError,

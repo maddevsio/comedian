@@ -8,6 +8,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"golang.org/x/text/language"
 )
@@ -17,6 +18,9 @@ func TestNotifyChannels(t *testing.T) {
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
 	_, err := bundle.LoadMessageFile("../active.en.toml")
+	assert.NoError(t, err)
+
+	c, err := config.Get()
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -45,7 +49,7 @@ func TestNotifyChannels(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			ListedChannels:             tt.ListedChannels,
 			ListedChannelsError:        tt.ListedChannelsError,
 			Standupers:                 tt.Standupers,
@@ -66,6 +70,9 @@ func TestSendWarning(t *testing.T) {
 	_, err := bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
+	c, err := config.Get()
+	assert.NoError(t, err)
+
 	settings := model.BotSettings{
 		TeamID:       "comedian",
 		UserID:       "TESTUSERID",
@@ -82,13 +89,13 @@ func TestSendWarning(t *testing.T) {
 		{false, []model.Standuper{}, errors.New("list standupers error"), errors.New("list standupers error")},
 		{false, []model.Standuper{}, nil, nil},
 		{false, []model.Standuper{{}}, nil, nil},
-		{false, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, errors.New("Could not post message to a channel")},
+		{false, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
 		{true, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
 	}
 
 	for _, tt := range testCases {
 		Dry = tt.dry
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			Standupers:          tt.Standupers,
 			ListStandupersError: tt.ListStandupersError,
 		})
@@ -117,13 +124,16 @@ func TestSendWarningBundleFail(t *testing.T) {
 		{false, []model.Standuper{}, errors.New("list standupers error"), errors.New("list standupers error")},
 		{false, []model.Standuper{}, nil, nil},
 		{false, []model.Standuper{{}}, nil, nil},
-		{false, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, errors.New("Could not post message to a channel")},
+		{false, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
 		{true, []model.Standuper{{ChannelID: "Foo", SubmittedStandupToday: false}}, nil, nil},
 	}
 
+	c, err := config.Get()
+	assert.NoError(t, err)
+
 	for _, tt := range testCases {
 		Dry = tt.dry
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			Standupers:          tt.Standupers,
 			ListStandupersError: tt.ListStandupersError,
 		})
@@ -162,7 +172,7 @@ func TestSendWarningBundleFail(t *testing.T) {
 
 // 	for _, tt := range testCases {
 // 		Dry = tt.dry
-// 		bot := New(bundle, settings, MockedDB{
+// 		bot := New(c, bundle, settings, MockedDB{
 // 			ChannelStandupers:          tt.ChannelStandupers,
 // 			ListChannelStandupersError: tt.ListChannelStandupersError,
 // 		})
@@ -199,7 +209,7 @@ func TestSendWarningBundleFail(t *testing.T) {
 
 // 	for _, tt := range testCases {
 // 		Dry = tt.dry
-// 		bot := New(bundle, settings, MockedDB{
+// 		bot := New(c, bundle, settings, MockedDB{
 // 			ChannelStandupers:          tt.ChannelStandupers,
 // 			ListChannelStandupersError: tt.ListChannelStandupersError,
 // 		})

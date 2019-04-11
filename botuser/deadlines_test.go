@@ -9,6 +9,7 @@ import (
 	"github.com/bouk/monkey"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"golang.org/x/text/language"
 )
@@ -17,7 +18,10 @@ func TestAddTime(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	c, err := config.Get()
+	assert.NoError(t, err)
+
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -46,7 +50,7 @@ func TestAddTime(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedChannel:            tt.SelectedChannel,
 			UpdatedChannel:             tt.UpdatedChannel,
 			ChannelStandupers:          tt.ChannelStandupers,
@@ -66,6 +70,9 @@ func TestAddTime(t *testing.T) {
 func TestAddTimeFailBundle(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	c, err := config.Get()
+	assert.NoError(t, err)
 
 	settings := model.BotSettings{
 		UserID:   "TESTUSERID",
@@ -93,7 +100,7 @@ func TestAddTimeFailBundle(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedChannel:            tt.SelectedChannel,
 			UpdatedChannel:             tt.UpdatedChannel,
 			ChannelStandupers:          tt.ChannelStandupers,
@@ -114,7 +121,10 @@ func TestRemoveTime(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	c, err := config.Get()
+	assert.NoError(t, err)
+
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -141,7 +151,7 @@ func TestRemoveTime(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedChannel:            tt.SelectedChannel,
 			UpdatedChannel:             tt.UpdatedChannel,
 			ChannelStandupers:          tt.ChannelStandupers,
@@ -161,6 +171,9 @@ func TestRemoveTime(t *testing.T) {
 func TestRemoveTimeFailBundle(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	c, err := config.Get()
+	assert.NoError(t, err)
 
 	settings := model.BotSettings{
 		UserID:   "TESTUSERID",
@@ -186,7 +199,7 @@ func TestRemoveTimeFailBundle(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedChannel:            tt.SelectedChannel,
 			UpdatedChannel:             tt.UpdatedChannel,
 			ChannelStandupers:          tt.ChannelStandupers,
@@ -207,7 +220,10 @@ func TestShowTime(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	c, err := config.Get()
+	assert.NoError(t, err)
+
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -226,7 +242,7 @@ func TestShowTime(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedChannel:      tt.SelectedChannel,
 			SelectedChannelError: tt.SelectedChannelError,
 		})
@@ -239,6 +255,9 @@ func TestShowTime(t *testing.T) {
 func TestShowTimeFailBundle(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	c, err := config.Get()
+	assert.NoError(t, err)
 
 	settings := model.BotSettings{
 		UserID:   "TESTUSERID",
@@ -256,7 +275,7 @@ func TestShowTimeFailBundle(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedChannel:      tt.SelectedChannel,
 			SelectedChannelError: tt.SelectedChannelError,
 		})

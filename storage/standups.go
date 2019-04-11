@@ -48,6 +48,7 @@ func (m *DB) UpdateStandup(s model.Standup) (model.Standup, error) {
 	return i, err
 }
 
+//GetStandup returns standup by its ID
 func (m *DB) GetStandup(id int64) (model.Standup, error) {
 	var s model.Standup
 	err := m.DB.Get(&s, "SELECT * FROM `standups` WHERE id=?", id)
@@ -71,6 +72,16 @@ func (m *DB) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
 func (m *DB) SelectLatestStandupByUser(userID, channelID string) (model.Standup, error) {
 	var s model.Standup
 	err := m.DB.Get(&s, "select * from standups where user_id=? and channel_id=? order by id desc limit 1", userID, channelID)
+	if err != nil {
+		return s, err
+	}
+	return s, nil
+}
+
+// GetStandupForPeriod selects standup entry from database filtered by user
+func (m *DB) GetStandupForPeriod(userID, channelID string, timeFrom, timeTo time.Time) (*model.Standup, error) {
+	s := &model.Standup{}
+	err := m.DB.Get(s, "select * from standups where user_id=? and channel_id=? and created BETWEEN ? AND ? limit 1", userID, channelID, timeFrom, timeTo)
 	if err != nil {
 		return s, err
 	}

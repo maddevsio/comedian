@@ -11,16 +11,19 @@ import (
 //CreateBotSettings creates bot properties for the newly created bot
 func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string, admin bool) (model.BotSettings, error) {
 	bs := model.BotSettings{
-		NotifierInterval:   30,
-		Language:           "en_US",
-		ReminderRepeatsMax: 3,
-		ReminderTime:       int64(10),
-		AccessToken:        token,
-		UserID:             userID,
-		TeamID:             teamID,
-		TeamName:           teamName,
-		Password:           password,
-		Admin:              admin,
+		NotifierInterval:    30,
+		Language:            "en_US",
+		ReminderRepeatsMax:  3,
+		ReminderTime:        int64(10),
+		AccessToken:         token,
+		UserID:              userID,
+		TeamID:              teamID,
+		TeamName:            teamName,
+		Password:            password,
+		Admin:               admin,
+		ReportingChannel:    "",
+		ReportingTime:       "9:00",
+		IndividualReportsOn: false,
 	}
 
 	err := bs.Validate()
@@ -29,8 +32,8 @@ func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string,
 	}
 
 	_, err = m.DB.Exec(
-		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, user_id, team_id, team_name, admin, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.UserID, bs.TeamID, bs.TeamName, bs.Admin, bs.Password)
+		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, user_id, team_id, team_name, admin, password, reporting_channel, reporting_time, individual_reports_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.UserID, bs.TeamID, bs.TeamName, bs.Admin, bs.Password, bs.ReportingChannel, bs.ReportingTime, bs.IndividualReportsOn)
 	if err != nil {
 		return bs, err
 	}
@@ -82,8 +85,8 @@ func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, e
 	}
 
 	_, err = m.DB.Exec(
-		"UPDATE `bot_settings` set notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=? where id=?",
-		settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.ID,
+		"UPDATE `bot_settings` set notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, reporting_channel=?, reporting_time=?, individual_reports_on=? where id=?",
+		settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.ReportingChannel, settings.ReportingTime, settings.IndividualReportsOn, settings.ID,
 	)
 	if err != nil {
 		return settings, err
@@ -107,10 +110,7 @@ func (m *DB) UpdateBotPassword(settings model.BotSettings) (model.BotSettings, e
 	if err != nil {
 		return settings, err
 	}
-	_, err = m.DB.Exec(
-		"UPDATE `bot_settings` set notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, password=? where id=?",
-		settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, password, settings.ID,
-	)
+	_, err = m.DB.Exec("UPDATE `bot_settings` set password=? where id=?", password, settings.ID)
 	if err != nil {
 		return settings, err
 	}

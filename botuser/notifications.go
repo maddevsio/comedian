@@ -80,34 +80,16 @@ func (bot *Bot) SendWarning(channelID string) error {
 		return nil
 	}
 
-	payload := translation.Payload{bot.bundle, bot.properties.Language, "Minutes", int(bot.properties.ReminderTime), map[string]interface{}{"time": bot.properties.ReminderTime}}
-	minutes, err := translation.Translate(payload)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"TeamName":     bot.properties.TeamName,
-			"Language":     payload.Lang,
-			"MessageID":    payload.MessageID,
-			"Count":        payload.Count,
-			"TemplateData": payload.TemplateData,
-		}).Error("Failed to translate message!")
-	}
+	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "Minutes", int(bot.properties.ReminderTime), map[string]interface{}{"time": bot.properties.ReminderTime}}
+	minutes := translation.Translate(payload)
 
-	payload = translation.Payload{bot.bundle, bot.properties.Language, "WarnNonReporters", len(nonReportersIDs), map[string]interface{}{"user": nonReportersIDs[0], "users": strings.Join(nonReportersIDs, ", "), "minutes": minutes}}
-	warnNonReporters, err := translation.Translate(payload)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"TeamName":     bot.properties.TeamName,
-			"Language":     payload.Lang,
-			"MessageID":    payload.MessageID,
-			"Count":        payload.Count,
-			"TemplateData": payload.TemplateData,
-		}).Error("Failed to translate message!")
-	}
+	payload = translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WarnNonReporters", len(nonReportersIDs), map[string]interface{}{"user": nonReportersIDs[0], "users": strings.Join(nonReportersIDs, ", "), "minutes": minutes}}
+	warnNonReporters := translation.Translate(payload)
 
 	err = bot.SendMessage(channelID, warnNonReporters, nil)
 	if err != nil {
 		log.Error(err)
-		return errors.New("Could not post message to a channel")
+		return nil
 	}
 
 	return nil
@@ -181,19 +163,10 @@ func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, r
 		return nil
 	}
 
-	payload := translation.Payload{bot.bundle, bot.properties.Language, "TagNonReporters", len(roundNonReporters), map[string]interface{}{"user": roundNonReporters[0], "users": strings.Join(roundNonReporters, ", ")}}
-	tagNonReporters, err := translation.Translate(payload)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"TeamName":     bot.properties.TeamName,
-			"Language":     payload.Lang,
-			"MessageID":    payload.MessageID,
-			"Count":        payload.Count,
-			"TemplateData": payload.TemplateData,
-		}).Error("Failed to translate message!")
-	}
+	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "TagNonReporters", len(roundNonReporters), map[string]interface{}{"user": roundNonReporters[0], "users": strings.Join(roundNonReporters, ", ")}}
+	tagNonReporters := translation.Translate(payload)
 
-	err = bot.SendMessage(channelID, tagNonReporters, nil)
+	err := bot.SendMessage(channelID, tagNonReporters, nil)
 	if err != nil {
 		log.Error("SendMessage in notify not all failed: ", err)
 	}

@@ -244,7 +244,7 @@ func TestUpdateBot(t *testing.T) {
 		}}
 
 		go fakeComedian.StartBots()
-		bot := botuser.New(nil, model.BotSettings{ID: int64(1)}, nil)
+		bot := botuser.New(nil, nil, model.BotSettings{ID: int64(1)}, nil)
 		fakeComedian.AddBot(bot)
 		e := echo.New()
 		f := make(url.Values)
@@ -297,7 +297,7 @@ func TestDeleteBot(t *testing.T) {
 		}}
 
 		go fakeComedian.StartBots()
-		bot := botuser.New(nil, model.BotSettings{ID: int64(1)}, nil)
+		bot := botuser.New(nil, nil, model.BotSettings{ID: int64(1)}, nil)
 		fakeComedian.AddBot(bot)
 
 		e := echo.New()

@@ -1,7 +1,12 @@
 package storage
 
-import "gitlab.com/team-monitoring/comedian/model"
+import (
+	"time"
 
+	"gitlab.com/team-monitoring/comedian/model"
+)
+
+//Storage implements interface for DB
 type Storage interface {
 	//CreateBotSettings creates bot properties for the newly created bot
 	CreateBotSettings(token, password, userID, teamID, teamName string, admin bool) (model.BotSettings, error)
@@ -75,6 +80,8 @@ type Storage interface {
 
 	SelectLatestStandupByUser(string, string) (model.Standup, error)
 
+	GetStandupForPeriod(string, string, time.Time, time.Time) (*model.Standup, error)
+
 	// UpdateStandup updates standup entry in database
 	UpdateStandup(s model.Standup) (model.Standup, error)
 
@@ -91,8 +98,10 @@ type Storage interface {
 
 	// CreateUser creates standup entry in database
 	CreateUser(u model.User) (model.User, error)
+
 	// SelectUser selects User entry from database
 	SelectUser(userID string) (model.User, error)
+
 	// GetUser selects User entry from database
 	GetUser(id int64) (model.User, error)
 

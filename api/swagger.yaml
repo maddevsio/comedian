@@ -735,7 +735,7 @@ definitions:
         example: "TB9KS3E13"
       admin:
         type: "boolean"
-        example: 0
+        example: false
       team_name:
         type: "string"
         example: "example"
@@ -757,3 +757,12 @@ definitions:
       reminder_time:
         type: "integer"
         format: "int64"
+      ReportingChannel:
+        type: "string"
+        example: "TBA234GH"
+      ReportingTime:
+        type: "string"
+        example: "9:00"
+      IndividualReportsOn: 
+        type: "boolean"
+        example: false

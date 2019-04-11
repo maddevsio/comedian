@@ -283,7 +283,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	bot := botuser.New(api.comedian.Bundle, cp, api.comedian.DB)
+	bot := botuser.New(api.config, api.comedian.Bundle, cp, api.comedian.DB)
 	message := fmt.Sprintf("Thank you for adding me to your workspace! Login at %v with: \n username: `%v`\n password: `%v`", api.config.UIurl, resp.TeamName, pass)
 	err = bot.SendUserMessage(resp.UserID, message)
 	if err != nil {

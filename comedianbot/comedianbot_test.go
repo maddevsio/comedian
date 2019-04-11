@@ -48,7 +48,7 @@ func TestBots(t *testing.T) {
 
 	assert.Equal(t, 0, len(comedian.bots))
 
-	bot := botuser.New(nil, botSettings, nil)
+	bot := botuser.New(nil, nil, botSettings, nil)
 	comedian.AddBot(bot)
 	assert.Equal(t, 1, len(comedian.bots))
 
@@ -84,7 +84,7 @@ func TestHandleEvent(t *testing.T) {
 
 	assert.Equal(t, 0, len(comedian.bots))
 
-	bot := botuser.New(nil, botSettings, nil)
+	bot := botuser.New(nil, nil, botSettings, nil)
 
 	comedian.AddBot(bot)
 	assert.Equal(t, 1, len(comedian.bots))

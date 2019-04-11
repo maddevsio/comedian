@@ -32,7 +32,7 @@ func TestNew(t *testing.T) {
 		Language: "en_US",
 	}
 
-	bot := New(bundle, settings, db)
+	bot := New(c, bundle, settings, db)
 	assert.Equal(t, "TESTUSERID", bot.properties.UserID)
 
 }
@@ -102,8 +102,10 @@ func TestAnalizeStandup(t *testing.T) {
 func TestGetAccessLevel(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -126,7 +128,7 @@ func TestGetAccessLevel(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedUser:        tt.SelectedUser,
 			FoundStanduper:      tt.FoundStanduper,
 			SelectedUserError:   tt.SelectedUserError,
@@ -144,8 +146,10 @@ func TestGetAccessLevel(t *testing.T) {
 func TestHandleJoin(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -167,7 +171,7 @@ func TestHandleJoin(t *testing.T) {
 	httpmock.RegisterResponder("POST", "https://slack.com/api/conversations.info", httpmock.NewStringResponder(200, `{"error": true, "channel": {}}`))
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedChannel:      tt.SelectedChannel,
 			CreatedChannel:       tt.CreatedChannel,
 			SelectedChannelError: tt.SelectedChannelError,
@@ -197,7 +201,7 @@ func TestHandleJoin(t *testing.T) {
 	httpmock.RegisterResponder("POST", "https://slack.com/api/conversations.info", httpmock.NewStringResponder(200, `{"ok": true, "channel": {"id": "CBAPFA2J2", "name": "general"}}`))
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedChannel:      tt.SelectedChannel,
 			CreatedChannel:       tt.CreatedChannel,
 			SelectedChannelError: tt.SelectedChannelError,
@@ -273,8 +277,10 @@ func TestSetProperties(t *testing.T) {
 func TestUpdateUser(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -307,7 +313,7 @@ func TestUpdateUser(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			SelectedUser:         tt.SelectedUser,
 			CreatedUser:          tt.CreatedUser,
 			UpdatedUser:          tt.UpdatedUser,
@@ -352,8 +358,10 @@ func TestUpdateUsersList(t *testing.T) {
 
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -364,7 +372,7 @@ func TestUpdateUsersList(t *testing.T) {
 	httpmock.Activate()
 	httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", fail)
 
-	bot := New(bundle, settings, MockedDB{CreatedUserError: nil})
+	bot := New(c, bundle, settings, MockedDB{CreatedUserError: nil})
 
 	bot.UpdateUsersList()
 	httpmock.DeactivateAndReset()
@@ -372,7 +380,7 @@ func TestUpdateUsersList(t *testing.T) {
 	httpmock.Activate()
 	httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", success)
 
-	bot = New(bundle, settings, MockedDB{CreatedUserError: errors.New("err"), SelectedUserError: errors.New("err")})
+	bot = New(c, bundle, settings, MockedDB{CreatedUserError: errors.New("err"), SelectedUserError: errors.New("err")})
 
 	bot.UpdateUsersList()
 	httpmock.DeactivateAndReset()
@@ -387,8 +395,10 @@ func TestSendMessage(t *testing.T) {
 
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -396,7 +406,7 @@ func TestSendMessage(t *testing.T) {
 		Language: "en_US",
 	}
 
-	bot := New(bundle, settings, MockedDB{})
+	bot := New(c, bundle, settings, MockedDB{})
 	err = bot.SendMessage("YYYZZZVVV", "Hey!", nil)
 	assert.NoError(t, err)
 
@@ -412,8 +422,10 @@ func TestSendUserMessage(t *testing.T) {
 
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -421,7 +433,7 @@ func TestSendUserMessage(t *testing.T) {
 		Language: "en_US",
 	}
 
-	bot := New(bundle, settings, MockedDB{})
+	bot := New(c, bundle, settings, MockedDB{})
 
 	err = bot.SendUserMessage("USLACKBOT", "MSG to User!")
 	assert.NoError(t, err)
@@ -438,8 +450,10 @@ func TestHandleMessage(t *testing.T) {
 
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -490,7 +504,7 @@ func TestHandleMessage(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		bot := New(bundle, settings, MockedDB{
+		bot := New(c, bundle, settings, MockedDB{
 			FoundStanduper:                tt.FoundStanduper,
 			SelectedStandupByMessageTS:    tt.SelectedStandupByMessageTS,
 			UpdatedStanduper:              tt.UpdatedStanduper,
@@ -531,8 +545,10 @@ func TestHandleMessage(t *testing.T) {
 func TestImplementCommands(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -540,7 +556,7 @@ func TestImplementCommands(t *testing.T) {
 		Language: "en_US",
 	}
 
-	bot := New(bundle, settings, MockedDB{
+	bot := New(c, bundle, settings, MockedDB{
 		SelectedChannelError: errors.New("no channel"),
 	})
 
@@ -569,8 +585,10 @@ func TestImplementCommands(t *testing.T) {
 func TestStart(t *testing.T) {
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
 
-	_, err := bundle.LoadMessageFile("../active.en.toml")
+	_, err = bundle.LoadMessageFile("../active.en.toml")
 	assert.NoError(t, err)
 
 	settings := model.BotSettings{
@@ -578,7 +596,7 @@ func TestStart(t *testing.T) {
 		Language: "en_US",
 	}
 
-	bot := New(bundle, settings, MockedDB{})
+	bot := New(c, bundle, settings, MockedDB{})
 
 	Dry = true
 	bot.Start()

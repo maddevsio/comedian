@@ -6,6 +6,7 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack/slackevents"
 	"gitlab.com/team-monitoring/comedian/botuser"
+	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
 )
@@ -30,13 +31,18 @@ func New(bundle *i18n.Bundle, db *storage.DB) *Comedian {
 
 //SetBots populates Comedian with bots
 func (comedian Comedian) SetBots() error {
+	config, err := config.Get()
+	if err != nil {
+		return err
+	}
+
 	settings, err := comedian.DB.GetAllBotSettings()
 	if err != nil {
 		return err
 	}
 
 	for _, s := range settings {
-		bot := botuser.New(comedian.Bundle, s, comedian.DB)
+		bot := botuser.New(config, comedian.Bundle, s, comedian.DB)
 		comedian.AddBot(bot)
 	}
 	return nil

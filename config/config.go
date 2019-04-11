@@ -7,6 +7,8 @@ import (
 // Config struct used for configuration of app with env variables
 type Config struct {
 	DatabaseURL            string `envconfig:"DATABASE" required:"false" default:"comedian:comedian@/comedian?parseTime=true"`
+	CollectorURL           string `envconfig:"COLLECTOR_URL" required:"false" default:""`
+	CollectorToken         string `envconfig:"COLLECTOR_TOKEN" required:"false" default:""`
 	HTTPBindAddr           string `envconfig:"HTTP_BIND_ADDR" required:"false" default:"0.0.0.0:8080"`
 	TestEnvironment        bool   `envconfig:"TESTENVIRONMENT" required:"false" default:"false"`
 	SlackClientID          string `envconfig:"SLACK_CLIENT_ID" required:"false"`

@@ -9,6 +9,7 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/storage"
 	"gitlab.com/team-monitoring/comedian/translation"
@@ -37,11 +38,12 @@ type Bot struct {
 	db         storage.Storage
 	bundle     *i18n.Bundle
 	wg         sync.WaitGroup
+	conf       *config.Config
 	QuitChan   chan struct{}
 }
 
 //New creates new Bot instance
-func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *Bot {
+func New(conf *config.Config, bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *Bot {
 	quit := make(chan struct{})
 
 	bot := &Bot{}
@@ -50,6 +52,7 @@ func New(bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *B
 	bot.db = db
 	bot.bundle = bundle
 	bot.QuitChan = quit
+	bot.conf = conf
 
 	return bot
 }
@@ -70,7 +73,7 @@ func (bot *Bot) Start() {
 			select {
 			case <-ticker:
 				bot.NotifyChannels(time.Now())
-				bot.SetStandupsCounterToZero()
+				bot.setStandupsCounterToZero()
 				if Dry {
 					break
 				}
@@ -88,7 +91,7 @@ func (bot *Bot) Stop() {
 	close(bot.QuitChan)
 }
 
-func (bot *Bot) SetStandupsCounterToZero() error {
+func (bot *Bot) setStandupsCounterToZero() error {
 	if time.Now().Hour() == 23 && time.Now().Minute() == 59 {
 		log.Info("Started to set submitted standups to 0 for all standupers")
 		standupers, err := bot.db.ListStandupersByTeamID(bot.properties.TeamID)
@@ -176,17 +179,8 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 	}
 
 	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.User, msg.Channel) {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		oneStandupPerDay, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-		}
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		oneStandupPerDay := translation.Translate(payload)
 		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 		return nil
 	}
@@ -249,17 +243,8 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 	}
 
 	if standuper.SubmittedStandupToday || bot.submittedStandupToday(msg.SubMessage.User, msg.Channel) {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		oneStandupPerDay, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-		}
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		oneStandupPerDay := translation.Translate(payload)
 		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
 		return nil
 	}
@@ -332,19 +317,8 @@ func (bot *Bot) analizeStandup(message string) string {
 	}
 
 	if !mentionsYesterdayWork {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "StandupHandleNoYesterdayWorkMentioned", 0, nil}
-		problem, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-
-		}
-		return problem
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "StandupHandleNoYesterdayWorkMentioned", 0, nil}
+		return translation.Translate(payload)
 	}
 
 	mentionsTodayPlans := false
@@ -355,19 +329,8 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsTodayPlans {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "StandupHandleNoTodayPlansMentioned", 0, nil}
-		problem, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-
-		}
-		return problem
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "StandupHandleNoTodayPlansMentioned", 0, nil}
+		return translation.Translate(payload)
 	}
 
 	mentionsProblem := false
@@ -379,19 +342,8 @@ func (bot *Bot) analizeStandup(message string) string {
 		}
 	}
 	if !mentionsProblem {
-		payload := translation.Payload{bot.bundle, bot.properties.Language, "StandupHandleNoProblemsMentioned", 0, nil}
-		problem, err := translation.Translate(payload)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"TeamName":     bot.properties.TeamName,
-				"Language":     payload.Lang,
-				"MessageID":    payload.MessageID,
-				"Count":        payload.Count,
-				"TemplateData": payload.TemplateData,
-			}).Error("Failed to translate message!")
-
-		}
-		return problem
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "StandupHandleNoProblemsMentioned", 0, nil}
+		return translation.Translate(payload)
 	}
 
 	return ""
@@ -474,7 +426,7 @@ func (bot *Bot) ImplementCommands(channelID, command, params string, accessLevel
 	case "show_deadline":
 		return bot.showTime(channelID)
 	default:
-		return bot.DisplayHelpText("")
+		return bot.displayDefaultHelpText()
 	}
 }
 

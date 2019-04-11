@@ -51,17 +51,20 @@ type Standuper struct {
 
 // BotSettings is used for updating and storing different bot configuration parameters
 type BotSettings struct {
-	ID                 int64  `db:"id" json:"id"`
-	UserID             string `db:"user_id" json:"user_id"`
-	NotifierInterval   int    `db:"notifier_interval" json:"notifier_interval" `
-	Language           string `db:"language" json:"language" `
-	ReminderRepeatsMax int    `db:"reminder_repeats_max" json:"reminder_repeats_max" `
-	ReminderTime       int64  `db:"reminder_time" json:"reminder_time" `
-	AccessToken        string `db:"bot_access_token" json:"bot_access_token" `
-	TeamID             string `db:"team_id" json:"team_id" `
-	TeamName           string `db:"team_name" json:"team_name" `
-	Admin              bool   `db:"admin" json:"admin" `
-	Password           string `db:"password" json:"password" `
+	ID                  int64  `db:"id" json:"id"`
+	UserID              string `db:"user_id" json:"user_id"`
+	NotifierInterval    int    `db:"notifier_interval" json:"notifier_interval" `
+	Language            string `db:"language" json:"language" `
+	ReminderRepeatsMax  int    `db:"reminder_repeats_max" json:"reminder_repeats_max" `
+	ReminderTime        int64  `db:"reminder_time" json:"reminder_time" `
+	AccessToken         string `db:"bot_access_token" json:"bot_access_token" `
+	TeamID              string `db:"team_id" json:"team_id" `
+	TeamName            string `db:"team_name" json:"team_name" `
+	Admin               bool   `db:"admin" json:"admin" `
+	Password            string `db:"password" json:"password" `
+	ReportingChannel    string `db:"reporting_channel" json:"reporting_channel"`
+	ReportingTime       string `db:"reporting_time" json:"reporting_time"`
+	IndividualReportsOn bool   `db:"individual_reports_on" json:"individual_reports_on"`
 }
 
 // ServiceEvent event coming from services
