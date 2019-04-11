@@ -7,7 +7,7 @@ info:
   license:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
-host: "staging.comedian.maddevs.co"
+host: "comedian-new.maddevs.co"
 basePath: "/"
 tags:
 - name: "standups"
@@ -687,8 +687,6 @@ definitions:
       Channel:
         type: "string"
       Message:
-        type: "string"
-      Attachments:
         type: "string"
   User:
     type: "object"
