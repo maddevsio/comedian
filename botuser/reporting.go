@@ -215,7 +215,14 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 		return
 	}
 
-	err = bot.SendMessage(bot.properties.ReportingChannel, reportHeader, allReports)
+	reportingChannelID := ""
+	for _, ch := range channels {
+		if (ch.ChannelName == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) || (ch.ChannelID == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) {
+			reportingChannelID = ch.ChannelID
+		}
+	}
+
+	err = bot.SendMessage(reportingChannelID, reportHeader, allReports)
 	if err != nil {
 		log.Error(err)
 	}
@@ -343,7 +350,14 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		return FinalReport, nil
 	}
 
-	err = bot.SendMessage(bot.properties.ReportingChannel, reportHeaderWeekly, allReports)
+	reportingChannelID := ""
+	for _, ch := range channels {
+		if (ch.ChannelName == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) || (ch.ChannelID == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) {
+			reportingChannelID = ch.ChannelID
+		}
+	}
+
+	err = bot.SendMessage(reportingChannelID, reportHeaderWeekly, allReports)
 	if err != nil {
 		log.Error("Send weekly report message failed: ", err, bot.properties.ReportingChannel)
 	}
