@@ -90,14 +90,6 @@
   revision = "135c24b11c19e52befcae2ec3fca5d9b78c4e98e"
 
 [[projects]]
-  digest = "1:f7463b67871bf7fe475e2c69fb0d21ead07de5188b8d7f8abf8fc961965ed841"
-  name = "github.com/gorilla/schema"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "d0e4c24cff97ae983e9847e0ed5a02dc10013d41"
-  version = "v1.0.2"
-
-[[projects]]
   digest = "1:7b5c6e2eeaa9ae5907c391a91c132abfd5c9e8a784a341b5625e750c67e6825d"
   name = "github.com/gorilla/websocket"
   packages = ["."]
@@ -339,7 +331,6 @@
     "github.com/getsentry/raven-go",
     "github.com/go-sql-driver/mysql",
     "github.com/go-validator/validator",
-    "github.com/gorilla/schema",
     "github.com/jarcoal/httpmock",
     "github.com/jmoiron/sqlx",
     "github.com/kelseyhightower/envconfig",

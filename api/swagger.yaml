@@ -82,7 +82,20 @@ paths:
   /service-message:
     post:
       summary: "Handles messages from different Comedian services. Does not belong to UI. Needed for services only"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: body
+        name: body
+        required: true
+        description: "note: slack attachment has particular structure, learn more at slack documentation"
+        schema:
+            $ref: '#/definitions/ServiceMessage'
       responses:
+        400: 
+          description: "incorrect data format"
         200:
           description: "Message handled!"
   /commands:
@@ -663,6 +676,19 @@ definitions:
       teamname:
         type: "string"
       password:
+        type: "string"
+  ServiceMessage: 
+    type: "object"
+    properties:
+      TeamName:
+        type: "string"
+      AccessToken:
+        type: "string"
+      Channel:
+        type: "string"
+      Message:
+        type: "string"
+      Attachments:
         type: "string"
   User:
     type: "object"
