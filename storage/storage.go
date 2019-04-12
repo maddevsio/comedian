@@ -18,6 +18,8 @@ type Storage interface {
 	// When dashboard is ready - DELETE!
 	GetBotSettingsByTeamName(teamName string) (model.BotSettings, error)
 
+	GetBotSettingsByTeamID(teamID string) (model.BotSettings, error)
+
 	//GetBotSettings returns a particular bot
 	GetBotSettings(id int64) (model.BotSettings, error)
 

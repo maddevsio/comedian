@@ -57,10 +57,19 @@ func (m *DB) GetAllBotSettings() ([]model.BotSettings, error) {
 }
 
 //GetBotSettingsByTeamName returns a particular bot
-// When dashboard is ready - DELETE!
 func (m *DB) GetBotSettingsByTeamName(teamName string) (model.BotSettings, error) {
 	var bs model.BotSettings
 	err := m.DB.Get(&bs, "SELECT * FROM `bot_settings` where team_name=?", teamName)
+	if err != nil {
+		return bs, err
+	}
+	return bs, nil
+}
+
+//GetBotSettingsByTeamID returns a particular bot
+func (m *DB) GetBotSettingsByTeamID(teamID string) (model.BotSettings, error) {
+	var bs model.BotSettings
+	err := m.DB.Get(&bs, "SELECT * FROM `bot_settings` where team_id=?", teamID)
 	if err != nil {
 		return bs, err
 	}
@@ -85,8 +94,8 @@ func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, e
 	}
 
 	_, err = m.DB.Exec(
-		"UPDATE `bot_settings` set notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, reporting_channel=?, reporting_time=?, individual_reports_on=? where id=?",
-		settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.ReportingChannel, settings.ReportingTime, settings.IndividualReportsOn, settings.ID,
+		"UPDATE `bot_settings` set bot_access_token=?, password=?, admin=?, user_id=?, notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, reporting_channel=?, reporting_time=?, individual_reports_on=? where id=?",
+		settings.AccessToken, settings.Password, settings.Admin, settings.UserID, settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.ReportingChannel, settings.ReportingTime, settings.IndividualReportsOn, settings.ID,
 	)
 	if err != nil {
 		return settings, err
