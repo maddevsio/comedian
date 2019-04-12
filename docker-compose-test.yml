@@ -41,7 +41,6 @@ services:
       - comedian_comedian
     environment:
       - COMEDIAN_DATABASE=comedian:comedian@tcp(db:3306)/comedian?parseTime=true
-      - TESTENVIRONMENT=true
     depends_on:
       - db
     working_dir: /go/src/gitlab.com/team-monitoring/comedian/

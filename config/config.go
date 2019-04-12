@@ -10,11 +10,10 @@ type Config struct {
 	CollectorURL           string `envconfig:"COLLECTOR_URL" required:"false" default:""`
 	CollectorToken         string `envconfig:"COLLECTOR_TOKEN" required:"false" default:""`
 	HTTPBindAddr           string `envconfig:"HTTP_BIND_ADDR" required:"false" default:"0.0.0.0:8080"`
-	TestEnvironment        bool   `envconfig:"TESTENVIRONMENT" required:"false" default:"false"`
 	SlackClientID          string `envconfig:"SLACK_CLIENT_ID" required:"false"`
 	SlackClientSecret      string `envconfig:"SLACK_CLIENT_SECRET" required:"false"`
-	SlackVerificationToken string `envconfig:"COMEDIAN_VERIFICATION_TOKEN" required:"false"`
-	UIurl                  string `envconfig:"COMEDIAN_UI_URL" required:"false"`
+	SlackVerificationToken string `envconfig:"SLACK_VERIFICATION_TOKEN" required:"false"`
+	UIurl                  string `envconfig:"UI_URL" required:"false"`
 	OwnerSlackTeamID       string `envconfig:"OWNER_SLACK_TEAM_ID" required:"false"`
 }
 

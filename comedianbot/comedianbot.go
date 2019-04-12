@@ -5,7 +5,6 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack/slackevents"
-	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/botuser"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
@@ -100,7 +99,6 @@ func (comedian *Comedian) SelectBot(team string) (*botuser.Bot, error) {
 	var botuser *botuser.Bot
 
 	for _, bot := range comedian.bots {
-		logrus.Info("SelectBot: ", bot)
 		if bot.Suits(team) {
 			botuser = bot
 		}

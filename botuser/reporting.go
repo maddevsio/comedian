@@ -2,7 +2,6 @@ package botuser
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -540,7 +539,6 @@ func (bot *Bot) GetCollectorDataOnMember(member model.Standuper, startDate, endD
 func (bot *Bot) GetCollectorData(getDataOn, data, dateFrom, dateTo string) (CollectorData, error) {
 	var collectorData CollectorData
 	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", bot.conf.CollectorURL, bot.properties.TeamName, getDataOn, data, dateFrom, dateTo)
-	log.Infof("teammonitoring: getCollectorData request URL: %s", linkURL)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		return collectorData, err
@@ -555,8 +553,7 @@ func (bot *Bot) GetCollectorData(getDataOn, data, dateFrom, dateTo string) (Coll
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		log.Errorf("teammonitoring: res status code - %v. Could not get data", res.StatusCode)
-		return collectorData, errors.New("could not get data on this request")
+		return collectorData, fmt.Errorf("failed to get collector data. %v", res.StatusCode)
 	}
 	body, _ := ioutil.ReadAll(res.Body)
 	json.Unmarshal(body, &collectorData)
