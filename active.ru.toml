@@ -237,6 +237,14 @@ other = "Вас назначили админом Комедиана!"
 description = "Displays message when user removed as admin from Comedian"
 other = "Вы больше не админ Комедиана!"
 
+[MemberAssigned]
+description = "Displays message when user added as Member for Comedian"
+other = "Вас добавили стендапить в <#{{.channelID}}|{{.channelName}}> с ролью {{.role}}. Помните, что не записано, то упущено навсегда!"
+
+[MemberRemoved]
+description = "Displays message when user removed as Member from Comedian"
+other = "Вас убрали из списка стендаперов в канале <#{{.channelID}}|{{.channelName}}> с ролью {{.role}}. Спасибо за все ваши стендапы и до скорого!"
+
 [RemoveStandupTime]
 description = "Displays message when a standuptime for a channel successfully removed"
 other = "Стендап время для канала удалено."

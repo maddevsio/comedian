@@ -122,6 +122,12 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 		}
 
 		if err != nil {
+			ch, err := bot.db.SelectChannel(channel)
+			if err != nil {
+				log.Error(err)
+				failed = append(failed, u)
+				continue
+			}
 			standuper, err := bot.db.CreateStanduper(model.Standuper{
 				TeamID:                bot.properties.TeamID,
 				UserID:                userID,
@@ -135,6 +141,12 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 				continue
 			}
 			log.Infof("ChannelMember created! ID:%v", standuper.ID)
+
+			payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "MemberAssigned", 0, map[string]interface{}{"role": role, "channelID": ch.ChannelID, "channelName": ch.ChannelName}}
+			err = bot.SendUserMessage(userID, translation.Translate(payload))
+			if err != nil {
+				log.Errorf("rest: SendUserMessage failed: %v\n", err)
+			}
 		}
 
 		added = append(added, u)
@@ -207,13 +219,12 @@ func (bot *Bot) addAdmins(users []string) string {
 		user.Role = "admin"
 
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AdminAssigned", 0, nil}
-		adminAssigned := translation.Translate(payload)
 		_, err = bot.db.UpdateUser(user)
 		if err != nil {
 			failed = append(failed, u)
 			continue
 		}
-		err = bot.SendUserMessage(userID, adminAssigned)
+		err = bot.SendUserMessage(userID, translation.Translate(payload))
 		if err != nil {
 			log.Errorf("rest: SendUserMessage failed: %v\n", err)
 		}
@@ -321,7 +332,19 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 			continue
 		}
 
+		ch, err := bot.db.SelectChannel(channelID)
+		if err != nil {
+			log.Error(err)
+			failed = append(failed, u)
+			continue
+		}
+
 		bot.db.DeleteStanduper(member.ID)
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "MemberRemoved", 0, map[string]interface{}{"role": member.RoleInChannel, "channelID": ch.ChannelID, "channelName": ch.ChannelName}}
+		err = bot.SendUserMessage(userID, translation.Translate(payload))
+		if err != nil {
+			log.Errorf("rest: SendUserMessage failed: %v\n", err)
+		}
 		deleted = append(deleted, u)
 	}
 

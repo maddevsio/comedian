@@ -214,6 +214,14 @@ other = "You have been added as Admin for Comedian!"
 description = "Displays message when user removed as admin from Comedian"
 other = "You have been removed as Admin from Comedian!"
 
+[MemberAssigned]
+description = "Displays message when user added as Member for Comedian"
+other = "You have been added as {{.role}} in <#{{.channelID}}|{{.channelName}}>. Please, submit standups in time!"
+
+[MemberRemoved]
+description = "Displays message when user removed as Member from Comedian"
+other = "You have been removed as {{.role}} from <#{{.channelID}}|{{.channelName}}>. Thanks for working with me and see you later!"
+
 [RemoveStandupTime]
 description = "Displays message when a standuptime for a channel successfully removed"
 other = "Standup time for channel deleted."
