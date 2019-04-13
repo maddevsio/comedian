@@ -538,7 +538,7 @@ func (bot *Bot) GetCollectorDataOnMember(member model.Standuper, startDate, endD
 //GetCollectorData sends api request to collector servise and returns collector object
 func (bot *Bot) GetCollectorData(getDataOn, data, dateFrom, dateTo string) (CollectorData, error) {
 	var collectorData CollectorData
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", bot.conf.CollectorURL, bot.properties.TeamName, getDataOn, data, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", bot.conf.CollectorURL, bot.properties.TeamID, getDataOn, data, dateFrom, dateTo)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		return collectorData, err
