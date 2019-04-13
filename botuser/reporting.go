@@ -551,11 +551,12 @@ func (bot *Bot) GetCollectorData(getDataOn, data, dateFrom, dateTo string) (Coll
 	}
 
 	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
 
 	if res.StatusCode != 200 {
+		log.WithFields(log.Fields(map[string]interface{}{"body": string(body), "requestURL": linkURL, "res.StatusCode": res.StatusCode})).Warning("Failed to get collector data on member!")
 		return collectorData, fmt.Errorf("failed to get collector data. %v", res.StatusCode)
 	}
-	body, _ := ioutil.ReadAll(res.Body)
 	json.Unmarshal(body, &collectorData)
 	return collectorData, nil
 }
