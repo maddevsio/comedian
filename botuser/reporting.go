@@ -35,6 +35,12 @@ func (bot *Bot) CallDisplayYesterdayTeamReport() error {
 		log.Info("Report time is empty")
 		return nil
 	}
+
+	if int(time.Now().Weekday()) == 0 {
+		log.Info("Sunday no yesterday report")
+		return nil
+	}
+
 	w := when.New(nil)
 	w.Add(en.All...)
 	w.Add(ru.All...)
