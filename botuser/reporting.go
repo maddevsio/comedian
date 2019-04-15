@@ -41,6 +41,11 @@ func (bot *Bot) CallDisplayYesterdayTeamReport() error {
 		return nil
 	}
 
+	if int(time.Now().Weekday()) == 1 {
+		log.Info("Monday no yesterday report")
+		return nil
+	}
+
 	w := when.New(nil)
 	w.Add(en.All...)
 	w.Add(ru.All...)
