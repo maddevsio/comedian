@@ -149,7 +149,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 
 			//if there is nothing to show, do not create attachment
 			if fieldValue == "" {
-				log.Info("Nothing to show... skip channel! ", channel.ChannelID)
+				log.Warningf("Nothing to show... skip member! %v", member)
 				continue
 			}
 
@@ -463,6 +463,9 @@ func (bot *Bot) processStandup(member model.Standuper) (string, int) {
 
 	standup, err := bot.db.GetStandupForPeriod(member.UserID, member.ChannelID, timeFrom, timeTo)
 	if err != nil || standup == nil {
+		if time.Now().Weekday() == 0 || time.Now().Weekday() == 1 {
+			return "", points
+		}
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "NoStandup", 0, map[string]interface{}{}}
 		text = translation.Translate(payload)
 	} else {
