@@ -56,6 +56,19 @@ func (comedian *Comedian) StartBots() {
 	}
 }
 
+// SelectAdminBot returns admin bot
+func (comedian *Comedian) SelectAdminBot() *botuser.Bot {
+	var botuser *botuser.Bot
+
+	for _, bot := range comedian.bots {
+		if bot.IsAdmin() {
+			botuser = bot
+		}
+	}
+
+	return botuser
+}
+
 //HandleEvent sends message to Slack Workspace
 func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 	bot, err := comedian.SelectBot(incomingEvent.TeamName)

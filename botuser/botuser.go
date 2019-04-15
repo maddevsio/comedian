@@ -150,6 +150,7 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		if err != nil {
 			return err
 		}
+
 	default:
 		log.WithFields(log.Fields{"event": string(data)}).Warning("unrecognized event!")
 		return nil
@@ -579,6 +580,11 @@ func (bot *Bot) updateUser(user slack.User) error {
 //Suits returns true if found desired bot properties
 func (bot *Bot) Suits(team string) bool {
 	return team == bot.properties.TeamID || team == bot.properties.TeamName
+}
+
+//IsAdmin returns true if bot is Admin
+func (bot *Bot) IsAdmin() bool {
+	return bot.properties.Admin
 }
 
 //Settings just returns bot settings

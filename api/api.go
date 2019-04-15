@@ -293,6 +293,12 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		}
 		api.comedian.AddBot(bot)
 
+		adminBot := api.comedian.SelectAdminBot()
+		err = adminBot.SendMessage("THRSFDBQF", fmt.Sprintf("Comedian is added to a new slack! Now it works at `%v`!", resp.TeamName), nil)
+		if err != nil {
+			log.Error("SendMessage failed for add bot to slack webhook: ", err)
+		}
+
 		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 	}
 
@@ -317,6 +323,12 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	err = bot.SendUserMessage(resp.UserID, message)
 	if err != nil {
 		log.Error("SendUserMessage failed in Auth: ", err)
+	}
+
+	adminBot := api.comedian.SelectAdminBot()
+	err = adminBot.SendMessage("THRSFDBQF", fmt.Sprintf("Comedian is updated at `%v`!", resp.TeamName), nil)
+	if err != nil {
+		log.Error("SendMessage failed for add bot to slack webhook: ", err)
 	}
 
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
