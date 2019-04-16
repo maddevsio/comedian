@@ -91,7 +91,7 @@ func (m *DB) GetStandupForPeriod(userID, channelID string, timeFrom, timeTo time
 // ListStandups returns array of standup entries from database
 func (m *DB) ListStandups() ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.DB.Select(&items, "SELECT * FROM `standups`")
+	err := m.DB.Select(&items, "SELECT * FROM `standups` order by id desc")
 	return items, err
 }
 
