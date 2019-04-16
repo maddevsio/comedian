@@ -70,7 +70,7 @@ func (bot *Bot) SendWarning(channelID string) error {
 
 	nonReportersIDs := []string{}
 	for _, standuper := range standupers {
-		if standuper.ChannelID == channelID && !standuper.SubmittedStandupToday {
+		if standuper.ChannelID == channelID && !standuper.SubmittedStandupToday && standuper.RoleInChannel != "pm" {
 			nonReportersIDs = append(nonReportersIDs, "<@"+standuper.UserID+">")
 		}
 	}
@@ -110,7 +110,7 @@ func (bot *Bot) SendChannelNotification(channelID string) error {
 
 	nonReporters := []model.Standuper{}
 	for _, standuper := range standupers {
-		if standuper.ChannelID == channelID && !standuper.SubmittedStandupToday {
+		if standuper.ChannelID == channelID && !standuper.SubmittedStandupToday && standuper.RoleInChannel != "pm" {
 			nonReporters = append(nonReporters, standuper)
 		}
 	}
@@ -153,7 +153,7 @@ func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, r
 			log.Error("notifyNotAll failed at GetStanduper: ", err)
 			continue
 		}
-		if !standuper.SubmittedStandupToday {
+		if !standuper.SubmittedStandupToday && standuper.RoleInChannel != "pm" {
 			roundNonReporters = append(roundNonReporters, fmt.Sprintf("<@%v>", standuper.UserID))
 		}
 	}

@@ -239,6 +239,8 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 		return err
 	}
 
+	log.Infof("Access level for user %v in channel %v is %v", slachCommand.UserID, slachCommand.ChannelID, accessLevel)
+
 	command, params := utils.CommandParsing(slachCommand.Text)
 
 	message := bot.ImplementCommands(slachCommand.ChannelID, command, params, accessLevel)
