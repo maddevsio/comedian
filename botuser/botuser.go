@@ -135,7 +135,12 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 			return err
 		}
 		return bot.HandleMessage(message)
-
+	case "app_mention":
+		message := &slack.MessageEvent{}
+		if err := json.Unmarshal(data, message); err != nil {
+			return err
+		}
+		return bot.HandleMessage(message)
 	case "member_joined_channel":
 		join := &slack.MemberJoinedChannelEvent{}
 		if err := json.Unmarshal(data, join); err != nil {
