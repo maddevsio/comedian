@@ -286,6 +286,37 @@ func (api *ComedianAPI) deleteBot(c echo.Context) error {
 	return c.JSON(http.StatusNoContent, id)
 }
 
+func (api *ComedianAPI) listChannelsOfBot(c echo.Context) error {
+
+	if c.Get("user") == nil {
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
+	}
+	user := c.Get("user").(*jwt.Token)
+
+	claims := user.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
+
+	listChannels, err := api.db.ListChannelsByTeamID(teamID)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error(" failed")
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	result := make([]model.Channel, 0)
+
+	for _, channel := range listChannels {
+		if channel.TeamID == teamID {
+			result = append(result, channel)
+		}
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
 func (api *ComedianAPI) listStandups(c echo.Context) error {
 
 	if c.Get("user") == nil {
