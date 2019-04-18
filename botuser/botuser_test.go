@@ -566,9 +566,9 @@ func TestImplementCommands(t *testing.T) {
 		accessLevel int
 		expected    string
 	}{
-		{"foo", "", 0, "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, default is a developer role, if the role is not selected. \nTo view members use `show` command. If you provide a role name, you will see members with this role. _admin, pm, developer, designer_. \nTo remove members use `remove` command. If you provide a role name, you will remove members with this role. _admin, pm, developer, designer_. \nTo set standup deadline use `add_deadline` command.\nTo view standup deadline in the channel use `show_deadline` command. \nTo remove standup deadline in the channel use `remove_deadline` command. \n"},
+		{"foo", "", 0, "To add members use `add` command. Here is an example: `add @user @user1 / pm` You can add members with _pm, developer, designer, tester_ roles, default is a developer role, if the role is not selected. \nTo view members use `show` command\nTo remove members use `remove` command and tag members to remove\nTo set standup deadline use `add_deadline` command.\nTo view standup deadline in the channel use `show_deadline` command. \nTo remove standup deadline in the channel use `remove_deadline` command. \n"},
 		{"add", "", 4, "Access Denied! You need to be at least PM in this project to use this command!"},
-		{"show", "foo", 0, "To view members use `show` command. If you provide a role name, you will see members with this role. _admin, pm, developer, designer_. "},
+		{"show", "foo", 0, "No standupers in this channel! To add one, please, use `/comedian add` slash command"},
 		{"remove", "", 4, "Access Denied! You need to be at least PM in this project to use this command!"},
 		{"add_deadline", "", 4, "Access Denied! You need to be at least PM in this project to use this command!"},
 		{"remove_deadline", "", 4, "Access Denied! You need to be at least PM in this project to use this command!"},

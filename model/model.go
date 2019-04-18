@@ -228,3 +228,12 @@ func (s Standuper) IsPM() bool {
 func (s Standuper) IsDesigner() bool {
 	return s.RoleInChannel == "designer"
 }
+
+//Role sets the abilities for different roles
+type Role struct {
+	Title         string
+	AccessLevel   int
+	ShouldStandup bool
+	ShouldCommit  bool
+	ShouldLogTime bool
+}

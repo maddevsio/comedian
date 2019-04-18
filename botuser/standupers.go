@@ -11,10 +11,7 @@ import (
 )
 
 func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AccessAtLeastAdmin", 0, nil}
-	accessAtLeastAdmin := translation.Translate(payload)
-
-	payload = translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
+	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
 	accessAtLeastPM := translation.Translate(payload)
 
 	if accessLevel > pmAccess {
@@ -26,7 +23,7 @@ func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
 	if strings.Contains(params, "/") {
 		dividedText := strings.Split(params, "/")
 		if len(dividedText) != 2 {
-			return "wrong username. Try again with correct username"
+			return bot.DisplayHelpText("add")
 		}
 		role = strings.TrimSpace(dividedText[1])
 		members = strings.Fields(dividedText[0])
@@ -36,17 +33,14 @@ func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
 	}
 
 	switch role {
-	case "admin", "админ":
-		if accessLevel > adminAccess {
-			return accessAtLeastAdmin
-		}
-		return bot.addAdmins(members)
 	case "developer", "разработчик", "":
 		return bot.addMembers(members, "developer", channelID)
 	case "designer", "дизайнер":
 		return bot.addMembers(members, "designer", channelID)
 	case "pm", "пм":
 		return bot.addMembers(members, "pm", channelID)
+	case "tester", "тестер":
+		return bot.addMembers(members, "tester", channelID)
 	default:
 		return bot.DisplayHelpText("add")
 	}
@@ -56,49 +50,18 @@ func (bot *Bot) showCommand(channelID, params string) string {
 	switch params {
 	case "admin", "админ":
 		return bot.listAdmins()
-	case "developer", "разработчик", "":
-		return bot.listMembers(channelID, "developer")
-	case "designer", "дизайнер":
-		return bot.listMembers(channelID, "designer")
-	case "pm", "пм":
-		return bot.listMembers(channelID, "pm")
 	default:
-		return bot.DisplayHelpText("show")
+		return bot.listMembers(channelID)
 	}
 }
 
 func (bot *Bot) deleteCommand(accessLevel int, channelID, params string) string {
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AccessAtLeastAdmin", 0, nil}
-	accessAtLeastAdmin := translation.Translate(payload)
-	payload = translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
+	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
 	accessAtLeastPM := translation.Translate(payload)
-
 	if accessLevel > pmAccess {
 		return accessAtLeastPM
 	}
-
-	var role string
-	var members []string
-	if strings.Contains(params, "/") {
-		dividedText := strings.Split(params, "/")
-		role = strings.TrimSpace(dividedText[1])
-		members = strings.Fields(dividedText[0])
-	} else {
-		role = "developer"
-		members = strings.Fields(params)
-	}
-
-	switch role {
-	case "admin", "админ":
-		if accessLevel > adminAccess {
-			return accessAtLeastAdmin
-		}
-		return bot.deleteAdmins(members)
-	case "developer", "разработчик", "pm", "пм", "":
-		return bot.deleteMembers(members, channelID)
-	default:
-		return bot.DisplayHelpText("remove")
-	}
+	return bot.deleteMembers(strings.Fields(params), channelID)
 }
 
 func (bot *Bot) addMembers(users []string, role, channel string) string {
@@ -216,109 +179,63 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 	return text
 }
 
-func (bot *Bot) addAdmins(users []string) string {
-
-	var failed, exist, added []string
-	var text string
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-
-	for _, u := range users {
-		// <@foo> passes this check... need to fix it later
-		if !rg.MatchString(u) {
-			log.Errorf("Could not add admin [%v]. Reason: could not match string. Wrong username", u)
-			failed = append(failed, u)
-			continue
-		}
-		userID, _ := utils.SplitUser(u)
-		user, err := bot.db.SelectUser(userID)
-		if err != nil {
-			log.Errorf("Could not add admin [%v]. Reason: could not find user [%v]. Wrong username", u, userID)
-			failed = append(failed, u)
-			continue
-		}
-		if user.Role == "admin" {
-			exist = append(exist, u)
-			continue
-		}
-		user.Role = "admin"
-
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AdminAssigned", 0, nil}
-		_, err = bot.db.UpdateUser(user)
-		if err != nil {
-			log.Errorf("Could not add admin. Could not update user [%v]: %v", user.ID, err)
-			failed = append(failed, u)
-			continue
-		}
-		err = bot.SendUserMessage(userID, translation.Translate(payload))
-		if err != nil {
-			log.Errorf("rest: SendUserMessage failed: %v\n", err)
-		}
-		added = append(added, u)
-	}
-
-	if len(failed) != 0 {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AddAdminsFailed", len(failed), map[string]interface{}{"admin": failed[0], "admins": strings.Join(failed, ", ")}}
-		addAdminsFailed := translation.Translate(payload)
-		text += addAdminsFailed
-	}
-	if len(exist) != 0 {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AddAdminsExist", len(exist), map[string]interface{}{"admin": exist[0], "admins": strings.Join(exist, ", ")}}
-		addAdminsExist := translation.Translate(payload)
-		text += addAdminsExist
-	}
-	if len(added) != 0 {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AddAdminsAdded", len(added), map[string]interface{}{"admin": added[0], "admins": strings.Join(added, ", ")}}
-		addAdminsAdded := translation.Translate(payload)
-		text += addAdminsAdded
-	}
-
-	return text
-}
-
-func (bot *Bot) listMembers(channelID, role string) string {
-
-	standupers, err := bot.db.ListChannelStandupers(channelID)
-	if err != nil {
-		return "could not list members"
-	}
-	var userIDs []string
-	for _, standuper := range standupers {
-		if standuper.RoleInChannel == role {
-			userIDs = append(userIDs, "<@"+standuper.UserID+">")
-		}
-	}
-	if role == "pm" {
-		if len(userIDs) < 1 {
-			payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListNoPMs", 0, nil}
-			listNoPMs := translation.Translate(payload)
-			return listNoPMs
-		}
-
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListPMs", len(userIDs), map[string]interface{}{"pm": userIDs[0], "pms": strings.Join(userIDs, ", ")}}
-		listPMs := translation.Translate(payload)
-
-		return listPMs
-
-	}
-
-	if len(userIDs) < 1 {
+func (bot *Bot) listMembers(channelID string) (result string) {
+	members, err := bot.db.ListChannelStandupers(channelID)
+	if err != nil || len(members) == 0 {
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListNoStandupers", 0, nil}
-		listNoStandupers := translation.Translate(payload)
-		return listNoStandupers
-
+		return translation.Translate(payload)
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListStandupers", len(userIDs), map[string]interface{}{"standuper": userIDs[0], "standupers": strings.Join(userIDs, ", ")}}
-	listStandupers := translation.Translate(payload)
-	return listStandupers
+	var managers []string
+	var developers []string
+	var designers []string
+	var testers []string
+
+	for _, member := range members {
+		switch member.RoleInChannel {
+		case "pm":
+			managers = append(managers, "<@"+member.UserID+">")
+		case "developer":
+			developers = append(developers, "<@"+member.UserID+">")
+		case "designer":
+			designers = append(designers, "<@"+member.UserID+">")
+		case "tester":
+			testers = append(testers, "<@"+member.UserID+">")
+		}
+	}
+
+	if len(managers) == 0 {
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListNoPMs", 0, nil}
+		result += translation.Translate(payload) + "\n"
+	} else {
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListPMs", len(managers), map[string]interface{}{"pm": managers[0], "pms": strings.Join(managers, ", ")}}
+		result += translation.Translate(payload) + "\n"
+	}
+
+	if len(developers) != 0 {
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListDevelopers", len(developers), map[string]interface{}{"developer": developers[0], "developers": strings.Join(developers, ", ")}}
+		result += translation.Translate(payload) + "\n"
+	}
+
+	if len(designers) != 0 {
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListDesigners", len(designers), map[string]interface{}{"designer": designers[0], "designers": strings.Join(designers, ", ")}}
+		result += translation.Translate(payload) + "\n"
+	}
+
+	if len(testers) != 0 {
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListTesters", len(testers), map[string]interface{}{"tester": testers[0], "testers": strings.Join(testers, ", ")}}
+		result += translation.Translate(payload) + "\n"
+	}
+	return result
 }
 
 func (bot *Bot) listAdmins() string {
+	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListNoAdmins", 0, nil}
+	listNoAdmins := translation.Translate(payload)
 
 	users, err := bot.db.ListUsers()
 	if err != nil {
-		return "could not list users"
+		return listNoAdmins
 	}
 	var userNames []string
 	for _, user := range users {
@@ -326,14 +243,12 @@ func (bot *Bot) listAdmins() string {
 			userNames = append(userNames, "<@"+user.UserName+">")
 		}
 	}
+
 	if len(userNames) < 1 {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListNoAdmins", 0, nil}
-		listNoAdmins := translation.Translate(payload)
 		return listNoAdmins
 	}
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListAdmins", len(userNames), map[string]interface{}{"admin": userNames[0], "admins": strings.Join(userNames, ", ")}}
-	listAdmins := translation.Translate(payload)
-	return listAdmins
+	payload = translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ListAdmins", len(userNames), map[string]interface{}{"admin": userNames[0], "admins": strings.Join(userNames, ", ")}}
+	return translation.Translate(payload)
 }
 
 func (bot *Bot) deleteMembers(members []string, channelID string) string {
@@ -349,6 +264,7 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 			failed = append(failed, u)
 			continue
 		}
+
 		userID, _ := utils.SplitUser(u)
 
 		// need to make sure people have different userID across teams
@@ -389,61 +305,6 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "DeleteMembersSucceed", len(deleted), map[string]interface{}{"user": deleted[0], "users": strings.Join(deleted, ", ")}}
 		deleteMembersSucceed := translation.Translate(payload)
 		text += deleteMembersSucceed
-	}
-
-	return text
-}
-
-func (bot *Bot) deleteAdmins(users []string) string {
-
-	var failed, deleted []string
-	var text string
-
-	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
-
-	for _, u := range users {
-		if !rg.MatchString(u) {
-			log.Errorf("Could not delete admin [%v]. Reason: could not match string. Wrong username", u)
-			failed = append(failed, u)
-			continue
-		}
-		userID, _ := utils.SplitUser(u)
-		user, err := bot.db.SelectUser(userID)
-		if err != nil {
-			log.Errorf("Could not delete admin. Could not find user by userID: [%v]. Reason: [%v]", userID, err)
-			failed = append(failed, u)
-			continue
-		}
-		if user.Role != "admin" {
-			log.Errorf("Could not delete admin. User with userID [%v] is not admin", userID)
-			failed = append(failed, u)
-			continue
-		}
-		user.Role = ""
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AdminRemoved", 0, nil}
-		adminRemoved := translation.Translate(payload)
-		_, err = bot.db.UpdateUser(user)
-		if err != nil {
-			log.Errorf("Could not delete admin. Could not update role, could not update user [%v]: %v", user.ID, err)
-			failed = append(failed, u)
-			continue
-		}
-		err = bot.SendUserMessage(userID, adminRemoved)
-		if err != nil {
-			log.Errorf("rest: SendUserMessage failed: %v\n", err)
-		}
-		deleted = append(deleted, u)
-	}
-
-	if len(failed) != 0 {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "DeleteAdminsFailed", len(failed), map[string]interface{}{"admin": failed[0], "admins": strings.Join(failed, ", ")}}
-		deleteAdminsFailed := translation.Translate(payload)
-		text += deleteAdminsFailed
-	}
-	if len(deleted) != 0 {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "DeleteAdminsSucceed", len(deleted), map[string]interface{}{"admin": deleted[0], "admins": strings.Join(deleted, ", ")}}
-		deleteAdminsSucceed := translation.Translate(payload)
-		text += deleteAdminsSucceed
 	}
 
 	return text

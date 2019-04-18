@@ -153,25 +153,35 @@ other = "Admins in this workspace: {{.admins}}"
 
 [ListNoAdmins]
 description = "Displays message when there are no admins in the channel"
-other = "No admins in this workspace! To add one, please, use `/comedian add` slash command"
+other = "No admins in this workspace! To add one, please, add admin in your slack settings"
 
 [ListNoPMs]
 description = "Displays message about there are no PMs in channel"
-other = "No PMs in this channel! To add one, please, use `/comedian add` slash command"
+other = "No PMs in this channel!"
+
+[ListPMs]
+description = "Displays list of pms"
+one = "PM in the project: {{.pm}}"
+other = "PMs in the project: {{.pms}}"
+
+[ListDevelopers]
+description = "Displays list of Developers"
+one = "Developer in the project: {{.developer}}"
+other = "Developers in the project: {{.developers}}"
+
+[ListDesigners]
+description = "Displays list of Designers"
+one = "Designer in the project: {{.designer}}"
+other = "Designers in the project: {{.designers}}"
+
+[ListTesters]
+description = "Displays list of Testers"
+one = "Tester in the project: {{.tester}}"
+other = "Testers in the project: {{.testers}}"
 
 [ListNoStandupers]
 description = "Displays message when there are no standupers in the channel"
 other = "No standupers in this channel! To add one, please, use `/comedian add` slash command"
-
-[ListPMs]
-description = "Displays list of pms"
-one = "PM in this channel: {{.pm}}"
-other = "PMs in this channel: {{.pms}}"
-
-[ListStandupers]
-description = "Displays list of standupers"
-one = "Standuper in this channel: {{.standuper}}"
-other = "Standupers in this channel: {{.standupers}}"
 
 [LoggedHours]
 description = "Shows a logged hours"
@@ -458,15 +468,15 @@ Other = "Below you will see examples of how to use Comedian slash commands: "
 
 [AddMembers]
 Description = "Displays usage of add command"
-Other = "To add members use `add` command. Here is an example: `add @user @user1 / admin` You can add members with _admin, pm, developer, designer_ roles, default is a developer role, if the role is not selected. "
+Other = "To add members use `add` command. Here is an example: `add @user @user1 / pm` You can add members with _pm, developer, designer, tester_ roles, default is a developer role, if the role is not selected. "
 
 [ShowMembers]
 Description = "Displays usage of show command"
-Other = "To view members use `show` command. If you provide a role name, you will see members with this role. _admin, pm, developer, designer_. "
+Other = "To view members use `show` command"
 
 [RemoveMembers]
 Description = "Displays usage of remove command"
-Other = "To remove members use `remove` command. If you provide a role name, you will remove members with this role. _admin, pm, developer, designer_. "
+Other = "To remove members use `remove` command and tag members to remove"
 
 [AddDeadline]
 Description = "Displays usage of add_deadline command"
