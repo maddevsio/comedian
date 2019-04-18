@@ -492,6 +492,9 @@ func (bot *Bot) UpdateUsersList() error {
 
 //CleanUpUsersList updates users in workspace
 func (bot *Bot) CleanUpUsersList() error {
+	if Dry {
+		return nil
+	}
 	users, err := bot.slack.GetUsers()
 	if err != nil {
 		return err

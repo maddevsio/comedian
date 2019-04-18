@@ -583,6 +583,26 @@ func TestImplementCommands(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
+	success := httpmock.NewStringResponder(200, `{
+		"ok": true,
+		"members": [
+			{
+				"id": "USER1D1",
+				"team_id": "TEAMID1",
+				"name": "UserAdmin",
+				"deleted": false,
+				"color": "9f69e7",
+				"real_name": "admin",
+				"is_admin": false,
+				"is_owner": false,
+				"is_primary_owner": false,
+				"is_restricted": false,
+				"is_ultra_restricted": false,
+				"is_bot": false
+			}
+		]
+	}`)
+
 	bundle := &i18n.Bundle{DefaultLanguage: language.English}
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 	c, err := config.Get()
@@ -596,8 +616,15 @@ func TestStart(t *testing.T) {
 		Language: "en_US",
 	}
 
-	bot := New(c, bundle, settings, MockedDB{})
+	bot := New(c, bundle, settings, MockedDB{
+		ListedUsers: []model.User{},
+	})
+
+	httpmock.Activate()
+	httpmock.RegisterResponder("POST", "https://slack.com/api/users.list", success)
 
 	Dry = true
 	bot.Start()
+	httpmock.DeactivateAndReset()
+
 }
