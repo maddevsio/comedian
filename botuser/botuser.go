@@ -61,7 +61,12 @@ func New(conf *config.Config, bundle *i18n.Bundle, settings model.BotSettings, d
 func (bot *Bot) Start() {
 	log.Info("Bot started: ", bot.properties)
 
-	err := bot.UpdateUsersList()
+	err := bot.CleanUpUsersList()
+	if err != nil {
+		log.Errorf("Cleanupuserslist failed: %v", err)
+	}
+
+	err = bot.UpdateUsersList()
 	if err != nil {
 		log.Errorf("UpdateUsersList failed: %v", err)
 	}
@@ -480,6 +485,38 @@ func (bot *Bot) UpdateUsersList() error {
 		err := bot.updateUser(user)
 		if err != nil {
 			log.WithFields(log.Fields{"user": user, "bot": bot, "error": err}).Error("updateUser failed")
+		}
+	}
+	return nil
+}
+
+//CleanUpUsersList updates users in workspace
+func (bot *Bot) CleanUpUsersList() error {
+	users, err := bot.slack.GetUsers()
+	if err != nil {
+		return err
+	}
+
+	teamUsers, err := bot.db.ListUsers()
+	if err != nil {
+		return err
+	}
+
+	for _, tu := range teamUsers {
+		var exist bool
+
+		if tu.TeamID != bot.properties.TeamID {
+			continue
+		}
+
+		for _, u := range users {
+			if tu.UserID == u.ID {
+				exist = true
+			}
+		}
+
+		if !exist {
+			bot.db.DeleteUser(tu.ID)
 		}
 	}
 	return nil
