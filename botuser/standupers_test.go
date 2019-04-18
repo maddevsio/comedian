@@ -46,7 +46,7 @@ func TestAddCommand(t *testing.T) {
 		{"Member <@foo|bar> is assigned.\n", 3, "<@foo|bar>", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"User <@foo|bar> is assigned as PM.", 3, "<@foo|bar> /pm", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"Member <@foo|bar> is assigned.\n", 3, "<@foo|bar> /designer", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
-		{"Member <@foo|bar> already has role.", 3, "<@foo|bar>", model.Standuper{ChannelID: "Foo", UserID: "foo"}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
+		{"Member <@foo|bar> is assigned.\n", 3, "<@foo|bar>", model.Standuper{ChannelID: "Foo", UserID: "foo"}, nil, model.Standuper{}, nil, model.User{}, nil, model.User{}, nil},
 		{"Could not assign member: <@foo|bar>.", 3, "<@foo|bar>", model.Standuper{}, errors.New("select standuper"), model.Standuper{}, errors.New("create standuper"), model.User{}, nil, model.User{}, nil},
 	}
 

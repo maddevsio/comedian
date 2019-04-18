@@ -66,14 +66,14 @@ func (bot *Bot) deleteCommand(accessLevel int, channelID, params string) string 
 
 func (bot *Bot) addMembers(users []string, role, channel string) string {
 
-	var failed, exist, added []string
+	var failed, added []string
 	var text string
 
 	rg, _ := regexp.Compile("<@([a-z0-9]+)|([a-z0-9]+)>")
 
 	for _, u := range users {
 		if !rg.MatchString(u) {
-			log.Errorf("Could not add member [%v]. Reason: could not match string. Wrong username", u)
+			log.WithFields(log.Fields(map[string]interface{}{"place": "if !rg.MatchString(u)", "user": u, "error": "could not match user to template"})).Error("Error in AddMembers")
 			failed = append(failed, u)
 			continue
 		}
@@ -86,13 +86,13 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 		if err != nil {
 			err := bot.AddNewSlackUser(u)
 			if err != nil {
-				log.Errorf("Could not create new user: %v", err)
+				log.WithFields(log.Fields(map[string]interface{}{"place": "bot.AddNewSlackUser(u)", "user": u, "error": err})).Error("Error in AddMembers")
 				failed = append(failed, u)
 				continue
 			}
 			user, err = bot.db.SelectUser(userID)
 			if err != nil {
-				log.Errorf("Could not find user by userID: [%v]. Reason: [%v]", userID, err)
+				log.WithFields(log.Fields(map[string]interface{}{"place": "bot.db.SelectUser(userID)", "user": u, "error": err})).Error("Error in AddMembers")
 				failed = append(failed, u)
 				continue
 			}
@@ -101,14 +101,21 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 		standuper, err := bot.db.FindStansuperByUserID(userID, channel)
 
 		if standuper.UserID == userID && standuper.ChannelID == channel {
-			exist = append(exist, u)
+			standuper.RoleInChannel = role
+			_, err := bot.db.UpdateStanduper(standuper)
+			if err != nil {
+				log.WithFields(log.Fields(map[string]interface{}{"place": "bot.db.UpdateStanduper(standuper)", "user": u, "error": err})).Error("Error in AddMembers")
+				failed = append(failed, u)
+				continue
+			}
+			added = append(added, u)
 			continue
 		}
 
 		if err != nil {
 			ch, err := bot.db.SelectChannel(channel)
 			if err != nil {
-				log.Errorf("Could not add member [%v]. Could not find channel [%v]. Error: [%v]", u, channel, err)
+				log.WithFields(log.Fields(map[string]interface{}{"place": "bot.db.SelectChannel(channel)", "user": u, "error": err})).Error("Error in AddMembers")
 				failed = append(failed, u)
 				continue
 			}
@@ -122,7 +129,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 				RealName:              user.RealName,
 			})
 			if err != nil {
-				log.Errorf("Could not add member [%v]. CreateStanduper failed: [%v]", u, err)
+				log.WithFields(log.Fields(map[string]interface{}{"place": "bot.db.CreateStanduper", "user": u, "error": err})).Error("Error in AddMembers")
 				failed = append(failed, u)
 				continue
 			}
@@ -131,7 +138,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 			payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "MemberAssigned", 0, map[string]interface{}{"role": role, "channelID": ch.ChannelID, "channelName": ch.ChannelName}}
 			err = bot.SendUserMessage(userID, translation.Translate(payload))
 			if err != nil {
-				log.Errorf("rest: SendUserMessage failed: %v\n", err)
+				log.WithFields(log.Fields(map[string]interface{}{"place": "bot.SendUserMessage", "user": u, "error": err})).Error("Error in AddMembers")
 			}
 		}
 
@@ -151,18 +158,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 		}
 
 	}
-	if len(exist) != 0 {
-		if role == "pm" {
-			payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AddPMsExist", len(exist), map[string]interface{}{"PM": exist[0], "PMs": strings.Join(exist, ", ")}}
-			addPMsExist := translation.Translate(payload)
-			text += addPMsExist
-		} else {
-			payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AddMembersExist", len(exist), map[string]interface{}{"user": exist[0], "users": strings.Join(exist, ", ")}}
-			addMembersExist := translation.Translate(payload)
-			text += addMembersExist
-		}
 
-	}
 	if len(added) != 0 {
 		if role == "pm" {
 			payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AddPMsAdded", len(added), map[string]interface{}{"PM": added[0], "PMs": strings.Join(added, ", ")}}
@@ -260,38 +256,37 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 
 	for _, u := range members {
 		if !rg.MatchString(u) {
-			log.Errorf("Could not delete member [%v]. Reason: could not match string. Wrong username", u)
+			log.WithFields(log.Fields(map[string]interface{}{"place": "bot.SendUserMessage", "user": u, "error": "could not match user to template"})).Error("Error in deleteMembers")
 			failed = append(failed, u)
 			continue
 		}
 
 		userID, _ := utils.SplitUser(u)
 
-		// need to make sure people have different userID across teams
 		member, err := bot.db.FindStansuperByUserID(userID, channelID)
 		if err != nil {
-			log.Errorf("rest: FindStansuperByUserID failed: %v\n", err)
+			log.WithFields(log.Fields(map[string]interface{}{"place": "bot.db.FindStansuperByUserID", "user": u, "error": err})).Error("Error in deleteMembers")
 			failed = append(failed, u)
 			continue
 		}
 
 		ch, err := bot.db.SelectChannel(channelID)
 		if err != nil {
-			log.Errorf("Could not delete member [%v]. Could not find channel [%v]. Error: [%v]", u, channelID, err)
+			log.WithFields(log.Fields(map[string]interface{}{"place": "bot.db.SelectChannel(channelID)", "user": u, "error": err})).Error("Error in deleteMembers")
 			failed = append(failed, u)
 			continue
 		}
 
 		err = bot.db.DeleteStanduper(member.ID)
 		if err != nil {
-			log.Errorf("Could not delete member [%v]. DeleteStanduper failed: [%v]", u, err)
+			log.WithFields(log.Fields(map[string]interface{}{"place": "bot.db.DeleteStanduper(member.ID)", "user": u, "error": err})).Error("Error in deleteMembers")
 			failed = append(failed, u)
 			continue
 		}
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "MemberRemoved", 0, map[string]interface{}{"role": member.RoleInChannel, "channelID": ch.ChannelID, "channelName": ch.ChannelName}}
 		err = bot.SendUserMessage(userID, translation.Translate(payload))
 		if err != nil {
-			log.Errorf("rest: SendUserMessage failed: %v\n", err)
+			log.WithFields(log.Fields(map[string]interface{}{"place": "bot.SendUserMessage", "user": u, "error": err})).Error("Error in deleteMembers")
 		}
 		deleted = append(deleted, u)
 	}
