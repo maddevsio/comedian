@@ -114,9 +114,24 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := bot.db.FindStansuperByUserID(userID, channel)
+		standuper, err := bot.db.FindStansuperByUserID(userID, channel)
 
-		if user.UserID == userID && user.ChannelID == channel {
+		var user model.User
+		user, errorUserNotFound := bot.db.SelectUser(userID)
+		if errorUserNotFound != nil {
+			err := bot.AddNewSlackUser(u)
+			if err != nil {
+				failed = append(failed, u)
+				continue
+			}
+			user, err = bot.db.SelectUser(userID)
+			if err != nil {
+				failed = append(failed, u)
+				continue
+			}
+		}
+
+		if standuper.UserID == userID && standuper.ChannelID == channel {
 			exist = append(exist, u)
 			continue
 		}
@@ -132,8 +147,10 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 				TeamID:                bot.properties.TeamID,
 				UserID:                userID,
 				ChannelID:             channel,
+				ChannelName:           ch.ChannelName,
 				RoleInChannel:         role,
 				SubmittedStandupToday: false,
+				RealName:              user.RealName,
 			})
 			if err != nil {
 				log.Error(err)
