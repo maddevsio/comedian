@@ -23,9 +23,6 @@ type Storage interface {
 	//GetBotSettings returns a particular bot
 	GetBotSettings(id int64) (model.BotSettings, error)
 
-	//ListChannelsByTeamID returns list of channels by teamID
-	ListChannelsByTeamID(teamID string) ([]model.Channel, error)
-
 	//UpdateBotSettings updates bot
 	UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error)
 

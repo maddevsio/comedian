@@ -258,37 +258,6 @@ paths:
           description: "Internal Error"
         201:
           description: "successful operation"
-  /v1/bots/{team_id}/channels:
-    get:
-      security:
-        - JWT: []
-      tags:
-      - "bots"
-      summary: "Find channels of bot by teamID"
-      description: "Returns a list of channels by teamID"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "team_id"
-        in: "path"
-        description: "teamID of bot"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "success"
-          schema:
-            type: "array"
-            items:            
-             $ref: "#/definitions/Channel"
-        400:
-          description: "Invalid data format"
-        401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
   /v1/users:
     get:
       security:

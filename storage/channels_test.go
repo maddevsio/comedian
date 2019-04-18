@@ -82,32 +82,3 @@ func TestUpdateChannels(t *testing.T) {
 
 	assert.NoError(t, mysql.DeleteChannel(ch.ID))
 }
-
-func TestListChannelsByTeamID(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
-
-	teamID := "team1"
-	var expectedListOfChannels []model.Channel
-
-	channel1, err := mysql.CreateChannel(model.Channel{TeamID: teamID, ChannelID: "cid1", ChannelName: "ch1"})
-	assert.NoError(t, err)
-	channel2, err := mysql.CreateChannel(model.Channel{TeamID: teamID, ChannelID: "cid2", ChannelName: "ch2"})
-	assert.NoError(t, err)
-	randomChannel, err := mysql.CreateChannel(model.Channel{TeamID: "random", ChannelID: "random", ChannelName: "random"})
-
-	expectedListOfChannels = append(expectedListOfChannels, channel1, channel2)
-
-	actualListOfChannels, err := mysql.ListChannelsByTeamID(teamID)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedListOfChannels, actualListOfChannels)
-
-	err = mysql.DeleteChannel(channel1.ID)
-	assert.NoError(t, err)
-	err = mysql.DeleteChannel(channel2.ID)
-	assert.NoError(t, err)
-	err = mysql.DeleteChannel(randomChannel.ID)
-	assert.NoError(t, err)
-}
