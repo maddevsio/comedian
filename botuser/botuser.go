@@ -199,9 +199,9 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 	}
 
 	if bot.submittedStandupToday(msg.User, msg.Channel) {
-		// payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		// oneStandupPerDay := translation.Translate(payload)
-		// bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		oneStandupPerDay := translation.Translate(payload)
+		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 		log.Warning("submitted standup today", msg.User, msg.Channel)
 		return nil
 	}
@@ -264,9 +264,9 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 	}
 
 	if bot.submittedStandupToday(msg.SubMessage.User, msg.Channel) {
-		// payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		// oneStandupPerDay := translation.Translate(payload)
-		// bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		oneStandupPerDay := translation.Translate(payload)
+		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
 		log.Warning("submitted standup today", msg.SubMessage.User, msg.Channel)
 		return nil
 	}
@@ -306,11 +306,11 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 }
 
 func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
-	log.Info("delete message!!!")
 	standup, err := bot.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
 	if err != nil {
 		return err
 	}
+	log.Info("delete message event ", msg)
 	return bot.db.DeleteStandup(standup.ID)
 }
 
@@ -321,7 +321,7 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 		log.Error(err)
 		return false
 	}
-	log.Info("standup.Modified.Day() == time.Now().Day() ", standup.Created.Day() == time.Now().Day())
+	log.Infof("standup.Created.Day() [%v] == time.Now().Day() [%v]", standup.Created.Day(), time.Now().Day())
 	if standup.Created.Day() == time.Now().Day() {
 		return true
 	}

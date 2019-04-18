@@ -69,6 +69,16 @@ type BotSettings struct {
 	IndividualReportsOn bool   `db:"individual_reports_on" json:"individual_reports_on"`
 }
 
+//Role sets the abilities for different roles
+type Role struct {
+	ID            int64  `db:"id" json:"id"`
+	Title         string `db:"title" json:"title"`
+	AccessLevel   int    `db:"access_level" json:"access_level"`
+	ShouldStandup bool   `db:"should_standup" json:"should_standup"`
+	ShouldCommit  bool   `db:"should_commit" json:"should_commit"`
+	ShouldLogTime bool   `db:"should_log_time" json:"should_log_time"`
+}
+
 // ServiceEvent event coming from services
 type ServiceEvent struct {
 	TeamName    string             `json:"team_name"`
@@ -227,13 +237,4 @@ func (s Standuper) IsPM() bool {
 //IsDesigner returns true if standuper has designer status
 func (s Standuper) IsDesigner() bool {
 	return s.RoleInChannel == "designer"
-}
-
-//Role sets the abilities for different roles
-type Role struct {
-	Title         string
-	AccessLevel   int
-	ShouldStandup bool
-	ShouldCommit  bool
-	ShouldLogTime bool
 }
