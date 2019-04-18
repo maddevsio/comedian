@@ -47,6 +47,8 @@ type Standuper struct {
 	RoleInChannel         string    `db:"role_in_channel" json:"role_in_channel"`
 	SubmittedStandupToday bool      `db:"submitted_standup_today" json:"submitted_standup_today"`
 	Created               time.Time `db:"created" json:"created"`
+	RealName              string    `db:"real_name" json:"real_name"`
+	ChannelName           string    `db:"channel_name" json:"channel_name"`
 }
 
 // BotSettings is used for updating and storing different bot configuration parameters

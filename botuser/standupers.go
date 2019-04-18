@@ -110,13 +110,34 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 
 	for _, u := range users {
 		if !rg.MatchString(u) {
+			log.Errorf("Could not add member [%v]. Reason: could not match string. Wrong username", u)
 			failed = append(failed, u)
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
-		user, err := bot.db.FindStansuperByUserID(userID, channel)
 
-		if user.UserID == userID && user.ChannelID == channel {
+		var user model.User
+		var err error
+
+		user, err = bot.db.SelectUser(userID)
+		if err != nil {
+			err := bot.AddNewSlackUser(u)
+			if err != nil {
+				log.Errorf("Could not create new user: %v", err)
+				failed = append(failed, u)
+				continue
+			}
+			user, err = bot.db.SelectUser(userID)
+			if err != nil {
+				log.Errorf("Could not find user by userID: [%v]. Reason: [%v]", userID, err)
+				failed = append(failed, u)
+				continue
+			}
+		}
+
+		standuper, err := bot.db.FindStansuperByUserID(userID, channel)
+
+		if standuper.UserID == userID && standuper.ChannelID == channel {
 			exist = append(exist, u)
 			continue
 		}
@@ -124,7 +145,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 		if err != nil {
 			ch, err := bot.db.SelectChannel(channel)
 			if err != nil {
-				log.Error(err)
+				log.Errorf("Could not add member [%v]. Could not find channel [%v]. Error: [%v]", u, channel, err)
 				failed = append(failed, u)
 				continue
 			}
@@ -132,11 +153,13 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 				TeamID:                bot.properties.TeamID,
 				UserID:                userID,
 				ChannelID:             channel,
+				ChannelName:           ch.ChannelName,
 				RoleInChannel:         role,
 				SubmittedStandupToday: false,
+				RealName:              user.RealName,
 			})
 			if err != nil {
-				log.Error(err)
+				log.Errorf("Could not add member [%v]. CreateStanduper failed: [%v]", u, err)
 				failed = append(failed, u)
 				continue
 			}
@@ -203,12 +226,14 @@ func (bot *Bot) addAdmins(users []string) string {
 	for _, u := range users {
 		// <@foo> passes this check... need to fix it later
 		if !rg.MatchString(u) {
+			log.Errorf("Could not add admin [%v]. Reason: could not match string. Wrong username", u)
 			failed = append(failed, u)
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
 		user, err := bot.db.SelectUser(userID)
 		if err != nil {
+			log.Errorf("Could not add admin [%v]. Reason: could not find user [%v]. Wrong username", u, userID)
 			failed = append(failed, u)
 			continue
 		}
@@ -221,6 +246,7 @@ func (bot *Bot) addAdmins(users []string) string {
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AdminAssigned", 0, nil}
 		_, err = bot.db.UpdateUser(user)
 		if err != nil {
+			log.Errorf("Could not add admin. Could not update user [%v]: %v", user.ID, err)
 			failed = append(failed, u)
 			continue
 		}
@@ -319,6 +345,7 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 
 	for _, u := range members {
 		if !rg.MatchString(u) {
+			log.Errorf("Could not delete member [%v]. Reason: could not match string. Wrong username", u)
 			failed = append(failed, u)
 			continue
 		}
@@ -334,12 +361,17 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 
 		ch, err := bot.db.SelectChannel(channelID)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("Could not delete member [%v]. Could not find channel [%v]. Error: [%v]", u, channelID, err)
 			failed = append(failed, u)
 			continue
 		}
 
-		bot.db.DeleteStanduper(member.ID)
+		err = bot.db.DeleteStanduper(member.ID)
+		if err != nil {
+			log.Errorf("Could not delete member [%v]. DeleteStanduper failed: [%v]", u, err)
+			failed = append(failed, u)
+			continue
+		}
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "MemberRemoved", 0, map[string]interface{}{"role": member.RoleInChannel, "channelID": ch.ChannelID, "channelName": ch.ChannelName}}
 		err = bot.SendUserMessage(userID, translation.Translate(payload))
 		if err != nil {
@@ -371,16 +403,19 @@ func (bot *Bot) deleteAdmins(users []string) string {
 
 	for _, u := range users {
 		if !rg.MatchString(u) {
+			log.Errorf("Could not delete admin [%v]. Reason: could not match string. Wrong username", u)
 			failed = append(failed, u)
 			continue
 		}
 		userID, _ := utils.SplitUser(u)
 		user, err := bot.db.SelectUser(userID)
 		if err != nil {
+			log.Errorf("Could not delete admin. Could not find user by userID: [%v]. Reason: [%v]", userID, err)
 			failed = append(failed, u)
 			continue
 		}
 		if user.Role != "admin" {
+			log.Errorf("Could not delete admin. User with userID [%v] is not admin", userID)
 			failed = append(failed, u)
 			continue
 		}
@@ -389,6 +424,7 @@ func (bot *Bot) deleteAdmins(users []string) string {
 		adminRemoved := translation.Translate(payload)
 		_, err = bot.db.UpdateUser(user)
 		if err != nil {
+			log.Errorf("Could not delete admin. Could not update role, could not update user [%v]: %v", user.ID, err)
 			failed = append(failed, u)
 			continue
 		}

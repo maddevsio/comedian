@@ -525,6 +525,23 @@ func (bot *Bot) CleanUpUsersList() error {
 	return nil
 }
 
+//AddNewSlackUser add new added slack user to db
+func (bot *Bot) AddNewSlackUser(userID string) error {
+	users, err := bot.slack.GetUsers()
+	if err != nil {
+		return err
+	}
+	for _, user := range users {
+		if user.ID == userID {
+			err := bot.updateUser(user)
+			if err != nil {
+				log.WithFields(log.Fields{"user": user, "bot": bot, "error": err}).Error("AddNewSlackUser.updateUser failed")
+			}
+		}
+	}
+	return nil
+}
+
 //SendMessageToSuperAdmins messages all users in workspace
 func (bot *Bot) SendMessageToSuperAdmins(message string) error {
 	users, err := bot.db.ListUsers()
