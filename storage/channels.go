@@ -79,13 +79,3 @@ func (m *DB) DeleteChannel(id int64) error {
 	_, err := m.DB.Exec("DELETE FROM `channels` WHERE id=?", id)
 	return err
 }
-
-//ListChannelsByTeamID returns list of channels by teamID
-func (m *DB) ListChannelsByTeamID(teamID string) ([]model.Channel, error) {
-	var list []model.Channel
-	err := m.DB.Select(&list, "SELECT * FROM `channels` WHERE team_id=?", teamID)
-	if err != nil {
-		return list, err
-	}
-	return list, err
-}
