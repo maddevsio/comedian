@@ -199,9 +199,9 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 	}
 
 	if bot.submittedStandupToday(msg.User, msg.Channel) {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		oneStandupPerDay := translation.Translate(payload)
-		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
+		// payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		// oneStandupPerDay := translation.Translate(payload)
+		// bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 		log.Warning("submitted standup today", msg.User, msg.Channel)
 		return nil
 	}
@@ -264,9 +264,9 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 	}
 
 	if bot.submittedStandupToday(msg.SubMessage.User, msg.Channel) {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		oneStandupPerDay := translation.Translate(payload)
-		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
+		// payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		// oneStandupPerDay := translation.Translate(payload)
+		// bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
 		log.Warning("submitted standup today", msg.SubMessage.User, msg.Channel)
 		return nil
 	}
