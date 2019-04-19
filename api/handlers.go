@@ -580,7 +580,7 @@ func (api *ComedianAPI) getChannel(c echo.Context) error {
 	return c.JSON(http.StatusOK, channel)
 }
 
-func (api *ComedianAPI) getStandupersByTeamID(c echo.Context) error {
+func (api *ComedianAPI) getStandupersOfChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -596,19 +596,15 @@ func (api *ComedianAPI) getStandupersByTeamID(c echo.Context) error {
 	if time.Now().Unix() > int64(expire) {
 		return c.JSON(http.StatusForbidden, "Token expired")
 	}
-	log.Info("id: ", id)
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
 		return c.JSON(404, "Channel not found")
 	}
-	log.Info("channel.TeamID: ", channel.TeamID)
 	standupers, err := api.db.ListChannelStandupers(channel.ChannelID)
 	if err != nil {
 		log.Errorf("Handler of: GET /channels/:id/standupers. ListStandupersByTeamID failed: %v", err)
 		return c.JSON(500, "internal server error")
 	}
-	log.Info("teamID: ", teamID)
-	log.Info("standupers: ", standupers)
 	var result []model.Standuper
 	for _, standuper := range standupers {
 		if standuper.TeamID == teamID {
