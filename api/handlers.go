@@ -580,6 +580,44 @@ func (api *ComedianAPI) getChannel(c echo.Context) error {
 	return c.JSON(http.StatusOK, channel)
 }
 
+func (api *ComedianAPI) getStandupersByTeamID(c echo.Context) error {
+	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	if c.Get("user") == nil {
+		return c.JSON(http.StatusUnauthorized, missingTokenErr)
+	}
+	u := c.Get("user").(*jwt.Token)
+	claims := u.Claims.(jwt.MapClaims)
+	teamID := claims["team_id"].(string)
+	expire := claims["expire"].(float64)
+	if time.Now().Unix() > int64(expire) {
+		return c.JSON(http.StatusForbidden, "Token expired")
+	}
+	log.Info("id: ", id)
+	channel, err := api.db.GetChannel(id)
+	if err != nil {
+		return c.JSON(404, "Channel not found")
+	}
+	log.Info("channel.TeamID: ", channel.TeamID)
+	standupers, err := api.db.ListChannelStandupers(channel.ChannelID)
+	if err != nil {
+		log.Errorf("Handler of: GET /channels/:id/standupers. ListStandupersByTeamID failed: %v", err)
+		return c.JSON(500, "internal server error")
+	}
+	log.Info("teamID: ", teamID)
+	log.Info("standupers: ", standupers)
+	var result []model.Standuper
+	for _, standuper := range standupers {
+		if standuper.TeamID == teamID {
+			result = append(result, standuper)
+		}
+	}
+	return c.JSON(200, result)
+}
+
 func (api *ComedianAPI) updateChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
