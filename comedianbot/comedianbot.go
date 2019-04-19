@@ -5,6 +5,7 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack/slackevents"
+	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/botuser"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
@@ -75,6 +76,10 @@ func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 	if err != nil {
 		return err
 	}
+
+	logrus.Info("Bot found to implement request: ", bot)
+	logrus.Info("Bot access token: ", bot.Settings().AccessToken)
+	logrus.Info("Incoming access token: ", incomingEvent.AccessToken)
 
 	if bot.Settings().AccessToken != incomingEvent.AccessToken {
 		return errors.New("Wrong access token")

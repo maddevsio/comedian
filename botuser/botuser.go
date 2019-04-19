@@ -643,7 +643,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 
 //Suits returns true if found desired bot properties
 func (bot *Bot) Suits(team string) bool {
-	return team == bot.properties.TeamID || team == bot.properties.TeamName
+	return strings.ToLower(team) == strings.ToLower(bot.properties.TeamID) || strings.ToLower(team) == strings.ToLower(bot.properties.TeamName)
 }
 
 //IsAdmin returns true if bot is Admin
