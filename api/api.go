@@ -93,6 +93,7 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	r.GET("/channels/:id", api.getChannel)
 	r.PATCH("/channels/:id", api.updateChannel)
 	r.DELETE("/channels/:id", api.deleteChannel)
+	r.GET("/channels/:id/standupers", api.getStandupersOfChannel)
 
 	r.GET("/standupers", api.listStandupers)
 	r.GET("/standupers/:id", api.getStanduper)

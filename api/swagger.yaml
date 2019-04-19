@@ -432,6 +432,37 @@ paths:
           description: "No access to resource"
         500:
           description: "Internal Error"
+  /v1/channels/{id}/standupers:
+    get:
+      security:
+        - JWT: []
+      tags:
+      - "channels"
+      summary: "Find standupers by channel's id"
+      description: "Returns a list of channels"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id of a channel"
+        required: true
+        type: "integer"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Standuper"
+        400:
+          description: "Invalid data format"
+        401:
+          description: "No JWT Token"
+        403:
+          description: "No access to resource"
+        500:
+          description: "Internal Error"
   /v1/standupers:
     get:
       security:
@@ -727,6 +758,10 @@ definitions:
       created:
         type: "string"
       role_in_channel:
+        type: "string"
+      real_name: 
+        type: "string"
+      channel_name: 
         type: "string"
   Standup:
     type: "object"
