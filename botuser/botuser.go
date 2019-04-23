@@ -33,13 +33,14 @@ const (
 
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
-	slack      *slack.Client
-	properties model.BotSettings
-	db         storage.Storage
-	bundle     *i18n.Bundle
-	wg         sync.WaitGroup
-	conf       *config.Config
-	QuitChan   chan struct{}
+	slack           *slack.Client
+	properties      model.BotSettings
+	db              storage.Storage
+	bundle          *i18n.Bundle
+	wg              sync.WaitGroup
+	conf            *config.Config
+	QuitChan        chan struct{}
+	notifierThreads []NotifierThread
 }
 
 //New creates new Bot instance
@@ -660,4 +661,41 @@ func (bot *Bot) Settings() model.BotSettings {
 func (bot *Bot) SetProperties(settings model.BotSettings) model.BotSettings {
 	bot.properties = settings
 	return bot.properties
+}
+
+//AddNewNotifierThread adds to notifierThreads new thread
+func (bot *Bot) AddNewNotifierThread(nt NotifierThread) {
+	bot.notifierThreads = append(bot.notifierThreads, nt)
+}
+
+//StopNotifierThread stops notifier thread of channel
+func (bot *Bot) StopNotifierThread(nt NotifierThread) {
+	nt.quit <- struct{}{}
+}
+
+//FindNotifierThread returns object of NotifierThread and true if notifier thread by channel exist
+func (bot *Bot) FindNotifierThread(channel model.Channel) (NotifierThread, bool) {
+	for _, nt := range bot.notifierThreads {
+		if nt.channel.ID == channel.ID {
+			return nt, true
+		}
+	}
+	return NotifierThread{}, false
+}
+
+//DeleteNotifierThreadFromList removes NotifierThread from list of threads
+func (bot *Bot) DeleteNotifierThreadFromList(channel model.Channel) {
+	position := 0
+	for _, nt := range bot.notifierThreads {
+		if nt.channel.ID == channel.ID {
+			l1 := bot.notifierThreads[:position]
+			l2 := bot.notifierThreads[position+1:]
+			result := append(l1, l2...)
+			if position > 0 {
+				position = position - 1
+			}
+			bot.notifierThreads = result
+		}
+		position++
+	}
 }
