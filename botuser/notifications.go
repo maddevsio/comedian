@@ -141,6 +141,17 @@ func (bot *Bot) SendChannelNotification(channelID string) error {
 
 func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, repeats *int) error {
 
+	channel, err := bot.db.SelectChannel(channelID)
+	if err != nil {
+		log.Errorf("SelectChannel in notify not all failed for channel [%v]: [%v]", channelID, err)
+		return err
+	}
+
+	if channel.StandupTime == 0 {
+		log.Info("Channel standup time 0. Finish Backoff")
+		return nil
+	}
+
 	if *repeats > bot.properties.ReminderRepeatsMax || len(nonReporters) < 1 {
 		log.Info("Finish Backoff")
 		return nil
@@ -161,7 +172,7 @@ func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, r
 	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "TagNonReporters", len(roundNonReporters), map[string]interface{}{"user": roundNonReporters[0], "users": strings.Join(roundNonReporters, ", ")}}
 	tagNonReporters := translation.Translate(payload)
 
-	err := bot.SendMessage(channelID, tagNonReporters, nil)
+	err = bot.SendMessage(channelID, tagNonReporters, nil)
 	if err != nil {
 		log.Error("SendMessage in notify not all failed: ", err)
 	}
