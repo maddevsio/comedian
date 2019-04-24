@@ -41,7 +41,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 	channel.StandupTime = r.Time.Unix()
 
 	if nt, exist := bot.FindNotifierThread(channel); exist {
-		bot.StopNotifierThread(nt)
+		go bot.StopNotifierThread(nt)
 		bot.DeleteNotifierThreadFromList(channel)
 	}
 
