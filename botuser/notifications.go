@@ -49,10 +49,10 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 		}
 
 		if t.Hour() == standupTime.Hour() && t.Minute() == standupTime.Minute() {
-			nt := NotifierThread{channel: channel, quit: make(chan struct{})}
+			nt := &NotifierThread{channel: channel, quit: make(chan struct{})}
 
 			bot.wg.Add(1)
-			go func(nt NotifierThread) {
+			go func(nt *NotifierThread) {
 				err := bot.SendChannelNotification(nt)
 				if err != nil {
 					log.Error(err)
@@ -105,7 +105,7 @@ func (bot *Bot) SendWarning(channelID string) error {
 }
 
 //SendChannelNotification starts standup reminders and direct reminders to users
-func (bot *Bot) SendChannelNotification(nt NotifierThread) error {
+func (bot *Bot) SendChannelNotification(nt *NotifierThread) error {
 	log.Info("SendChannelNotification for channel: ", nt.channel.ChannelID)
 	standupers, err := bot.db.ListChannelStandupers(nt.channel.ChannelID)
 	if err != nil {
