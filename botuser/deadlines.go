@@ -82,6 +82,11 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 
 	channel.StandupTime = int64(0)
 
+	if nt, exist := bot.FindNotifierThread(channel); exist {
+		go bot.StopNotifierThread(nt)
+		bot.DeleteNotifierThreadFromList(channel)
+	}
+
 	_, err = bot.db.UpdateChannel(channel)
 
 	if err != nil {
