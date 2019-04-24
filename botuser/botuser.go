@@ -40,7 +40,7 @@ type Bot struct {
 	wg              sync.WaitGroup
 	conf            *config.Config
 	QuitChan        chan struct{}
-	notifierThreads []NotifierThread
+	notifierThreads []*NotifierThread
 }
 
 //New creates new Bot instance
@@ -664,23 +664,23 @@ func (bot *Bot) SetProperties(settings model.BotSettings) model.BotSettings {
 }
 
 //AddNewNotifierThread adds to notifierThreads new thread
-func (bot *Bot) AddNewNotifierThread(nt NotifierThread) {
+func (bot *Bot) AddNewNotifierThread(nt *NotifierThread) {
 	bot.notifierThreads = append(bot.notifierThreads, nt)
 }
 
 //StopNotifierThread stops notifier thread of channel
-func (bot *Bot) StopNotifierThread(nt NotifierThread) {
+func (bot *Bot) StopNotifierThread(nt *NotifierThread) {
 	nt.quit <- struct{}{}
 }
 
 //FindNotifierThread returns object of NotifierThread and true if notifier thread by channel exist
-func (bot *Bot) FindNotifierThread(channel model.Channel) (NotifierThread, bool) {
+func (bot *Bot) FindNotifierThread(channel model.Channel) (*NotifierThread, bool) {
 	for _, nt := range bot.notifierThreads {
 		if nt.channel.ID == channel.ID {
 			return nt, true
 		}
 	}
-	return NotifierThread{}, false
+	return &NotifierThread{}, false
 }
 
 //DeleteNotifierThreadFromList removes NotifierThread from list of threads
