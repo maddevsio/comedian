@@ -628,3 +628,63 @@ func TestStart(t *testing.T) {
 	httpmock.DeactivateAndReset()
 
 }
+
+func TestFindNotifierThread(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+
+	bot := New(c, &i18n.Bundle{}, model.BotSettings{}, MockedDB{})
+
+	testCase := []struct {
+		initialListOfThreads []*NotifierThread
+		channel              model.Channel
+		expectedExistence    bool
+
+		needToCheckChannelEquality bool
+	}{
+		{[]*NotifierThread{&NotifierThread{channel: model.Channel{ID: 1}}, &NotifierThread{channel: model.Channel{ID: 2}}}, model.Channel{ID: 1}, true, true},
+		{[]*NotifierThread{&NotifierThread{channel: model.Channel{ID: 1}}, &NotifierThread{channel: model.Channel{ID: 2}}}, model.Channel{ID: 2}, true, true},
+		{[]*NotifierThread{&NotifierThread{channel: model.Channel{ID: 1}}, &NotifierThread{channel: model.Channel{ID: 2}}}, model.Channel{ID: -1}, false, false},
+	}
+	for _, test := range testCase {
+		bot.notifierThreads = test.initialListOfThreads
+		nt, actualExistence := bot.FindNotifierThread(test.channel)
+		assert.Equal(t, test.expectedExistence, actualExistence)
+		if test.needToCheckChannelEquality {
+			assert.Equal(t, test.channel, nt.channel)
+		}
+	}
+}
+
+func TestDeleteNotifierThreadFromList(t *testing.T) {
+	c, err := config.Get()
+	assert.NoError(t, err)
+
+	bot := New(c, &i18n.Bundle{}, model.BotSettings{}, MockedDB{})
+
+	var initialListOfThreads1, initialListOfThreads2, initialListOfThreads3 []*NotifierThread
+	initialListOfThreads1 = append(initialListOfThreads1, &NotifierThread{channel: model.Channel{ID: 1}}, &NotifierThread{channel: model.Channel{ID: 2}}, &NotifierThread{channel: model.Channel{ID: 3}})
+	initialListOfThreads2 = append(initialListOfThreads2, &NotifierThread{channel: model.Channel{ID: 1}}, &NotifierThread{channel: model.Channel{ID: 2}}, &NotifierThread{channel: model.Channel{ID: 3}})
+	initialListOfThreads3 = append(initialListOfThreads3, &NotifierThread{channel: model.Channel{ID: 1}}, &NotifierThread{channel: model.Channel{ID: 2}}, &NotifierThread{channel: model.Channel{ID: 3}})
+
+	testCase := []struct {
+		initialListOfThreads  []*NotifierThread
+		channel               model.Channel
+		expectedListOfThreads []*NotifierThread
+	}{
+		//deletes from list element model.Channel with ID equal 1
+		{initialListOfThreads1, model.Channel{ID: 1}, []*NotifierThread{&NotifierThread{channel: model.Channel{ID: 2}}, &NotifierThread{channel: model.Channel{ID: 3}}}},
+		//deletes from list element model.Channel with ID equal 2
+		{initialListOfThreads2, model.Channel{ID: 2}, []*NotifierThread{&NotifierThread{channel: model.Channel{ID: 1}}, &NotifierThread{channel: model.Channel{ID: 3}}}},
+		//deletes from list element model.Channel with ID equal 3
+		{initialListOfThreads3, model.Channel{ID: 3}, []*NotifierThread{&NotifierThread{channel: model.Channel{ID: 1}}, &NotifierThread{channel: model.Channel{ID: 2}}}},
+		//deletes from list not exist element
+		{initialListOfThreads3, model.Channel{ID: -1}, []*NotifierThread{&NotifierThread{channel: model.Channel{ID: 1}}, &NotifierThread{channel: model.Channel{ID: 2}}, &NotifierThread{channel: model.Channel{ID: 3}}}},
+	}
+	for _, test := range testCase {
+		bot.notifierThreads = test.initialListOfThreads
+		bot.DeleteNotifierThreadFromList(test.channel)
+
+		assert.Equal(t, test.expectedListOfThreads, bot.notifierThreads)
+	}
+}
