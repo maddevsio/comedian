@@ -12,6 +12,12 @@ import (
 	"gitlab.com/team-monitoring/comedian/translation"
 )
 
+//NotifierThread struct to manage notifier goroutines
+type NotifierThread struct {
+	channel model.Channel
+	quit    chan struct{}
+}
+
 // NotifyChannels reminds users of channels about upcoming or missing standups
 func (bot *Bot) NotifyChannels(t time.Time) {
 	if int(t.Weekday()) == 6 || int(t.Weekday()) == 0 {
@@ -43,14 +49,17 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 		}
 
 		if t.Hour() == standupTime.Hour() && t.Minute() == standupTime.Minute() {
+			nt := &NotifierThread{channel: channel, quit: make(chan struct{})}
+
 			bot.wg.Add(1)
-			go func(channel model.Channel) {
-				err := bot.SendChannelNotification(channel.ChannelID)
+			go func(nt *NotifierThread) {
+				err := bot.SendChannelNotification(nt)
 				if err != nil {
 					log.Error(err)
 				}
 				bot.wg.Done()
-			}(channel)
+			}(nt)
+			bot.AddNewNotifierThread(nt)
 		}
 	}
 }
@@ -96,21 +105,21 @@ func (bot *Bot) SendWarning(channelID string) error {
 }
 
 //SendChannelNotification starts standup reminders and direct reminders to users
-func (bot *Bot) SendChannelNotification(channelID string) error {
-	log.Info("SendChannelNotification for channel: ", channelID)
-	standupers, err := bot.db.ListChannelStandupers(channelID)
+func (bot *Bot) SendChannelNotification(nt *NotifierThread) error {
+	log.Info("SendChannelNotification for channel: ", nt.channel.ChannelID)
+	standupers, err := bot.db.ListChannelStandupers(nt.channel.ChannelID)
 	if err != nil {
 		return err
 	}
 
 	if len(standupers) == 0 {
-		log.Info("No standupers in channel: ", channelID)
+		log.Info("No standupers in channel: ", nt.channel.ChannelID)
 		return nil
 	}
 
 	nonReporters := []model.Standuper{}
 	for _, standuper := range standupers {
-		if standuper.ChannelID == channelID && !bot.submittedStandupToday(standuper.UserID, standuper.ChannelID) && standuper.RoleInChannel != "pm" {
+		if standuper.ChannelID == nt.channel.ChannelID && !bot.submittedStandupToday(standuper.UserID, standuper.ChannelID) && standuper.RoleInChannel != "pm" {
 			nonReporters = append(nonReporters, standuper)
 		}
 	}
@@ -123,11 +132,16 @@ func (bot *Bot) SendChannelNotification(channelID string) error {
 	var repeats int
 
 	notifyNotAll := func() error {
-		err := bot.notifyNotAll(channelID, nonReporters, &repeats)
-		if err != nil {
-			return err
+		select {
+		case <-nt.quit:
+			return nil
+		default:
+			err := bot.notifyNotAll(nt.channel.ChannelID, nonReporters, &repeats)
+			if err != nil {
+				return err
+			}
+			return nil
 		}
-		return nil
 	}
 
 	b := backoff.NewConstantBackOff(time.Duration(bot.properties.NotifierInterval) * time.Minute)
