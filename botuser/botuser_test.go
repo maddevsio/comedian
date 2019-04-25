@@ -218,6 +218,40 @@ func TestHandleJoin(t *testing.T) {
 	httpmock.DeactivateAndReset()
 }
 
+func TestHandleJoinNewUser(t *testing.T) {
+	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	c, err := config.Get()
+	assert.NoError(t, err)
+
+	settings := model.BotSettings{
+		UserID:   "TESTUSERID",
+		Language: "en_US",
+	}
+
+	testCase := []struct {
+		user              slack.User
+		createdUser       model.User
+		createdUserError  error
+		selectedUserError error
+	}{
+		{slack.User{TeamID: "team1", Name: "user1", ID: "uid1", RealName: "realuser1"}, model.User{TeamID: "team1", UserName: "user1", UserID: "uid1", Role: "", RealName: "realuser1"}, nil, errors.New("sql no rows in result set")},
+		{slack.User{TeamID: "team2", Name: "user2", ID: "uid2", RealName: "realuser2"}, model.User{}, nil, nil},
+		{slack.User{IsBot: true}, model.User{}, nil, errors.New("sql no rows in result set")},
+		{slack.User{}, model.User{}, errors.New("could not create user"), errors.New("sql no rows in result set")},
+	}
+	for _, test := range testCase {
+		bot := New(c, bundle, settings, MockedDB{
+			CreatedUser:       test.createdUser,
+			CreatedUserError:  test.createdUserError,
+			SelectedUserError: test.selectedUserError,
+		})
+		user, err := bot.HandleJoinNewUser(test.user)
+		assert.Equal(t, test.createdUser, user)
+		assert.Equal(t, test.createdUserError, err)
+	}
+}
+
 func TestSuits(t *testing.T) {
 	properties := model.BotSettings{
 		TeamID:   "Foo",

@@ -155,6 +155,13 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		//need to check if join.Team is teamID, not a teamName
 		_, err = bot.HandleJoin(join.Channel, join.Team)
 		return err
+	case "team_join":
+		join := &slack.TeamJoinEvent{}
+		if err := json.Unmarshal(data, join); err != nil {
+			return err
+		}
+		_, err := bot.HandleJoinNewUser(join.User)
+		return err
 	case "app_uninstalled":
 		bot.Stop()
 		err := bot.db.DeleteBotSettings(bot.properties.TeamID)
@@ -431,6 +438,31 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 		return newChannel, err
 	}
 	return newChannel, nil
+}
+
+//HandleJoinNewUser handles comedian joining user
+func (bot *Bot) HandleJoinNewUser(user slack.User) (model.User, error) {
+	newUser, err := bot.db.SelectUser(user.ID)
+	if err == nil {
+		return newUser, nil
+	}
+
+	if user.IsBot || user.Name == "slackbot" {
+		return newUser, nil
+	}
+
+	newUser, err = bot.db.CreateUser(model.User{
+		TeamID:   user.TeamID,
+		UserName: user.Name,
+		UserID:   user.ID,
+		Role:     "",
+		RealName: user.RealName,
+	})
+	if err != nil {
+		return newUser, err
+	}
+	log.Infof("Successfully create new user [%v]", newUser)
+	return newUser, nil
 }
 
 //ImplementCommands implements slash commands such as adding users and managing deadlines
