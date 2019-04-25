@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
+	"github.com/olebedev/when"
+	"github.com/olebedev/when/rules/en"
+	"github.com/olebedev/when/rules/ru"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/model"
 	"gitlab.com/team-monitoring/comedian/translation"
@@ -35,12 +38,21 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 			continue
 		}
 
-		if channel.StandupTime == 0 {
+		if channel.StandupTime == "" {
 			continue
 		}
 
-		standupTime := time.Unix(channel.StandupTime, 0)
-		warningTime := time.Unix(channel.StandupTime-bot.properties.ReminderTime*60, 0)
+		w := when.New(nil)
+		w.Add(en.All...)
+		w.Add(ru.All...)
+
+		r, err := w.Parse(channel.StandupTime, time.Now())
+		if err != nil {
+			log.Errorf("Unable to parse channel standup time [%v]: [%v]", channel.StandupTime, err)
+			continue
+		}
+
+		warningTime := time.Unix(r.Time.Unix()-bot.properties.ReminderTime*60, 0)
 		if t.Hour() == warningTime.Hour() && t.Minute() == warningTime.Minute() {
 			err := bot.SendWarning(channel.ChannelID)
 			if err != nil {
@@ -48,7 +60,7 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 			}
 		}
 
-		if t.Hour() == standupTime.Hour() && t.Minute() == standupTime.Minute() {
+		if t.Hour() == r.Time.Hour() && t.Minute() == r.Time.Minute() {
 			nt := &NotifierThread{channel: channel, quit: make(chan struct{})}
 
 			bot.wg.Add(1)

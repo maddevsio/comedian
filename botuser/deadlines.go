@@ -28,7 +28,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 		return "Unable to recognize time for a deadline"
 	}
 	if r == nil {
-		log.Error("r is nil", err)
+		log.Error("r is nil. No matches found", err)
 		return "Unable to recognize time for a deadline"
 	}
 
@@ -38,7 +38,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 		return "could not recognize channel, please add me to the channel and try again"
 	}
 
-	channel.StandupTime = r.Time.Unix()
+	channel.StandupTime = r.Text
 
 	if nt, exist := bot.FindNotifierThread(channel); exist {
 		go bot.StopNotifierThread(nt)
@@ -80,7 +80,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 		return "could not recognize channel, please add me to the channel and try again"
 	}
 
-	channel.StandupTime = int64(0)
+	channel.StandupTime = ""
 
 	if nt, exist := bot.FindNotifierThread(channel); exist {
 		go bot.StopNotifierThread(nt)
@@ -107,7 +107,7 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 func (bot *Bot) showTime(channelID string) string {
 	channel, err := bot.db.SelectChannel(channelID)
 	// need to check error first, because it is misleading!
-	if err != nil || channel.StandupTime == int64(0) {
+	if err != nil || channel.StandupTime == "" {
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ShowNoStandupTime", 0, nil}
 		showNoStandupTime := translation.Translate(payload)
 		return showNoStandupTime
