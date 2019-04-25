@@ -73,12 +73,12 @@ func TestUpdateChannels(t *testing.T) {
 		ChannelID:   "bar12",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), ch.StandupTime)
+	assert.Equal(t, "", ch.StandupTime)
 
-	ch.StandupTime = int64(1)
+	ch.StandupTime = "10:00"
 	ch, err = mysql.UpdateChannel(ch)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), ch.StandupTime)
+	assert.Equal(t, "10:00", ch.StandupTime)
 
 	assert.NoError(t, mysql.DeleteChannel(ch.ID))
 }

@@ -44,8 +44,8 @@ func TestNotifyChannels(t *testing.T) {
 		{time.Date(2018, 3, 10, 10, 0, 0, 0, time.Local), []model.Channel{}, nil, []model.Standuper{}, nil, []model.Standuper{}, nil, model.Channel{}, nil},
 		{time.Date(2018, 3, 12, 10, 0, 0, 0, time.Local), []model.Channel{}, errors.New("list channels"), []model.Standuper{}, nil, []model.Standuper{}, nil, model.Channel{}, nil},
 		{time.Date(2018, 3, 12, 10, 0, 0, 0, time.Local), []model.Channel{{TeamID: "foo"}}, nil, []model.Standuper{}, nil, []model.Standuper{}, nil, model.Channel{}, nil},
-		{time.Date(2018, 3, 12, 10, 0, 0, 0, time.Local), []model.Channel{{TeamID: "comedian", StandupTime: int64(0)}}, nil, []model.Standuper{}, nil, []model.Standuper{}, nil, model.Channel{}, nil},
-		{time.Date(2018, 3, 12, 10, 0, 0, 0, time.Local), []model.Channel{{TeamID: "comedian", StandupTime: time.Date(2018, 3, 12, 10, 0, 0, 0, time.Local).Unix()}}, nil, []model.Standuper{}, errors.New("err"), []model.Standuper{}, errors.New("err"), model.Channel{}, nil},
+		{time.Date(2018, 3, 12, 10, 0, 0, 0, time.Local), []model.Channel{{TeamID: "comedian", StandupTime: ""}}, nil, []model.Standuper{}, nil, []model.Standuper{}, nil, model.Channel{}, nil},
+		{time.Date(2018, 3, 12, 10, 0, 0, 0, time.Local), []model.Channel{{TeamID: "comedian", StandupTime: "10:00"}}, nil, []model.Standuper{}, errors.New("err"), []model.Standuper{}, errors.New("err"), model.Channel{}, nil},
 	}
 
 	for _, tt := range testCases {
