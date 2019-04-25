@@ -51,8 +51,12 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 			log.Errorf("Unable to parse channel standup time [%v]: [%v]", channel.StandupTime, err)
 			continue
 		}
+		log.Info("r.Text: ", r.Text)
+		log.Info("r.Time.Unix(): ", r.Time.Unix())
+		log.Info("bot.properties.ReminderTime*60: ", bot.properties.ReminderTime*60)
 
 		warningTime := time.Unix(r.Time.Unix()-bot.properties.ReminderTime*60, 0)
+		log.Info("warningTime: ", warningTime)
 		if t.Hour() == warningTime.Hour() && t.Minute() == warningTime.Minute() {
 			err := bot.SendWarning(channel.ChannelID)
 			if err != nil {
