@@ -442,7 +442,6 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 
 //HandleJoinNewUser handles comedian joining user
 func (bot *Bot) HandleJoinNewUser(user slack.User) (model.User, error) {
-	newUser := model.User{}
 	newUser, err := bot.db.SelectUser(user.ID)
 	if err == nil {
 		return newUser, nil
