@@ -274,7 +274,7 @@ other = "No standup time set for this channel yet! Please, add a standup time us
 
 [ShowStandupTime]
 description = "Shows a standup time of channel"
-other = "<!date^{{.standuptime}}^Standup time is {time}|Standup time set at 12:00>"
+other = "Standup time is {{.standuptime}}"
 
 [SomethingWentWrong]
 description = "Displays message when occure unexpected errors"

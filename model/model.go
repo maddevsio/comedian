@@ -35,7 +35,7 @@ type Channel struct {
 	TeamID      string `db:"team_id" json:"team_id"`
 	ChannelName string `db:"channel_name" json:"channel_name"`
 	ChannelID   string `db:"channel_id" json:"channel_id"`
-	StandupTime int64  `db:"channel_standup_time" json:"channel_standup_time"`
+	StandupTime string `db:"channel_standup_time" json:"channel_standup_time"`
 }
 
 // Standuper model used for serialization/deserialization stored ChannelMembers

@@ -236,9 +236,9 @@ func TestShowTime(t *testing.T) {
 		SelectedChannel      model.Channel
 		SelectedChannelError error
 	}{
-		{"No standup time set for this channel yet! Please, add a standup time using `/comedian add_deadline` command!", model.Channel{StandupTime: int64(0)}, nil},
+		{"No standup time set for this channel yet! Please, add a standup time using `/comedian add_deadline` command!", model.Channel{StandupTime: ""}, nil},
 		{"No standup time set for this channel yet! Please, add a standup time using `/comedian add_deadline` command!", model.Channel{}, errors.New("select channel")},
-		{"<!date^1514894400^Standup time is {time}|Standup time set at 12:00>", model.Channel{StandupTime: int64(1514894400)}, nil},
+		{"Standup time is 12:00", model.Channel{StandupTime: "12:00"}, nil},
 	}
 
 	for _, tt := range testCases {
@@ -269,9 +269,9 @@ func TestShowTimeFailBundle(t *testing.T) {
 		SelectedChannel      model.Channel
 		SelectedChannelError error
 	}{
-		{"", model.Channel{StandupTime: int64(0)}, nil},
+		{"", model.Channel{StandupTime: ""}, nil},
 		{"", model.Channel{}, errors.New("select channel")},
-		{"", model.Channel{StandupTime: int64(1514894400)}, nil},
+		{"", model.Channel{StandupTime: ""}, nil},
 	}
 
 	for _, tt := range testCases {

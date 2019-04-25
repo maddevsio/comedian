@@ -301,7 +301,7 @@ other = "У этого канала до сих пор не установлен
 
 [ShowStandupTime]
 description = "Shows a standup time of channel"
-other = "<!date^{{.standuptime}}^Срок для сдачи стендапов установлен на {time}|Срок для сдачи стендапов установлен на 12:00>"
+other = "Срок для сдачи стендапов установлен на {{.standuptime}}"
 
 [SomethingWentWrong]
 description = "Displays message when occure unexpected errors"

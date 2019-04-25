@@ -432,7 +432,7 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 		TeamID:      teamID,
 		ChannelName: channel.Name,
 		ChannelID:   channel.ID,
-		StandupTime: int64(0),
+		StandupTime: "",
 	})
 	if err != nil {
 		return newChannel, err
