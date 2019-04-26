@@ -168,7 +168,7 @@ func (bot *Bot) SendChannelNotification(nt *NotifierThread) error {
 
 func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, repeats *int) error {
 
-	if *repeats > bot.properties.ReminderRepeatsMax || len(nonReporters) < 1 {
+	if *repeats >= bot.properties.ReminderRepeatsMax || len(nonReporters) < 1 {
 		log.Info("Finish Backoff")
 		return nil
 	}
