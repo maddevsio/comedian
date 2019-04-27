@@ -61,6 +61,11 @@ func TestNotifyChannels(t *testing.T) {
 		})
 		bot.NotifyChannels(tt.time)
 	}
+	//check errors if channel_standup_time is timestamp
+	bot := New(c, bundle, settings, MockedDB{
+		ListedChannels: []model.Channel{model.Channel{TeamID: "comedian", StandupTime: "0"}, model.Channel{StandupTime: "123456"}},
+	})
+	bot.NotifyChannels(time.Now())
 }
 
 func TestSendWarning(t *testing.T) {

@@ -52,6 +52,11 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 			continue
 		}
 
+		if r == nil {
+			log.Infof("Could not find matches. Channel standup time:  [%v]", channel.StandupTime)
+			continue
+		}
+
 		warningTime := time.Unix(r.Time.Unix()-bot.properties.ReminderTime*60, 0)
 		log.Info("warningTime: ", warningTime)
 		if t.Hour() == warningTime.Hour() && t.Minute() == warningTime.Minute() {
