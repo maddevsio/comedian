@@ -125,6 +125,7 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("HandleCallbackEvent failed to ReadAll from body")
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
@@ -133,6 +134,8 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 		log.WithFields(log.Fields{"error": err}).Error("HandleCallbackEvent failed to unmarshar incomingevent")
 		return c.JSON(http.StatusBadRequest, err)
 	}
+
+	log.Infof("New event! %v \n", incomingEvent)
 
 	if incomingEvent.Token != api.config.SlackVerificationToken {
 		return c.JSON(http.StatusForbidden, "verification token does not match")
@@ -150,12 +153,12 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, err)
 		}
 
-		go func(event slackevents.EventsAPICallbackEvent) {
-			err = api.comedian.HandleCallbackEvent(event)
-			if err != nil {
-				log.WithFields(log.Fields{"event": event, "error": err}).Error("HandleCallbackEvent failed")
-			}
-		}(event)
+		log.Infof("Callback body: %+v\n \n", event)
+
+		err = api.comedian.HandleCallbackEvent(event)
+		if err != nil {
+			log.WithFields(log.Fields{"event": event, "error": err}).Error("HandleCallbackEvent failed")
+		}
 
 		return c.String(http.StatusOK, "Success")
 	}

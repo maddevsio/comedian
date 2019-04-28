@@ -134,6 +134,8 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		return err
 	}
 
+	log.Info("Inner Event: \n", ev)
+
 	switch ev["type"] {
 	case "message":
 		message := &slack.MessageEvent{}
@@ -168,13 +170,11 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		if err != nil {
 			return err
 		}
-
+		return nil
 	default:
 		log.WithFields(log.Fields{"event": string(data)}).Warning("unrecognized event!")
 		return nil
 	}
-
-	return nil
 }
 
 //HandleMessage handles slack message event
@@ -201,15 +201,10 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		return bot.SendEphemeralMessage(msg.Channel, msg.User, problem)
 	}
 
-	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
-	if err != nil {
-		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
-	}
-
 	if bot.submittedStandupToday(msg.User, msg.Channel) {
-		// payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		// oneStandupPerDay := translation.Translate(payload)
-		// bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		oneStandupPerDay := translation.Translate(payload)
+		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 		log.Warning("submitted standup today", msg.User, msg.Channel)
 		return nil
 	}
@@ -221,6 +216,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		MessageTS: msg.Msg.Timestamp,
 	})
 	if err != nil {
+		bot.SendEphemeralMessage(msg.Channel, msg.User, "I could not save your standup due to some technical issues, please, report ths to your PM or directly to Comedian development team")
 		return err
 	}
 	log.Infof("Standup created #id:%v\n", standup.ID)
@@ -238,11 +234,18 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		}).Error("Failed to AddReaction!")
 	}
 
+	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
+	if err != nil {
+		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
+		return nil
+	}
+
 	standuper.SubmittedStandupToday = true
 	_, err = bot.db.UpdateStanduper(standuper)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
