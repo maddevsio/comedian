@@ -187,6 +187,8 @@ func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
 		return bot.handleEditMessage(msg)
 	case typeDeleteMessage:
 		return bot.handleDeleteMessage(msg)
+	case "bot_message":
+		return nil
 	}
 	return nil
 }
@@ -202,9 +204,9 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 	}
 
 	if bot.submittedStandupToday(msg.User, msg.Channel) {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		oneStandupPerDay := translation.Translate(payload)
-		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
+		// payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		// oneStandupPerDay := translation.Translate(payload)
+		// bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 		log.Warning("submitted standup today", msg.User, msg.Channel)
 		return nil
 	}
