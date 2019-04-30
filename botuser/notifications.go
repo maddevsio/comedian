@@ -58,7 +58,6 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 		}
 
 		warningTime := time.Unix(r.Time.Unix()-bot.properties.ReminderTime*60, 0)
-		log.Info("warningTime: ", warningTime)
 		if t.Hour() == warningTime.Hour() && t.Minute() == warningTime.Minute() {
 			err := bot.SendWarning(channel.ChannelID)
 			if err != nil {
