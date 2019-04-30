@@ -23,6 +23,7 @@ func TestCreateChannel(t *testing.T) {
 		TeamID:      "foo",
 		ChannelName: "bar",
 		ChannelID:   "bar12",
+		StandupTime: "",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", ch.TeamID)
@@ -40,6 +41,7 @@ func TestGetChannels(t *testing.T) {
 		TeamID:      "foo",
 		ChannelName: "bar",
 		ChannelID:   "bar12",
+		StandupTime: "",
 	})
 	assert.NoError(t, err)
 
