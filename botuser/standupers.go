@@ -84,7 +84,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 
 		user, err = bot.db.SelectUser(userID)
 		if err != nil {
-			err := bot.AddNewSlackUser(u)
+			err := bot.AddNewSlackUser(userID)
 			if err != nil {
 				log.WithFields(log.Fields(map[string]interface{}{"place": "bot.AddNewSlackUser(u)", "user": u, "error": err})).Error("Error in AddMembers")
 				failed = append(failed, u)
