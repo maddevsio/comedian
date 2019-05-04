@@ -1,9 +1,7 @@
 FROM golang:1.11.4
 COPY . /go/src/gitlab.com/team-monitoring/comedian
-# Install dependencies
 WORKDIR /go/src/gitlab.com/team-monitoring/comedian
-# Compile comedian
-RUN make build_linux
+RUN GOOS=linux GOARCH=amd64 go build -o comedian main.go
 
 FROM debian:9.8
 LABEL maintainer="Anatoliy Fedorenko <fedorenko.tolik@gmail.com>"

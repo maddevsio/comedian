@@ -26,6 +26,7 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 	if int(t.Weekday()) == 6 || int(t.Weekday()) == 0 {
 		return
 	}
+	//TODO COM-1644
 	channels, err := bot.db.ListChannels()
 	if err != nil {
 		log.Errorf("notifier: ListAllStandupTime failed: %v\n", err)

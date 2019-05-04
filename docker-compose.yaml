@@ -3,9 +3,9 @@ version: '2'
 services:
 
   db:
-    image: percona/percona-server:5.7
-    restart: on-failure
-    command: --max_allowed_packet=32505856
+    image: mysql:5.7
+    volumes:
+      - "database:/var/lib/mysql"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: comedian
@@ -13,16 +13,22 @@ services:
       MYSQL_PASSWORD: comedian
 
   comedian:
-    image: comedian:latest
+    build: .
     restart: on-failure
     links:
       - db:db
-    expose:
-      - 8080
+    ports:
+      - 8080:8080
     environment:
-      COMEDIAN_DATABASE: comedian:comedian@tcp(db:3306)/comedian?parseTime=true
-      COMEDIAN_HTTP_BIND_ADDR: 0.0.0.0:8080
-      COMEDIAN_SLACK_CLIENT_ID: ${COMEDIAN_SLACK_CLIENT_ID}
-      COMEDIAN_SLACK_CLIENT_SECRET: ${COMEDIAN_SLACK_CLIENT_SECRET}
+      TZ: Asia/Bishkek
+      DATABASE: comedian:comedian@tcp(db:3306)/comedian?parseTime=true
+      HTTP_BIND_ADDR: 0.0.0.0:8080
+      SLACK_CLIENT_ID: ${SLACK_CLIENT_ID}
+      SLACK_CLIENT_SECRET: ${SLACK_CLIENT_SECRET}
+      SLACK_VERIFICATION_TOKEN: ${SLACK_VERIFICATION_TOKEN}
+
     depends_on:
       - db
+
+volumes:
+  database:

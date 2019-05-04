@@ -84,6 +84,7 @@ func (bot *Bot) CallDisplayWeeklyTeamReport() error {
 
 // displayYesterdayTeamReport generates report on users who submit standups
 func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
+	log.Info("generating yesterday team report!")
 	var allReports []slack.Attachment
 
 	channels, err := bot.db.ListChannels()
@@ -134,6 +135,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 
 			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
 				commits = ""
+				commitsPoints++
 			}
 
 			if collectorError != nil {
@@ -465,6 +467,9 @@ func (bot *Bot) processStandup(member model.Standuper) (string, int) {
 	if err != nil || standup == nil {
 		if time.Now().Weekday() == 0 || time.Now().Weekday() == 1 {
 			return "", points
+		}
+		if member.RoleInChannel == "pm" {
+			return "", 1
 		}
 		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "NoStandup", 0, map[string]interface{}{}}
 		text = translation.Translate(payload)

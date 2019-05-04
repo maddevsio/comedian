@@ -1,42 +1,9 @@
-TARGET=comedian
-
-all: fmt clean build docker
-
-clean:
-	rm -rf $(TARGET)
-
-fmt:
-	go fmt ./...
-
-build:
-	go build -o $(TARGET) main.go
-
-build_linux:
-	GOOS=linux GOARCH=amd64 go build -o $(TARGET) main.go
-
-build_docker:
-	docker build -t comedian .
-
-docker: build_linux build_docker
-
-migration-ci:
-	./goose -dir migrations mysql "comedian:comedian@tcp(db:3306)/comedian"  up
-
-migrate:
-	goose -dir migrations mysql "comedian:comedian@tcp(db:3306)/comedian"  up
-
-migrate_localy:
-	goose -dir migrations mysql "root:root@/comedian"  up
-
-
-c_migration:
-	goose -dir migrations create migration_name sql
+run:
+	docker-compose up --build
 	
-db_clean:
-	goose -dir migrations mysql "comedian:comedian@/comedian"  reset
-	goose -dir migrations mysql "comedian:comedian@/comedian"  up
+clear:
+	docker-compose down --remove-orphans
 
-run_tests:
-	go test ./botuser/ ./config/ ./api/ ./utils/ ./storage/ ./model/ ./comedianbot/ ./translation/ ./crypto/ -cover
-
-test: run_tests
+test:
+	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+	docker-compose -f docker-compose.test.yml down --remove-orphans
