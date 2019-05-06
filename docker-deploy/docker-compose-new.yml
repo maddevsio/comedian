@@ -47,8 +47,8 @@ services:
       - COMEDIAN_OWNER_SLACK_TEAM_ID=${COMEDIAN_OWNER_SLACK_TEAM_ID}
       - SENTRY_DSN=${SENTRY_DSN}
       - SENTRY_ENVIRONMENT=comedian
-      - VIRTUAL_HOST=comedian-new.maddevs.co
-      - LETSENCRYPT_HOST=comedian-new.maddevs.co
+      - VIRTUAL_HOST=comedian.maddevs.co
+      - LETSENCRYPT_HOST=comedian.maddevs.co
       - LETSENCRYPT_EMAIL=fedorenko.tolik@gmail.com
     depends_on:
       - new-comedian-db
