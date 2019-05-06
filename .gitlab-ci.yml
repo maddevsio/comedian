@@ -12,14 +12,10 @@ tests:
   tags:
     - docker
   script:
-    - docker network create comedian_comedian
-    - docker-compose -f ./docker-compose-test.yml up -d db
-    - sleep 10
-    - docker-compose -f ./docker-compose-test.yml run --rm golang  make migration-ci run_tests
+    - make test
   allow_failure: false
   only:
     - master
-  
 
 build:
   image: docker:latest

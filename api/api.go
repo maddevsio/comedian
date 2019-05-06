@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -52,14 +53,14 @@ type Event struct {
 
 var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>.*)`)
 
-// New creates API
+// New creates API instance
 func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedian) ComedianAPI {
 
 	echo := echo.New()
 	echo.Use(middleware.CORS())
 	echo.Pre(middleware.RemoveTrailingSlash())
 	echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "method=${method}, uri=${uri}, status=${status}\n",
+		Format: "method:${method}, uri:${uri}, status:${status}, error:${error}\n",
 	}))
 
 	api := ComedianAPI{
@@ -75,6 +76,7 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	echo.POST("/service-message", api.handleServiceMessage)
 	echo.POST("/info-message", api.handleInfoMessage)
 	echo.POST("/commands", api.handleCommands)
+	echo.POST("/user-commands", api.handleUsersCommands)
 	echo.GET("/auth", api.auth)
 
 	r := echo.Group("/v1")
@@ -125,17 +127,13 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("HandleCallbackEvent failed to ReadAll from body")
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("HandleCallbackEvent failed to unmarshar incomingevent")
 		return c.JSON(http.StatusBadRequest, err)
 	}
-
-	log.Infof("New event! %v \n", incomingEvent)
 
 	if incomingEvent.Token != api.config.SlackVerificationToken {
 		return c.JSON(http.StatusForbidden, "verification token does not match")
@@ -152,8 +150,6 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 			log.WithFields(log.Fields{"error": err}).Error("HandleCallbackEvent failed to unmarshar callbackevent")
 			return c.JSON(http.StatusBadRequest, err)
 		}
-
-		log.Infof("Callback body: %+v\n \n", event)
 
 		err = api.comedian.HandleCallbackEvent(event)
 		if err != nil {
@@ -217,37 +213,59 @@ func (api *ComedianAPI) handleInfoMessage(c echo.Context) error {
 }
 
 func (api *ComedianAPI) handleCommands(c echo.Context) error {
-	slachCommand, err := slack.SlashCommandParse(c.Request())
+	slashCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	if !slachCommand.ValidateToken(api.config.SlackVerificationToken) {
-		return c.String(http.StatusBadRequest, "could not understand request")
+	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
+		return c.String(http.StatusBadRequest, "wrong verification token")
 	}
 
-	if slachCommand.Command != "/comedian" {
-		log.WithFields(log.Fields(map[string]interface{}{"slachCommand": slachCommand})).Warning("Command is not /comedian")
-		return c.String(http.StatusBadRequest, "slash command should be `/comedian`")
-	}
-
-	bot, err := api.comedian.SelectBot(slachCommand.TeamID)
+	bot, err := api.comedian.SelectBot(slashCommand.TeamID)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"slachCommand": slachCommand, "error": err})).Error("handleCommands failed on Select Bot")
+		log.WithFields(log.Fields(map[string]interface{}{"slashCommand": slashCommand, "error": err})).Error("handleCommands failed on Select Bot")
 		return err
 	}
 
-	accessLevel, err := bot.GetAccessLevel(slachCommand.UserID, slachCommand.ChannelID)
+	accessLevel, err := bot.GetAccessLevel(slashCommand.UserID, slashCommand.ChannelID)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"bot": bot, "slachCommand": slachCommand, "error": err})).Error("handleCommands failed on GetAccessLevel")
+		log.WithFields(log.Fields(map[string]interface{}{"bot": bot, "slashCommand": slashCommand, "error": err})).Error("handleCommands failed on GetAccessLevel")
 		return err
 	}
 
-	log.Infof("Access level for user %v in channel %v is %v", slachCommand.UserID, slachCommand.ChannelID, accessLevel)
+	command, params := utils.CommandParsing(slashCommand.Text)
 
-	command, params := utils.CommandParsing(slachCommand.Text)
+	message := bot.ImplementCommands(slashCommand.ChannelID, command, params, accessLevel)
 
-	message := bot.ImplementCommands(slachCommand.ChannelID, command, params, accessLevel)
+	return c.String(http.StatusOK, message)
+}
+
+func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
+	slashCommand, err := slack.SlashCommandParse(c.Request())
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
+		return c.String(http.StatusBadRequest, "Invalid verification token")
+	}
+
+	bot, err := api.comedian.SelectBot(slashCommand.TeamID)
+	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"slashCommand": slashCommand, "error": err})).Error("handleCommands failed on Select Bot")
+		return c.String(http.StatusOK, "No bot found to implement the request. Please, report this to Comedian development team")
+	}
+
+	today := time.Now()
+	dateFrom := fmt.Sprintf("%d-%02d-%02d", today.Year(), today.Month(), 1)
+	dateTo := fmt.Sprintf("%d-%02d-%02d", today.Year(), today.Month(), today.Day())
+	dataOnUser, err := bot.GetCollectorData("users", slashCommand.UserID, dateFrom, dateTo)
+	if err != nil {
+		return c.String(http.StatusOK, "Failed to get data from Collector. Make sure you were added to Collector database and try again")
+	}
+
+	message := fmt.Sprintf("You have logged %v from the begining of the month", utils.SecondsToHuman(dataOnUser.Worklogs))
 
 	return c.String(http.StatusOK, message)
 }
@@ -316,6 +334,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	bot, err := api.comedian.SelectBot(resp.TeamID)
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 	bot.SetProperties(settings)
 

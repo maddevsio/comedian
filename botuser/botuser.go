@@ -472,7 +472,6 @@ func (bot *Bot) HandleJoinNewUser(user slack.User) (model.User, error) {
 
 //ImplementCommands implements slash commands such as adding users and managing deadlines
 func (bot *Bot) ImplementCommands(channelID, command, params string, accessLevel int) string {
-
 	switch command {
 	case "add":
 		return bot.addCommand(accessLevel, channelID, params)
