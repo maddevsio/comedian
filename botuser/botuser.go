@@ -182,7 +182,9 @@ func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
 	msg.Team = bot.properties.TeamID
 	switch msg.SubType {
 	case typeMessage:
-		return bot.handleNewMessage(msg)
+		return nil
+		// return bot.handleNewMessage(msg) need to skip it
+		// since new messages are handled by app_mention event
 	case typeEditMessage:
 		return bot.handleEditMessage(msg)
 	case typeDeleteMessage:
