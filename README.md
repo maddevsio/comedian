@@ -34,20 +34,23 @@ export SLACK_CLIENT_SECRET=6b0826c3b77fd072dc1ec1fc5c582743
 export SLACK_VERIFICATION_TOKEN=Oiwpp2x5Jup1jdQxdtnYTOWT
 ```
 
-### **Step 3**: Configure slash commands
+### **Step 3**: Add bot user 
+From the left sidebar select "Bot users". Create a bot user with any name you like. Turn on "Always show my bot online" feature. 
+
+### **Step 4**: Configure slash commands
 From the left sidebar select "Slash Commands". Create `/comedian` slash command with request URL: `http://<ngrok https URL>/commands`)
 
-### **Step 4**: Add Redirect URL in OAuth & Permissions tab
+### **Step 5**: Add Redirect URL in OAuth & Permissions tab
 Add a new redirect url `http://<ngrok https URL>/auth`. Save it! This is where Slack will redirect when you install bot into a workspace
 
-### **Step 5**: Run Comedian
+### **Step 6**: Run Comedian
 
 CD into your project root directory and run Comedian with `make run` command from your terminal. In case you do not have docker and docker-compose, install them on your machine and try again. 
 
-### **Step 6**: Add Event Subscriptions
+### **Step 7**: Add Event Subscriptions
 In Event Subscriptions tab enable events. Configure URL as follows ```http://<ngrok https URL>/event```. You should receive confirmation of your endpoint. if not, check if your app and ngrok are working and you have internet access. If confirm received, add `app_uninstalled`, `message_groups`, `message_channels`, `team_join` events. 
 
-### **Step 7**: Add Comedian to your workspace
+### **Step 8**: Add Comedian to your workspace
 Navigate to `manage distribution` tab and press `Add to Slack` button
 Chose which slack you want to add Comedian to and authorize it. Once done, Comedian will send you the username and password. 
 
