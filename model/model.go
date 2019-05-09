@@ -168,6 +168,11 @@ func (bs BotSettings) Validate() error {
 		return err
 	}
 
+	if bs.ReportingTime == "" {
+		err := errors.New("reporting time cannot be empty")
+		return err
+	}
+
 	return nil
 }
 

@@ -42,16 +42,20 @@ func TestBotSettings(t *testing.T) {
 		accessToken        string
 		ReminderTime       int64
 		ReminderRepeatsMax int
+		ReportingTime      string
+		Password           string
 		errorMessage       string
 	}{
-		{"", "", "", 1, 1, "team ID cannot be empty"},
-		{"tID", "", "", 1, 1, "team name cannot be empty"},
-		{"tID", "tName", "", 1, 1, "accessToken cannot be empty"},
-		{"tID", "tName", "accToken", 1, 1, ""},
-		{"tID", "tName", "accToken", 0, 1, "reminder time cannot be zero or negative"},
-		{"tID", "tName", "accToken", -1, 1, "reminder time cannot be zero or negative"},
-		{"tID", "tName", "accToken", 1, 0, "reminder repeats max cannot be zero or negative"},
-		{"tID", "tName", "accToken", 1, -1, "reminder repeats max cannot be zero or negative"},
+		{"", "", "", 1, 1, "01:00", "123", "team ID cannot be empty"},
+		{"tID", "", "", 1, 1, "01:00", "123", "team name cannot be empty"},
+		{"tID", "tName", "", 1, 1, "01:00", "123", "accessToken cannot be empty"},
+		{"tID", "tName", "accToken", 1, 1, "01:00", "123", ""},
+		{"tID", "tName", "accToken", 0, 1, "01:00", "123", "reminder time cannot be zero or negative"},
+		{"tID", "tName", "accToken", -1, 1, "01:00", "123", "reminder time cannot be zero or negative"},
+		{"tID", "tName", "accToken", 1, 0, "01:00", "123", "reminder repeats max cannot be zero or negative"},
+		{"tID", "tName", "accToken", 1, -1, "01:00", "123", "reminder repeats max cannot be zero or negative"},
+		{"tID", "tName", "accToken", 1, 1, "", "123", "reporting time cannot be empty"},
+		{"tID", "tName", "accToken", 1, 1, "", "", "password cannot be empty"},
 	}
 	for _, tt := range testCases {
 		bs := BotSettings{
@@ -60,7 +64,8 @@ func TestBotSettings(t *testing.T) {
 			AccessToken:        tt.accessToken,
 			ReminderTime:       tt.ReminderTime,
 			ReminderRepeatsMax: tt.ReminderRepeatsMax,
-			Password:           "Foo",
+			ReportingTime:      tt.ReportingTime,
+			Password:           tt.Password,
 		}
 		err := bs.Validate()
 		if err != nil {
