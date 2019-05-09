@@ -88,7 +88,10 @@ func (bot *Bot) Start() {
 				if err != nil {
 					log.Error("CallDisplayWeeklyTeamReport failed: ", err)
 				}
-				bot.setStandupsCounterToZero()
+				err = bot.setStandupsCounterToZero()
+				if err != nil {
+					log.Error("setStandupsCounterToZero failed: ", err)
+				}
 				if Dry {
 					break
 				}

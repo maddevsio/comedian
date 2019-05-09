@@ -38,7 +38,7 @@ export SLACK_VERIFICATION_TOKEN=Oiwpp2x5Jup1jdQxdtnYTOWT
 From the left sidebar select "Bot users". Create a bot user with any name you like. Turn on "Always show my bot online" feature. 
 
 ### **Step 4**: Configure slash commands
-From the left sidebar select "Slash Commands". Create `/comedian` slash command with request URL: `http://<ngrok https URL>/commands`)
+From the left sidebar select "Slash Commands". Create `/comedian` slash command with request URL: `http://<ngrok https URL>/commands`) Mark as needed the option of `Escase channels, users and links sent to your app`. 
 
 ### **Step 5**: Add Redirect URL in OAuth & Permissions tab
 Add a new redirect url `http://<ngrok https URL>/auth`. Save it! This is where Slack will redirect when you install bot into a workspace
