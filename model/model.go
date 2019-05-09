@@ -173,6 +173,11 @@ func (bs BotSettings) Validate() error {
 		return err
 	}
 
+	if bs.Language == "" {
+		err := errors.New("language cannot be empty")
+		return err
+	}
+
 	return nil
 }
 
