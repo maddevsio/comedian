@@ -158,6 +158,16 @@ func (bs BotSettings) Validate() error {
 		return err
 	}
 
+	if bs.ReminderTime == 0 || bs.ReminderTime == -1 {
+		err := errors.New("reminder time cannot be zero or negative")
+		return err
+	}
+
+	if bs.ReminderRepeatsMax == 0 || bs.ReminderRepeatsMax == -1 {
+		err := errors.New("reminder repeats max cannot be zero or negative")
+		return err
+	}
+
 	return nil
 }
 
