@@ -324,9 +324,9 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
 	standup, err := bot.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
 	if err != nil {
-		return err
+		log.Warning("Could not select standup for deleting: ", msg)
+		return nil
 	}
-	log.Info("delete message event ", msg)
 	return bot.db.DeleteStandup(standup.ID)
 }
 
