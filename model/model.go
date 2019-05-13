@@ -158,6 +158,26 @@ func (bs BotSettings) Validate() error {
 		return err
 	}
 
+	if bs.ReminderTime <= 0 {
+		err := errors.New("reminder time cannot be zero or negative")
+		return err
+	}
+
+	if bs.ReminderRepeatsMax <= 0 {
+		err := errors.New("reminder repeats max cannot be zero or negative")
+		return err
+	}
+
+	if bs.ReportingTime == "" {
+		err := errors.New("reporting time cannot be empty")
+		return err
+	}
+
+	if bs.Language == "" {
+		err := errors.New("language cannot be empty")
+		return err
+	}
+
 	return nil
 }
 
