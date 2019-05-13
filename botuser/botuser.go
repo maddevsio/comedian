@@ -331,14 +331,12 @@ func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
 }
 
 func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
-	log.Info("Start checking if user submitted standup today!", userID)
 	standup, err := bot.db.SelectLatestStandupByUser(userID, channelID)
 	if err != nil {
 		log.Error(err)
 		return false
 	}
-	log.Infof("standup.Created.Day() [%v] == time.Now().Day() [%v]", standup.Created.Day(), time.Now().Day())
-	if standup.Created.Day() == time.Now().Day() {
+	if standup.Created.Day() == time.Now().UTC().Day() {
 		return true
 	}
 	return false
