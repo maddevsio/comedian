@@ -122,7 +122,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 
 			UserInfo, err := bot.db.SelectUser(member.UserID)
 			if err != nil {
-				log.Errorf("SelectUser failed for  user %v: %v", UserInfo.UserName, err)
+				log.Warningf("SelectUser failed for  user %v: %v", member.UserID, err)
 				continue
 			}
 
@@ -268,7 +268,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 
 			UserInfo, err := bot.db.SelectUser(member.UserID)
 			if err != nil {
-				log.Errorf("SelectUser failed for  user %v: %v", UserInfo.UserName, err)
+				log.Warningf("SelectUser failed for  user %v: %v", member.UserID, err)
 				continue
 			}
 
