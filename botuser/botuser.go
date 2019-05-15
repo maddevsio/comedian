@@ -161,6 +161,12 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		}
 		_, err := bot.HandleJoinNewUser(join.User)
 		return err
+	case "user_change":
+		event := &slack.UserChangeEvent{}
+		if err := json.Unmarshal(data, event); err != nil {
+			return err
+		}
+		return bot.updateUser(event.User)
 	case "app_uninstalled":
 		bot.Stop()
 		err := bot.db.DeleteBotSettings(bot.properties.TeamID)
