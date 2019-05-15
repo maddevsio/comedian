@@ -27,6 +27,8 @@ type User struct {
 	UserID   string `db:"user_id" json:"user_id"`
 	Role     string `db:"role" json:"role"`
 	RealName string `db:"real_name" json:"real_name"`
+	TZ       string `db:"tz" json:"tz"`
+	TZOffset int    `db:"tz_offset" json:"tz_offset"`
 }
 
 // Channel model used for serialization/deserialization stored Channels
