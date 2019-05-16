@@ -223,6 +223,10 @@ func (api *ComedianAPI) changePassword(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "current password does not match")
 	}
 
+	if data.OldPassword == data.NewPassword {
+		return c.JSON(http.StatusBadRequest, "new password should be different from old password")
+	}
+
 	settings.Password = data.NewPassword
 
 	res, err := api.db.UpdateBotPassword(settings)
