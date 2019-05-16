@@ -145,7 +145,7 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		if err := json.Unmarshal(data, message); err != nil {
 			return err
 		}
-		return bot.HandleMessage(message)
+		return bot.HandleAppMention(message)
 	case "member_joined_channel":
 		join := &slack.MemberJoinedChannelEvent{}
 		if err := json.Unmarshal(data, join); err != nil {
@@ -207,9 +207,9 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 	}
 
 	if bot.submittedStandupToday(msg.User, msg.Channel) {
-		// payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		// oneStandupPerDay := translation.Translate(payload)
-		// bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		oneStandupPerDay := translation.Translate(payload)
+		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
 		log.Warning("submitted standup today", msg.User, msg.Channel)
 		return nil
 	}
@@ -280,9 +280,9 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 	}
 
 	if bot.submittedStandupToday(msg.SubMessage.User, msg.Channel) {
-		// payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		// oneStandupPerDay := translation.Translate(payload)
-		// bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
+		oneStandupPerDay := translation.Translate(payload)
+		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
 		log.Warning("submitted standup today", msg.SubMessage.User, msg.Channel)
 		return nil
 	}
@@ -352,6 +352,63 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 		return true
 	}
 	return false
+}
+
+//HandleAppMention функция которая работает точно так же как и HandleMessage
+//но при этом не говорит пользователю что он уже написал стендап.
+func (bot *Bot) HandleAppMention(msg *slack.MessageEvent) error {
+	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
+		return nil
+	}
+
+	problem := bot.analizeStandup(msg.Msg.Text)
+	if problem != "" {
+		log.Warning("HandleAppMention func. wrong standup", problem)
+		return nil
+
+	}
+
+	if bot.submittedStandupToday(msg.User, msg.Channel) {
+		log.Warning("HandleAppMention func. submitted standup today", msg.User, msg.Channel)
+		return nil
+	}
+	_, err := bot.db.CreateStandup(model.Standup{
+		TeamID:    msg.Team,
+		ChannelID: msg.Channel,
+		UserID:    msg.User,
+		Comment:   msg.Msg.Text,
+		MessageTS: msg.Msg.Timestamp,
+	})
+	if err != nil {
+		return err
+	}
+	item := slack.ItemRef{
+		Channel:   msg.Channel,
+		Timestamp: msg.Msg.Timestamp,
+		File:      "",
+		Comment:   "",
+	}
+	err = bot.slack.AddReaction("heavy_check_mark", item)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"TeamName": bot.properties.TeamName,
+			"Item":     item,
+		}).Error("Failed to AddReaction!")
+	}
+
+	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
+	if err != nil {
+		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
+		return nil
+	}
+
+	standuper.SubmittedStandupToday = true
+	_, err = bot.db.UpdateStanduper(standuper)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (bot *Bot) analizeStandup(message string) string {
