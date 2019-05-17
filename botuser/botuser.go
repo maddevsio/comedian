@@ -344,10 +344,6 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 
 	loc := time.FixedZone(user.TZ, user.TZOffset)
 
-	log.Infof("Standup created by %v at: %v", user.RealName, standup.Created.In(loc).Day())
-	log.Info("Standup created from DB: ", standup.Created)
-	log.Infof("Now its: %v \n", time.Now().UTC().In(loc).Day())
-
 	if standup.Created.In(loc).Day() == time.Now().UTC().In(loc).Day() {
 		return true
 	}
@@ -357,6 +353,7 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 //HandleAppMention функция которая работает точно так же как и HandleMessage
 //но при этом не говорит пользователю что он уже написал стендап.
 func (bot *Bot) HandleAppMention(msg *slack.MessageEvent) error {
+	msg.Team = bot.properties.TeamID
 	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
 		return nil
 	}
