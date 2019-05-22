@@ -23,6 +23,10 @@ var (
 	Dry bool
 )
 
+var problemKeys = []string{"problem", "difficult", "issue", "block", "проблем", "мешает"}
+var todayPlansKeys = []string{"today", "сегодня"}
+var yesterdayWorkKeys = []string{"yesterday", "friday", "monday", "tuesday", "wednesday", "thursday", "saturday", "sunday", "вчера", "пятниц", "понедельник", "вторник", "сред", "четверг", "суббот", "воскресенье"}
+
 const (
 	superAdminAccess  = 1
 	adminAccess       = 2
@@ -412,7 +416,6 @@ func (bot *Bot) analizeStandup(message string) string {
 	message = strings.ToLower(message)
 
 	mentionsYesterdayWork := false
-	yesterdayWorkKeys := []string{"yesterday", "friday", "monday", "tuesday", "wednesday", "thursday", "saturday", "sunday", "completed", "вчера", "пятниц", "делал", "сделано", "понедельник", "вторник", "сред", "четверг", "суббот", "воскресенье"}
 	for _, work := range yesterdayWorkKeys {
 		if strings.Contains(message, work) {
 			mentionsYesterdayWork = true
@@ -425,7 +428,6 @@ func (bot *Bot) analizeStandup(message string) string {
 	}
 
 	mentionsTodayPlans := false
-	todayPlansKeys := []string{"today", "going", "plan", "сегодня", "собираюсь", "план"}
 	for _, plan := range todayPlansKeys {
 		if strings.Contains(message, plan) {
 			mentionsTodayPlans = true
@@ -438,7 +440,6 @@ func (bot *Bot) analizeStandup(message string) string {
 
 	mentionsProblem := false
 
-	problemKeys := []string{"problem", "difficult", "stuck", "question", "issue", "block", "проблем", "трудност", "затруднени", "вопрос", "блок"}
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
