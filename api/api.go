@@ -315,6 +315,10 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		if err != nil {
 			log.Error("SendUserMessage failed in Auth: ", err)
 		}
+		err = bot.SendUserMessage(resp.UserID, "If you never used Comedian before, check Comedian short intro video for more information! https://youtu.be/huvmtJCCtOE")
+		if err != nil {
+			log.Error("SendUserMessage failed in Auth: ", err)
+		}
 		api.comedian.AddBot(bot)
 
 		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
@@ -340,6 +344,10 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	message := fmt.Sprintf("Settings updated! New Login at %v with: \n username: `%v`\n password: `%v`", api.config.UIurl, resp.TeamName, pass)
 	err = bot.SendUserMessage(resp.UserID, message)
+	if err != nil {
+		log.Error("SendUserMessage failed in Auth: ", err)
+	}
+	err = bot.SendUserMessage(resp.UserID, "If you never used Comedian before, check Comedian short intro video for more information! https://youtu.be/huvmtJCCtOE")
 	if err != nil {
 		log.Error("SendUserMessage failed in Auth: ", err)
 	}
