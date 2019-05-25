@@ -77,7 +77,7 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	echo.POST("/service-message", api.handleServiceMessage)
 	echo.POST("/info-message", api.handleInfoMessage)
 	echo.POST("/commands", api.handleCommands)
-	echo.POST("/team-worklogs", api.showTeamMembersWorklogs)
+	echo.POST("/team-worklogs", api.showTeamWorklogs)
 	echo.POST("/user-commands", api.handleUsersCommands)
 	echo.GET("/auth", api.auth)
 
@@ -272,7 +272,7 @@ func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 	return c.String(http.StatusOK, message)
 }
 
-func (api *ComedianAPI) showTeamMembersWorklogs(c echo.Context) error {
+func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	slashCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -317,13 +317,14 @@ func (api *ComedianAPI) showTeamMembersWorklogs(c echo.Context) error {
 	var total int
 
 	for _, standuper := range standupers {
-		userInProject := fmt.Sprintf("%v/%v", standuper.UserID, slashCommand.ChannelName)
+		userInProject := fmt.Sprintf("%v/%v", standuper.UserID, standuper.ChannelName)
 		dataOnUserInProject, err := bot.GetCollectorData("user-in-project", userInProject, dateFrom, dateTo)
 		if err != nil {
 			log.WithFields(log.Fields(map[string]interface{}{"standuper": standuper, "error": err})).Error("failed to get data on user in project")
 			continue
 		}
-		message += fmt.Sprintf("%s - %s \n", standuper.ChannelName, utils.SecondsToHuman(dataOnUserInProject.Worklogs))
+		message += fmt.Sprintf("%s - %s \n", standuper.RealName, utils.SecondsToHuman(dataOnUserInProject.Worklogs))
+		total += dataOnUserInProject.Worklogs
 	}
 
 	message += fmt.Sprintf("In total: %v", utils.SecondsToHuman(total))
