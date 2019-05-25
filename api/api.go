@@ -295,19 +295,22 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	}
 
 	dates := strings.Split(slashCommand.Text, "-")
+	var from, to time.Time
 
-	if len(dates) != 2 {
-		return c.String(http.StatusOK, "Wrong format. Please, use the following format `MM.DD.YY - MM.DD.YY`")
-	}
+	if len(dates) == 2 {
+		from, err = utils.StringToTime(dates[0])
+		if err != nil {
+			return c.String(http.StatusOK, err.Error())
+		}
 
-	from, err := utils.StringToTime(dates[0])
-	if err != nil {
-		return c.String(http.StatusOK, err.Error())
-	}
-
-	to, err := utils.StringToTime(dates[1])
-	if err != nil {
-		return c.String(http.StatusOK, err.Error())
+		to, err = utils.StringToTime(dates[1])
+		if err != nil {
+			return c.String(http.StatusOK, err.Error())
+		}
+	} else {
+		today := time.Now()
+		from = time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.Local)
+		to = today
 	}
 
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", from.Year(), from.Month(), from.Day())
@@ -315,6 +318,13 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 
 	var message string
 	var total int
+
+	channel, err := api.db.SelectChannel(slashCommand.ChannelID)
+	if err != nil {
+		return c.String(http.StatusOK, "Add me to the channel first")
+	}
+
+	message += fmt.Sprintf("Worklogs of %s, from %s to %s: \n", channel.ChannelName, dateFrom, dateTo)
 
 	for _, standuper := range standupers {
 		userInProject := fmt.Sprintf("%v/%v", standuper.UserID, standuper.ChannelName)
