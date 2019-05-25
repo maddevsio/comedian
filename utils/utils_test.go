@@ -3,7 +3,6 @@ package utils
 import (
 	"testing"
 
-	"github.com/labstack/gommon/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,17 +51,23 @@ func TestCommandParsing(t *testing.T) {
 }
 
 func TestStringToTime(t *testing.T) {
-	time, err := StringToTime(" 5.1.2019 ")
-	assert.NoError(t, err)
-	log.Info(time)
-	assert.Equal(t, 1, time.Day())
-	assert.Equal(t, 5, int(time.Month()))
-	assert.Equal(t, 2019, time.Year())
-
-	time, err = StringToTime(" 5/1/19 ")
-	assert.NoError(t, err)
-	log.Info(time)
-	assert.Equal(t, 1, time.Day())
-	assert.Equal(t, 5, int(time.Month()))
-	assert.Equal(t, 2019, time.Year())
+	testCase := []struct {
+		text  string
+		day   int
+		month int
+		year  int
+	}{
+		{"5.1.2019 ", 1, 5, 2019},
+		{"5.01.2019 ", 1, 5, 2019},
+		{"5/1/2019 ", 1, 5, 2019},
+		{"5/1/18 ", 1, 5, 2018},
+		{"5.1.18 ", 1, 5, 2018},
+	}
+	for _, tt := range testCase {
+		time, err := StringToTime(tt.text)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.day, time.Day())
+		assert.Equal(t, tt.month, int(time.Month()))
+		assert.Equal(t, tt.year, time.Year())
+	}
 }
