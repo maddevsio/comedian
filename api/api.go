@@ -294,6 +294,12 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 		return c.String(http.StatusOK, "Could not retreve standupers of the project")
 	}
 
+	if len(standupers) == 0 {
+		return c.String(http.StatusOK, "No one standups in the project. No data")
+	}
+
+	channel := standupers[0].ChannelName
+
 	dates := strings.Split(slashCommand.Text, "-")
 	var from, to time.Time
 
@@ -319,12 +325,7 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	var message string
 	var total int
 
-	channel, err := api.db.SelectChannel(slashCommand.ChannelID)
-	if err != nil {
-		return c.String(http.StatusOK, "Add me to the channel first")
-	}
-
-	message += fmt.Sprintf("Worklogs of %s, from %s to %s: \n", channel.ChannelName, dateFrom, dateTo)
+	message += fmt.Sprintf("Worklogs of %s, from %s to %s: \n", channel, dateFrom, dateTo)
 
 	for _, standuper := range standupers {
 		userInProject := fmt.Sprintf("%v/%v", standuper.UserID, standuper.ChannelName)
