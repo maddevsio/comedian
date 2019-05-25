@@ -18,6 +18,14 @@
   version = "v0.3.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:214518d7d8af755027e4271707e130f73624200f3df2048f00bec66b3dec79b3"
+  name = "github.com/araddon/dateparse"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d2ba70357e924a4dc132001c6faebb8a5ea9878a"
+
+[[projects]]
   digest = "1:d8abdc866ebbe05fa3bce50863e23afd4c73c804b90c908caa864e86df1db8a1"
   name = "github.com/bouk/monkey"
   packages = ["."]
@@ -327,6 +335,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/BurntSushi/toml",
+    "github.com/araddon/dateparse",
     "github.com/bouk/monkey",
     "github.com/cenkalti/backoff",
     "github.com/dgrijalva/jwt-go",
@@ -339,6 +348,7 @@
     "github.com/kelseyhightower/envconfig",
     "github.com/labstack/echo",
     "github.com/labstack/echo/middleware",
+    "github.com/labstack/gommon/log",
     "github.com/nicksnyder/go-i18n/v2/i18n",
     "github.com/nlopes/slack",
     "github.com/nlopes/slack/slackevents",

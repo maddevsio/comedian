@@ -3,6 +3,7 @@ package utils
 import (
 	"testing"
 
+	"github.com/labstack/gommon/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,4 +49,20 @@ func TestCommandParsing(t *testing.T) {
 		assert.Equal(t, test.commandTitle, aTitle)
 		assert.Equal(t, test.commandBody, aBody)
 	}
+}
+
+func TestStringToTime(t *testing.T) {
+	time, err := StringToTime(" 5.1.2019 ")
+	assert.NoError(t, err)
+	log.Info(time)
+	assert.Equal(t, 1, time.Day())
+	assert.Equal(t, 5, int(time.Month()))
+	assert.Equal(t, 2019, time.Year())
+
+	time, err = StringToTime(" 5/1/19 ")
+	assert.NoError(t, err)
+	log.Info(time)
+	assert.Equal(t, 1, time.Day())
+	assert.Equal(t, 5, int(time.Month()))
+	assert.Equal(t, 2019, time.Year())
 }
