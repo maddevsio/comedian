@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo"
@@ -76,6 +77,7 @@ func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedi
 	echo.POST("/service-message", api.handleServiceMessage)
 	echo.POST("/info-message", api.handleInfoMessage)
 	echo.POST("/commands", api.handleCommands)
+	echo.POST("/team-worklogs", api.showTeamMembersWorklogs)
 	echo.POST("/user-commands", api.handleUsersCommands)
 	echo.GET("/auth", api.auth)
 
@@ -266,6 +268,65 @@ func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 	}
 
 	message := fmt.Sprintf("You have logged %v from the begining of the month", utils.SecondsToHuman(dataOnUser.Worklogs))
+
+	return c.String(http.StatusOK, message)
+}
+
+func (api *ComedianAPI) showTeamMembersWorklogs(c echo.Context) error {
+	slashCommand, err := slack.SlashCommandParse(c.Request())
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
+		return c.String(http.StatusBadRequest, "Invalid verification token")
+	}
+
+	bot, err := api.comedian.SelectBot(slashCommand.TeamID)
+	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"slashCommand": slashCommand, "error": err})).Error("handleCommands failed on Select Bot")
+		return c.String(http.StatusOK, "No bot found to implement the request. Please, report this to Comedian development team")
+	}
+
+	standupers, err := api.db.ListChannelStandupers(slashCommand.ChannelID)
+	if err != nil {
+		log.WithFields(log.Fields(map[string]interface{}{"slashCommand": slashCommand, "error": err})).Error("handleCommands failed on ListChannelStandupers")
+		return c.String(http.StatusOK, "Could not retreve standupers of the project")
+	}
+
+	dates := strings.Split(slashCommand.Text, "-")
+
+	if len(dates) != 2 {
+		return c.String(http.StatusOK, "Wrong format. Please, use the following format `MM.DD.YY - MM.DD.YY`")
+	}
+
+	from, err := utils.StringToTime(dates[0])
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+
+	to, err := utils.StringToTime(dates[1])
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+
+	dateFrom := fmt.Sprintf("%d-%02d-%02d", from.Year(), from.Month(), from.Day())
+	dateTo := fmt.Sprintf("%d-%02d-%02d", to.Year(), to.Month(), to.Day())
+
+	var message string
+	var total int
+
+	for _, standuper := range standupers {
+		userInProject := fmt.Sprintf("%v/%v", standuper.UserID, slashCommand.ChannelName)
+		dataOnUserInProject, err := bot.GetCollectorData("user-in-project", userInProject, dateFrom, dateTo)
+		if err != nil {
+			log.WithFields(log.Fields(map[string]interface{}{"standuper": standuper, "error": err})).Error("failed to get data on user in project")
+			continue
+		}
+		message += fmt.Sprintf("%s - %s \n", standuper.ChannelName, utils.SecondsToHuman(dataOnUserInProject.Worklogs))
+	}
+
+	message += fmt.Sprintf("In total: %v", utils.SecondsToHuman(total))
 
 	return c.String(http.StatusOK, message)
 }

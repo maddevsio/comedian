@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"time"
+
+	"github.com/araddon/dateparse"
 )
 
 //SplitUser divides full user object to name & id
@@ -37,4 +40,9 @@ func CommandParsing(text string) (commandTitle, commandBody string) {
 	commandTitle = splitText[0]
 	commandBody = strings.Join(splitText[1:], " ")
 	return commandTitle, commandBody
+}
+
+func StringToTime(text string) (time.Time, error) {
+	text = strings.TrimSpace(text)
+	return dateparse.ParseIn(text, time.Local)
 }
