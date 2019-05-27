@@ -350,10 +350,10 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	members = sortTeamMembers(members)
 
 	for _, member := range members {
-		message += fmt.Sprintf("%s - %v \n", member.standuper.RealName, member.teamWorklogs/3600)
+		message += fmt.Sprintf("%s - %.2f \n", member.standuper.RealName, float32(member.teamWorklogs)/3600)
 	}
 
-	message += fmt.Sprintf("In total: %v", total/3600)
+	message += fmt.Sprintf("In total: %.2f", float32(total)/3600)
 
 	return c.String(http.StatusOK, message)
 }
