@@ -52,6 +52,11 @@ type Event struct {
 	Type      string `json:"type"`
 }
 
+type TeamMember struct {
+	standuper    model.Standuper
+	teamWorklogs int
+}
+
 var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>.*)`)
 
 // New creates API instance
@@ -326,6 +331,7 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	var total int
 
 	message += fmt.Sprintf("Worklogs of %s, from %s to %s: \n", channel, dateFrom, dateTo)
+	members := []TeamMember{}
 
 	for _, standuper := range standupers {
 		userInProject := fmt.Sprintf("%v/%v", standuper.UserID, standuper.ChannelName)
@@ -334,11 +340,20 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 			log.WithFields(log.Fields(map[string]interface{}{"standuper": standuper, "error": err})).Error("failed to get data on user in project")
 			continue
 		}
-		message += fmt.Sprintf("%s - %s \n", standuper.RealName, utils.SecondsToHuman(dataOnUserInProject.Worklogs))
+		members = append(members, TeamMember{
+			standuper:    standuper,
+			teamWorklogs: dataOnUserInProject.Worklogs,
+		})
 		total += dataOnUserInProject.Worklogs
 	}
 
-	message += fmt.Sprintf("In total: %v", utils.SecondsToHuman(total))
+	members = sortTeamMembers(members)
+
+	for _, member := range members {
+		message += fmt.Sprintf("%s - %v \n", member.standuper.RealName, member.teamWorklogs/3600)
+	}
+
+	message += fmt.Sprintf("In total: %v", total/3600)
 
 	return c.String(http.StatusOK, message)
 }
@@ -426,4 +441,42 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	}
 
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
+}
+
+func sortTeamMembers(entries []TeamMember) []TeamMember {
+	var members []TeamMember
+
+	for i := 0; i < len(entries); i++ {
+		if !sweep(entries, i) {
+			break
+		}
+	}
+
+	for _, item := range entries {
+		members = append(members, item)
+	}
+
+	return members
+}
+
+func sweep(entries []TeamMember, prevPasses int) bool {
+	var N = len(entries)
+	var didSwap = false
+	var firstIndex = 0
+	var secondIndex = 1
+
+	for secondIndex < (N - prevPasses) {
+
+		var firstItem = entries[firstIndex]
+		var secondItem = entries[secondIndex]
+		if entries[firstIndex].teamWorklogs < entries[secondIndex].teamWorklogs {
+			entries[firstIndex] = secondItem
+			entries[secondIndex] = firstItem
+			didSwap = true
+		}
+		firstIndex++
+		secondIndex++
+	}
+
+	return didSwap
 }
