@@ -126,6 +126,11 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 				continue
 			}
 
+			if UserInfo.IsSick() || UserInfo.IsOnVacation() {
+				log.Warningf("user %v is either sick or on vacation. skip", member.UserID)
+				continue
+			}
+
 			dataOnUser, dataOnUserInProject, collectorError := bot.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, -1))
 
 			if collectorError == nil {
@@ -269,6 +274,11 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 			UserInfo, err := bot.db.SelectUser(member.UserID)
 			if err != nil {
 				log.Warningf("SelectUser failed for  user %v: %v", member.UserID, err)
+				continue
+			}
+
+			if UserInfo.IsSick() || UserInfo.IsOnVacation() {
+				log.Warningf("user %v is either sick or on vacation. skip", member.UserID)
 				continue
 			}
 

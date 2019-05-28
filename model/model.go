@@ -2,10 +2,15 @@ package model
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/nlopes/slack"
 )
+
+var sickKeywords = []string{"sick", "болею"}
+var vacationKeywords = []string{"vacation", "отпуск"}
+var doNotDisturbKeywords = []string{"disturb", "беспокоит"}
 
 // Standup model used for serialization/deserialization stored standups
 type Standup struct {
@@ -29,6 +34,7 @@ type User struct {
 	RealName string `db:"real_name" json:"real_name"`
 	TZ       string `db:"tz" json:"tz"`
 	TZOffset int    `db:"tz_offset" json:"tz_offset"`
+	Status   string `db:"status" json:"status"`
 }
 
 // Channel model used for serialization/deserialization stored Channels
@@ -241,6 +247,36 @@ func (u User) Validate() error {
 	}
 
 	return nil
+}
+
+func (u User) IsSick() bool {
+	for _, keyword := range sickKeywords {
+		if strings.Contains(u.Status, keyword) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (u User) IsOnVacation() bool {
+	for _, keyword := range vacationKeywords {
+		if strings.Contains(u.Status, keyword) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (u User) ShouldNotBeDisturbed() bool {
+	for _, keyword := range doNotDisturbKeywords {
+		if strings.Contains(u.Status, keyword) {
+			return true
+		}
+	}
+
+	return false
 }
 
 //IsAdmin returns true if user has admin role

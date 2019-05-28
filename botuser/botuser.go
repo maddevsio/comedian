@@ -346,6 +346,10 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 		return false
 	}
 
+	if user.IsSick() || user.IsOnVacation() || user.ShouldNotBeDisturbed() {
+		return true
+	}
+
 	loc := time.FixedZone(user.TZ, user.TZOffset)
 
 	if standup.Created.In(loc).Day() == time.Now().UTC().In(loc).Day() {
@@ -647,6 +651,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 				RealName: user.RealName,
 				TZ:       user.TZ,
 				TZOffset: user.TZOffset,
+				Status:   user.Profile.StatusText,
 			})
 			if err != nil {
 				return err
@@ -662,6 +667,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 				RealName: user.RealName,
 				TZ:       user.TZ,
 				TZOffset: user.TZOffset,
+				Status:   user.Profile.StatusText,
 			})
 			if err != nil {
 				return err
@@ -677,6 +683,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 			RealName: user.RealName,
 			TZ:       user.TZ,
 			TZOffset: user.TZOffset,
+			Status:   user.Profile.StatusText,
 		})
 		if err != nil {
 			return err
@@ -695,6 +702,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 		u.TeamID = user.TeamID
 		u.TZ = user.TZ
 		u.TZOffset = user.TZOffset
+		u.Status = user.Profile.StatusText
 		_, err = bot.db.UpdateUser(u)
 		if err != nil {
 			return err
