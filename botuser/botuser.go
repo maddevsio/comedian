@@ -651,7 +651,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 				RealName: user.RealName,
 				TZ:       user.TZ,
 				TZOffset: user.TZOffset,
-				Status:   user.Profile.StatusText,
+				Status:   strings.ToLower(user.Profile.StatusText),
 			})
 			if err != nil {
 				return err
@@ -667,7 +667,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 				RealName: user.RealName,
 				TZ:       user.TZ,
 				TZOffset: user.TZOffset,
-				Status:   user.Profile.StatusText,
+				Status:   strings.ToLower(user.Profile.StatusText),
 			})
 			if err != nil {
 				return err
@@ -683,7 +683,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 			RealName: user.RealName,
 			TZ:       user.TZ,
 			TZOffset: user.TZOffset,
-			Status:   user.Profile.StatusText,
+			Status:   strings.ToLower(user.Profile.StatusText),
 		})
 		if err != nil {
 			return err
@@ -702,7 +702,7 @@ func (bot *Bot) updateUser(user slack.User) error {
 		u.TeamID = user.TeamID
 		u.TZ = user.TZ
 		u.TZOffset = user.TZOffset
-		u.Status = user.Profile.StatusText
+		u.Status = strings.ToLower(user.Profile.StatusText)
 		_, err = bot.db.UpdateUser(u)
 		if err != nil {
 			return err
