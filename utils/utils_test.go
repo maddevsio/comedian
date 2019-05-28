@@ -13,13 +13,6 @@ func TestSplitUser(t *testing.T) {
 	assert.Equal(t, "userName", name)
 }
 
-func TestSplitChannel(t *testing.T) {
-	channel := "<#ChannelID|channelName"
-	id, name := SplitChannel(channel)
-	assert.Equal(t, "ChannelID", id)
-	assert.Equal(t, "channelName", name)
-}
-
 func TestSecondsToHuman(t *testing.T) {
 	testCase := []struct {
 		secondsInt int
