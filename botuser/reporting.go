@@ -32,7 +32,6 @@ type AttachmentItem struct {
 // CallDisplayYesterdayTeamReport calls displayYesterdayTeamReport
 func (bot *Bot) CallDisplayYesterdayTeamReport() error {
 	if bot.properties.ReportingTime == "" {
-		log.Info("Report time is empty")
 		return nil
 	}
 
@@ -84,7 +83,6 @@ func (bot *Bot) CallDisplayWeeklyTeamReport() error {
 
 // displayYesterdayTeamReport generates report on users who submit standups
 func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
-	log.Info("generating yesterday team report!")
 	var allReports []slack.Attachment
 
 	channels, err := bot.db.ListChannels()
@@ -110,7 +108,6 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 		}
 
 		if len(Standupers) == 0 {
-			log.Infof("Skip %v channel", channel.ChannelID)
 			continue
 		}
 
@@ -202,7 +199,6 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 		}
 
 		if len(attachmentsPull) == 0 {
-			log.Info("len(attachmentsPull) == 0 for channel ", channel.ChannelID)
 			continue
 		}
 
@@ -218,7 +214,6 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 	}
 
 	if len(allReports) == 0 {
-		log.Info("len(allReports) == 0")
 		return
 	}
 
@@ -261,7 +256,6 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		}
 
 		if len(Standupers) == 0 {
-			log.Infof("Skip %v channel", channel.ChannelID)
 			continue
 		}
 

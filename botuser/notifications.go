@@ -54,7 +54,7 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 		}
 
 		if r == nil {
-			log.Infof("Could not find matches. Channel standup time:  [%v]", channel.StandupTime)
+			log.Errorf("Could not find matches. Channel standup time:  [%v]", channel.StandupTime)
 			continue
 		}
 
@@ -84,14 +84,12 @@ func (bot *Bot) NotifyChannels(t time.Time) {
 
 // SendWarning reminds users in chat about upcoming standups
 func (bot *Bot) SendWarning(channelID string) error {
-	log.Info("SendWarning for channel: ", channelID)
 	standupers, err := bot.db.ListStandupers()
 	if err != nil {
 		return err
 	}
 
 	if len(standupers) == 0 {
-		log.Info("No standupers to warn for channel: ", channelID)
 		return nil
 	}
 
@@ -103,7 +101,6 @@ func (bot *Bot) SendWarning(channelID string) error {
 	}
 
 	if len(nonReportersIDs) == 0 {
-		log.Info("No non reporters to warn for channel: ", channelID)
 		return nil
 	}
 
@@ -124,14 +121,12 @@ func (bot *Bot) SendWarning(channelID string) error {
 
 //SendChannelNotification starts standup reminders and direct reminders to users
 func (bot *Bot) SendChannelNotification(nt *NotifierThread) error {
-	log.Info("SendChannelNotification for channel: ", nt.channel.ChannelID)
 	standupers, err := bot.db.ListChannelStandupers(nt.channel.ChannelID)
 	if err != nil {
 		return err
 	}
 
 	if len(standupers) == 0 {
-		log.Info("No standupers in channel: ", nt.channel.ChannelID)
 		return nil
 	}
 
@@ -143,7 +138,6 @@ func (bot *Bot) SendChannelNotification(nt *NotifierThread) error {
 	}
 
 	if len(nonReporters) == 0 {
-		log.Info("len(nonReporters) == 0")
 		return nil
 	}
 
@@ -174,7 +168,6 @@ func (bot *Bot) SendChannelNotification(nt *NotifierThread) error {
 func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, repeats *int) error {
 
 	if *repeats >= bot.properties.ReminderRepeatsMax || len(nonReporters) < 1 {
-		log.Info("Finish Backoff")
 		return nil
 	}
 
@@ -186,7 +179,6 @@ func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, r
 	}
 
 	if len(roundNonReporters) == 0 {
-		log.Info("No non reporters in notifyNotAll")
 		return nil
 	}
 

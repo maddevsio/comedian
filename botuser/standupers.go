@@ -133,7 +133,6 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 				failed = append(failed, u)
 				continue
 			}
-			log.Infof("ChannelMember created! ID:%v", standuper.ID)
 
 			payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "MemberAssigned", 0, map[string]interface{}{"role": role, "channelID": ch.ChannelID, "channelName": ch.ChannelName}}
 			err = bot.SendUserMessage(userID, translation.Translate(payload))

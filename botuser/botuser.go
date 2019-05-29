@@ -65,7 +65,7 @@ func New(conf *config.Config, bundle *i18n.Bundle, settings model.BotSettings, d
 
 //Start updates Users list and launches notifications
 func (bot *Bot) Start() {
-	log.Info("Bot started: ", bot.properties)
+	log.Info("Bot started for ", bot.properties.TeamName)
 
 	err := bot.UpdateUsersList()
 	if err != nil {
@@ -82,7 +82,6 @@ func (bot *Bot) Start() {
 				if err != nil {
 					log.Error("CallDisplayYesterdayTeamReport failed: ", err)
 				}
-
 				err = bot.CallDisplayWeeklyTeamReport()
 				if err != nil {
 					log.Error("CallDisplayWeeklyTeamReport failed: ", err)
@@ -95,7 +94,6 @@ func (bot *Bot) Start() {
 					break
 				}
 			case <-bot.QuitChan:
-				log.Infof("Mission completed, gbye!!! Truly yours, %v bot", bot.properties.TeamName)
 				bot.wg.Done()
 				return
 			}
@@ -114,7 +112,6 @@ func (bot *Bot) Stop() {
 
 func (bot *Bot) setStandupsCounterToZero() error {
 	if time.Now().Hour() == 23 && time.Now().Minute() == 59 {
-		log.Info("Started to set submitted standups to 0 for all standupers")
 		standupers, err := bot.db.ListStandupersByTeamID(bot.properties.TeamID)
 		if err != nil {
 			return err
@@ -139,8 +136,6 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 	if err := json.Unmarshal(data, &ev); err != nil {
 		return err
 	}
-
-	log.Info("Inner Event: \n", ev)
 
 	switch ev["type"] {
 	case "message":
@@ -233,7 +228,6 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		bot.SendEphemeralMessage(msg.Channel, msg.User, "I could not save your standup due to some technical issues, please, report ths to your PM or directly to Comedian development team")
 		return err
 	}
-	log.Infof("Standup created #id:%v\n", standup.ID)
 	item := slack.ItemRef{
 		Channel:   msg.Channel,
 		Timestamp: msg.Msg.Timestamp,
@@ -280,7 +274,6 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Standup updated #id:%v\n", st.ID)
 		return nil
 	}
 	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
@@ -306,8 +299,6 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 	if err != nil {
 		return err
 	}
-
-	log.Infof("Standup created #id:%v\n", standup.ID)
 
 	item := slack.ItemRef{
 		Channel:   msg.Channel,
@@ -545,7 +536,6 @@ func (bot *Bot) HandleJoinNewUser(user slack.User) (model.User, error) {
 	if err != nil {
 		return newUser, err
 	}
-	log.Infof("Successfully create new user [%v]", newUser)
 	return newUser, nil
 }
 
@@ -593,7 +583,6 @@ func (bot *Bot) GetAccessLevel(userID, channelID string) (int, error) {
 
 //UpdateUsersList updates users in workspace
 func (bot *Bot) UpdateUsersList() error {
-	log.Info("Start to update users list")
 	users, err := bot.slack.GetUsers()
 	if err != nil {
 		return err
