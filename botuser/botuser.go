@@ -103,7 +103,7 @@ func (bot *Bot) Start() {
 		}
 	}()
 	if !Dry {
-		gocron.Every(1).Day().At("10:00").Do(bot.remindAboutWorklogs)
+		gocron.Every(1).Day().At("17:00").Do(bot.remindAboutWorklogs)
 		<-gocron.Start()
 	}
 }
@@ -795,7 +795,7 @@ func (bot *Bot) DeleteNotifierThreadFromList(channel model.Channel) {
 }
 
 func (bot *Bot) remindAboutWorklogs() {
-	if time.Now().AddDate(0, 0, 1).Day() != 1 {
+	if time.Now().AddDate(0, 0, 1).Day() != 30 {
 		return
 	}
 
@@ -806,6 +806,10 @@ func (bot *Bot) remindAboutWorklogs() {
 	}
 
 	for _, user := range users {
+		if user.UserID != "UC1JNECA3" {
+			continue
+		}
+
 		message := "Сегодня последний день месяца. Пожалуйста, перепроверьте ворклоги!\n"
 
 		if user.TeamID != bot.properties.TeamID {
