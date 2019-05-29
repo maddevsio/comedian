@@ -90,6 +90,10 @@ func (bot *Bot) Start() {
 				if err != nil {
 					log.Error("setStandupsCounterToZero failed: ", err)
 				}
+				err = bot.remindAboutWorklogs()
+				if err != nil {
+					log.Error("remindAboutWorklogs failed: ", err)
+				}
 				if Dry {
 					break
 				}
@@ -99,10 +103,6 @@ func (bot *Bot) Start() {
 			}
 		}
 	}()
-	// if !Dry {
-	// 	gocron.Every(1).Day().At("17:00").Do(bot.remindAboutWorklogs)
-	// 	<-gocron.Start()
-	// }
 }
 
 //Stop closes bot QuitChan making bot goroutine to exit
@@ -782,15 +782,18 @@ func (bot *Bot) DeleteNotifierThreadFromList(channel model.Channel) {
 	}
 }
 
-func (bot *Bot) remindAboutWorklogs() {
+func (bot *Bot) remindAboutWorklogs() error {
 	if time.Now().AddDate(0, 0, 1).Day() != 30 {
-		return
+		return nil
+	}
+
+	if time.Now().Hour() != 19 || time.Now().Minute() != 0 {
+		return nil
 	}
 
 	users, err := bot.db.ListUsers()
 	if err != nil {
-		log.Error(err)
-		return
+		return err
 	}
 
 	for _, user := range users {
@@ -840,4 +843,6 @@ func (bot *Bot) remindAboutWorklogs() {
 			log.Error(err)
 		}
 	}
+
+	return nil
 }
