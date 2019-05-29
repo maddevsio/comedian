@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jasonlvhit/gocron"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
@@ -102,10 +101,10 @@ func (bot *Bot) Start() {
 			}
 		}
 	}()
-	if !Dry {
-		gocron.Every(1).Day().At("17:00").Do(bot.remindAboutWorklogs)
-		<-gocron.Start()
-	}
+	// if !Dry {
+	// 	gocron.Every(1).Day().At("17:00").Do(bot.remindAboutWorklogs)
+	// 	<-gocron.Start()
+	// }
 }
 
 //Stop closes bot QuitChan making bot goroutine to exit
