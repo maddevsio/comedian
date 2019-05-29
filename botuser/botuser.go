@@ -783,11 +783,11 @@ func (bot *Bot) DeleteNotifierThreadFromList(channel model.Channel) {
 }
 
 func (bot *Bot) remindAboutWorklogs() error {
-	if time.Now().AddDate(0, 0, 1).Day() != 30 {
+	if time.Now().AddDate(0, 0, 1).Day() != 1 {
 		return nil
 	}
 
-	if time.Now().Hour() != 19 || time.Now().Minute() != 0 {
+	if time.Now().Hour() != 10 || time.Now().Minute() != 0 {
 		return nil
 	}
 
@@ -797,12 +797,6 @@ func (bot *Bot) remindAboutWorklogs() error {
 	}
 
 	for _, user := range users {
-		if user.UserID != "UC1JNECA3" {
-			continue
-		}
-
-		message := "Сегодня последний день месяца. Пожалуйста, перепроверьте ворклоги!\n"
-
 		if user.TeamID != bot.properties.TeamID {
 			continue
 		}
@@ -823,17 +817,18 @@ func (bot *Bot) remindAboutWorklogs() error {
 			continue
 		}
 
+		message := "Сегодня последний день месяца. Пожалуйста, перепроверьте ворклоги!\n"
 		var total int
 
 		for _, member := range standupers {
-			_, userInProject, err := bot.GetCollectorDataOnMember(member, time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local), time.Now())
+			user, userInProject, err := bot.GetCollectorDataOnMember(member, time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local), time.Now())
 			if err != nil {
 				log.Error(err)
 				continue
 			}
 
 			message += fmt.Sprintf("%s залогано %v\n", member.ChannelName, float32(userInProject.Worklogs)/3600)
-			total += userInProject.Worklogs
+			total = user.Worklogs
 		}
 
 		message += fmt.Sprintf("В общем: %v", float32(total)/3600)
