@@ -217,7 +217,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		log.Warning("submitted standup today", msg.User, msg.Channel)
 		return nil
 	}
-	standup, err := bot.db.CreateStandup(model.Standup{
+	_, err := bot.db.CreateStandup(model.Standup{
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
 		UserID:    msg.User,
@@ -270,7 +270,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 	if err == nil {
 		standup.Comment = msg.SubMessage.Text
-		st, err := bot.db.UpdateStandup(standup)
+		_, err := bot.db.UpdateStandup(standup)
 		if err != nil {
 			return err
 		}

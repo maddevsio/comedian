@@ -119,7 +119,7 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 				failed = append(failed, u)
 				continue
 			}
-			standuper, err := bot.db.CreateStanduper(model.Standuper{
+			_, err = bot.db.CreateStanduper(model.Standuper{
 				TeamID:                bot.properties.TeamID,
 				UserID:                userID,
 				ChannelID:             channel,
