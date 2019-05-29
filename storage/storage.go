@@ -62,6 +62,9 @@ type Storage interface {
 	//FindStansuperByUserID finds user in channel
 	FindStansuperByUserID(userID, channelID string) (model.Standuper, error)
 
+	//FindStansuperByUserID finds user in channel
+	FindStansupersByUserID(userID string) ([]model.Standuper, error)
+
 	// ListStandupers returns array of standup entries from database
 	ListStandupers() ([]model.Standuper, error)
 

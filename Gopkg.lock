@@ -115,6 +115,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:b77f003794d3fd85a23b31c7aea565340465c5f7028d394ed58cc78a808d28a4"
+  name = "github.com/jasonlvhit/gocron"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f996a843b48da99bb5dfabc2ddf9738fc7c18e55"
+
+[[projects]]
+  branch = "master"
   digest = "1:d8715388cdd077d4b5e477e92e93e8c2c16c5f8cdc1f79b0ef2616ef8ea09f9f"
   name = "github.com/jmoiron/sqlx"
   packages = [
@@ -344,11 +352,11 @@
     "github.com/go-sql-driver/mysql",
     "github.com/go-validator/validator",
     "github.com/jarcoal/httpmock",
+    "github.com/jasonlvhit/gocron",
     "github.com/jmoiron/sqlx",
     "github.com/kelseyhightower/envconfig",
     "github.com/labstack/echo",
     "github.com/labstack/echo/middleware",
-    "github.com/labstack/gommon/log",
     "github.com/nicksnyder/go-i18n/v2/i18n",
     "github.com/nlopes/slack",
     "github.com/nlopes/slack/slackevents",

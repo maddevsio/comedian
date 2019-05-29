@@ -2,10 +2,12 @@ package botuser
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/jasonlvhit/gocron"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
@@ -100,6 +102,10 @@ func (bot *Bot) Start() {
 			}
 		}
 	}()
+	if !Dry {
+		gocron.Every(1).Day().At("10:00").Do(bot.remindAboutWorklogs)
+		<-gocron.Start()
+	}
 }
 
 //Stop closes bot QuitChan making bot goroutine to exit
@@ -593,7 +599,6 @@ func (bot *Bot) UpdateUsersList() error {
 	if err != nil {
 		return err
 	}
-	log.Info("Users: ", users)
 	for _, user := range users {
 		err := bot.updateUser(user)
 		if err != nil {
@@ -635,7 +640,6 @@ func (bot *Bot) SendMessageToSuperAdmins(message string) error {
 }
 
 func (bot *Bot) updateUser(user slack.User) error {
-	log.Info("update user: ", user)
 	if user.IsBot || user.Name == "slackbot" {
 		return nil
 	}
@@ -787,5 +791,61 @@ func (bot *Bot) DeleteNotifierThreadFromList(channel model.Channel) {
 			bot.notifierThreads = result
 		}
 		position++
+	}
+}
+
+func (bot *Bot) remindAboutWorklogs() {
+	if time.Now().AddDate(0, 0, 1).Day() != 1 {
+		return
+	}
+
+	users, err := bot.db.ListUsers()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for _, user := range users {
+		message := "Сегодня последний день месяца. Пожалуйста, перепроверьте ворклоги!\n"
+
+		if user.TeamID != bot.properties.TeamID {
+			continue
+		}
+
+		standupers, err := bot.db.FindStansupersByUserID(user.UserID)
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+
+		if len(standupers) < 1 {
+			continue
+		}
+
+		_, _, err = bot.GetCollectorDataOnMember(standupers[0], time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local), time.Now())
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+
+		var total int
+
+		for _, member := range standupers {
+			_, userInProject, err := bot.GetCollectorDataOnMember(member, time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local), time.Now())
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+
+			message += fmt.Sprintf("%s залогано %v\n", member.ChannelName, float32(userInProject.Worklogs)/3600)
+			total += userInProject.Worklogs
+		}
+
+		message += fmt.Sprintf("В общем: %v", float32(total)/3600)
+
+		err = bot.SendUserMessage(user.UserID, message)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }

@@ -54,6 +54,13 @@ func (m *DB) FindStansuperByUserID(userID, channelID string) (model.Standuper, e
 	return u, err
 }
 
+//FindStansupersByUserID finds user in channel
+func (m *DB) FindStansupersByUserID(userID string) ([]model.Standuper, error) {
+	var u []model.Standuper
+	err := m.DB.Select(&u, "SELECT * FROM `channel_members` WHERE user_id=?", userID)
+	return u, err
+}
+
 // ListStandupers returns array of standup entries from database
 func (m *DB) ListStandupers() ([]model.Standuper, error) {
 	items := []model.Standuper{}
