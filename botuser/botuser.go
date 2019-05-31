@@ -827,11 +827,11 @@ func (bot *Bot) remindAboutWorklogs() error {
 				continue
 			}
 
-			message += fmt.Sprintf("%s залогано %v\n", member.ChannelName, float32(userInProject.Worklogs)/3600)
+			message += fmt.Sprintf("%s залогано %.2f\n", member.ChannelName, float32(userInProject.Worklogs)/3600)
 			total = user.Worklogs
 		}
 
-		message += fmt.Sprintf("В общем: %v", float32(total)/3600)
+		message += fmt.Sprintf("В общем: %.2f", float32(total)/3600)
 
 		err = bot.SendUserMessage(user.UserID, message)
 		if err != nil {

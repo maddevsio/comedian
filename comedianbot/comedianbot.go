@@ -5,7 +5,6 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack/slackevents"
-	"github.com/sirupsen/logrus"
 	"gitlab.com/team-monitoring/comedian/botuser"
 	"gitlab.com/team-monitoring/comedian/config"
 	"gitlab.com/team-monitoring/comedian/model"
@@ -28,6 +27,28 @@ func New(bundle *i18n.Bundle, db *storage.DB) *Comedian {
 	comedian.DB = db
 	comedian.Bundle = bundle
 	return &comedian
+}
+
+//SelectBot returns bot by its team id or teamname if found
+func (comedian *Comedian) SelectBot(team string) (*botuser.Bot, error) {
+	var botuser *botuser.Bot
+
+	for _, bot := range comedian.bots {
+		if bot.Suits(team) {
+			botuser = bot
+		}
+	}
+
+	if botuser == nil {
+		return botuser, errors.New("no bot found to implement the request")
+	}
+
+	return botuser, nil
+}
+
+//AddBot sends Bot to Comedian Channel where Bot can start its Work
+func (comedian *Comedian) AddBot(bot *botuser.Bot) {
+	comedian.botsChan <- bot
 }
 
 //SetBots populates Comedian with bots
@@ -57,29 +78,12 @@ func (comedian *Comedian) StartBots() {
 	}
 }
 
-// SelectAdminBot returns admin bot
-func (comedian *Comedian) SelectAdminBot() *botuser.Bot {
-	var botuser *botuser.Bot
-
-	for _, bot := range comedian.bots {
-		if bot.IsAdmin() {
-			botuser = bot
-		}
-	}
-
-	return botuser
-}
-
 //HandleEvent sends message to Slack Workspace
 func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 	bot, err := comedian.SelectBot(incomingEvent.TeamName)
 	if err != nil {
 		return err
 	}
-
-	logrus.Info("Bot found to implement request: ", bot)
-	logrus.Info("Bot access token: ", bot.Settings().AccessToken)
-	logrus.Info("Incoming access token: ", incomingEvent.AccessToken)
 
 	if bot.Settings().AccessToken != incomingEvent.AccessToken {
 		return errors.New("Wrong access token")
@@ -110,26 +114,4 @@ func (comedian *Comedian) HandleCallbackEvent(event slackevents.EventsAPICallbac
 	}
 
 	return bot.HandleCallBackEvent(event.InnerEvent)
-}
-
-//SelectBot returns bot by its team id or teamname if found
-func (comedian *Comedian) SelectBot(team string) (*botuser.Bot, error) {
-	var botuser *botuser.Bot
-
-	for _, bot := range comedian.bots {
-		if bot.Suits(team) {
-			botuser = bot
-		}
-	}
-
-	if botuser == nil {
-		return botuser, errors.New("no bot found to implement the request")
-	}
-
-	return botuser, nil
-}
-
-//AddBot sends Bot to Comedian Channel where Bot can start its Work
-func (comedian *Comedian) AddBot(bot *botuser.Bot) {
-	comedian.botsChan <- bot
 }
