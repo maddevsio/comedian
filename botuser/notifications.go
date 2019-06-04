@@ -148,7 +148,7 @@ func (bot *Bot) SendChannelNotification(nt *NotifierThread) error {
 		case <-nt.quit:
 			return nil
 		default:
-			err := bot.notifyNotAll(nt.channel.ChannelID, nonReporters, &repeats)
+			err := bot.notifyNotAll(nt.channel.ChannelID, &repeats)
 			if err != nil {
 				return err
 			}
@@ -165,27 +165,36 @@ func (bot *Bot) SendChannelNotification(nt *NotifierThread) error {
 	return nil
 }
 
-func (bot *Bot) notifyNotAll(channelID string, nonReporters []model.Standuper, repeats *int) error {
+func (bot *Bot) notifyNotAll(channelID string, repeats *int) error {
 
-	if *repeats >= bot.properties.ReminderRepeatsMax || len(nonReporters) < 1 {
+	if *repeats >= bot.properties.ReminderRepeatsMax {
 		return nil
 	}
 
-	roundNonReporters := []string{}
-	for _, st := range nonReporters {
-		if !bot.submittedStandupToday(st.UserID, st.ChannelID) && st.RoleInChannel != "pm" {
-			roundNonReporters = append(roundNonReporters, fmt.Sprintf("<@%v>", st.UserID))
+	standupers, err := bot.db.ListChannelStandupers(channelID)
+	if err != nil {
+		return err
+	}
+
+	if len(standupers) == 0 {
+		return nil
+	}
+
+	nonReporters := []string{}
+	for _, standuper := range standupers {
+		if !bot.submittedStandupToday(standuper.UserID, standuper.ChannelID) && standuper.RoleInChannel != "pm" {
+			nonReporters = append(nonReporters, fmt.Sprintf("<@%v>", standuper.UserID))
 		}
 	}
 
-	if len(roundNonReporters) == 0 {
+	if len(nonReporters) == 0 {
 		return nil
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "TagNonReporters", len(roundNonReporters), map[string]interface{}{"user": roundNonReporters[0], "users": strings.Join(roundNonReporters, ", ")}}
+	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "TagNonReporters", len(nonReporters), map[string]interface{}{"user": nonReporters[0], "users": strings.Join(nonReporters, ", ")}}
 	tagNonReporters := translation.Translate(payload)
 
-	err := bot.SendMessage(channelID, tagNonReporters, nil)
+	err = bot.SendMessage(channelID, tagNonReporters, nil)
 	if err != nil {
 		log.Error("SendMessage in notify not all failed: ", err)
 	}
