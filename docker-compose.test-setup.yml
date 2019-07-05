@@ -1,0 +1,40 @@
+version: '2.2'
+
+networks:
+  integration-tests:
+    driver: bridge
+
+services:
+  comedian:
+    image: golang:1.11.4
+    links:
+      - db:db
+    networks:
+      - integration-tests
+    environment:
+      - COMEDIAN_DATABASE=comedian:comedian@tcp(db:3306)/comedian?parseTime=true
+    working_dir: /go/src/github.com/maddevsio/comedian/
+    volumes:
+      - ./:/go/src/github.com/maddevsio/comedian/
+    command: bash -c "./goose -dir migrations mysql 'comedian:comedian@tcp(db:3306)/comedian' up "
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:5.7
+    ports:
+    - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: comedian
+      MYSQL_PASSWORD: comedian
+      MYSQL_DATABASE: comedian
+    healthcheck:
+      test: "mysql -ucomedian --password=comedian -e 'show databases;' |grep comedian"
+      interval: 30s
+      timeout: 20s
+      retries: 10
+    networks:
+      - integration-tests
+

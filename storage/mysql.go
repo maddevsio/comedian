@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"time"
 
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
@@ -18,9 +17,11 @@ type DB struct {
 func New(c *config.Config) (*DB, error) {
 	con, err := sqlx.Connect("mysql", c.DatabaseURL)
 	if err != nil {
-		return nil, err
+		con, err = sqlx.Connect("mysql", "comedian:comedian@tcp(localhost:3306)/comedian?parseTime=true")
+		if err != nil {
+			return nil, err
+		}
 	}
-	con.SetConnMaxLifetime(time.Second)
 	db := &DB{con}
 
 	return db, nil
