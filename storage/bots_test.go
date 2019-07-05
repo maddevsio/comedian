@@ -7,72 +7,62 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
-	"github.com/maddevsio/comedian/config"
 )
 
 func TestCreateBotSettings(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	bot, err := mysql.CreateBotSettings("", "", "", "", "", false)
+	bot, err := db.CreateBotSettings("", "", "", "", "")
 	assert.Error(t, err)
 	assert.Equal(t, int64(0), bot.ID)
 
-	bot, err = mysql.CreateBotSettings("token", "pass", "", "teamID", "foo", false)
+	bot, err = db.CreateBotSettings("token", "pass", "", "teamID", "foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 
-	assert.NoError(t, mysql.DeleteBotSettingsByID(bot.ID))
+	assert.NoError(t, db.DeleteBotSettingsByID(bot.ID))
 }
 
 func TestBotSettings(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
+	db := setupDB()
+
+	_, err := db.GetAllBotSettings()
 	assert.NoError(t, err)
 
-	_, err = mysql.GetAllBotSettings()
-	assert.NoError(t, err)
-
-	bot, err := mysql.CreateBotSettings("token", "pass", "", "teamID", "foo", false)
+	bot, err := db.CreateBotSettings("token", "pass", "", "teamID", "foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 
-	bot, err = mysql.GetBotSettings(bot.ID)
+	bot, err = db.GetBotSettings(bot.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, "teamID", bot.TeamID)
 
-	bot, err = mysql.GetBotSettings(int64(0))
+	bot, err = db.GetBotSettings(int64(0))
 	assert.Error(t, err)
 
-	bot, err = mysql.GetBotSettingsByTeamName("foo")
+	bot, err = db.GetBotSettingsByTeamName("foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "teamID", bot.TeamID)
 
-	bot, err = mysql.GetBotSettingsByTeamName("bar")
+	bot, err = db.GetBotSettingsByTeamName("bar")
 	assert.Error(t, err)
 
-	assert.NoError(t, mysql.DeleteBotSettingsByID(bot.ID))
+	assert.NoError(t, db.DeleteBotSettingsByID(bot.ID))
 }
 
 func TestUpdateAndDeleteBotSettings(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	bot, err := mysql.CreateBotSettings("token", "pass", "", "teamID", "foo", false)
+	bot, err := db.CreateBotSettings("token", "pass", "", "teamID", "foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 	assert.Equal(t, "en_US", bot.Language)
 
 	bot.Language = "ru_RU"
 
-	bot, err = mysql.UpdateBotSettings(bot)
+	bot, err = db.UpdateBotSettings(bot)
 	assert.NoError(t, err)
 	assert.Equal(t, "ru_RU", bot.Language)
 
-	assert.NoError(t, mysql.DeleteBotSettings(bot.TeamID))
+	assert.NoError(t, db.DeleteBotSettings(bot.TeamID))
 }

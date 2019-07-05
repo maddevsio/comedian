@@ -5,21 +5,17 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/stretchr/testify/assert"
-	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateChannel(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	_, err = mysql.CreateChannel(model.Channel{})
+	_, err := db.CreateChannel(model.Channel{})
 	assert.Error(t, err)
 
-	ch, err := mysql.CreateChannel(model.Channel{
+	ch, err := db.CreateChannel(model.Channel{
 		TeamID:      "foo",
 		ChannelName: "bar",
 		ChannelID:   "bar12",
@@ -28,16 +24,13 @@ func TestCreateChannel(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", ch.TeamID)
 
-	assert.NoError(t, mysql.DeleteChannel(ch.ID))
+	assert.NoError(t, db.DeleteChannel(ch.ID))
 }
 
 func TestGetChannels(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	ch, err := mysql.CreateChannel(model.Channel{
+	ch, err := db.CreateChannel(model.Channel{
 		TeamID:      "foo",
 		ChannelName: "bar",
 		ChannelID:   "bar12",
@@ -45,31 +38,28 @@ func TestGetChannels(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, err = mysql.ListChannels()
+	_, err = db.ListChannels()
 	assert.NoError(t, err)
 
-	_, err = mysql.SelectChannel("")
+	_, err = db.SelectChannel("")
 	assert.Error(t, err)
 
-	_, err = mysql.SelectChannel("bar12")
+	_, err = db.SelectChannel("bar12")
 	assert.NoError(t, err)
 
-	_, err = mysql.GetChannel(int64(0))
+	_, err = db.GetChannel(int64(0))
 	assert.Error(t, err)
 
-	_, err = mysql.GetChannel(ch.ID)
+	_, err = db.GetChannel(ch.ID)
 	assert.NoError(t, err)
 
-	assert.NoError(t, mysql.DeleteChannel(ch.ID))
+	assert.NoError(t, db.DeleteChannel(ch.ID))
 }
 
 func TestUpdateChannels(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	ch, err := mysql.CreateChannel(model.Channel{
+	ch, err := db.CreateChannel(model.Channel{
 		TeamID:      "foo",
 		ChannelName: "bar",
 		ChannelID:   "bar12",
@@ -78,9 +68,9 @@ func TestUpdateChannels(t *testing.T) {
 	assert.Equal(t, "", ch.StandupTime)
 
 	ch.StandupTime = "10:00"
-	ch, err = mysql.UpdateChannel(ch)
+	ch, err = db.UpdateChannel(ch)
 	assert.NoError(t, err)
 	assert.Equal(t, "10:00", ch.StandupTime)
 
-	assert.NoError(t, mysql.DeleteChannel(ch.ID))
+	assert.NoError(t, db.DeleteChannel(ch.ID))
 }

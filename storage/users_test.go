@@ -6,21 +6,17 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/stretchr/testify/assert"
-	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateUser(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	_, err = mysql.CreateUser(model.User{})
+	_, err := db.CreateUser(model.User{})
 	assert.Error(t, err)
 
-	u, err := mysql.CreateUser(model.User{
+	u, err := db.CreateUser(model.User{
 		TeamID:   "foo",
 		UserID:   "bar",
 		UserName: "fooUser",
@@ -28,47 +24,41 @@ func TestCreateUser(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", u.TeamID)
 
-	assert.NoError(t, mysql.DeleteUser(u.ID))
+	assert.NoError(t, db.DeleteUser(u.ID))
 }
 
 func TestGetUser(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	u, err := mysql.CreateUser(model.User{
+	u, err := db.CreateUser(model.User{
 		TeamID:   "foo",
 		UserID:   "bar",
 		UserName: "fooUser",
 	})
 	assert.NoError(t, err)
 
-	_, err = mysql.ListUsers()
+	_, err = db.ListUsers()
 	assert.NoError(t, err)
 
-	_, err = mysql.SelectUser("")
+	_, err = db.SelectUser("")
 	assert.Error(t, err)
 
-	_, err = mysql.SelectUser("bar")
+	_, err = db.SelectUser("bar")
 	assert.NoError(t, err)
 
-	_, err = mysql.GetUser(int64(0))
+	_, err = db.GetUser(int64(0))
 	assert.Error(t, err)
 
-	_, err = mysql.GetUser(u.ID)
+	_, err = db.GetUser(u.ID)
 	assert.NoError(t, err)
 
-	assert.NoError(t, mysql.DeleteUser(u.ID))
+	assert.NoError(t, db.DeleteUser(u.ID))
 }
 
 func TestUpdateUser(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	u, err := mysql.CreateUser(model.User{
+	u, err := db.CreateUser(model.User{
 		TeamID:   "foo",
 		UserID:   "bar",
 		UserName: "fooUser",
@@ -78,9 +68,9 @@ func TestUpdateUser(t *testing.T) {
 
 	u.Role = "admin"
 
-	u, err = mysql.UpdateUser(u)
+	u, err = db.UpdateUser(u)
 	assert.NoError(t, err)
 	assert.Equal(t, "admin", u.Role)
 
-	assert.NoError(t, mysql.DeleteUser(u.ID))
+	assert.NoError(t, db.DeleteUser(u.ID))
 }

@@ -6,21 +6,17 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/stretchr/testify/assert"
-	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateStanduper(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	_, err = mysql.CreateStanduper(model.Standuper{})
+	_, err := db.CreateStanduper(model.Standuper{})
 	assert.Error(t, err)
 
-	s, err := mysql.CreateStanduper(model.Standuper{
+	s, err := db.CreateStanduper(model.Standuper{
 		TeamID:    "foo",
 		UserID:    "bar",
 		ChannelID: "bar12",
@@ -28,53 +24,47 @@ func TestCreateStanduper(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", s.TeamID)
 
-	assert.NoError(t, mysql.DeleteStanduper(s.ID))
+	assert.NoError(t, db.DeleteStanduper(s.ID))
 }
 
 func TestGetStandupers(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	s, err := mysql.CreateStanduper(model.Standuper{
+	s, err := db.CreateStanduper(model.Standuper{
 		TeamID:    "foo",
 		UserID:    "bar",
 		ChannelID: "bar12",
 	})
 	assert.NoError(t, err)
 
-	_, err = mysql.ListStandupers()
+	_, err = db.ListStandupers()
 	assert.NoError(t, err)
 
-	_, err = mysql.ListChannelStandupers("")
+	_, err = db.ListChannelStandupers("")
 	assert.NoError(t, err)
 
-	_, err = mysql.ListChannelStandupers("bar12")
+	_, err = db.ListChannelStandupers("bar12")
 	assert.NoError(t, err)
 
-	_, err = mysql.GetStanduper(int64(0))
+	_, err = db.GetStanduper(int64(0))
 	assert.Error(t, err)
 
-	_, err = mysql.GetStanduper(s.ID)
+	_, err = db.GetStanduper(s.ID)
 	assert.NoError(t, err)
 
-	_, err = mysql.FindStansuperByUserID("noUser", "bar12")
+	_, err = db.FindStansuperByUserID("noUser", "bar12")
 	assert.Error(t, err)
 
-	_, err = mysql.FindStansuperByUserID("bar", "bar12")
+	_, err = db.FindStansuperByUserID("bar", "bar12")
 	assert.NoError(t, err)
 
-	assert.NoError(t, mysql.DeleteStanduper(s.ID))
+	assert.NoError(t, db.DeleteStanduper(s.ID))
 }
 
 func TestUpdateStanduper(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	s, err := mysql.CreateStanduper(model.Standuper{
+	s, err := db.CreateStanduper(model.Standuper{
 		TeamID:    "foo",
 		UserID:    "bar",
 		ChannelID: "bar12",
@@ -86,10 +76,10 @@ func TestUpdateStanduper(t *testing.T) {
 	s.RoleInChannel = "developer"
 	s.SubmittedStandupToday = true
 
-	s, err = mysql.UpdateStanduper(s)
+	s, err = db.UpdateStanduper(s)
 	assert.NoError(t, err)
 	assert.Equal(t, "developer", s.RoleInChannel)
 	assert.Equal(t, true, s.SubmittedStandupToday)
 
-	assert.NoError(t, mysql.DeleteStanduper(s.ID))
+	assert.NoError(t, db.DeleteStanduper(s.ID))
 }

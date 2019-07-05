@@ -6,21 +6,17 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/stretchr/testify/assert"
-	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateStandup(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	_, err = mysql.CreateStandup(model.Standup{})
+	_, err := db.CreateStandup(model.Standup{})
 	assert.Error(t, err)
 
-	st, err := mysql.CreateStandup(model.Standup{
+	st, err := db.CreateStandup(model.Standup{
 		TeamID:    "foo",
 		UserID:    "bar",
 		ChannelID: "bar12",
@@ -29,16 +25,13 @@ func TestCreateStandup(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", st.TeamID)
 
-	assert.NoError(t, mysql.DeleteStandup(st.ID))
+	assert.NoError(t, db.DeleteStandup(st.ID))
 }
 
 func TestGetStandups(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	st, err := mysql.CreateStandup(model.Standup{
+	st, err := db.CreateStandup(model.Standup{
 		TeamID:    "foo",
 		UserID:    "bar",
 		ChannelID: "bar12",
@@ -46,31 +39,28 @@ func TestGetStandups(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, err = mysql.ListStandups()
+	_, err = db.ListStandups()
 	assert.NoError(t, err)
 
-	_, err = mysql.SelectStandupByMessageTS("2345")
+	_, err = db.SelectStandupByMessageTS("2345")
 	assert.Error(t, err)
 
-	_, err = mysql.SelectStandupByMessageTS("12345")
+	_, err = db.SelectStandupByMessageTS("12345")
 	assert.NoError(t, err)
 
-	_, err = mysql.GetStandup(int64(0))
+	_, err = db.GetStandup(int64(0))
 	assert.Error(t, err)
 
-	_, err = mysql.GetStandup(st.ID)
+	_, err = db.GetStandup(st.ID)
 	assert.NoError(t, err)
 
-	assert.NoError(t, mysql.DeleteStandup(st.ID))
+	assert.NoError(t, db.DeleteStandup(st.ID))
 }
 
 func TestUpdateStandup(t *testing.T) {
-	c, err := config.Get()
-	assert.NoError(t, err)
-	mysql, err := New(c)
-	assert.NoError(t, err)
+	db := setupDB()
 
-	st, err := mysql.CreateStandup(model.Standup{
+	st, err := db.CreateStandup(model.Standup{
 		TeamID:    "foo",
 		UserID:    "bar",
 		ChannelID: "bar12",
@@ -83,10 +73,10 @@ func TestUpdateStandup(t *testing.T) {
 	st.Comment = "yesterday, today, problems"
 	st.MessageTS = "123456"
 
-	st, err = mysql.UpdateStandup(st)
+	st, err = db.UpdateStandup(st)
 	assert.NoError(t, err)
 	assert.Equal(t, "yesterday, today, problems", st.Comment)
 	assert.Equal(t, "123456", st.MessageTS)
 
-	assert.NoError(t, mysql.DeleteStandup(st.ID))
+	assert.NoError(t, db.DeleteStandup(st.ID))
 }

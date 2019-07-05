@@ -1,17 +1,22 @@
 package storage
 
 import (
-	"testing"
 
 	// This line is must for working MySQL database
+	"log"
+
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/stretchr/testify/assert"
 	"github.com/maddevsio/comedian/config"
 )
 
-func TestNew(t *testing.T) {
+func setupDB() *DB {
 	c, err := config.Get()
-	assert.NoError(t, err)
-	_, err = New(c)
-	assert.NoError(t, err)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db, err := New(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return db
 }
