@@ -67,3 +67,9 @@ You can use the following commands:
 | /comedian add_deadline | hh:mm | Set standup time |
 | /comedian show_deadline | - | Show standup time in current channel |
 | /comedian remove_deadline | - | Delete standup time in current channel |
+
+## Testing
+
+Run tests with `make test` command. This will run integration tests and output the result.
+
+If you want to do manual testing for separate components / or see code coverage with `vscode` or `go test`, use `make setup` to setup database for testing purposes.
