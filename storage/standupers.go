@@ -5,7 +5,7 @@ import (
 
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
-	"gitlab.com/team-monitoring/comedian/model"
+	"github.com/maddevsio/comedian/model"
 )
 
 // CreateStanduper creates comedian entry in database
@@ -14,7 +14,7 @@ func (m *DB) CreateStanduper(s model.Standuper) (model.Standuper, error) {
 	if err != nil {
 		return s, err
 	}
-	res, err := m.DB.Exec(
+	res, err := m.db.Exec(
 		"INSERT INTO `channel_members` (team_id, user_id, channel_id, submitted_standup_today, role_in_channel, created, real_name, channel_name) VALUES (?,?,?,?,?,?,?,?)",
 		s.TeamID, s.UserID, s.ChannelID, s.SubmittedStandupToday, s.RoleInChannel, time.Now(), s.RealName, s.ChannelName)
 	if err != nil {
@@ -35,7 +35,7 @@ func (m *DB) UpdateStanduper(st model.Standuper) (model.Standuper, error) {
 	if err != nil {
 		return st, err
 	}
-	_, err = m.DB.Exec(
+	_, err = m.db.Exec(
 		"UPDATE `channel_members` SET submitted_standup_today=?, role_in_channel=? WHERE id=?",
 		st.SubmittedStandupToday, st.RoleInChannel, st.ID,
 	)
@@ -43,54 +43,54 @@ func (m *DB) UpdateStanduper(st model.Standuper) (model.Standuper, error) {
 		return st, err
 	}
 	var i model.Standuper
-	err = m.DB.Get(&i, "SELECT * FROM `channel_members` WHERE id=?", st.ID)
+	err = m.db.Get(&i, "SELECT * FROM `channel_members` WHERE id=?", st.ID)
 	return i, err
 }
 
 //FindStansuperByUserID finds user in channel
 func (m *DB) FindStansuperByUserID(userID, channelID string) (model.Standuper, error) {
 	var u model.Standuper
-	err := m.DB.Get(&u, "SELECT * FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
+	err := m.db.Get(&u, "SELECT * FROM `channel_members` WHERE user_id=? AND channel_id=?", userID, channelID)
 	return u, err
 }
 
 //FindStansupersByUserID finds user in channel
 func (m *DB) FindStansupersByUserID(userID string) ([]model.Standuper, error) {
 	var u []model.Standuper
-	err := m.DB.Select(&u, "SELECT * FROM `channel_members` WHERE user_id=?", userID)
+	err := m.db.Select(&u, "SELECT * FROM `channel_members` WHERE user_id=?", userID)
 	return u, err
 }
 
 // ListStandupers returns array of standup entries from database
 func (m *DB) ListStandupers() ([]model.Standuper, error) {
 	items := []model.Standuper{}
-	err := m.DB.Select(&items, "SELECT * FROM `channel_members`")
+	err := m.db.Select(&items, "SELECT * FROM `channel_members`")
 	return items, err
 }
 
 //GetStanduper returns a standuper
 func (m *DB) GetStanduper(id int64) (model.Standuper, error) {
 	standuper := model.Standuper{}
-	err := m.DB.Get(&standuper, "SELECT * FROM channel_members where id=?", id)
+	err := m.db.Get(&standuper, "SELECT * FROM channel_members where id=?", id)
 	return standuper, err
 }
 
 // ListChannelStandupers returns array of standup entries from database
 func (m *DB) ListChannelStandupers(channelID string) ([]model.Standuper, error) {
 	items := []model.Standuper{}
-	err := m.DB.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=?", channelID)
+	err := m.db.Select(&items, "SELECT * FROM `channel_members` WHERE channel_id=?", channelID)
 	return items, err
 }
 
 // ListStandupersByTeamID returns array of standupers which belongs to one team
 func (m *DB) ListStandupersByTeamID(teamID string) ([]model.Standuper, error) {
 	items := []model.Standuper{}
-	err := m.DB.Select(&items, "SELECT * FROM `channel_members` WHERE team_id=?", teamID)
+	err := m.db.Select(&items, "SELECT * FROM `channel_members` WHERE team_id=?", teamID)
 	return items, err
 }
 
 // DeleteStanduper deletes channel_members entry from database
 func (m *DB) DeleteStanduper(id int64) error {
-	_, err := m.DB.Exec("DELETE FROM `channel_members` WHERE id=?", id)
+	_, err := m.db.Exec("DELETE FROM `channel_members` WHERE id=?", id)
 	return err
 }

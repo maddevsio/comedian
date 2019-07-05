@@ -1,6 +1,6 @@
 FROM golang:1.11.4
-COPY . /go/src/gitlab.com/team-monitoring/comedian
-WORKDIR /go/src/gitlab.com/team-monitoring/comedian
+COPY . /go/src/github.com/maddevsio/comedian/comedian
+WORKDIR /go/src/github.com/maddevsio/comedian/comedian
 RUN GOOS=linux GOARCH=amd64 go build -o comedian main.go
 
 FROM debian:9.8
@@ -17,7 +17,7 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
     && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 COPY active.en.toml  /
 COPY active.ru.toml  /  
-COPY --from=0  /go/src/gitlab.com/team-monitoring/comedian/comedian /
+COPY --from=0  /go/src/github.com/maddevsio/comedian/comedian /
 COPY goose /
 COPY migrations /migrations
 COPY entrypoint.sh /

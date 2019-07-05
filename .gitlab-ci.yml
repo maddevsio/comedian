@@ -25,11 +25,11 @@ build:
   before_script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
-    - docker build --pull -t registry.gitlab.com/team-monitoring/comedian .
-    - docker tag registry.gitlab.com/team-monitoring/comedian registry.gitlab.com/team-monitoring/comedian:new
-    - docker tag registry.gitlab.com/team-monitoring/comedian registry.gitlab.com/team-monitoring/comedian:staging
-    - docker push registry.gitlab.com/team-monitoring/comedian:new
-    - docker push registry.gitlab.com/team-monitoring/comedian:staging
+    - docker build --pull -t registry.github.com/maddevsio/comedian/comedian .
+    - docker tag registry.github.com/maddevsio/comedian/comedian registry.github.com/maddevsio/comedian/comedian:new
+    - docker tag registry.github.com/maddevsio/comedian/comedian registry.github.com/maddevsio/comedian/comedian:staging
+    - docker push registry.github.com/maddevsio/comedian/comedian:new
+    - docker push registry.github.com/maddevsio/comedian/comedian:staging
   only:
     - master
   # when:

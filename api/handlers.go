@@ -8,9 +8,9 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-validator/validator"
 	"github.com/labstack/echo"
+	"github.com/maddevsio/comedian/crypto"
+	"github.com/maddevsio/comedian/model"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/crypto"
-	"gitlab.com/team-monitoring/comedian/model"
 )
 
 var (
@@ -81,15 +81,10 @@ func (api *ComedianAPI) listBots(c echo.Context) error {
 	user := c.Get("user").(*jwt.Token)
 
 	claims := user.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
 	expire := claims["expire"].(float64)
 
 	if time.Now().Unix() > int64(expire) {
 		return c.JSON(http.StatusForbidden, "Token expired")
-	}
-
-	if teamID != api.config.OwnerSlackTeamID {
-		return c.JSON(http.StatusForbidden, "Not allowed action for you")
 	}
 
 	bots := make([]model.BotSettings, 0)

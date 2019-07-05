@@ -6,10 +6,10 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/team-monitoring/comedian/botuser"
-	"gitlab.com/team-monitoring/comedian/config"
-	"gitlab.com/team-monitoring/comedian/model"
-	"gitlab.com/team-monitoring/comedian/storage"
+	"github.com/maddevsio/comedian/botuser"
+	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/storage"
 	"golang.org/x/text/language"
 )
 

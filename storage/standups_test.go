@@ -7,8 +7,8 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/team-monitoring/comedian/config"
-	"gitlab.com/team-monitoring/comedian/model"
+	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/model"
 )
 
 func TestCreateStandup(t *testing.T) {

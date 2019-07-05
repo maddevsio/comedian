@@ -6,12 +6,12 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/evalphobia/logrus_sentry"
 	raven "github.com/getsentry/raven-go"
+	"github.com/maddevsio/comedian/api"
+	"github.com/maddevsio/comedian/comedianbot"
+	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/storage"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/api"
-	"gitlab.com/team-monitoring/comedian/comedianbot"
-	"gitlab.com/team-monitoring/comedian/config"
-	"gitlab.com/team-monitoring/comedian/storage"
 	"golang.org/x/text/language"
 )
 

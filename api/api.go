@@ -11,24 +11,24 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/maddevsio/comedian/botuser"
+	"github.com/maddevsio/comedian/comedianbot"
+	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/crypto"
+	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/storage"
+	"github.com/maddevsio/comedian/utils"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 	"github.com/sethvargo/go-password/password"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/botuser"
-	"gitlab.com/team-monitoring/comedian/comedianbot"
-	"gitlab.com/team-monitoring/comedian/config"
-	"gitlab.com/team-monitoring/comedian/crypto"
-	"gitlab.com/team-monitoring/comedian/model"
-	"gitlab.com/team-monitoring/comedian/storage"
-	"gitlab.com/team-monitoring/comedian/utils"
 )
 
 // ComedianAPI struct used to handle slack requests (slash commands)
 type ComedianAPI struct {
 	echo     *echo.Echo
 	comedian *comedianbot.Comedian
-	db       storage.Storage
+	db       *storage.DB
 	config   *config.Config
 }
 
@@ -60,7 +60,7 @@ type TeamMember struct {
 var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>.*)`)
 
 // New creates API instance
-func New(config *config.Config, db storage.Storage, comedian *comedianbot.Comedian) ComedianAPI {
+func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) ComedianAPI {
 
 	echo := echo.New()
 	echo.Use(middleware.CORS())
@@ -384,14 +384,9 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	var admin bool
-	if resp.TeamID == api.config.OwnerSlackTeamID {
-		admin = true
-	}
-
 	botSettings, err := api.db.GetBotSettingsByTeamID(resp.TeamID)
 	if err != nil {
-		cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, encriptedPass, resp.Bot.BotUserID, resp.TeamID, resp.TeamName, admin)
+		cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, encriptedPass, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
 		if err != nil {
 			log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
 			return err
@@ -415,7 +410,6 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	botSettings.AccessToken = resp.Bot.BotAccessToken
 	botSettings.UserID = resp.Bot.BotUserID
 	botSettings.Password = encriptedPass
-	botSettings.Admin = admin
 
 	settings, err := api.db.UpdateBotSettings(botSettings)
 	if err != nil {

@@ -15,9 +15,9 @@ services:
       - COMEDIAN_DATABASE=comedian:comedian@tcp(db:3306)/comedian?parseTime=true
     depends_on:
       - db
-    working_dir: /go/src/gitlab.com/team-monitoring/comedian/
+    working_dir: /go/src/github.com/maddevsio/comedian/
     volumes:
-      - ./:/go/src/gitlab.com/team-monitoring/comedian/
+      - ./:/go/src/github.com/maddevsio/comedian/
     command: bash -c "./goose -dir migrations mysql 'comedian:comedian@tcp(db:3306)/comedian' up && go test -v -timeout 30s ./... "
     depends_on:
       db:

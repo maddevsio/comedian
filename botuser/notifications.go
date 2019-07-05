@@ -11,8 +11,8 @@ import (
 	"github.com/olebedev/when/rules/en"
 	"github.com/olebedev/when/rules/ru"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/model"
-	"gitlab.com/team-monitoring/comedian/translation"
+	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/translation"
 )
 
 //NotifierThread struct to manage notifier goroutines

@@ -6,7 +6,7 @@ import (
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/team-monitoring/comedian/config"
+	"github.com/maddevsio/comedian/config"
 )
 
 func TestNew(t *testing.T) {

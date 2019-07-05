@@ -70,21 +70,10 @@ type BotSettings struct {
 	AccessToken         string `db:"bot_access_token" json:"bot_access_token" `
 	TeamID              string `db:"team_id" json:"team_id" `
 	TeamName            string `db:"team_name" json:"team_name" `
-	Admin               bool   `db:"admin" json:"admin" `
 	Password            string `db:"password" json:"password" `
 	ReportingChannel    string `db:"reporting_channel" json:"reporting_channel"`
 	ReportingTime       string `db:"reporting_time" json:"reporting_time"`
 	IndividualReportsOn bool   `db:"individual_reports_on" json:"individual_reports_on"`
-}
-
-//Role sets the abilities for different roles
-type Role struct {
-	ID            int64  `db:"id" json:"id"`
-	Title         string `db:"title" json:"title"`
-	AccessLevel   int    `db:"access_level" json:"access_level"`
-	ShouldStandup bool   `db:"should_standup" json:"should_standup"`
-	ShouldCommit  bool   `db:"should_commit" json:"should_commit"`
-	ShouldLogTime bool   `db:"should_log_time" json:"should_log_time"`
 }
 
 // ServiceEvent event coming from services

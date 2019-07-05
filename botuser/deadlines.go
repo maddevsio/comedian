@@ -7,7 +7,7 @@ import (
 	"github.com/olebedev/when/rules/en"
 	"github.com/olebedev/when/rules/ru"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/translation"
+	"github.com/maddevsio/comedian/translation"
 )
 
 func (bot *Bot) addTime(accessLevel int, channelID, params string) string {

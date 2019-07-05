@@ -6,7 +6,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/team-monitoring/comedian/model"
+	"github.com/maddevsio/comedian/model"
 	"golang.org/x/text/language"
 )
 

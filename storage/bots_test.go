@@ -7,7 +7,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/team-monitoring/comedian/config"
+	"github.com/maddevsio/comedian/config"
 )
 
 func TestCreateBotSettings(t *testing.T) {

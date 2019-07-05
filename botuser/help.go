@@ -1,7 +1,7 @@
 package botuser
 
 import (
-	"gitlab.com/team-monitoring/comedian/translation"
+	"github.com/maddevsio/comedian/translation"
 )
 
 //DisplayHelpText displays help text

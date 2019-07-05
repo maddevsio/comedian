@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/maddevsio/comedian/config"
+	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/storage"
+	"github.com/maddevsio/comedian/translation"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/config"
-	"gitlab.com/team-monitoring/comedian/model"
-	"gitlab.com/team-monitoring/comedian/storage"
-	"gitlab.com/team-monitoring/comedian/translation"
 )
 
 var (
@@ -40,7 +40,7 @@ const (
 type Bot struct {
 	slack           *slack.Client
 	properties      model.BotSettings
-	db              storage.Storage
+	db              *storage.DB
 	bundle          *i18n.Bundle
 	wg              sync.WaitGroup
 	conf            *config.Config
@@ -49,7 +49,7 @@ type Bot struct {
 }
 
 //New creates new Bot instance
-func New(conf *config.Config, bundle *i18n.Bundle, settings model.BotSettings, db storage.Storage) *Bot {
+func New(conf *config.Config, bundle *i18n.Bundle, settings model.BotSettings, db *storage.DB) *Bot {
 	quit := make(chan struct{})
 
 	bot := &Bot{}
@@ -727,11 +727,6 @@ func (bot *Bot) updateUser(user slack.User) error {
 //Suits returns true if found desired bot properties
 func (bot *Bot) Suits(team string) bool {
 	return strings.ToLower(team) == strings.ToLower(bot.properties.TeamID) || strings.ToLower(team) == strings.ToLower(bot.properties.TeamName)
-}
-
-//IsAdmin returns true if bot is Admin
-func (bot *Bot) IsAdmin() bool {
-	return bot.properties.Admin
 }
 
 //Settings just returns bot settings

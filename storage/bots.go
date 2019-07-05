@@ -4,12 +4,12 @@ import (
 
 	// This line is must for working MySQL database
 	_ "github.com/go-sql-driver/mysql"
-	"gitlab.com/team-monitoring/comedian/crypto"
-	"gitlab.com/team-monitoring/comedian/model"
+	"github.com/maddevsio/comedian/crypto"
+	"github.com/maddevsio/comedian/model"
 )
 
 //CreateBotSettings creates bot properties for the newly created bot
-func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string, admin bool) (model.BotSettings, error) {
+func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string) (model.BotSettings, error) {
 	bs := model.BotSettings{
 		NotifierInterval:    30,
 		Language:            "en_US",
@@ -20,7 +20,6 @@ func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string,
 		TeamID:              teamID,
 		TeamName:            teamName,
 		Password:            password,
-		Admin:               admin,
 		ReportingChannel:    "",
 		ReportingTime:       "9:00",
 		IndividualReportsOn: false,
@@ -31,9 +30,9 @@ func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string,
 		return bs, err
 	}
 
-	_, err = m.DB.Exec(
-		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, user_id, team_id, team_name, admin, password, reporting_channel, reporting_time, individual_reports_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.UserID, bs.TeamID, bs.TeamName, bs.Admin, bs.Password, bs.ReportingChannel, bs.ReportingTime, bs.IndividualReportsOn)
+	_, err = m.db.Exec(
+		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, user_id, team_id, team_name, password, reporting_channel, reporting_time, individual_reports_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.UserID, bs.TeamID, bs.TeamName, bs.Password, bs.ReportingChannel, bs.ReportingTime, bs.IndividualReportsOn)
 	if err != nil {
 		return bs, err
 	}
@@ -49,7 +48,7 @@ func (m *DB) CreateBotSettings(token, password, userID, teamID, teamName string,
 //GetAllBotSettings returns all bots
 func (m *DB) GetAllBotSettings() ([]model.BotSettings, error) {
 	var bs []model.BotSettings
-	err := m.DB.Select(&bs, "SELECT * FROM `bot_settings`")
+	err := m.db.Select(&bs, "SELECT * FROM `bot_settings`")
 	if err != nil {
 		return bs, err
 	}
@@ -59,7 +58,7 @@ func (m *DB) GetAllBotSettings() ([]model.BotSettings, error) {
 //GetBotSettingsByTeamName returns a particular bot
 func (m *DB) GetBotSettingsByTeamName(teamName string) (model.BotSettings, error) {
 	var bs model.BotSettings
-	err := m.DB.Get(&bs, "SELECT * FROM `bot_settings` where team_name=?", teamName)
+	err := m.db.Get(&bs, "SELECT * FROM `bot_settings` where team_name=?", teamName)
 	if err != nil {
 		return bs, err
 	}
@@ -69,7 +68,7 @@ func (m *DB) GetBotSettingsByTeamName(teamName string) (model.BotSettings, error
 //GetBotSettingsByTeamID returns a particular bot
 func (m *DB) GetBotSettingsByTeamID(teamID string) (model.BotSettings, error) {
 	var bs model.BotSettings
-	err := m.DB.Get(&bs, "SELECT * FROM `bot_settings` where team_id=?", teamID)
+	err := m.db.Get(&bs, "SELECT * FROM `bot_settings` where team_id=?", teamID)
 	if err != nil {
 		return bs, err
 	}
@@ -79,7 +78,7 @@ func (m *DB) GetBotSettingsByTeamID(teamID string) (model.BotSettings, error) {
 //GetBotSettings returns a particular bot
 func (m *DB) GetBotSettings(id int64) (model.BotSettings, error) {
 	var bs model.BotSettings
-	err := m.DB.Get(&bs, "SELECT * FROM `bot_settings` where id=?", id)
+	err := m.db.Get(&bs, "SELECT * FROM `bot_settings` where id=?", id)
 	if err != nil {
 		return bs, err
 	}
@@ -93,15 +92,15 @@ func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, e
 		return settings, err
 	}
 
-	_, err = m.DB.Exec(
-		"UPDATE `bot_settings` set bot_access_token=?, password=?, admin=?, user_id=?, notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, reporting_channel=?, reporting_time=?, individual_reports_on=? where id=?",
-		settings.AccessToken, settings.Password, settings.Admin, settings.UserID, settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.ReportingChannel, settings.ReportingTime, settings.IndividualReportsOn, settings.ID,
+	_, err = m.db.Exec(
+		"UPDATE `bot_settings` set bot_access_token=?, password=?, user_id=?, notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, reporting_channel=?, reporting_time=?, individual_reports_on=? where id=?",
+		settings.AccessToken, settings.Password, settings.UserID, settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.ReportingChannel, settings.ReportingTime, settings.IndividualReportsOn, settings.ID,
 	)
 	if err != nil {
 		return settings, err
 	}
 	var bs model.BotSettings
-	err = m.DB.Get(&bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
+	err = m.db.Get(&bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
 	if err != nil {
 		return settings, err
 	}
@@ -119,12 +118,12 @@ func (m *DB) UpdateBotPassword(settings model.BotSettings) (model.BotSettings, e
 	if err != nil {
 		return settings, err
 	}
-	_, err = m.DB.Exec("UPDATE `bot_settings` set password=? where id=?", password, settings.ID)
+	_, err = m.db.Exec("UPDATE `bot_settings` set password=? where id=?", password, settings.ID)
 	if err != nil {
 		return settings, err
 	}
 	var bs model.BotSettings
-	err = m.DB.Get(&bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
+	err = m.db.Get(&bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
 	if err != nil {
 		return settings, err
 	}
@@ -133,12 +132,12 @@ func (m *DB) UpdateBotPassword(settings model.BotSettings) (model.BotSettings, e
 
 //DeleteBotSettingsByID deletes bot
 func (m *DB) DeleteBotSettingsByID(id int64) error {
-	_, err := m.DB.Exec("DELETE FROM `bot_settings` WHERE id=?", id)
+	_, err := m.db.Exec("DELETE FROM `bot_settings` WHERE id=?", id)
 	return err
 }
 
 //DeleteBotSettings deletes bot
 func (m *DB) DeleteBotSettings(teamID string) error {
-	_, err := m.DB.Exec("DELETE FROM `bot_settings` WHERE team_id=?", teamID)
+	_, err := m.db.Exec("DELETE FROM `bot_settings` WHERE team_id=?", teamID)
 	return err
 }

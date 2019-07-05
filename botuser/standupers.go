@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/team-monitoring/comedian/model"
-	"gitlab.com/team-monitoring/comedian/translation"
-	"gitlab.com/team-monitoring/comedian/utils"
+	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/translation"
+	"github.com/maddevsio/comedian/utils"
 )
 
 func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
