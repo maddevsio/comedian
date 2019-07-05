@@ -14,7 +14,7 @@ import (
 // Comedian is the main struct of the project
 type Comedian struct {
 	bots     []*botuser.Bot
-	DB       *storage.DB
+	DB       *storage.DB 
 	botsChan chan *botuser.Bot
 	Bundle   *i18n.Bundle
 }
