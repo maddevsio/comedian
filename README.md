@@ -2,7 +2,14 @@
     <img style="width: 300px" src ="documentation/logo.png" />
 </div>
 
-<div align="center"> Team management system that helps track performance and assist team members in daily remote standups meetings </div>
+<div align="center"> Team management system that helps track performance and assist team members in daily remote standups meetings 
+
+[![Developed by Mad Devs](https://maddevs.io/badge-dark.svg)](https://maddevs.io/)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Go Report Card](https://goreportcard.com/badge/github.com/maddevsio/comedian)](https://goreportcard.com/report/github.com/maddevsio/comedian)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+</div>
 
 ![](documentation/show.gif)
 
