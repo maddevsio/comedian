@@ -4,10 +4,9 @@ import (
 	"regexp"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/translation"
-	"github.com/maddevsio/comedian/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 func (bot *Bot) addCommand(accessLevel int, channelID, params string) string {
@@ -77,7 +76,9 @@ func (bot *Bot) addMembers(users []string, role, channel string) string {
 			failed = append(failed, u)
 			continue
 		}
-		userID, _ := utils.SplitUser(u)
+
+		userFull := strings.Split(u, "|")
+		userID := strings.Replace(userFull[0], "<@", "", -1)
 
 		var user model.User
 		var err error
@@ -260,7 +261,8 @@ func (bot *Bot) deleteMembers(members []string, channelID string) string {
 			continue
 		}
 
-		userID, _ := utils.SplitUser(u)
+		userFull := strings.Split(u, "|")
+		userID := strings.Replace(userFull[0], "<@", "", -1)
 
 		member, err := bot.db.FindStansuperByUserID(userID, channelID)
 		if err != nil {

@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"time"
 
+	"github.com/maddevsio/comedian/model"
+	"github.com/maddevsio/comedian/translation"
 	"github.com/nlopes/slack"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules/en"
 	"github.com/olebedev/when/rules/ru"
 	log "github.com/sirupsen/logrus"
-	"github.com/maddevsio/comedian/model"
-	"github.com/maddevsio/comedian/translation"
-	"github.com/maddevsio/comedian/utils"
 )
 
 //CollectorData used to parse data on user from Collector
@@ -390,10 +390,10 @@ func (bot *Bot) processWorklogs(totalWorklogs, projectWorklogs int) (string, int
 		points++
 	}
 
-	worklogsTime := utils.SecondsToHuman(totalWorklogs)
+	worklogsTime := SecondsToHuman(totalWorklogs)
 
 	if totalWorklogs != projectWorklogs {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WorklogsTimeTranslation", 0, map[string]interface{}{"projectWorklogs": utils.SecondsToHuman(projectWorklogs), "totalWorklogs": utils.SecondsToHuman(totalWorklogs)}}
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WorklogsTimeTranslation", 0, map[string]interface{}{"projectWorklogs": SecondsToHuman(projectWorklogs), "totalWorklogs": SecondsToHuman(totalWorklogs)}}
 		worklogsTime = translation.Translate(payload)
 	}
 
@@ -423,10 +423,10 @@ func (bot *Bot) processWeeklyWorklogs(totalWorklogs, projectWorklogs int) (strin
 		worklogsEmoji = ":sunglasses:"
 		points++
 	}
-	worklogsTime := utils.SecondsToHuman(totalWorklogs)
+	worklogsTime := SecondsToHuman(totalWorklogs)
 
 	if totalWorklogs != projectWorklogs {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WorklogsTimeTranslation", 0, map[string]interface{}{"projectWorklogs": utils.SecondsToHuman(projectWorklogs), "totalWorklogs": utils.SecondsToHuman(totalWorklogs)}}
+		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WorklogsTimeTranslation", 0, map[string]interface{}{"projectWorklogs": SecondsToHuman(projectWorklogs), "totalWorklogs": SecondsToHuman(totalWorklogs)}}
 		worklogsTime = translation.Translate(payload)
 	}
 
@@ -572,4 +572,12 @@ func (bot *Bot) GetCollectorData(getDataOn, data, dateFrom, dateTo string) (Coll
 	}
 	json.Unmarshal(body, &collectorData)
 	return collectorData, nil
+}
+
+//SecondsToHuman converts seconds (int) to HH:MM format
+func SecondsToHuman(input int) string {
+	hours := math.Floor(float64(input) / 60 / 60)
+	seconds := input % (60 * 60)
+	minutes := math.Floor(float64(seconds) / 60)
+	return fmt.Sprintf("%v:%02d", int(hours), int(minutes))
 }

@@ -1,8 +1,4 @@
-.vscode
-.idea
-.sw[p,o]
 comedian
+vendor
 .env
-/docker/
-./docker-deploy/configs/nginx/certs/*
-./docker-deploy/.env
+

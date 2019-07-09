@@ -1,11 +1,7 @@
 package main
 
 import (
-	"os"
-
 	"github.com/BurntSushi/toml"
-	"github.com/evalphobia/logrus_sentry"
-	raven "github.com/getsentry/raven-go"
 	"github.com/maddevsio/comedian/api"
 	"github.com/maddevsio/comedian/comedianbot"
 	"github.com/maddevsio/comedian/config"
@@ -15,23 +11,8 @@ import (
 	"golang.org/x/text/language"
 )
 
-func init() {
-	raven.SetSampleRate(0.25)
-
-	hook, err := logrus_sentry.NewSentryHook(os.Getenv("SENTRY_DSN"), []log.Level{
-		log.PanicLevel,
-		log.FatalLevel,
-		log.ErrorLevel,
-	})
-
-	if err == nil {
-		log.AddHook(hook)
-	}
-}
-
 func main() {
-
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle := i18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
 	_, err := bundle.LoadMessageFile("active.en.toml")

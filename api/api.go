@@ -241,7 +241,10 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 		return err
 	}
 
-	command, params := utils.CommandParsing(slashCommand.Text)
+	text = strings.TrimSpace(slashCommand.Text)
+	splitText := strings.Split(text, " ")
+	command = splitText[0]
+	params = strings.Join(splitText[1:], " ")
 
 	message := bot.ImplementCommands(slashCommand.ChannelID, command, params, accessLevel)
 
@@ -272,7 +275,7 @@ func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 		return c.String(http.StatusOK, "Failed to get data from Collector. Make sure you were added to Collector database and try again")
 	}
 
-	message := fmt.Sprintf("You have logged %v from the begining of the month", utils.SecondsToHuman(dataOnUser.Worklogs))
+	message := fmt.Sprintf("You have logged %v from the begining of the month", botuser.SecondsToHuman(dataOnUser.Worklogs))
 
 	return c.String(http.StatusOK, message)
 }
@@ -309,12 +312,13 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	var from, to time.Time
 
 	if len(dates) == 2 {
-		from, err = utils.StringToTime(dates[0])
+
+		from, err = dateparse.ParseIn(strings.TrimSpace(dates[0]), time.Local)
 		if err != nil {
 			return c.String(http.StatusOK, err.Error())
 		}
 
-		to, err = utils.StringToTime(dates[1])
+		to, err = dateparse.ParseIn(strings.TrimSpace(dates[1]), time.Local)
 		if err != nil {
 			return c.String(http.StatusOK, err.Error())
 		}
