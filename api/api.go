@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/maddevsio/comedian/botuser"
@@ -17,7 +18,6 @@ import (
 	"github.com/maddevsio/comedian/crypto"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
-	"github.com/maddevsio/comedian/utils"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 	"github.com/sethvargo/go-password/password"
@@ -241,10 +241,10 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 		return err
 	}
 
-	text = strings.TrimSpace(slashCommand.Text)
+	text := strings.TrimSpace(slashCommand.Text)
 	splitText := strings.Split(text, " ")
-	command = splitText[0]
-	params = strings.Join(splitText[1:], " ")
+	command := splitText[0]
+	params := strings.Join(splitText[1:], " ")
 
 	message := bot.ImplementCommands(slashCommand.ChannelID, command, params, accessLevel)
 
@@ -372,7 +372,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	code := urlValues.Get("code")
 
-	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
+	resp, err := slack.GetOAuthResponse(http.DefaultClient, api.config.SlackClientID, api.config.SlackClientSecret, code, "")
 	if err != nil {
 		log.WithFields(log.Fields(map[string]interface{}{"config": api.config, "urlValues": urlValues, "error": err})).Error("auth failed on GetOAuthResponse")
 		return err

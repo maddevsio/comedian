@@ -72,7 +72,7 @@ func (api *ComedianAPI) login(c echo.Context) error {
 		"bot":   settings,
 		"token": t,
 	})
-}
+} 
 
 func (api *ComedianAPI) listBots(c echo.Context) error {
 	if c.Get("user") == nil {

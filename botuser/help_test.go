@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
+	"github.com/maddevsio/comedian/model"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
-	"github.com/maddevsio/comedian/model"
 	"golang.org/x/text/language"
 )
 
@@ -32,7 +32,7 @@ func TestDisplayHelpText(t *testing.T) {
 		{"ru_RU", "remove_deadline", "Чтобы удалить время сдачи стендапов в канале используйте команду `remove_deadline`."},
 	}
 
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle := i18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
 	_, err := bundle.LoadMessageFile("../active.en.toml")
