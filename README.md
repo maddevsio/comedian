@@ -1,5 +1,5 @@
 <div align="center">
-    <img style="width: 300px" src ="documentation/logo.png" />
+    <img style="width: 300px" src ="logo.png" />
 </div>
 
 <div align="center"> Team management system that helps track performance and assist team members in daily remote standups meetings 
@@ -10,8 +10,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
-
-![](documentation/show.gif)
 
 ## Comedian Features
 
