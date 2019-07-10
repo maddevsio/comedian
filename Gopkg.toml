@@ -30,24 +30,12 @@
   version = "0.3.0"
 
 [[constraint]]
-  name = "github.com/bouk/monkey"
-  version = "1.0.0"
-
-[[constraint]]
   name = "github.com/cenkalti/backoff"
   version = "2.0.0"
 
 [[constraint]]
   name = "github.com/go-sql-driver/mysql"
   version = "1.4.0"
-
-[[constraint]]
-  name = "github.com/gorilla/schema"
-  version = "1.0.2"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/jasonlvhit/gocron"
 
 [[constraint]]
   branch = "master"
@@ -80,10 +68,6 @@
 [[constraint]]
   name = "golang.org/x/text"
   version = "0.3.0"
-
-[[constraint]]
-  branch = "v1"
-  name = "gopkg.in/jarcoal/httpmock.v1"
 
 [prune]
   go-tests = true

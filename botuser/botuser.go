@@ -458,9 +458,7 @@ func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachm
 	if Dry {
 		return nil
 	}
-	_, _, err := bot.slack.PostMessage(channel,
-		slack.MsgOptionText(message, true),
-		slack.MsgOptionAttachments(attachments...))
+	_, _, err := bot.slack.PostMessage(channel, message, slack.PostMessageParameters{Attachments: attachments})
 	return err
 }
 

@@ -1,6 +1,6 @@
 FROM golang:1.11.4
-COPY . /go/src/github.com/maddevsio/comedian/comedian
-WORKDIR /go/src/github.com/maddevsio/comedian/comedian
+COPY . /go/src/github.com/maddevsio/comedian
+WORKDIR /go/src/github.com/maddevsio/comedian
 RUN GOOS=linux GOARCH=amd64 go build -o comedian main.go
 
 FROM debian:9.8

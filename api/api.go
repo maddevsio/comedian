@@ -372,7 +372,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	code := urlValues.Get("code")
 
-	resp, err := slack.GetOAuthResponse(http.DefaultClient, api.config.SlackClientID, api.config.SlackClientSecret, code, "")
+	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
 	if err != nil {
 		log.WithFields(log.Fields(map[string]interface{}{"config": api.config, "urlValues": urlValues, "error": err})).Error("auth failed on GetOAuthResponse")
 		return err
