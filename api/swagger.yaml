@@ -7,7 +7,7 @@ info:
   license:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
-host: "comedian-new.maddevs.co"
+host: "comedian.maddevs.co"
 basePath: "/"
 tags:
 - name: "standups"
