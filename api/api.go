@@ -233,18 +233,7 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 		return err
 	}
 
-	accessLevel, err := bot.GetAccessLevel(slashCommand.UserID, slashCommand.ChannelID)
-	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"bot": bot, "slashCommand": slashCommand, "error": err})).Error("handleCommands failed on GetAccessLevel")
-		return err
-	}
-
-	text := strings.TrimSpace(slashCommand.Text)
-	splitText := strings.Split(text, " ")
-	command := splitText[0]
-	params := strings.Join(splitText[1:], " ")
-
-	message := bot.ImplementCommands(slashCommand.ChannelID, command, params, accessLevel)
+	message := bot.ImplementCommands(slashCommand)
 
 	return c.String(http.StatusOK, message)
 }

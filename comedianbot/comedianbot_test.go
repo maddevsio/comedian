@@ -38,8 +38,6 @@ func TestBots(t *testing.T) {
 	comedian := New(bundle, db)
 	assert.NotEqual(t, nil, comedian)
 
-	botuser.Dry = true
-
 	go comedian.StartBots()
 
 	botSettings := model.BotSettings{
@@ -88,9 +86,4 @@ func TestHandleEvent(t *testing.T) {
 
 	comedian.AddBot(bot)
 	assert.Equal(t, 1, len(comedian.bots))
-
-	err = comedian.HandleEvent(model.ServiceEvent{
-		TeamName: "testTeam",
-	})
-	assert.Equal(t, nil, err)
 }

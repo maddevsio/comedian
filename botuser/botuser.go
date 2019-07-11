@@ -10,7 +10,6 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
-	"github.com/maddevsio/comedian/translation"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
@@ -26,38 +25,27 @@ var problemKeys = []string{"problem", "difficult", "issue", "block", "пробл
 var todayPlansKeys = []string{"today", "сегодня"}
 var yesterdayWorkKeys = []string{"yesterday", "friday", "monday", "tuesday", "wednesday", "thursday", "saturday", "sunday", "вчера", "пятниц", "понедельник", "вторник", "сред", "четверг", "суббот", "воскресенье"}
 
-const (
-	superAdminAccess  = 1
-	adminAccess       = 2
-	pmAccess          = 3
-	regularUserAccess = 4
-	noAccess          = 0
-)
-
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
 	slack           *slack.Client
 	properties      model.BotSettings
 	db              *storage.DB
-	bundle          *i18n.Bundle
+	localizer       *i18n.Localizer
 	wg              sync.WaitGroup
-	conf            *config.Config
 	QuitChan        chan struct{}
 	notifierThreads []*NotifierThread
+	conf            *config.Config
 }
 
 //New creates new Bot instance
-func New(conf *config.Config, bundle *i18n.Bundle, settings model.BotSettings, db *storage.DB) *Bot {
-	quit := make(chan struct{})
-
+func New(config *config.Config, bundle *i18n.Bundle, settings model.BotSettings, db *storage.DB) *Bot {
 	bot := &Bot{}
 	bot.slack = slack.New(settings.AccessToken)
 	bot.properties = settings
 	bot.db = db
-	bot.bundle = bundle
-	bot.QuitChan = quit
-	bot.conf = conf
-
+	bot.localizer = i18n.NewLocalizer(bundle, settings.Language)
+	bot.QuitChan = make(chan struct{})
+	bot.conf = config
 	return bot
 }
 
@@ -84,10 +72,6 @@ func (bot *Bot) Start() {
 				if err != nil {
 					log.Error("CallDisplayWeeklyTeamReport failed: ", err)
 				}
-				err = bot.setStandupsCounterToZero()
-				if err != nil {
-					log.Error("setStandupsCounterToZero failed: ", err)
-				}
 				err = bot.remindAboutWorklogs()
 				if err != nil {
 					log.Error("remindAboutWorklogs failed: ", err)
@@ -103,21 +87,6 @@ func (bot *Bot) Start() {
 //Stop closes bot QuitChan making bot goroutine to exit
 func (bot *Bot) Stop() {
 	close(bot.QuitChan)
-}
-
-func (bot *Bot) setStandupsCounterToZero() error {
-	if time.Now().Hour() == 23 && time.Now().Minute() == 59 {
-		standupers, err := bot.db.ListStandupersByTeamID(bot.properties.TeamID)
-		if err != nil {
-			return err
-		}
-		for _, standuper := range standupers {
-			standuper.SubmittedStandupToday = false
-			bot.db.UpdateStanduper(standuper)
-		}
-		return nil
-	}
-	return nil
 }
 
 //HandleCallBackEvent handles different callback events from Slack Event Subscription list
@@ -150,7 +119,6 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		if err := json.Unmarshal(data, join); err != nil {
 			return err
 		}
-		//need to check if join.Team is teamID, not a teamName
 		_, err = bot.HandleJoin(join.Channel, join.Team)
 		return err
 	case "team_join":
@@ -205,13 +173,6 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		return bot.SendEphemeralMessage(msg.Channel, msg.User, problem)
 	}
 
-	if bot.submittedStandupToday(msg.User, msg.Channel) {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		oneStandupPerDay := translation.Translate(payload)
-		bot.SendEphemeralMessage(msg.Channel, msg.User, oneStandupPerDay)
-		log.Warning("submitted standup today", msg.User, msg.Channel)
-		return nil
-	}
 	_, err := bot.db.CreateStandup(model.Standup{
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
@@ -276,14 +237,6 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
-	if bot.submittedStandupToday(msg.SubMessage.User, msg.Channel) {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "OneStandupPerDay", 0, nil}
-		oneStandupPerDay := translation.Translate(payload)
-		bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, oneStandupPerDay)
-		log.Warning("submitted standup today", msg.SubMessage.User, msg.Channel)
-		return nil
-	}
-
 	standup, err = bot.db.CreateStandup(model.Standup{
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
@@ -331,6 +284,8 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 		log.Error("Failed to SelectLatestStandupByUser", err)
 		return false
 	}
+
+	//TODO need to change it for direct Slack API call
 	user, err := bot.db.SelectUser(userID)
 	if err != nil {
 		log.Error("Failed to SelectUser ", err)
@@ -408,44 +363,75 @@ func (bot *Bot) HandleAppMention(msg *slack.MessageEvent) error {
 }
 
 func (bot *Bot) analizeStandup(message string) string {
+	errors := []string{}
 	message = strings.ToLower(message)
 
-	mentionsYesterdayWork := false
+	var mentionsYesterdayWork, mentionsTodayPlans, mentionsProblem bool
+
 	for _, work := range yesterdayWorkKeys {
 		if strings.Contains(message, work) {
 			mentionsYesterdayWork = true
 		}
 	}
 
-	if !mentionsYesterdayWork {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "StandupHandleNoYesterdayWorkMentioned", 0, nil}
-		return translation.Translate(payload)
-	}
-
-	mentionsTodayPlans := false
 	for _, plan := range todayPlansKeys {
 		if strings.Contains(message, plan) {
 			mentionsTodayPlans = true
 		}
 	}
-	if !mentionsTodayPlans {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "StandupHandleNoTodayPlansMentioned", 0, nil}
-		return translation.Translate(payload)
-	}
-
-	mentionsProblem := false
 
 	for _, problem := range problemKeys {
 		if strings.Contains(message, problem) {
 			mentionsProblem = true
 		}
 	}
-	if !mentionsProblem {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "StandupHandleNoProblemsMentioned", 0, nil}
-		return translation.Translate(payload)
-	}
 
-	return ""
+	if !mentionsYesterdayWork {
+		warnings, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "noYesterdayMention",
+				Other: "- no 'yesterday' keywords detected: {{.Keywords}}",
+			},
+			TemplateData: map[string]interface{}{
+				"Keywords": strings.Join(yesterdayWorkKeys, ", "),
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		errors = append(errors, warnings)
+	}
+	if !mentionsTodayPlans {
+		warnings, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "noTodayMention",
+				Other: "- no 'today' keywords detected: {{.Keywords}}",
+			},
+			TemplateData: map[string]interface{}{
+				"Keywords": strings.Join(todayPlansKeys, ", "),
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		errors = append(errors, warnings)
+	}
+	if !mentionsProblem {
+		warnings, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "noProblemsMention",
+				Other: "- no 'problems' keywords detected: {{.Keywords}}",
+			},
+			TemplateData: map[string]interface{}{
+				"Keywords": strings.Join(problemKeys, ", "),
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		errors = append(errors, warnings)
+	}
+	return strings.Join(errors, ", ")
 }
 
 // SendMessage posts a message in a specified channel visible for everyone
@@ -524,45 +510,23 @@ func (bot *Bot) HandleJoinNewUser(user slack.User) (model.User, error) {
 }
 
 //ImplementCommands implements slash commands such as adding users and managing deadlines
-func (bot *Bot) ImplementCommands(channelID, command, params string, accessLevel int) string {
-	switch command {
-	case "add":
-		return bot.addCommand(accessLevel, channelID, params)
+func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
+	switch command.Command {
+	case "join":
+		return bot.joinCommand(command)
 	case "show":
-		return bot.showCommand(channelID, params)
-	case "remove":
-		return bot.deleteCommand(accessLevel, channelID, params)
+		return bot.showCommand(command)
+	case "quit":
+		return bot.quitCommand(command)
 	case "add_deadline":
-		return bot.addTime(accessLevel, channelID, params)
+		return bot.addDeadline(command)
 	case "remove_deadline":
-		return bot.removeTime(accessLevel, channelID)
+		return bot.removeDeadline(command)
 	case "show_deadline":
-		return bot.showTime(channelID)
+		return bot.showDeadline(command)
 	default:
-		return bot.displayDefaultHelpText()
+		return "help"
 	}
-}
-
-//GetAccessLevel returns access level to figure out if a user can use slash command
-func (bot *Bot) GetAccessLevel(userID, channelID string) (int, error) {
-	user, err := bot.db.SelectUser(userID)
-	if err != nil {
-		return noAccess, err
-	}
-	if user.IsAdmin() {
-		return adminAccess, nil
-	}
-
-	standuper, err := bot.db.FindStansuperByUserID(userID, channelID)
-	if err != nil {
-		return regularUserAccess, nil
-	}
-
-	if standuper.IsPM() {
-		return pmAccess, nil
-	}
-
-	return regularUserAccess, nil
 }
 
 //UpdateUsersList updates users in workspace
@@ -592,20 +556,6 @@ func (bot *Bot) AddNewSlackUser(userID string) error {
 			if err != nil {
 				log.WithFields(log.Fields{"user": user, "bot": bot, "error": err}).Error("AddNewSlackUser.updateUser failed")
 			}
-		}
-	}
-	return nil
-}
-
-//SendMessageToSuperAdmins messages all users in workspace
-func (bot *Bot) SendMessageToSuperAdmins(message string) error {
-	users, err := bot.db.ListUsers()
-	if err != nil {
-		return err
-	}
-	for _, user := range users {
-		if user.TeamID == bot.properties.TeamID && user.Role == "super-admin" {
-			bot.SendUserMessage(user.UserID, message)
 		}
 	}
 	return nil

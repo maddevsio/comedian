@@ -73,6 +73,13 @@ You can use the following commands:
 | /comedian show_deadline | - | Show standup time in current channel |
 | /comedian remove_deadline | - | Delete standup time in current channel |
 
+To update messages: 
+```
+goi18n extract
+goi18n merge active.*.toml
+goi18n merge active.*.toml translate.*.toml
+```
+
 ## Testing
 
 Run tests with `make test` command. This will run integration tests and output the result.

@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
+	"github.com/maddevsio/comedian/model"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules/en"
 	"github.com/olebedev/when/rules/ru"
 	log "github.com/sirupsen/logrus"
-	"github.com/maddevsio/comedian/model"
-	"github.com/maddevsio/comedian/translation"
 )
 
 //NotifierThread struct to manage notifier goroutines
@@ -104,11 +104,29 @@ func (bot *Bot) SendWarning(channelID string) error {
 		return nil
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "Minutes", int(bot.properties.ReminderTime), map[string]interface{}{"time": bot.properties.ReminderTime}}
-	minutes := translation.Translate(payload)
+	minutes, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "minutes",
+			Other: "",
+		},
+		PluralCount:  int(bot.properties.ReminderTime),
+		TemplateData: map[string]interface{}{"time": bot.properties.ReminderTime},
+	})
+	if err != nil {
+		log.Error(err)
+	}
 
-	payload = translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WarnNonReporters", len(nonReportersIDs), map[string]interface{}{"user": nonReportersIDs[0], "users": strings.Join(nonReportersIDs, ", "), "minutes": minutes}}
-	warnNonReporters := translation.Translate(payload)
+	warnNonReporters, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "warnNonReporters",
+			Other: "",
+		},
+		PluralCount:  len(nonReportersIDs),
+		TemplateData: map[string]interface{}{"user": nonReportersIDs[0], "users": strings.Join(nonReportersIDs, ", "), "minutes": minutes},
+	})
+	if err != nil {
+		log.Error(err)
+	}
 
 	err = bot.SendMessage(channelID, warnNonReporters, nil)
 	if err != nil {
@@ -191,8 +209,17 @@ func (bot *Bot) notifyNotAll(channelID string, repeats *int) error {
 		return nil
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "TagNonReporters", len(nonReporters), map[string]interface{}{"user": nonReporters[0], "users": strings.Join(nonReporters, ", ")}}
-	tagNonReporters := translation.Translate(payload)
+	tagNonReporters, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "tagNonReporters",
+			Other: "",
+		},
+		PluralCount:  len(nonReporters),
+		TemplateData: map[string]interface{}{"user": nonReporters[0], "users": strings.Join(nonReporters, ", ")},
+	})
+	if err != nil {
+		log.Error(err)
+	}
 
 	err = bot.SendMessage(channelID, tagNonReporters, nil)
 	if err != nil {

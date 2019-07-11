@@ -3,26 +3,20 @@ package botuser
 import (
 	"time"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/nlopes/slack"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules/en"
 	"github.com/olebedev/when/rules/ru"
 	log "github.com/sirupsen/logrus"
-	"github.com/maddevsio/comedian/translation"
 )
 
-func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
-	accessAtLeastPM := translation.Translate(payload)
-
-	if accessLevel > pmAccess {
-		return accessAtLeastPM
-	}
-
+func (bot *Bot) addDeadline(command slack.SlashCommand) string {
 	w := when.New(nil)
 	w.Add(en.All...)
 	w.Add(ru.All...)
 
-	r, err := w.Parse(params, time.Now())
+	r, err := w.Parse(command.Text, time.Now())
 	if err != nil {
 		log.Error("Failed to parse params", err)
 		return "Unable to recognize time for a deadline"
@@ -32,7 +26,7 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 		return "Unable to recognize time for a deadline"
 	}
 
-	channel, err := bot.db.SelectChannel(channelID)
+	channel, err := bot.db.SelectChannel(command.ChannelID)
 	if err != nil {
 		log.Error("failed to select channel", err)
 		return "could not recognize channel, please add me to the channel and try again"
@@ -51,31 +45,40 @@ func (bot *Bot) addTime(accessLevel int, channelID, params string) string {
 		return "could not set channel deadline"
 	}
 
-	standupers, err := bot.db.ListChannelStandupers(channelID)
+	standupers, err := bot.db.ListChannelStandupers(command.ChannelID)
 	if err != nil {
 		log.Errorf("BotAPI: ListChannelStandupers failed: %v\n", err)
 	}
 
 	if len(standupers) == 0 {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AddStandupTimeNoUsers", 0, map[string]interface{}{"timeInt": r.Time.Unix()}}
-		addStandupTimeNoUsers := translation.Translate(payload)
+		addStandupTimeNoUsers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "addStandupTimeNoUsers",
+				Other: "",
+			},
+			TemplateData: map[string]interface{}{"timeInt": r.Time.Unix()},
+		})
+		if err != nil {
+			log.Error(err)
+		}
 		return addStandupTimeNoUsers
 	}
 
-	payload = translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AddStandupTime", 0, map[string]interface{}{"timeInt": r.Time.Unix()}}
-	addStandupTime := translation.Translate(payload)
+	addStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "addStandupTime",
+			Other: "",
+		},
+		TemplateData: map[string]interface{}{"timeInt": r.Time.Unix()},
+	})
+	if err != nil {
+		log.Error(err)
+	}
 	return addStandupTime
 }
 
-func (bot *Bot) removeTime(accessLevel int, channelID string) string {
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "AccessAtLeastPM", 0, nil}
-	accessAtLeastPM := translation.Translate(payload)
-
-	if accessLevel > pmAccess {
-		return accessAtLeastPM
-	}
-
-	channel, err := bot.db.SelectChannel(channelID)
+func (bot *Bot) removeDeadline(command slack.SlashCommand) string {
+	channel, err := bot.db.SelectChannel(command.ChannelID)
 	if err != nil {
 		return "could not recognize channel, please add me to the channel and try again"
 	}
@@ -92,28 +95,58 @@ func (bot *Bot) removeTime(accessLevel int, channelID string) string {
 	if err != nil {
 		return "could not remove channel deadline"
 	}
-	st, err := bot.db.ListChannelStandupers(channelID)
+	st, err := bot.db.ListChannelStandupers(command.ChannelID)
 	if len(st) != 0 {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "RemoveStandupTimeWithUsers", 0, nil}
-		removeStandupTimeWithUsers := translation.Translate(payload)
+		removeStandupTimeWithUsers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "removeStandupTimeWithUsers",
+				Other: "",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
 		return removeStandupTimeWithUsers
 	}
 
-	payload = translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "RemoveStandupTime", 0, nil}
-	removeStandupTime := translation.Translate(payload)
+	removeStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "removeStandupTime",
+			Other: "",
+		},
+	})
+	if err != nil {
+		log.Error(err)
+	}
 	return removeStandupTime
 }
 
-func (bot *Bot) showTime(channelID string) string {
-	channel, err := bot.db.SelectChannel(channelID)
+func (bot *Bot) showDeadline(command slack.SlashCommand) string {
+	channel, err := bot.db.SelectChannel(command.ChannelID)
 	// need to check error first, because it is misleading!
 	if err != nil || channel.StandupTime == "" {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ShowNoStandupTime", 0, nil}
-		showNoStandupTime := translation.Translate(payload)
+		showNoStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "showNoStandupTime",
+				Other: "",
+			},
+			TemplateData: map[string]interface{}{"standuptime": channel.StandupTime},
+		})
+		if err != nil {
+			log.Error(err)
+		}
 		return showNoStandupTime
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ShowStandupTime", 0, map[string]interface{}{"standuptime": channel.StandupTime}}
-	showStandupTime := translation.Translate(payload)
+	showStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "showStandupTime",
+			Other: "",
+		},
+		TemplateData: map[string]interface{}{"standuptime": channel.StandupTime},
+	})
+	if err != nil {
+		log.Error(err)
+	}
 	return showStandupTime
 }

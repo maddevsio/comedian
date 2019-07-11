@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/maddevsio/comedian/model"
-	"github.com/maddevsio/comedian/translation"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules/en"
@@ -91,8 +91,15 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 		return FinalReport, err
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ReportHeader", 0, map[string]interface{}{}}
-	reportHeader := translation.Translate(payload)
+	reportHeader, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "reportHeader",
+			Other: "",
+		},
+	})
+	if err != nil {
+		log.Error(err)
+	}
 
 	for _, channel := range channels {
 		if channel.TeamID != bot.properties.TeamID {
@@ -166,12 +173,28 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 
 			//attachment text will be depend on worklogsPoints,commitsPoints and standupPoints
 			if points >= 3 {
-				payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "NotTagStanduper", 0, map[string]interface{}{"user": UserInfo.RealName, "channel": channel.ChannelName}}
-				notTagStanduper := translation.Translate(payload)
+				notTagStanduper, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "notTagStanduper",
+						Other: "",
+					},
+					TemplateData: map[string]interface{}{"user": UserInfo.RealName, "channel": channel.ChannelName},
+				})
+				if err != nil {
+					log.Error(err)
+				}
 				attachment.Text = notTagStanduper
 			} else {
-				payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "TagStanduper", 0, map[string]interface{}{"user": member.UserID, "channel": channel.ChannelName}}
-				tagStanduper := translation.Translate(payload)
+				tagStanduper, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "tagStanduper",
+						Other: "",
+					},
+					TemplateData: map[string]interface{}{"user": member.UserID, "channel": channel.ChannelName},
+				})
+				if err != nil {
+					log.Error(err)
+				}
 				attachment.Text = tagStanduper
 			}
 
@@ -242,8 +265,15 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		return FinalReport, err
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "ReportHeaderWeekly", 0, map[string]interface{}{}}
-	reportHeaderWeekly := translation.Translate(payload)
+	reportHeaderWeekly, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "reportHeaderWeekly",
+			Other: "",
+		},
+	})
+	if err != nil {
+		log.Error(err)
+	}
 
 	for _, channel := range channels {
 		var attachmentsPull []AttachmentItem
@@ -310,11 +340,29 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 			points := worklogsPoints + commitsPoints
 
 			if points >= 2 {
-				payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "NotTagStanduper", 0, map[string]interface{}{"user": UserInfo.RealName, "channel": channel.ChannelName}}
-				attachment.Text = translation.Translate(payload)
+				notTagStanduper, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "notTagStanduper",
+						Other: "",
+					},
+					TemplateData: map[string]interface{}{"user": UserInfo.RealName, "channel": channel.ChannelName},
+				})
+				if err != nil {
+					log.Error(err)
+				}
+				attachment.Text = notTagStanduper
 			} else {
-				payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "TagStanduper", 0, map[string]interface{}{"user": member.UserID, "channel": channel.ChannelName}}
-				attachment.Text = translation.Translate(payload)
+				tagStanduper, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "tagStanduper",
+						Other: "",
+					},
+					TemplateData: map[string]interface{}{"user": member.UserID, "channel": channel.ChannelName},
+				})
+				if err != nil {
+					log.Error(err)
+				}
+				attachment.Text = tagStanduper
 			}
 
 			switch points {
@@ -393,8 +441,17 @@ func (bot *Bot) processWorklogs(totalWorklogs, projectWorklogs int) (string, int
 	worklogsTime := SecondsToHuman(totalWorklogs)
 
 	if totalWorklogs != projectWorklogs {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WorklogsTimeTranslation", 0, map[string]interface{}{"projectWorklogs": SecondsToHuman(projectWorklogs), "totalWorklogs": SecondsToHuman(totalWorklogs)}}
-		worklogsTime = translation.Translate(payload)
+		var err error
+		worklogsTime, err = bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "worklogsTime",
+				Other: "",
+			},
+			TemplateData: map[string]interface{}{"projectWorklogs": SecondsToHuman(projectWorklogs), "totalWorklogs": SecondsToHuman(totalWorklogs)},
+		})
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	if int(time.Now().Weekday()) == 0 || int(time.Now().Weekday()) == 1 {
@@ -404,8 +461,17 @@ func (bot *Bot) processWorklogs(totalWorklogs, projectWorklogs int) (string, int
 		}
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WorklogsTranslation", 0, map[string]interface{}{"worklogsTime": worklogsTime, "worklogsEmoji": worklogsEmoji}}
-	return translation.Translate(payload), points
+	worklogsTranslation, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "worklogsTranslation",
+			Other: "",
+		},
+		TemplateData: map[string]interface{}{"worklogsTime": worklogsTime, "worklogsEmoji": worklogsEmoji},
+	})
+	if err != nil {
+		log.Error(err)
+	}
+	return worklogsTranslation, points
 }
 
 func (bot *Bot) processWeeklyWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
@@ -426,12 +492,31 @@ func (bot *Bot) processWeeklyWorklogs(totalWorklogs, projectWorklogs int) (strin
 	worklogsTime := SecondsToHuman(totalWorklogs)
 
 	if totalWorklogs != projectWorklogs {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WorklogsTimeTranslation", 0, map[string]interface{}{"projectWorklogs": SecondsToHuman(projectWorklogs), "totalWorklogs": SecondsToHuman(totalWorklogs)}}
-		worklogsTime = translation.Translate(payload)
+		var err error
+		worklogsTime, err = bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "worklogsTime",
+				Other: "",
+			},
+			TemplateData: map[string]interface{}{"projectWorklogs": SecondsToHuman(projectWorklogs), "totalWorklogs": SecondsToHuman(totalWorklogs)},
+		})
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "WorklogsTranslation", 0, map[string]interface{}{"worklogsTime": worklogsTime, "worklogsEmoji": worklogsEmoji}}
-	return translation.Translate(payload), points
+	worklogsTranslation, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "worklogsTranslation",
+			Other: "",
+		},
+		TemplateData: map[string]interface{}{"worklogsTime": worklogsTime, "worklogsEmoji": worklogsEmoji},
+	})
+	if err != nil {
+		log.Error(err)
+	}
+
+	return worklogsTranslation, points
 }
 
 func (bot *Bot) processCommits(totalCommits, projectCommits int) (string, int) {
@@ -454,8 +539,17 @@ func (bot *Bot) processCommits(totalCommits, projectCommits int) (string, int) {
 		}
 	}
 
-	payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "CommitsTranslation", 0, map[string]interface{}{"projectCommits": projectCommits, "commitsEmoji": commitsEmoji}}
-	return translation.Translate(payload), points
+	commitsTranslation, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "commitsTranslation",
+			Other: "",
+		},
+		TemplateData: map[string]interface{}{"projectCommits": projectCommits, "commitsEmoji": commitsEmoji},
+	})
+	if err != nil {
+		log.Error(err)
+	}
+	return commitsTranslation, points
 }
 
 func (bot *Bot) processStandup(member model.Standuper) (string, int) {
@@ -475,11 +569,27 @@ func (bot *Bot) processStandup(member model.Standuper) (string, int) {
 		if member.RoleInChannel == "pm" {
 			return "", 1
 		}
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "NoStandup", 0, map[string]interface{}{}}
-		text = translation.Translate(payload)
+		noStandup, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "noStandup",
+				Other: "",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		text = noStandup
 	} else {
-		payload := translation.Payload{bot.properties.TeamName, bot.bundle, bot.properties.Language, "HasStandup", 0, map[string]interface{}{}}
-		text = translation.Translate(payload)
+		hasStandup, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "hasStandup",
+				Other: "",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		text = hasStandup
 		points++
 	}
 
