@@ -247,73 +247,6 @@ paths:
           description: "Unauthorized"
         500:
           description: "Internal Error"
-  /v1/users/{id}:
-    get:
-      security:
-        - JWT: []
-      tags:
-      - "users"
-      summary: "Returns user by its ID"
-      description: "Returns user object"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "id of user to return"
-        required: true
-        type: "integer"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/User"
-        400:
-          description: "Invalid data format"
-        401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
-    patch:
-      security:
-        - JWT: []
-      tags:
-      - "users"
-      summary: "Updates a user in the database with form data"
-      description: ""
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "id of user to return"
-        required: true
-        type: "integer"
-      - in: body
-        name: body
-        required: true
-        description: User params that needs to be updated. Currently only role can be modified
-        schema:
-            $ref: '#/definitions/User'
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
-        400:
-          description: "Invalid data format"
-        401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
   /v1/channels:
     get:
       security:
@@ -392,37 +325,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Channel"
-        400:
-          description: "Invalid data format"
-        401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
-  /v1/channels/{id}/standupers:
-    get:
-      security:
-        - JWT: []
-      tags:
-      - "channels"
-      summary: "Find standupers by channel's id"
-      description: "Returns a list of channels"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "id of a channel"
-        required: true
-        type: "integer"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Standuper"
         400:
           description: "Invalid data format"
         401:
@@ -658,16 +560,6 @@ paths:
           description: "No access to resource"
         500:
           description: "Internal Error"
-  /v1/logout:
-    post:
-      security:
-        - JWT: []
-      summary: "logs user out"
-      responses:
-        401:
-          description: "Unauthorzed"
-        201:
-          description: "successful operation"
 definitions:
   Login: 
     type: "object"

@@ -58,14 +58,14 @@ type teamMember struct {
 
 var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>.*)`)
 
-// New creates API instance
+//New creates API instance
 func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) ComedianAPI {
 
 	echo := echo.New()
 	echo.Use(middleware.CORS())
 	echo.Pre(middleware.RemoveTrailingSlash())
 	echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "method:${method}, uri:${uri}, status:${status}, error:${error}\n",
+		Format: "method:${method}, uri:${uri}, status:${status}\n",
 	}))
 
 	api := ComedianAPI{
@@ -94,14 +94,11 @@ func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) 
 	r.DELETE("/standups/:id", api.deleteStandup)
 
 	r.GET("/users", api.listUsers)
-	r.GET("/users/:id", api.getUser)
-	r.PATCH("/users/:id", api.updateUser)
 
 	r.GET("/channels", api.listChannels)
 	r.GET("/channels/:id", api.getChannel)
 	r.PATCH("/channels/:id", api.updateChannel)
 	r.DELETE("/channels/:id", api.deleteChannel)
-	r.GET("/channels/:id/standupers", api.getStandupersOfChannel)
 
 	r.GET("/standupers", api.listStandupers)
 	r.GET("/standupers/:id", api.getStanduper)
@@ -113,7 +110,6 @@ func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) 
 	r.PATCH("/bots/:id", api.updateBot)
 	r.DELETE("/bots/:id", api.deleteBot)
 
-	r.POST("/logout", api.logout)
 	return api
 }
 
@@ -160,8 +156,6 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 		if err != nil {
 			log.WithFields(log.Fields{"event": event, "error": err}).Error("HandleCallbackEvent failed")
 		}
-
-		return c.String(http.StatusOK, "Success")
 	}
 
 	return c.String(http.StatusOK, "Success")

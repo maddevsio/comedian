@@ -412,74 +412,6 @@ func (api *ComedianAPI) listUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-func (api *ComedianAPI) getUser(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, missingTokenErr)
-	}
-	u := c.Get("user").(*jwt.Token)
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
-	expire := claims["expire"].(float64)
-	if time.Now().Unix() > int64(expire) {
-		return c.JSON(http.StatusForbidden, "Token expired")
-	}
-
-	user, err := api.db.GetUser(id)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, err.Error())
-	}
-
-	if user.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, accessDeniedErr)
-	}
-
-	return c.JSON(http.StatusOK, user)
-}
-
-func (api *ComedianAPI) updateUser(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, missingTokenErr)
-	}
-	u := c.Get("user").(*jwt.Token)
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
-	expire := claims["expire"].(float64)
-	if time.Now().Unix() > int64(expire) {
-		return c.JSON(http.StatusForbidden, "Token expired")
-	}
-
-	user, err := api.db.GetUser(id)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, err.Error())
-	}
-
-	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if user.TeamID != teamID {
-		return c.JSON(http.StatusForbidden, accessDeniedErr)
-	}
-
-	res, err := api.db.UpdateUser(user)
-	if err != nil {
-		log.WithFields(log.Fields{"user": user, "error": err}).Error("UpdateUser failed")
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-
-	return c.JSON(http.StatusOK, res)
-}
-
 func (api *ComedianAPI) listChannels(c echo.Context) error {
 
 	if c.Get("user") == nil {
@@ -538,40 +470,6 @@ func (api *ComedianAPI) getChannel(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, channel)
-}
-
-func (api *ComedianAPI) getStandupersOfChannel(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, missingTokenErr)
-	}
-	u := c.Get("user").(*jwt.Token)
-	claims := u.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
-	expire := claims["expire"].(float64)
-	if time.Now().Unix() > int64(expire) {
-		return c.JSON(http.StatusForbidden, "Token expired")
-	}
-	channel, err := api.db.GetChannel(id)
-	if err != nil {
-		return c.JSON(404, "Channel not found")
-	}
-	standupers, err := api.db.ListChannelStandupers(channel.ChannelID)
-	if err != nil {
-		log.Errorf("Handler of: GET /channels/:id/standupers. ListStandupersByTeamID failed: %v", err)
-		return c.JSON(500, "internal server error")
-	}
-	var result []model.Standuper
-	for _, standuper := range standupers {
-		if standuper.TeamID == teamID {
-			result = append(result, standuper)
-		}
-	}
-	return c.JSON(200, result)
 }
 
 func (api *ComedianAPI) updateChannel(c echo.Context) error {
@@ -781,8 +679,4 @@ func (api *ComedianAPI) deleteStanduper(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusNoContent, id)
-}
-
-func (api *ComedianAPI) logout(c echo.Context) error {
-	return c.JSON(http.StatusCreated, "logged out")
 }
