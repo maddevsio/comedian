@@ -4,17 +4,17 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/stretchr/testify/assert"
 	"github.com/maddevsio/comedian/botuser"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/text/language"
 )
 
 func TestNew(t *testing.T) {
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle := i18n.NewBundle(language.English)
 
 	config, err := config.Get()
 	assert.NoError(t, err)
@@ -27,7 +27,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestBots(t *testing.T) {
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle := i18n.NewBundle(language.English)
 
 	config, err := config.Get()
 	assert.NoError(t, err)
@@ -60,7 +60,7 @@ func TestBots(t *testing.T) {
 }
 
 func TestHandleEvent(t *testing.T) {
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle := i18n.NewBundle(language.English)
 
 	config, err := config.Get()
 	assert.NoError(t, err)

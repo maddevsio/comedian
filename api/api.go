@@ -15,12 +15,10 @@ import (
 	"github.com/maddevsio/comedian/botuser"
 	"github.com/maddevsio/comedian/comedianbot"
 	"github.com/maddevsio/comedian/config"
-	"github.com/maddevsio/comedian/crypto"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
-	"github.com/sethvargo/go-password/password"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,13 +44,14 @@ type swagger struct {
 	Definitions map[string]interface{}
 }
 
+//Event represents slack challenge event
 type Event struct {
 	Token     string `json:"token"`
 	Challenge string `json:"challenge"`
 	Type      string `json:"type"`
 }
 
-type TeamMember struct {
+type teamMember struct {
 	standuper    model.Standuper
 	teamWorklogs int
 }
@@ -112,7 +111,6 @@ func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) 
 	r.GET("/bots", api.listBots)
 	r.GET("/bots/:id", api.getBot)
 	r.PATCH("/bots/:id", api.updateBot)
-	r.POST("/bots/:id/update-password", api.changePassword)
 	r.DELETE("/bots/:id", api.deleteBot)
 
 	r.POST("/logout", api.logout)
@@ -335,7 +333,7 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	var total int
 
 	message += fmt.Sprintf("Worklogs of %s, from %s to %s: \n", channel, dateFrom, dateTo)
-	members := []TeamMember{}
+	members := []teamMember{}
 
 	for _, standuper := range standupers {
 		userInProject := fmt.Sprintf("%v/%v", standuper.UserID, standuper.ChannelName)
@@ -344,7 +342,7 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 			log.WithFields(log.Fields(map[string]interface{}{"standuper": standuper, "error": err})).Error("failed to get data on user in project")
 			continue
 		}
-		members = append(members, TeamMember{
+		members = append(members, teamMember{
 			standuper:    standuper,
 			teamWorklogs: dataOnUserInProject.Worklogs,
 		})
@@ -378,30 +376,15 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	pass, err := password.Generate(26, 10, 0, false, false)
-	if err != nil {
-		return err
-	}
-
-	encriptedPass, err := crypto.Generate(pass)
-	if err != nil {
-		return err
-	}
-
 	botSettings, err := api.db.GetBotSettingsByTeamID(resp.TeamID)
 	if err != nil {
-		cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, encriptedPass, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
+		cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
 		if err != nil {
 			log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
 			return err
 		}
 
 		bot := botuser.New(api.config, api.comedian.Bundle, cp, api.comedian.DB)
-		message := fmt.Sprintf("Thank you for adding me to your workspace! Login at %v with: \n username: `%v`\n password: `%v`", api.config.UIurl, resp.TeamName, pass)
-		err = bot.SendUserMessage(resp.UserID, message)
-		if err != nil {
-			log.Error("SendUserMessage failed in Auth: ", err)
-		}
 		err = bot.SendUserMessage(resp.UserID, "If you never used Comedian before, check Comedian short intro video for more information! https://youtu.be/huvmtJCCtOE")
 		if err != nil {
 			log.Error("SendUserMessage failed in Auth: ", err)
@@ -413,7 +396,6 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	botSettings.AccessToken = resp.Bot.BotAccessToken
 	botSettings.UserID = resp.Bot.BotUserID
-	botSettings.Password = encriptedPass
 
 	settings, err := api.db.UpdateBotSettings(botSettings)
 	if err != nil {
@@ -427,12 +409,6 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 	bot.SetProperties(settings)
-
-	message := fmt.Sprintf("Settings updated! New Login at %v with: \n username: `%v`\n password: `%v`", api.config.UIurl, resp.TeamName, pass)
-	err = bot.SendUserMessage(resp.UserID, message)
-	if err != nil {
-		log.Error("SendUserMessage failed in Auth: ", err)
-	}
 	err = bot.SendUserMessage(resp.UserID, "If you never used Comedian before, check Comedian short intro video for more information! https://youtu.be/huvmtJCCtOE")
 	if err != nil {
 		log.Error("SendUserMessage failed in Auth: ", err)
@@ -441,8 +417,8 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 }
 
-func sortTeamMembers(entries []TeamMember) []TeamMember {
-	var members []TeamMember
+func sortTeamMembers(entries []teamMember) []teamMember {
+	var members []teamMember
 
 	for i := 0; i < len(entries); i++ {
 		if !sweep(entries, i) {
@@ -457,7 +433,7 @@ func sortTeamMembers(entries []TeamMember) []TeamMember {
 	return members
 }
 
-func sweep(entries []TeamMember, prevPasses int) bool {
+func sweep(entries []teamMember, prevPasses int) bool {
 	var N = len(entries)
 	var didSwap = false
 	var firstIndex = 0

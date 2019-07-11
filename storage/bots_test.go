@@ -12,11 +12,11 @@ import (
 func TestCreateBotSettings(t *testing.T) {
 	db := setupDB()
 
-	bot, err := db.CreateBotSettings("", "", "", "", "")
+	bot, err := db.CreateBotSettings("", "", "", "")
 	assert.Error(t, err)
 	assert.Equal(t, int64(0), bot.ID)
 
-	bot, err = db.CreateBotSettings("token", "pass", "", "teamID", "foo")
+	bot, err = db.CreateBotSettings("token", "userID", "teamID", "foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 
@@ -29,7 +29,7 @@ func TestBotSettings(t *testing.T) {
 	_, err := db.GetAllBotSettings()
 	assert.NoError(t, err)
 
-	bot, err := db.CreateBotSettings("token", "pass", "", "teamID", "foo")
+	bot, err := db.CreateBotSettings("token", "", "teamID", "foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 
@@ -53,7 +53,7 @@ func TestBotSettings(t *testing.T) {
 func TestUpdateAndDeleteBotSettings(t *testing.T) {
 	db := setupDB()
 
-	bot, err := db.CreateBotSettings("token", "pass", "", "teamID", "foo")
+	bot, err := db.CreateBotSettings("token", "", "teamID", "foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 	assert.Equal(t, "en_US", bot.Language)

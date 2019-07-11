@@ -62,6 +62,9 @@ paths:
           schema:
             type: object
             properties:
+              user: 
+                type: object
+                $ref: "#/definitions/User"
               bot:
                 type: object
                 $ref: "#/definitions/Bot"
@@ -223,41 +226,6 @@ paths:
           description: "No access to resource"
         500:
           description: "Internal Error"   
-  /v1/bots/{id}/update-password:
-    post:
-      security:
-        - JWT: []
-      summary: "updates bot password"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "Bot id to change password for"
-        required: true
-        type: "integer"
-        format: "int"
-      - name: "old_password"
-        in: "query"
-        description: "current password"
-        required: true
-        type: "string"
-      - name: "new_password"
-        in: "query"
-        description: "desired password"
-        required: true
-        type: "string"
-      responses:
-        400:
-          description: "Invalid data"
-        403:
-          description: "Access Denied"
-        500:
-          description: "Internal Error"
-        201:
-          description: "successful operation"
   /v1/users:
     get:
       security:
@@ -703,10 +671,12 @@ paths:
 definitions:
   Login: 
     type: "object"
+    required:
+      - code
     properties:
-      teamname:
+      code:
         type: "string"
-      password:
+      redirect_uri:
         type: "string"
   ServiceMessage: 
     type: "object"

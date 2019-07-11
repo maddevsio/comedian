@@ -70,7 +70,6 @@ type BotSettings struct {
 	AccessToken         string `db:"bot_access_token" json:"bot_access_token" `
 	TeamID              string `db:"team_id" json:"team_id" `
 	TeamName            string `db:"team_name" json:"team_name" `
-	Password            string `db:"password" json:"password" `
 	ReportingChannel    string `db:"reporting_channel" json:"reporting_channel"`
 	ReportingTime       string `db:"reporting_time" json:"reporting_time"`
 	IndividualReportsOn bool   `db:"individual_reports_on" json:"individual_reports_on"`
@@ -147,11 +146,6 @@ func (bs BotSettings) Validate() error {
 
 	if bs.AccessToken == "" {
 		err := errors.New("accessToken cannot be empty")
-		return err
-	}
-
-	if bs.Password == "" {
-		err := errors.New("password cannot be empty")
 		return err
 	}
 
