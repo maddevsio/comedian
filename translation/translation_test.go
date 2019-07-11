@@ -11,7 +11,7 @@ import (
 )
 
 func TestTranslate(t *testing.T) {
-	bundle := &i18n.Bundle{DefaultLanguage: language.English}
+	bundle := i18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 
 	_, err := bundle.LoadMessageFile("../active.en.toml")

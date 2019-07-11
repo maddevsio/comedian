@@ -9,9 +9,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/go-validator/validator"
 	"github.com/labstack/echo"
-	"github.com/maddevsio/comedian/crypto"
 	"github.com/maddevsio/comedian/model"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
@@ -201,71 +199,6 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 	settings.SetProperties(res)
 
 	return c.JSON(http.StatusOK, res)
-}
-
-func (api *ComedianAPI) changePassword(c echo.Context) error {
-
-	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, missingTokenErr)
-	}
-	user := c.Get("user").(*jwt.Token)
-
-	claims := user.Claims.(jwt.MapClaims)
-	botID := claims["bot_id"].(float64)
-	expire := claims["expire"].(float64)
-	if time.Now().Unix() > int64(expire) {
-		return c.JSON(http.StatusForbidden, "Token expired")
-	}
-
-	if int64(botID) != id {
-		return c.JSON(http.StatusForbidden, accessDeniedErr)
-	}
-
-	settings, err := api.db.GetBotSettings(id)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	data := ChangePasswordData{}
-
-	if err := c.Bind(&data); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err = validator.Validate(data); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	err = crypto.Compare(settings.Password, data.OldPassword)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, "current password does not match")
-	}
-
-	if data.OldPassword == data.NewPassword {
-		return c.JSON(http.StatusBadRequest, "new password should be different from old password")
-	}
-
-	settings.Password = data.NewPassword
-
-	res, err := api.db.UpdateBotPassword(settings)
-	if err != nil {
-		log.WithFields(log.Fields{"settings": settings, "error": err}).Error("UpdateBotPassword failed")
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-
-	bot, err := api.comedian.SelectBot(settings.TeamName)
-	if err != nil {
-		log.WithFields(log.Fields{"bot": bot, "error": err}).Error("Could not select bot")
-		return c.JSON(http.StatusCreated, res)
-	}
-	bot.SetProperties(res)
-
-	return c.JSON(http.StatusCreated, res)
 }
 
 func (api *ComedianAPI) deleteBot(c echo.Context) error {

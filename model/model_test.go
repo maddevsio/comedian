@@ -43,21 +43,19 @@ func TestBotSettings(t *testing.T) {
 		reminderTime       int64
 		reminderRepeatsMax int
 		reportingTime      string
-		password           string
 		language           string
 		errorMessage       string
 	}{
-		{"", "", "", 1, 1, "01:00", "123", "en_US", "team ID cannot be empty"},
-		{"tID", "", "", 1, 1, "01:00", "123", "en_US", "team name cannot be empty"},
-		{"tID", "tName", "", 1, 1, "01:00", "123", "en_US", "accessToken cannot be empty"},
-		{"tID", "tName", "accToken", 1, 1, "01:00", "123", "en_US", ""},
-		{"tID", "tName", "accToken", 0, 1, "01:00", "123", "en_US", "reminder time cannot be zero or negative"},
-		{"tID", "tName", "accToken", -1, 1, "01:00", "123", "en_US", "reminder time cannot be zero or negative"},
-		{"tID", "tName", "accToken", 1, 0, "01:00", "123", "en_US", "reminder repeats max cannot be zero or negative"},
-		{"tID", "tName", "accToken", 1, -1, "01:00", "123", "en_US", "reminder repeats max cannot be zero or negative"},
-		{"tID", "tName", "accToken", 1, 1, "", "123", "en_US", "reporting time cannot be empty"},
-		{"tID", "tName", "accToken", 1, 1, "", "", "en_US", "password cannot be empty"},
-		{"tID", "tName", "accToken", 1, 1, "01:00", "123", "", "language cannot be empty"},
+		{"", "", "", 1, 1, "01:00", "en_US", "team ID cannot be empty"},
+		{"tID", "", "", 1, 1, "01:00", "en_US", "team name cannot be empty"},
+		{"tID", "tName", "", 1, 1, "01:00", "en_US", "accessToken cannot be empty"},
+		{"tID", "tName", "accToken", 1, 1, "01:00", "en_US", ""},
+		{"tID", "tName", "accToken", 0, 1, "01:00", "en_US", "reminder time cannot be zero or negative"},
+		{"tID", "tName", "accToken", -1, 1, "01:00", "en_US", "reminder time cannot be zero or negative"},
+		{"tID", "tName", "accToken", 1, 0, "01:00", "en_US", "reminder repeats max cannot be zero or negative"},
+		{"tID", "tName", "accToken", 1, -1, "01:00", "en_US", "reminder repeats max cannot be zero or negative"},
+		{"tID", "tName", "accToken", 1, 1, "", "en_US", "reporting time cannot be empty"},
+		{"tID", "tName", "accToken", 1, 1, "01:00", "", "language cannot be empty"},
 	}
 	for _, tt := range testCases {
 		bs := BotSettings{
@@ -67,7 +65,6 @@ func TestBotSettings(t *testing.T) {
 			ReminderTime:       tt.reminderTime,
 			ReminderRepeatsMax: tt.reminderRepeatsMax,
 			ReportingTime:      tt.reportingTime,
-			Password:           tt.password,
 			Language:           tt.language,
 		}
 		err := bs.Validate()
