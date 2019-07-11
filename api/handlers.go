@@ -18,10 +18,18 @@ var (
 	accessDeniedErr = "access denied"
 )
 
-//LoginData structure is used for parsing login data that UI sends to back end
-type LoginData struct {
-	TeamName string `json:"teamname"`
-	Password string `json:"password"`
+//LoginPayload represents loginPayload from UI
+type LoginPayload struct {
+	Code        string `json:"code"`
+	RedirectURI string `json:"redirect_uri"`
+}
+
+//Validate LoginPayload
+func (lp *LoginPayload) Validate() error {
+	if strings.TrimSpace(lp.Code) == "" {
+		return fmt.Errorf("code is required")
+	}
+	return nil
 }
 
 //ChangePasswordData is used to change password
@@ -35,44 +43,60 @@ func (api *ComedianAPI) healthcheck(c echo.Context) error {
 }
 
 func (api *ComedianAPI) login(c echo.Context) error {
-	var data LoginData
-
-	if err := c.Bind(&data); err != nil {
-		return c.JSON(http.StatusBadRequest, "incorrect fields or data format")
+	ld := new(LoginPayload)
+	if err := c.Bind(ld); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
 	}
 
-	settings, err := api.db.GetBotSettingsByTeamName(data.TeamName)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, "wrong username or password")
+	if ld.Validate() != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": ld.Validate().Error()})
 	}
 
-	err = crypto.Compare(settings.Password, data.Password)
+	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, ld.Code, ld.RedirectURI, false)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, "wrong username or password")
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+	}
+
+	userIdentity := &slack.UserIdentityResponse{}
+
+	userIdentityResponse, err := http.Get(fmt.Sprintf("https://slack.com/api/users.identity?token=%s", resp.AccessToken))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+	}
+
+	err = json.NewDecoder(userIdentityResponse.Body).Decode(userIdentity)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
 	}
 
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
 
+	user, err := api.db.SelectUser(userIdentity.User.ID)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": "No user with such ID"})
+	}
+
+	bot, err := api.db.GetBotSettingsByTeamID(user.TeamID)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": "No comedian bot found"})
+	}
 	// Set claims
 	claims := token.Claims.(jwt.MapClaims)
-	claims["team_id"] = settings.TeamID
-	claims["team_name"] = settings.TeamName
-	claims["bot_id"] = settings.ID
-	claims["expire"] = time.Now().Add(time.Minute * 60).Unix()
+	claims["user_id"] = user.UserID
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(api.config.SlackClientSecret))
+	tokenString, err := token.SignedString([]byte(api.config.SlackClientSecret))
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("SignedString failed")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"bot":   settings,
-		"token": t,
+		"token": tokenString,
+		"user":  user,
+		"bot":   bot,
 	})
-} 
+}
 
 func (api *ComedianAPI) listBots(c echo.Context) error {
 	if c.Get("user") == nil {

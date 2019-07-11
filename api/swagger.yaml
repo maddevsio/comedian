@@ -62,6 +62,9 @@ paths:
           schema:
             type: object
             properties:
+              user: 
+                type: object
+                $ref: "#/definitions/User"
               bot:
                 type: object
                 $ref: "#/definitions/Bot"
@@ -703,10 +706,12 @@ paths:
 definitions:
   Login: 
     type: "object"
+    required:
+      - code
     properties:
-      teamname:
+      code:
         type: "string"
-      password:
+      redirect_uri:
         type: "string"
   ServiceMessage: 
     type: "object"
