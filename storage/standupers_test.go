@@ -11,7 +11,6 @@ import (
 )
 
 func TestCreateStanduper(t *testing.T) {
-	db := setupDB()
 
 	_, err := db.CreateStanduper(model.Standuper{})
 	assert.Error(t, err)
@@ -28,7 +27,6 @@ func TestCreateStanduper(t *testing.T) {
 }
 
 func TestGetStandupers(t *testing.T) {
-	db := setupDB()
 
 	s, err := db.CreateStanduper(model.Standuper{
 		TeamID:    "foo",
@@ -62,7 +60,6 @@ func TestGetStandupers(t *testing.T) {
 }
 
 func TestUpdateStanduper(t *testing.T) {
-	db := setupDB()
 
 	s, err := db.CreateStanduper(model.Standuper{
 		TeamID:    "foo",

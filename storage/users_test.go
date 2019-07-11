@@ -11,7 +11,6 @@ import (
 )
 
 func TestCreateUser(t *testing.T) {
-	db := setupDB()
 
 	_, err := db.CreateUser(model.User{})
 	assert.Error(t, err)
@@ -28,7 +27,6 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestGetUser(t *testing.T) {
-	db := setupDB()
 
 	u, err := db.CreateUser(model.User{
 		TeamID:   "foo",
@@ -56,7 +54,6 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	db := setupDB()
 
 	u, err := db.CreateUser(model.User{
 		TeamID:   "foo",

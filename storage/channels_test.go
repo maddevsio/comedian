@@ -10,8 +10,6 @@ import (
 )
 
 func TestCreateChannel(t *testing.T) {
-	db := setupDB()
-
 	_, err := db.CreateChannel(model.Channel{})
 	assert.Error(t, err)
 
@@ -28,8 +26,6 @@ func TestCreateChannel(t *testing.T) {
 }
 
 func TestGetChannels(t *testing.T) {
-	db := setupDB()
-
 	ch, err := db.CreateChannel(model.Channel{
 		TeamID:      "foo",
 		ChannelName: "bar",
@@ -57,8 +53,6 @@ func TestGetChannels(t *testing.T) {
 }
 
 func TestUpdateChannels(t *testing.T) {
-	db := setupDB()
-
 	ch, err := db.CreateChannel(model.Channel{
 		TeamID:      "foo",
 		ChannelName: "bar",

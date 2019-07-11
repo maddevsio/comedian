@@ -20,8 +20,6 @@ var (
 	typeMessage       = ""
 	typeEditMessage   = "message_changed"
 	typeDeleteMessage = "message_deleted"
-	//Dry is used to implement Dry run for bot methods
-	Dry bool
 )
 
 var problemKeys = []string{"problem", "difficult", "issue", "block", "проблем", "мешает"}
@@ -93,9 +91,6 @@ func (bot *Bot) Start() {
 				err = bot.remindAboutWorklogs()
 				if err != nil {
 					log.Error("remindAboutWorklogs failed: ", err)
-				}
-				if Dry {
-					break
 				}
 			case <-bot.QuitChan:
 				bot.wg.Done()
@@ -455,18 +450,12 @@ func (bot *Bot) analizeStandup(message string) string {
 
 // SendMessage posts a message in a specified channel visible for everyone
 func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachment) error {
-	if Dry {
-		return nil
-	}
 	_, _, err := bot.slack.PostMessage(channel, message, slack.PostMessageParameters{Attachments: attachments})
 	return err
 }
 
 // SendEphemeralMessage posts a message in a specified channel which is visible only for selected user
 func (bot *Bot) SendEphemeralMessage(channel, user, message string) error {
-	if Dry {
-		return nil
-	}
 	_, err := bot.slack.PostEphemeral(
 		channel,
 		user,
@@ -477,9 +466,6 @@ func (bot *Bot) SendEphemeralMessage(channel, user, message string) error {
 
 // SendUserMessage Direct Message specific user
 func (bot *Bot) SendUserMessage(userID, message string) error {
-	if Dry {
-		return nil
-	}
 	_, _, channelID, err := bot.slack.OpenIMChannel(userID)
 	if err != nil {
 		return err

@@ -10,8 +10,6 @@ import (
 )
 
 func TestCreateBotSettings(t *testing.T) {
-	db := setupDB()
-
 	bot, err := db.CreateBotSettings("", "", "", "")
 	assert.Error(t, err)
 	assert.Equal(t, int64(0), bot.ID)
@@ -24,7 +22,6 @@ func TestCreateBotSettings(t *testing.T) {
 }
 
 func TestBotSettings(t *testing.T) {
-	db := setupDB()
 
 	_, err := db.GetAllBotSettings()
 	assert.NoError(t, err)
@@ -51,7 +48,6 @@ func TestBotSettings(t *testing.T) {
 }
 
 func TestUpdateAndDeleteBotSettings(t *testing.T) {
-	db := setupDB()
 
 	bot, err := db.CreateBotSettings("token", "", "teamID", "foo")
 	assert.NoError(t, err)
