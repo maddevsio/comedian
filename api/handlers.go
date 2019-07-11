@@ -1,8 +1,11 @@
 package api
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -10,6 +13,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/maddevsio/comedian/crypto"
 	"github.com/maddevsio/comedian/model"
+	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
 )
 

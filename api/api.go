@@ -46,13 +46,14 @@ type swagger struct {
 	Definitions map[string]interface{}
 }
 
+//Event represents slack challenge event
 type Event struct {
 	Token     string `json:"token"`
 	Challenge string `json:"challenge"`
 	Type      string `json:"type"`
 }
 
-type TeamMember struct {
+type teamMember struct {
 	standuper    model.Standuper
 	teamWorklogs int
 }
@@ -335,7 +336,7 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	var total int
 
 	message += fmt.Sprintf("Worklogs of %s, from %s to %s: \n", channel, dateFrom, dateTo)
-	members := []TeamMember{}
+	members := []teamMember{}
 
 	for _, standuper := range standupers {
 		userInProject := fmt.Sprintf("%v/%v", standuper.UserID, standuper.ChannelName)
@@ -344,7 +345,7 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 			log.WithFields(log.Fields(map[string]interface{}{"standuper": standuper, "error": err})).Error("failed to get data on user in project")
 			continue
 		}
-		members = append(members, TeamMember{
+		members = append(members, teamMember{
 			standuper:    standuper,
 			teamWorklogs: dataOnUserInProject.Worklogs,
 		})
@@ -441,8 +442,8 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 }
 
-func sortTeamMembers(entries []TeamMember) []TeamMember {
-	var members []TeamMember
+func sortTeamMembers(entries []teamMember) []teamMember {
+	var members []teamMember
 
 	for i := 0; i < len(entries); i++ {
 		if !sweep(entries, i) {
@@ -457,7 +458,7 @@ func sortTeamMembers(entries []TeamMember) []TeamMember {
 	return members
 }
 
-func sweep(entries []TeamMember, prevPasses int) bool {
+func sweep(entries []teamMember, prevPasses int) bool {
 	var N = len(entries)
 	var didSwap = false
 	var firstIndex = 0
