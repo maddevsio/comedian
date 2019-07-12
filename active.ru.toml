@@ -1,0 +1,82 @@
+[addStandupTime]
+hash = "sha1-df341ea8a1df59b68859296dbebfa4c8ac48e9d6"
+other = "Крайний срок сдачи стендапов обновлен на {{.Deadline}}"
+
+[couldNotShowDeadline]
+hash = "sha1-5dbe21767924ce5a14ec8c5115e7aa32d852a06f"
+other = "Не удалось показать срок сдачи"
+
+[createStanduperFailed]
+hash = "sha1-0c2c7f510c062191a09701b7d62a1f7ce754054b"
+other = "Не смог добавить вас в стендаперы"
+
+[deadlineNotSet]
+hash = "sha1-96363e9a8f2900fd8b5b07bcf0dff5efa9dacbc9"
+other = "Не смог изменить срок сдачи стендапов"
+
+[failedLeaveStandupers]
+hash = "sha1-c7374272c4a00a4dc1b1d8f6ac46c75a5e2f8129"
+other = "Не смог убрать вас из стендаперов"
+
+[leaveStanupers]
+hash = "sha1-aa349b49e8cfa8132c055dabfa72436424101503"
+other = "Спасибо за все ваши сообщения, вы можете больше не стендапить"
+
+[listNoStandupers]
+hash = "sha1-e8aef7674bf966b36bed44a562a63103a54c327e"
+other = "Никто не стендапит, сделайте /join чтобы начать"
+
+[noProblemsMention]
+hash = "sha1-fd5ada3d46270c013bc30233b94e7c12a304fbc0"
+other = "- нет ключевых слов блока 'проблемы': {{.Keywords}}"
+
+[noTodayMention]
+hash = "sha1-a414039575828892ae739899cf3303299a3094f7"
+other = "- нет ключевых слов блока 'сегодня': {{.Keywords}}"
+
+[noYesterdayMention]
+hash = "sha1-bdff0c3bc740bf4fb242f13c35b3f78894e49b0e"
+other = "- нет ключевых слов блока 'вчера': {{.Keywords}}"
+
+[notStanduper]
+hash = "sha1-1c88a37c3eb3279a3f0cf6b8cb6f0a0ee737f61b"
+other = "Вы еще не стендапите"
+
+[removeStandupTime]
+hash = "sha1-6444dd89936abbd9a8cc0a99e16394a0ca1b9dc6"
+other = "Удалил срок сдачи стендапов"
+
+[selectChannelFailed]
+hash = "sha1-c3fc0257d180ca51328a5ed70197d59b373f83da"
+other = "Не смог добавить вас в стендап команду. попробуйте передобавить меня в канал"
+
+[showNoStandupTime]
+hash = "sha1-a1e4959733ee1f6f257bc4e5b81be38cf58ecc6b"
+other = "Время сдачи стендапов не установлено"
+
+[showStandupTime]
+hash = "sha1-695a85f3f06bd7c3ad9ed511196f0ae21663fc5d"
+other = "Время сдачи стендапов установлено на {{.Deadline}}"
+
+[showStandupers]
+few = "{{.Standupers}} стендапят в группе"
+hash = "sha1-7c1b080d825ac604d70c078f362aea96a5ca37d0"
+many = "{{.Standupers}} стендапят в группе"
+one = "Только {{.Standupers}} стендапит в группе"
+other = "{{.Standupers}} стендапят в группе"
+
+[welcomeNoDedline]
+hash = "sha1-e57fbe3ef11584376832f8981aa8728f0b291e32"
+other = "Добро пожаловать в стендап команду, крайний срок сдачи стендапов еще не был установлен"
+
+[welcomeWithDedline]
+hash = "sha1-9c0fb2113888323c689d5d30bd4641f5caf57505"
+other = "Добро пожаловать в стендап команду, пожалуйста, сдавайте стендапы до {{.Deadline}}"
+
+[wrongDeadlineFormat]
+hash = "sha1-51fdd67be14fe92e3e3f5aa5e62be47c39b37b67"
+other = "Не распознал формат времени. Используйте 1pm или 13:00 как форматы"
+
+[youAlreadyStandup]
+hash = "sha1-f03147e6936098294841cbd1c82cdbe70b8e9a3d"
+other = "Вы уже стендапите"

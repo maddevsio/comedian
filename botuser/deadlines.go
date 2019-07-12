@@ -12,24 +12,45 @@ import (
 )
 
 func (bot *Bot) addDeadline(command slack.SlashCommand) string {
+
+	if command.Text == "" {
+		return bot.removeDeadline(command)
+	}
+
 	w := when.New(nil)
 	w.Add(en.All...)
 	w.Add(ru.All...)
 
+	wrongDeadlineFormat, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "wrongDeadlineFormat",
+			Other: "Could not recognize deadline time. Use 1pm or 13:00 formats",
+		},
+	})
+	if err != nil {
+		log.Error(err)
+	}
+
 	r, err := w.Parse(command.Text, time.Now())
 	if err != nil {
-		log.Error("Failed to parse params", err)
-		return "Unable to recognize time for a deadline"
+		return wrongDeadlineFormat
 	}
 	if r == nil {
-		log.Error("r is nil. No matches found", err)
-		return "Unable to recognize time for a deadline"
+		return wrongDeadlineFormat
 	}
 
 	channel, err := bot.db.SelectChannel(command.ChannelID)
 	if err != nil {
-		log.Error("failed to select channel", err)
-		return "could not recognize channel, please add me to the channel and try again"
+		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "deadlineNotSet",
+				Other: "Could not change channel deadline",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		return deadlineNotSet
 	}
 
 	channel.StandupTime = r.Text
@@ -41,35 +62,24 @@ func (bot *Bot) addDeadline(command slack.SlashCommand) string {
 
 	_, err = bot.db.UpdateChannel(channel)
 	if err != nil {
-		log.Error("failed to update channel", err)
-		return "could not set channel deadline"
-	}
-
-	standupers, err := bot.db.ListChannelStandupers(command.ChannelID)
-	if err != nil {
-		log.Errorf("BotAPI: ListChannelStandupers failed: %v\n", err)
-	}
-
-	if len(standupers) == 0 {
-		addStandupTimeNoUsers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
-				ID:    "addStandupTimeNoUsers",
-				Other: "",
+				ID:    "deadlineNotSet",
+				Other: "Could not change channel deadline",
 			},
-			TemplateData: map[string]interface{}{"timeInt": r.Time.Unix()},
 		})
 		if err != nil {
 			log.Error(err)
 		}
-		return addStandupTimeNoUsers
+		return deadlineNotSet
 	}
 
 	addStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "addStandupTime",
-			Other: "",
+			Other: "Updated standup deadline to {{.Deadline}}",
 		},
-		TemplateData: map[string]interface{}{"timeInt": r.Time.Unix()},
+		TemplateData: map[string]interface{}{"Deadline": command.Text},
 	})
 	if err != nil {
 		log.Error(err)
@@ -80,7 +90,16 @@ func (bot *Bot) addDeadline(command slack.SlashCommand) string {
 func (bot *Bot) removeDeadline(command slack.SlashCommand) string {
 	channel, err := bot.db.SelectChannel(command.ChannelID)
 	if err != nil {
-		return "could not recognize channel, please add me to the channel and try again"
+		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "deadlineNotSet",
+				Other: "Could not change channel deadline",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		return deadlineNotSet
 	}
 
 	channel.StandupTime = ""
@@ -91,28 +110,23 @@ func (bot *Bot) removeDeadline(command slack.SlashCommand) string {
 	}
 
 	_, err = bot.db.UpdateChannel(channel)
-
 	if err != nil {
-		return "could not remove channel deadline"
-	}
-	st, err := bot.db.ListChannelStandupers(command.ChannelID)
-	if len(st) != 0 {
-		removeStandupTimeWithUsers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
-				ID:    "removeStandupTimeWithUsers",
-				Other: "",
+				ID:    "deadlineNotSet",
+				Other: "Could not change channel deadline",
 			},
 		})
 		if err != nil {
 			log.Error(err)
 		}
-		return removeStandupTimeWithUsers
+		return deadlineNotSet
 	}
 
 	removeStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "removeStandupTime",
-			Other: "",
+			Other: "Standup deadline removed",
 		},
 	})
 	if err != nil {
@@ -123,14 +137,25 @@ func (bot *Bot) removeDeadline(command slack.SlashCommand) string {
 
 func (bot *Bot) showDeadline(command slack.SlashCommand) string {
 	channel, err := bot.db.SelectChannel(command.ChannelID)
-	// need to check error first, because it is misleading!
-	if err != nil || channel.StandupTime == "" {
+	if err != nil {
+		couldNotShowDeadline, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "couldNotShowDeadline",
+				Other: "Can not show channel deadline",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		return couldNotShowDeadline
+	}
+
+	if channel.StandupTime == "" {
 		showNoStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "showNoStandupTime",
-				Other: "",
+				Other: "Standup deadline is not set",
 			},
-			TemplateData: map[string]interface{}{"standuptime": channel.StandupTime},
 		})
 		if err != nil {
 			log.Error(err)
@@ -141,9 +166,9 @@ func (bot *Bot) showDeadline(command slack.SlashCommand) string {
 	showStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "showStandupTime",
-			Other: "",
+			Other: "Standup deadline set to {{.Deadline}}",
 		},
-		TemplateData: map[string]interface{}{"standuptime": channel.StandupTime},
+		TemplateData: map[string]interface{}{"Deadline": channel.StandupTime},
 	})
 	if err != nil {
 		log.Error(err)

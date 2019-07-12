@@ -76,8 +76,8 @@ You can use the following commands:
 To update messages: 
 ```
 goi18n extract
-goi18n merge active.*.toml
 goi18n merge active.*.toml translate.*.toml
+goi18n merge active.*.toml
 ```
 
 ## Testing
