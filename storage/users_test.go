@@ -61,13 +61,12 @@ func TestUpdateUser(t *testing.T) {
 		UserName: "fooUser",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, "", u.Role)
 
-	u.Role = "admin"
+	u.RealName = "Groot"
 
 	u, err = db.UpdateUser(u)
 	assert.NoError(t, err)
-	assert.Equal(t, "admin", u.Role)
+	assert.Equal(t, "Groot", u.RealName)
 
 	assert.NoError(t, db.DeleteUser(u.ID))
 }

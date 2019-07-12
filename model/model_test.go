@@ -150,12 +150,6 @@ func TestUser(t *testing.T) {
 }
 
 func TestHelperFunctions(t *testing.T) {
-	user := User{
-		Role: "admin",
-	}
-	admin := user.IsAdmin()
-	assert.True(t, admin)
-
 	standuper := Standuper{
 		RoleInChannel: "pm",
 	}

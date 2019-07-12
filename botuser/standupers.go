@@ -14,7 +14,7 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 		youAlreadyStandup, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "youAlreadyStandup",
-				Other: "You already a part of standup team",
+				Other: "You are already a part of standup team",
 			},
 		})
 		if err != nil {
@@ -23,7 +23,28 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 		return youAlreadyStandup
 	}
 
-	_, err = bot.db.CreateStanduper(model.Standuper{})
+	u, err := bot.slack.GetUserInfo(command.UserID)
+	if err != nil {
+		log.Error(err)
+	}
+
+	var realName string
+
+	if u == nil {
+		realName = "S.T.A.L.K.E.R."
+	} else {
+		realName = u.RealName
+	}
+
+	_, err = bot.db.CreateStanduper(model.Standuper{
+		TeamID:                command.TeamID,
+		UserID:                command.UserID,
+		ChannelID:             command.ChannelID,
+		ChannelName:           command.ChannelName,
+		SubmittedStandupToday: true,
+		RealName:              realName,
+		RoleInChannel:         command.Text,
+	})
 	if err != nil {
 		createStanduperFailed, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -99,16 +120,26 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 	var list []string
 
 	for _, member := range members {
-		list = append(list, member.RealName+"-"+member.RoleInChannel)
+		var role string
+		role = member.RoleInChannel
+
+		if member.RoleInChannel == "" {
+			role = "developer"
+		}
+		list = append(list, member.RealName+" - "+role)
 	}
 
 	listStandupers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
-			ID:    "listStandupers",
-			Other: "",
+			ID:    "showStandupers",
+			One:   "Only {{.Standupers}} standups in the team, /join to start standuping",
+			Two:   "{{.Standupers}} submit standups in the team",
+			Few:   "{{.Standupers}} submit standups in the team",
+			Many:  "{{.Standupers}} submit standups in the team",
+			Other: "{{.Standupers}} submit standups in the team",
 		},
 		PluralCount:  len(members),
-		TemplateData: map[string]interface{}{"members": strings.Join(list, ", ")},
+		TemplateData: map[string]interface{}{"Standupers": strings.Join(list, ", ")},
 	})
 	if err != nil {
 		log.Error(err)

@@ -30,7 +30,6 @@ type User struct {
 	TeamID   string `db:"team_id" json:"team_id"`
 	UserName string `db:"user_name" json:"user_name"`
 	UserID   string `db:"user_id" json:"user_id"`
-	Role     string `db:"role" json:"role"`
 	RealName string `db:"real_name" json:"real_name"`
 	TZ       string `db:"tz" json:"tz"`
 	TZOffset int    `db:"tz_offset" json:"tz_offset"`
@@ -259,14 +258,6 @@ func (u User) ShouldNotBeDisturbed() bool {
 		}
 	}
 
-	return false
-}
-
-//IsAdmin returns true if user has admin role
-func (u User) IsAdmin() bool {
-	if u.Role == "admin" || u.Role == "super-admin" {
-		return true
-	}
 	return false
 }
 

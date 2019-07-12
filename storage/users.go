@@ -14,8 +14,8 @@ func (m *DB) CreateUser(u model.User) (model.User, error) {
 		return u, err
 	}
 	res, err := m.db.Exec(
-		"INSERT INTO `users` (team_id, user_name, user_id, role, real_name, tz, tz_offset, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		u.TeamID, u.UserName, u.UserID, u.Role, u.RealName, u.TZ, u.TZOffset, u.Status,
+		"INSERT INTO `users` (team_id, user_name, user_id, real_name, tz, tz_offset, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		u.TeamID, u.UserName, u.UserID, u.RealName, u.TZ, u.TZOffset, u.Status,
 	)
 	if err != nil {
 		return u, err
@@ -56,8 +56,8 @@ func (m *DB) UpdateUser(u model.User) (model.User, error) {
 		return u, err
 	}
 	_, err = m.db.Exec(
-		"UPDATE `users` SET role=?, real_name=?, tz=?, tz_offset=?, status=? WHERE id=?",
-		u.Role, u.RealName, u.TZ, u.TZOffset, u.Status, u.ID,
+		"UPDATE `users` SET real_name=?, tz=?, tz_offset=?, status=? WHERE id=?",
+		u.RealName, u.TZ, u.TZOffset, u.Status, u.ID,
 	)
 	if err != nil {
 		return u, err

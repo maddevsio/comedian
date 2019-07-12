@@ -432,11 +432,7 @@ func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachm
 
 // SendEphemeralMessage posts a message in a specified channel which is visible only for selected user
 func (bot *Bot) SendEphemeralMessage(channel, user, message string) error {
-	_, err := bot.slack.PostEphemeral(
-		channel,
-		user,
-		slack.MsgOptionText(message, true),
-	)
+	_, err := bot.slack.PostEphemeral(channel, user, slack.MsgOptionText(message, true))
 	return err
 }
 
@@ -488,7 +484,6 @@ func (bot *Bot) HandleJoinNewUser(user slack.User) (model.User, error) {
 		TeamID:   user.TeamID,
 		UserName: user.Name,
 		UserID:   user.ID,
-		Role:     "",
 		RealName: user.RealName,
 		TZ:       user.TZ,
 		TZOffset: user.TZOffset,
@@ -558,44 +553,10 @@ func (bot *Bot) updateUser(user slack.User) error {
 
 	u, err := bot.db.SelectUser(user.ID)
 	if err != nil && !user.Deleted {
-		if user.IsOwner || user.IsPrimaryOwner {
-			u, err = bot.db.CreateUser(model.User{
-				TeamID:   user.TeamID,
-				UserName: user.Name,
-				UserID:   user.ID,
-				Role:     "super-admin",
-				RealName: user.RealName,
-				TZ:       user.TZ,
-				TZOffset: user.TZOffset,
-				Status:   strings.ToLower(user.Profile.StatusText),
-			})
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if user.IsAdmin {
-			u, err = bot.db.CreateUser(model.User{
-				TeamID:   user.TeamID,
-				UserName: user.Name,
-				UserID:   user.ID,
-				Role:     "admin",
-				RealName: user.RealName,
-				TZ:       user.TZ,
-				TZOffset: user.TZOffset,
-				Status:   strings.ToLower(user.Profile.StatusText),
-			})
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-
 		u, err = bot.db.CreateUser(model.User{
 			TeamID:   user.TeamID,
 			UserName: user.Name,
 			UserID:   user.ID,
-			Role:     "",
 			RealName: user.RealName,
 			TZ:       user.TZ,
 			TZOffset: user.TZOffset,
@@ -608,12 +569,6 @@ func (bot *Bot) updateUser(user slack.User) error {
 
 	if !user.Deleted {
 		u.UserName = user.Name
-		if user.IsAdmin {
-			u.Role = "admin"
-		}
-		if user.IsOwner || user.IsPrimaryOwner {
-			u.Role = "super-admin"
-		}
 		u.RealName = user.RealName
 		u.TeamID = user.TeamID
 		u.TZ = user.TZ
