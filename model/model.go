@@ -81,7 +81,7 @@ type ServiceEvent struct {
 	AccessToken string             `json:"bot_access_token"`
 	Channel     string             `json:"channel"`
 	Message     string             `json:"message"`
-	Attachments []slack.Attachment `json:"attachments"`
+	Attachments []slack.Attachment `json:"attachments,omitempty"`
 }
 
 // InfoEvent event coming from services

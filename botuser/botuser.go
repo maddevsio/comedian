@@ -90,47 +90,37 @@ func (bot *Bot) Stop() {
 }
 
 //HandleCallBackEvent handles different callback events from Slack Event Subscription list
-func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
-	ev := map[string]interface{}{}
-	data, err := event.MarshalJSON()
-	if err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal(data, &ev); err != nil {
-		return err
-	}
-
-	switch ev["type"] {
+func (bot *Bot) HandleCallBackEvent(eventType string, eventData []byte) error {
+	switch eventType {
 	case "message":
 		message := &slack.MessageEvent{}
-		if err := json.Unmarshal(data, message); err != nil {
+		if err := json.Unmarshal(eventData, message); err != nil {
 			return err
 		}
 		return bot.HandleMessage(message)
 	case "app_mention":
 		message := &slack.MessageEvent{}
-		if err := json.Unmarshal(data, message); err != nil {
+		if err := json.Unmarshal(eventData, message); err != nil {
 			return err
 		}
 		return bot.HandleAppMention(message)
 	case "member_joined_channel":
 		join := &slack.MemberJoinedChannelEvent{}
-		if err := json.Unmarshal(data, join); err != nil {
+		if err := json.Unmarshal(eventData, join); err != nil {
 			return err
 		}
-		_, err = bot.HandleJoin(join.Channel, join.Team)
+		_, err := bot.HandleJoin(join.Channel, join.Team)
 		return err
 	case "team_join":
 		join := &slack.TeamJoinEvent{}
-		if err := json.Unmarshal(data, join); err != nil {
+		if err := json.Unmarshal(eventData, join); err != nil {
 			return err
 		}
 		_, err := bot.HandleJoinNewUser(join.User)
 		return err
 	case "user_change":
 		event := &slack.UserChangeEvent{}
-		if err := json.Unmarshal(data, event); err != nil {
+		if err := json.Unmarshal(eventData, event); err != nil {
 			return err
 		}
 		return bot.updateUser(event.User)
@@ -142,7 +132,7 @@ func (bot *Bot) HandleCallBackEvent(event *json.RawMessage) error {
 		}
 		return nil
 	default:
-		log.WithFields(log.Fields{"event": string(data)}).Warning("unrecognized event!")
+		log.WithFields(log.Fields{"event": string(eventData)}).Warning("unrecognized event!")
 		return nil
 	}
 }

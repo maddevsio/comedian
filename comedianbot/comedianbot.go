@@ -3,6 +3,7 @@ package comedianbot
 import (
 	"errors"
 
+	"encoding/json"
 	"github.com/maddevsio/comedian/botuser"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
@@ -10,6 +11,9 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack/slackevents"
 )
+
+//Dry is needed to not send messages to slack for testing purposes
+var Dry bool
 
 // Comedian is the main struct of the project
 type Comedian struct {
@@ -89,21 +93,11 @@ func (comedian *Comedian) HandleEvent(incomingEvent model.ServiceEvent) error {
 		return errors.New("Wrong access token")
 	}
 
+	if Dry {
+		return nil
+	}
+
 	return bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
-}
-
-//HandleInfoEvent sends message to Slack Workspace
-func (comedian *Comedian) HandleInfoEvent(incomingEvent model.InfoEvent) error {
-	bot, err := comedian.SelectBot(incomingEvent.TeamName)
-	if err != nil {
-		return err
-	}
-
-	if bot.Settings().AccessToken != incomingEvent.AccessToken {
-		return errors.New("Wrong access token")
-	}
-
-	return bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, nil)
 }
 
 //HandleCallbackEvent choses bot to deal with event and then handles event
@@ -113,5 +107,15 @@ func (comedian *Comedian) HandleCallbackEvent(event slackevents.EventsAPICallbac
 		return err
 	}
 
-	return bot.HandleCallBackEvent(event.InnerEvent)
+	ev := map[string]interface{}{}
+	data, err := event.InnerEvent.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(data, &ev); err != nil {
+		return err
+	}
+
+	return bot.HandleCallBackEvent(ev["type"].(string), data)
 }

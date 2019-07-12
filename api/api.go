@@ -79,7 +79,6 @@ func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) 
 	echo.POST("/login", api.login)
 	echo.POST("/event", api.handleEvent)
 	echo.POST("/service-message", api.handleServiceMessage)
-	echo.POST("/info-message", api.handleInfoMessage)
 	echo.POST("/commands", api.handleCommands)
 	echo.POST("/team-worklogs", api.showTeamWorklogs)
 	echo.POST("/user-commands", api.handleUsersCommands)
@@ -180,28 +179,6 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, "Message handled!")
-}
-
-func (api *ComedianAPI) handleInfoMessage(c echo.Context) error {
-
-	var incomingEvent model.InfoEvent
-
-	body, err := ioutil.ReadAll(c.Request().Body)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-
-	err = json.Unmarshal(body, &incomingEvent)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-
-	err = api.comedian.HandleInfoEvent(incomingEvent)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-
-	return c.JSON(http.StatusOK, "Info Message handled!")
 }
 
 func (api *ComedianAPI) handleCommands(c echo.Context) error {
