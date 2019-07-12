@@ -8,6 +8,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 func TestCreateStandup(t *testing.T) {
@@ -40,6 +41,13 @@ func TestGetStandups(t *testing.T) {
 	_, err = db.ListStandups()
 	assert.NoError(t, err)
 
+	st, err = db.SelectLatestStandupByUser("bar", "bar12")
+	assert.NoError(t, err)
+	assert.Equal(t, "12345", st.MessageTS)
+
+	_, err = db.SelectLatestStandupByUser("foo", "bar12")
+	assert.Error(t, err)
+
 	_, err = db.SelectStandupByMessageTS("2345")
 	assert.Error(t, err)
 
@@ -51,6 +59,16 @@ func TestGetStandups(t *testing.T) {
 
 	_, err = db.GetStandup(st.ID)
 	assert.NoError(t, err)
+
+	res, err := db.GetStandupForPeriod("bar", "bar12", time.Now().Add(10*time.Second*(-1)), time.Now().Add(10*time.Second))
+	assert.NoError(t, err)
+	assert.Equal(t, "12345", res.MessageTS)
+
+	_, err = db.GetStandupForPeriod("foo", "bar12", time.Now().Add(10*time.Second*(-1)), time.Now().Add(10*time.Second))
+	assert.Error(t, err)
+
+	_, err = db.GetStandupForPeriod("foo", "bar12", time.Now().Add(10*time.Hour*(-1)), time.Now().Add(10*time.Second*(-1)))
+	assert.Error(t, err)
 
 	assert.NoError(t, db.DeleteStandup(st.ID))
 }
