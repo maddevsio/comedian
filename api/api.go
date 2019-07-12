@@ -141,24 +141,23 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 	}
 
 	if incomingEvent.Type == slackevents.URLVerification {
-		return c.String(http.StatusOK, incomingEvent.Challenge)
+		return c.JSON(http.StatusOK, incomingEvent.Challenge)
 	}
 
 	if incomingEvent.Type == slackevents.CallbackEvent {
 		var event slackevents.EventsAPICallbackEvent
 		err = json.Unmarshal(body, &event)
 		if err != nil {
-			log.WithFields(log.Fields{"error": err}).Error("HandleCallbackEvent failed to unmarshar callbackevent")
 			return c.JSON(http.StatusBadRequest, err)
 		}
 
 		err = api.comedian.HandleCallbackEvent(event)
 		if err != nil {
-			log.WithFields(log.Fields{"event": event, "error": err}).Error("HandleCallbackEvent failed")
+			return c.JSON(http.StatusBadRequest, err)
 		}
 	}
 
-	return c.String(http.StatusOK, "Success")
+	return c.JSON(http.StatusOK, "Success")
 }
 
 func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
@@ -167,20 +166,17 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on ReadAll")
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on Unmarshal body")
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	err = api.comedian.HandleEvent(incomingEvent)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on HandleEvent")
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	return c.JSON(http.StatusOK, "Message handled!")
@@ -192,20 +188,17 @@ func (api *ComedianAPI) handleInfoMessage(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on ReadAll")
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on Unmarshal body")
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	err = api.comedian.HandleInfoEvent(incomingEvent)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("handleServiceMessage failed on HandleEvent")
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	return c.JSON(http.StatusOK, "Info Message handled!")
@@ -214,38 +207,36 @@ func (api *ComedianAPI) handleInfoMessage(c echo.Context) error {
 func (api *ComedianAPI) handleCommands(c echo.Context) error {
 	slashCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
-		return c.String(http.StatusBadRequest, "wrong verification token")
+		return c.JSON(http.StatusBadRequest, "wrong verification token")
 	}
 
 	bot, err := api.comedian.SelectBot(slashCommand.TeamID)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"slashCommand": slashCommand, "error": err})).Error("handleCommands failed on Select Bot")
 		return err
 	}
 
 	message := bot.ImplementCommands(slashCommand)
 
-	return c.String(http.StatusOK, message)
+	return c.JSON(http.StatusOK, message)
 }
 
 func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 	slashCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
-		return c.String(http.StatusBadRequest, "Invalid verification token")
+		return c.JSON(http.StatusBadRequest, "Invalid verification token")
 	}
 
 	bot, err := api.comedian.SelectBot(slashCommand.TeamID)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"slashCommand": slashCommand, "error": err})).Error("handleCommands failed on Select Bot")
-		return c.String(http.StatusOK, "No bot found to implement the request. Please, report this to Comedian development team")
+		return c.JSON(http.StatusOK, "No bot found to implement the request. Please, report this to Comedian development team")
 	}
 
 	today := time.Now()
@@ -253,38 +244,36 @@ func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 	dateTo := fmt.Sprintf("%d-%02d-%02d", today.Year(), today.Month(), today.Day())
 	dataOnUser, err := bot.GetCollectorData("users", slashCommand.UserID, dateFrom, dateTo)
 	if err != nil {
-		return c.String(http.StatusOK, "Failed to get data from Collector. Make sure you were added to Collector database and try again")
+		return c.JSON(http.StatusOK, "Failed to get data from Collector. Make sure you were added to Collector database and try again")
 	}
 
 	message := fmt.Sprintf("You have logged %v from the begining of the month", botuser.SecondsToHuman(dataOnUser.Worklogs))
 
-	return c.String(http.StatusOK, message)
+	return c.JSON(http.StatusOK, message)
 }
 
 func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	slashCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
-		return c.String(http.StatusBadRequest, "Invalid verification token")
+		return c.JSON(http.StatusBadRequest, "Invalid verification token")
 	}
 
 	bot, err := api.comedian.SelectBot(slashCommand.TeamID)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"slashCommand": slashCommand, "error": err})).Error("handleCommands failed on Select Bot")
-		return c.String(http.StatusOK, "No bot found to implement the request. Please, report this to Comedian development team")
+		return c.JSON(http.StatusOK, "No bot found to implement the request. Please, report this to Comedian development team")
 	}
 
 	standupers, err := api.db.ListChannelStandupers(slashCommand.ChannelID)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"slashCommand": slashCommand, "error": err})).Error("handleCommands failed on ListChannelStandupers")
-		return c.String(http.StatusOK, "Could not retreve standupers of the project")
+		return c.JSON(http.StatusOK, "Could not retreve standupers of the project")
 	}
 
 	if len(standupers) == 0 {
-		return c.String(http.StatusOK, "No one standups in the project. No data")
+		return c.JSON(http.StatusOK, "No one standups in the project. No data")
 	}
 
 	channel := standupers[0].ChannelName
@@ -296,12 +285,12 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 
 		from, err = dateparse.ParseIn(strings.TrimSpace(dates[0]), time.Local)
 		if err != nil {
-			return c.String(http.StatusOK, err.Error())
+			return c.JSON(http.StatusOK, err)
 		}
 
 		to, err = dateparse.ParseIn(strings.TrimSpace(dates[1]), time.Local)
 		if err != nil {
-			return c.String(http.StatusOK, err.Error())
+			return c.JSON(http.StatusOK, err)
 		}
 	} else {
 		today := time.Now()
@@ -322,7 +311,7 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 		userInProject := fmt.Sprintf("%v/%v", standuper.UserID, standuper.ChannelName)
 		dataOnUserInProject, err := bot.GetCollectorData("user-in-project", userInProject, dateFrom, dateTo)
 		if err != nil {
-			log.WithFields(log.Fields(map[string]interface{}{"standuper": standuper, "error": err})).Error("failed to get data on user in project")
+
 			continue
 		}
 		members = append(members, teamMember{
@@ -340,22 +329,20 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 
 	message += fmt.Sprintf("In total: %.2f", float32(total)/3600)
 
-	return c.String(http.StatusOK, message)
+	return c.JSON(http.StatusOK, message)
 }
 
 func (api *ComedianAPI) auth(c echo.Context) error {
 
 	urlValues, err := c.FormParams()
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("auth failed on c.FormParams()")
-		return c.String(http.StatusUnauthorized, err.Error())
+		return c.JSON(http.StatusUnauthorized, err)
 	}
 
 	code := urlValues.Get("code")
 
 	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"config": api.config, "urlValues": urlValues, "error": err})).Error("auth failed on GetOAuthResponse")
 		return err
 	}
 
@@ -363,7 +350,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	if err != nil {
 		cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
 		if err != nil {
-			log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
+
 			return err
 		}
 
@@ -382,7 +369,6 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	settings, err := api.db.UpdateBotSettings(botSettings)
 	if err != nil {
-		log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
 		return err
 	}
 
