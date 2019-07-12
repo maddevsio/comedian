@@ -134,7 +134,7 @@ func TestImplementCommands(t *testing.T) {
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",
-		ChannelName: "Channel",
+		ChannelName: "ChannelWithNoDeadline",
 		Text:        "",
 	})
 	assert.Equal(t, "You are already a part of standup team", resp)
@@ -144,7 +144,7 @@ func TestImplementCommands(t *testing.T) {
 		TeamID:      "testTeam",
 		UserID:      "foo",
 		ChannelID:   "CHAN123",
-		ChannelName: "Channel",
+		ChannelName: "ChannelWithNoDeadline",
 		Text:        "",
 	})
 	assert.NotEqual(t, "", resp)
@@ -154,7 +154,7 @@ func TestImplementCommands(t *testing.T) {
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",
-		ChannelName: "Channel",
+		ChannelName: "ChannelWithNoDeadline",
 		Text:        "",
 	})
 	assert.Equal(t, "You no longer have to submit standups, thanks for all your standups and messages", resp)
@@ -164,7 +164,7 @@ func TestImplementCommands(t *testing.T) {
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",
-		ChannelName: "Channel",
+		ChannelName: "ChannelWithNoDeadline",
 		Text:        "",
 	})
 	assert.Equal(t, "You do not standup yet", resp)
@@ -179,4 +179,13 @@ func TestImplementCommands(t *testing.T) {
 	})
 	assert.Equal(t, "You no longer have to submit standups, thanks for all your standups and messages", resp)
 
+	resp = bot.ImplementCommands(slack.SlashCommand{
+		Command:     "show",
+		TeamID:      "testTeam",
+		UserID:      "foo123",
+		ChannelID:   "CHAN321",
+		ChannelName: "ChannelWithDeadline",
+		Text:        "",
+	})
+	assert.NotEqual(t, "", resp)
 }

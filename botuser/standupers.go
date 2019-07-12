@@ -108,7 +108,7 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 		listNoStandupers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "listNoStandupers",
-				Other: "",
+				Other: "No standupers in the team, /join to start standuping",
 			},
 		})
 		if err != nil {
