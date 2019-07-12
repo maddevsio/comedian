@@ -37,6 +37,13 @@ func TestBotSettings(t *testing.T) {
 	bot, err = db.GetBotSettings(int64(0))
 	assert.Error(t, err)
 
+	bot, err = db.GetBotSettingsByTeamID("teamID")
+	assert.NoError(t, err)
+	assert.Equal(t, "teamID", bot.TeamID)
+
+	bot, err = db.GetBotSettingsByTeamID("teamWrongID")
+	assert.Error(t, err)
+
 	bot, err = db.GetBotSettingsByTeamName("foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "teamID", bot.TeamID)

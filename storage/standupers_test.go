@@ -35,8 +35,19 @@ func TestGetStandupers(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	v, err := db.CreateStanduper(model.Standuper{
+		TeamID:    "foo",
+		UserID:    "bar",
+		ChannelID: "bar13",
+	})
+	assert.NoError(t, err)
+
 	_, err = db.ListStandupers()
 	assert.NoError(t, err)
+
+	res, err := db.ListStandupersByTeamID("foo")
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(res))
 
 	_, err = db.ListChannelStandupers("")
 	assert.NoError(t, err)
@@ -53,10 +64,15 @@ func TestGetStandupers(t *testing.T) {
 	_, err = db.FindStansuperByUserID("noUser", "bar12")
 	assert.Error(t, err)
 
+	res, err = db.FindStansupersByUserID("bar")
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(res))
+
 	_, err = db.FindStansuperByUserID("bar", "bar12")
 	assert.NoError(t, err)
 
 	assert.NoError(t, db.DeleteStanduper(s.ID))
+	assert.NoError(t, db.DeleteStanduper(v.ID))
 }
 
 func TestUpdateStanduper(t *testing.T) {
