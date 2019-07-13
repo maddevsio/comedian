@@ -198,7 +198,7 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 
 	message := bot.ImplementCommands(slashCommand)
 
-	return c.JSON(http.StatusOK, message)
+	return c.String(http.StatusOK, message)
 }
 
 func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {

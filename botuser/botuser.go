@@ -21,9 +21,9 @@ var (
 	typeDeleteMessage = "message_deleted"
 )
 
-var problemKeys = []string{"problem", "difficult", "issue", "block", "проблем", "мешает"}
+var problemKeys = []string{"issue", "мешает"}
 var todayPlansKeys = []string{"today", "сегодня"}
-var yesterdayWorkKeys = []string{"yesterday", "friday", "monday", "tuesday", "wednesday", "thursday", "saturday", "sunday", "вчера", "пятниц", "понедельник", "вторник", "сред", "четверг", "суббот", "воскресенье"}
+var yesterdayWorkKeys = []string{"yesterday", "friday", "вчера", "пятниц"}
 
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
@@ -262,7 +262,6 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
 	standup, err := bot.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
 	if err != nil {
-		log.Warning("Could not select standup for deleting: ", msg)
 		return nil
 	}
 	return bot.db.DeleteStandup(standup.ID)
@@ -304,15 +303,13 @@ func (bot *Bot) HandleAppMention(msg *slack.MessageEvent) error {
 
 	problem := bot.analizeStandup(msg.Msg.Text)
 	if problem != "" {
-		log.Warning("HandleAppMention func. wrong standup", problem)
 		return nil
-
 	}
 
 	if bot.submittedStandupToday(msg.User, msg.Channel) {
-		log.Warning("HandleAppMention func. submitted standup today", msg.User, msg.Channel)
 		return nil
 	}
+
 	_, err := bot.db.CreateStandup(model.Standup{
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
@@ -323,6 +320,7 @@ func (bot *Bot) HandleAppMention(msg *slack.MessageEvent) error {
 	if err != nil {
 		return err
 	}
+
 	item := slack.ItemRef{
 		Channel:   msg.Channel,
 		Timestamp: msg.Msg.Timestamp,
@@ -497,18 +495,18 @@ func (bot *Bot) HandleJoinNewUser(user slack.User) (model.User, error) {
 //ImplementCommands implements slash commands such as adding users and managing deadlines
 func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
 	switch command.Command {
-	case "join":
+	case "/start":
 		return bot.joinCommand(command)
-	case "show":
+	case "/show":
 		return bot.showCommand(command)
-	case "quit":
+	case "/quit":
 		return bot.quitCommand(command)
-	case "edit_deadline":
+	case "/edit_deadline":
 		return bot.addDeadline(command)
-	case "show_deadline":
+	case "/show_deadline":
 		return bot.showDeadline(command)
 	default:
-		return "help"
+		return "Unknown command"
 	}
 }
 

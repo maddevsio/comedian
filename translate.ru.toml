@@ -24,7 +24,7 @@ other = "Спасибо за все ваши сообщения, вы может
 
 [listNoStandupers]
 hash = "sha1-e8aef7674bf966b36bed44a562a63103a54c327e"
-other = "Никто не стендапит, сделайте /join чтобы начать"
+other = "Никто не стендапит, сделайте /start чтобы начать"
 
 [noProblemsMention]
 hash = "sha1-fd5ada3d46270c013bc30233b94e7c12a304fbc0"

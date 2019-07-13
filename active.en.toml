@@ -21,6 +21,6 @@ youAlreadyStandup = "You are already a part of standup team"
 [showStandupers]
 few = "{{.Standupers}} submit standups in the team"
 many = "{{.Standupers}} submit standups in the team"
-one = "Only {{.Standupers}} standups in the team, /join to start standuping"
+one = "Only {{.Standupers}} submits standups in the team, '/start' to begin"
 other = "{{.Standupers}} submit standups in the team"
 two = "{{.Standupers}} submit standups in the team"

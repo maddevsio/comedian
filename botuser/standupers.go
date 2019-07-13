@@ -1,6 +1,7 @@
 package botuser
 
 import (
+	"fmt"
 	"github.com/maddevsio/comedian/model"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
@@ -126,13 +127,13 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 		if member.RoleInChannel == "" {
 			role = "developer"
 		}
-		list = append(list, member.RealName+" - "+role)
+		list = append(list, fmt.Sprintf("%s(%s)", member.RealName, role))
 	}
 
 	listStandupers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "showStandupers",
-			One:   "Only {{.Standupers}} standups in the team, /join to start standuping",
+			One:   "Only {{.Standupers}} submits standups in the team, '/start' to begin",
 			Two:   "{{.Standupers}} submit standups in the team",
 			Few:   "{{.Standupers}} submit standups in the team",
 			Many:  "{{.Standupers}} submit standups in the team",
