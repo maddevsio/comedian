@@ -23,9 +23,9 @@ type NotifierThread struct {
 
 // NotifyChannels reminds users of channels about upcoming or missing standups
 func (bot *Bot) NotifyChannels(t time.Time) {
-	if int(t.Weekday()) == 6 || int(t.Weekday()) == 0 {
-		return
-	}
+	// if int(t.Weekday()) == 6 || int(t.Weekday()) == 0 {
+	// 	return
+	// }
 	//TODO COM-1644
 	channels, err := bot.db.ListChannels()
 	if err != nil {

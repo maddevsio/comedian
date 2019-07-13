@@ -501,7 +501,7 @@ func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
 		return bot.showCommand(command)
 	case "/quit":
 		return bot.quitCommand(command)
-	case "/edit_deadline":
+	case "/update_deadline":
 		return bot.addDeadline(command)
 	default:
 		return ""
