@@ -84,15 +84,12 @@ func TestUpdateStanduper(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "", s.RoleInChannel)
-	assert.Equal(t, false, s.SubmittedStandupToday)
 
 	s.RoleInChannel = "developer"
-	s.SubmittedStandupToday = true
 
 	s, err = db.UpdateStanduper(s)
 	assert.NoError(t, err)
 	assert.Equal(t, "developer", s.RoleInChannel)
-	assert.Equal(t, true, s.SubmittedStandupToday)
 
 	assert.NoError(t, db.DeleteStanduper(s.ID))
 }

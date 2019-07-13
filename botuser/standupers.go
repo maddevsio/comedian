@@ -38,13 +38,12 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 	}
 
 	_, err = bot.db.CreateStanduper(model.Standuper{
-		TeamID:                command.TeamID,
-		UserID:                command.UserID,
-		ChannelID:             command.ChannelID,
-		ChannelName:           command.ChannelName,
-		SubmittedStandupToday: true,
-		RealName:              realName,
-		RoleInChannel:         command.Text,
+		TeamID:        command.TeamID,
+		UserID:        command.UserID,
+		ChannelID:     command.ChannelID,
+		ChannelName:   command.ChannelName,
+		RealName:      realName,
+		RoleInChannel: command.Text,
 	})
 	if err != nil {
 		createStanduperFailed, err := bot.localizer.Localize(&i18n.LocalizeConfig{

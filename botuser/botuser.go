@@ -188,18 +188,6 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		}).Error("Failed to AddReaction!")
 	}
 
-	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
-	if err != nil {
-		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
-		return nil
-	}
-
-	standuper.SubmittedStandupToday = true
-	_, err = bot.db.UpdateStanduper(standuper)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -221,10 +209,6 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 			return err
 		}
 		return nil
-	}
-	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
-	if err != nil {
-		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
 	}
 
 	standup, err = bot.db.CreateStandup(model.Standup{
@@ -251,11 +235,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 			"Item":     item,
 		}).Error("Failed to AddReaction!")
 	}
-	standuper.SubmittedStandupToday = true
-	_, err = bot.db.UpdateStanduper(standuper)
-	if err != nil {
-		return err
-	}
+
 	return nil
 }
 
@@ -270,19 +250,12 @@ func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
 func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 	standup, err := bot.db.SelectLatestStandupByUser(userID, channelID)
 	if err != nil {
-		log.Error("Failed to SelectLatestStandupByUser", err)
 		return false
 	}
 
-	//TODO need to change it for direct Slack API call
 	user, err := bot.db.SelectUser(userID)
 	if err != nil {
-		log.Error("Failed to SelectUser ", err)
 		return false
-	}
-
-	if user.IsSick() || user.IsOnVacation() || user.ShouldNotBeDisturbed() {
-		return true
 	}
 
 	loc := time.FixedZone(user.TZ, user.TZOffset)
@@ -303,10 +276,6 @@ func (bot *Bot) HandleAppMention(msg *slack.MessageEvent) error {
 
 	problem := bot.analizeStandup(msg.Msg.Text)
 	if problem != "" {
-		return nil
-	}
-
-	if bot.submittedStandupToday(msg.User, msg.Channel) {
 		return nil
 	}
 
@@ -333,18 +302,6 @@ func (bot *Bot) HandleAppMention(msg *slack.MessageEvent) error {
 			"TeamName": bot.properties.TeamName,
 			"Item":     item,
 		}).Error("Failed to AddReaction!")
-	}
-
-	standuper, err := bot.db.FindStansuperByUserID(msg.User, msg.Channel)
-	if err != nil {
-		log.WithFields(log.Fields{"channel": msg.Channel, "error": err, "user": msg.User}).Warning("Non standuper submitted standup")
-		return nil
-	}
-
-	standuper.SubmittedStandupToday = true
-	_, err = bot.db.UpdateStanduper(standuper)
-	if err != nil {
-		return err
 	}
 
 	return nil

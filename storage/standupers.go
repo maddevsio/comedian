@@ -15,8 +15,8 @@ func (m *DB) CreateStanduper(s model.Standuper) (model.Standuper, error) {
 		return s, err
 	}
 	res, err := m.db.Exec(
-		"INSERT INTO `channel_members` (team_id, user_id, channel_id, submitted_standup_today, role_in_channel, created, real_name, channel_name) VALUES (?,?,?,?,?,?,?,?)",
-		s.TeamID, s.UserID, s.ChannelID, s.SubmittedStandupToday, s.RoleInChannel, time.Now(), s.RealName, s.ChannelName)
+		"INSERT INTO `channel_members` (team_id, user_id, channel_id, role_in_channel, created, real_name, channel_name) VALUES (?,?,?,?,?,?,?)",
+		s.TeamID, s.UserID, s.ChannelID, s.RoleInChannel, time.Now(), s.RealName, s.ChannelName)
 	if err != nil {
 		return s, err
 	}
@@ -36,8 +36,8 @@ func (m *DB) UpdateStanduper(st model.Standuper) (model.Standuper, error) {
 		return st, err
 	}
 	_, err = m.db.Exec(
-		"UPDATE `channel_members` SET submitted_standup_today=?, role_in_channel=? WHERE id=?",
-		st.SubmittedStandupToday, st.RoleInChannel, st.ID,
+		"UPDATE `channel_members` SET role_in_channel=? WHERE id=?",
+		st.RoleInChannel, st.ID,
 	)
 	if err != nil {
 		return st, err

@@ -47,15 +47,14 @@ type Channel struct {
 
 // Standuper model used for serialization/deserialization stored ChannelMembers
 type Standuper struct {
-	ID                    int64     `db:"id" json:"id"`
-	TeamID                string    `db:"team_id" json:"team_id"`
-	UserID                string    `db:"user_id" json:"user_id"`
-	ChannelID             string    `db:"channel_id" json:"channel_id"`
-	RoleInChannel         string    `db:"role_in_channel" json:"role_in_channel"`
-	SubmittedStandupToday bool      `db:"submitted_standup_today" json:"submitted_standup_today"`
-	Created               time.Time `db:"created" json:"created"`
-	RealName              string    `db:"real_name" json:"real_name"`
-	ChannelName           string    `db:"channel_name" json:"channel_name"`
+	ID            int64     `db:"id" json:"id"`
+	TeamID        string    `db:"team_id" json:"team_id"`
+	UserID        string    `db:"user_id" json:"user_id"`
+	ChannelID     string    `db:"channel_id" json:"channel_id"`
+	RoleInChannel string    `db:"role_in_channel" json:"role_in_channel"`
+	Created       time.Time `db:"created" json:"created"`
+	RealName      string    `db:"real_name" json:"real_name"`
+	ChannelName   string    `db:"channel_name" json:"channel_name"`
 }
 
 // BotSettings is used for updating and storing different bot configuration parameters
