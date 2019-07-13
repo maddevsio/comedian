@@ -4,7 +4,7 @@ createStanduperFailed = "Could not add you to standup team"
 deadlineNotSet = "Could not change channel deadline"
 failedLeaveStandupers = "Could not remove you from standup team"
 leaveStanupers = "You no longer have to submit standups, thanks for all your standups and messages"
-listNoStandupers = "No standupers in the team, `/start` to begin"
+listNoStandupers = "No standupers in the team, /start to start standuping. "
 noProblemsMention = "- no 'problems' keywords detected: {{.Keywords}}"
 noTodayMention = "- no 'today' keywords detected: {{.Keywords}}"
 noYesterdayMention = "- no 'yesterday' keywords detected: {{.Keywords}}"
@@ -18,9 +18,30 @@ welcomeWithDedline = "Welcome to the standup team, please, submit your standups 
 wrongDeadlineFormat = "Could not recognize deadline time. Use 1pm or 13:00 formats"
 youAlreadyStandup = "You are already a part of standup team"
 
+[minutes]
+few = "{{.time}} minutes"
+many = "{{.time}} minutes"
+one = "{{.time}} minute"
+other = "{{.time}} minutes"
+two = "{{.time}} minutes"
+
 [showStandupers]
-few = "{{.Standupers}} submit standups in the team"
-many = "{{.Standupers}} submit standups in the team"
-one = "Only {{.Standupers}} submits standups in the team, `/start` to begin"
-other = "{{.Standupers}} submit standups in the team"
-two = "{{.Standupers}} submit standups in the team"
+few = "{{.Standupers}} submit standups in the team. "
+many = "{{.Standupers}} submit standups in the team. "
+one = "Only {{.Standupers}} submits standups in the team, '/start' to begin. "
+other = "{{.Standupers}} submit standups in the team. "
+two = "{{.Standupers}} submit standups in the team. "
+
+[tagNonReporters]
+few = "{{.users}} you have missed standup deadlines, shame!"
+many = "{{.users}} you have missed standup deadlines, shame!"
+one = "{{.user}}, you are the only one to miss standup, shame!"
+other = "{{.users}} you have missed standup deadlines, shame!"
+two = "{{.users}} you have missed standup deadlines, shame!"
+
+[warnNonReporters]
+few = "{{.users}} you may miss the deadline in {{.minutes}}"
+many = "{{.users}} you may miss the deadline in {{.minutes}}"
+one = "{{.user}}, you are the only one to miss standup, in {{.minutes}}, hurry up!"
+other = "{{.users}} you may miss the deadline in {{.minutes}}"
+two = "{{.users}} you may miss the deadline in {{.minutes}}"

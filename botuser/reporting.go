@@ -227,9 +227,11 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 
 		attachments = bot.sortReportEntries(attachmentsPull)
 		if bot.properties.IndividualReportsOn {
-			err := bot.SendMessage(channel.ChannelID, reportHeader, attachments)
-			if err != nil {
-				log.Error(err)
+			bot.MessageChan <- Message{
+				Type:        "message",
+				Channel:     channel.ChannelID,
+				Text:        reportHeader,
+				Attachments: attachments,
 			}
 		}
 
@@ -247,9 +249,11 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 		}
 	}
 
-	err = bot.SendMessage(reportingChannelID, reportHeader, allReports)
-	if err != nil {
-		log.Error(err)
+	bot.MessageChan <- Message{
+		Type:        "message",
+		Channel:     reportingChannelID,
+		Text:        reportHeader,
+		Attachments: allReports,
 	}
 	FinalReport = fmt.Sprintf(reportHeader, allReports)
 	return FinalReport, nil
@@ -391,12 +395,13 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		attachments = bot.sortReportEntries(attachmentsPull)
 
 		if bot.properties.IndividualReportsOn {
-			err := bot.SendMessage(channel.ChannelID, reportHeaderWeekly, attachments)
-			if err != nil {
-				log.Error("Send weekly report individual message failed: ", err, channel.ChannelID)
+			bot.MessageChan <- Message{
+				Type:        "message",
+				Channel:     channel.ChannelID,
+				Text:        reportHeaderWeekly,
+				Attachments: attachments,
 			}
 		}
-
 		allReports = append(allReports, attachments...)
 	}
 
@@ -411,9 +416,11 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		}
 	}
 
-	err = bot.SendMessage(reportingChannelID, reportHeaderWeekly, allReports)
-	if err != nil {
-		log.Error("Send weekly report message failed: ", err, bot.properties.ReportingChannel)
+	bot.MessageChan <- Message{
+		Type:        "message",
+		Channel:     reportingChannelID,
+		Text:        reportHeaderWeekly,
+		Attachments: allReports,
 	}
 	FinalReport = fmt.Sprintf(reportHeaderWeekly, allReports)
 	return FinalReport, nil

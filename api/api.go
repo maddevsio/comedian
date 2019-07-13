@@ -318,6 +318,8 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	code := urlValues.Get("code")
 
+	log.Info(code)
+
 	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
 	if err != nil {
 		return err
@@ -327,15 +329,10 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	if err != nil {
 		cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
 		if err != nil {
-
 			return err
 		}
 
 		bot := botuser.New(api.config, api.comedian.Bundle, cp, api.comedian.DB)
-		err = bot.SendUserMessage(resp.UserID, "If you never used Comedian before, check Comedian short intro video for more information! https://youtu.be/huvmtJCCtOE")
-		if err != nil {
-			log.Error("SendUserMessage failed in Auth: ", err)
-		}
 		api.comedian.AddBot(bot)
 
 		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
@@ -355,10 +352,6 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 	bot.SetProperties(settings)
-	err = bot.SendUserMessage(resp.UserID, "If you never used Comedian before, check Comedian short intro video for more information! https://youtu.be/huvmtJCCtOE")
-	if err != nil {
-		log.Error("SendUserMessage failed in Auth: ", err)
-	}
 
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 }

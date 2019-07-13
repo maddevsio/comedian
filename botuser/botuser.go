@@ -25,6 +25,15 @@ var problemKeys = []string{"issue", "мешает"}
 var todayPlansKeys = []string{"today", "сегодня"}
 var yesterdayWorkKeys = []string{"yesterday", "friday", "вчера", "пятниц"}
 
+//Message represent any message that can be send to Slack or any other destination
+type Message struct {
+	Type        string
+	Channel     string
+	User        string
+	Text        string
+	Attachments []slack.Attachment
+}
+
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
 	slack           *slack.Client
@@ -35,6 +44,7 @@ type Bot struct {
 	QuitChan        chan struct{}
 	notifierThreads []*NotifierThread
 	conf            *config.Config
+	MessageChan     chan Message
 }
 
 //New creates new Bot instance
@@ -46,6 +56,7 @@ func New(config *config.Config, bundle *i18n.Bundle, settings model.BotSettings,
 	bot.localizer = i18n.NewLocalizer(bundle, settings.Language)
 	bot.QuitChan = make(chan struct{})
 	bot.conf = config
+	bot.MessageChan = make(chan Message)
 	return bot
 }
 
@@ -63,7 +74,8 @@ func (bot *Bot) Start() {
 		for {
 			select {
 			case <-ticker:
-				bot.NotifyChannels(time.Now())
+				bot.warnChannels()
+				bot.alarmChannels()
 				err = bot.CallDisplayYesterdayTeamReport()
 				if err != nil {
 					log.Error("CallDisplayYesterdayTeamReport failed: ", err)
@@ -79,9 +91,32 @@ func (bot *Bot) Start() {
 			case <-bot.QuitChan:
 				bot.wg.Done()
 				return
+			case msg := <-bot.MessageChan:
+				bot.send(msg)
 			}
 		}
 	}()
+}
+
+func (bot *Bot) send(msg Message) {
+	if msg.Type == "message" {
+		err := bot.SendMessage(msg.Channel, msg.Text, msg.Attachments)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+	if msg.Type == "ephemeral" {
+		err := bot.SendEphemeralMessage(msg.Channel, msg.User, msg.Text)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+	if msg.Type == "direct" {
+		err := bot.SendUserMessage(msg.User, msg.Text)
+		if err != nil {
+			log.Error(err)
+		}
+	}
 }
 
 //Stop closes bot QuitChan making bot goroutine to exit
@@ -93,17 +128,15 @@ func (bot *Bot) Stop() {
 func (bot *Bot) HandleCallBackEvent(eventType string, eventData []byte) error {
 	switch eventType {
 	case "message":
+		log.Info("message!")
 		message := &slack.MessageEvent{}
 		if err := json.Unmarshal(eventData, message); err != nil {
 			return err
 		}
 		return bot.HandleMessage(message)
 	case "app_mention":
-		message := &slack.MessageEvent{}
-		if err := json.Unmarshal(eventData, message); err != nil {
-			return err
-		}
-		return bot.HandleAppMention(message)
+		log.Info("app_mention!")
+		return nil
 	case "member_joined_channel":
 		join := &slack.MemberJoinedChannelEvent{}
 		if err := json.Unmarshal(eventData, join); err != nil {
@@ -139,28 +172,34 @@ func (bot *Bot) HandleCallBackEvent(eventType string, eventData []byte) error {
 
 //HandleMessage handles slack message event
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
+	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
+		return nil
+	}
 	msg.Team = bot.properties.TeamID
 	switch msg.SubType {
 	case typeMessage:
-		return bot.handleNewMessage(msg)
+		bot.handleNewMessage(msg)
 	case typeEditMessage:
-		return bot.handleEditMessage(msg)
+		bot.handleEditMessage(msg)
 	case typeDeleteMessage:
-		return bot.handleDeleteMessage(msg)
+		bot.handleDeleteMessage(msg)
 	case "bot_message":
 		return nil
 	}
 	return nil
 }
 
-func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
-	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
-		return nil
-	}
+func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) (string, error) {
 
 	problem := bot.analizeStandup(msg.Msg.Text)
 	if problem != "" {
-		return bot.SendEphemeralMessage(msg.Channel, msg.User, problem)
+		bot.MessageChan <- Message{
+			Type:    "ephemeral",
+			Channel: msg.Channel,
+			User:    msg.User,
+			Text:    problem,
+		}
+		return problem, nil
 	}
 
 	_, err := bot.db.CreateStandup(model.Standup{
@@ -171,8 +210,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 		MessageTS: msg.Msg.Timestamp,
 	})
 	if err != nil {
-		bot.SendEphemeralMessage(msg.Channel, msg.User, "I could not save your standup due to some technical issues, please, report ths to your PM or directly to Comedian development team")
-		return err
+		return "", err
 	}
 	item := slack.ItemRef{
 		Channel:   msg.Channel,
@@ -182,23 +220,21 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) error {
 	}
 	err = bot.slack.AddReaction("heavy_check_mark", item)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"TeamName": bot.properties.TeamName,
-			"Item":     item,
-		}).Error("Failed to AddReaction!")
+		return "", err
 	}
-
-	return nil
+	return "standup saved", nil
 }
 
-func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
-	if !strings.Contains(msg.SubMessage.Text, bot.properties.UserID) {
-		return nil
-	}
-
+func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) (string, error) {
 	problem := bot.analizeStandup(msg.SubMessage.Text)
 	if problem != "" {
-		return bot.SendEphemeralMessage(msg.Channel, msg.SubMessage.User, problem)
+		bot.MessageChan <- Message{
+			Type:    "ephemeral",
+			Channel: msg.Channel,
+			User:    msg.User,
+			Text:    problem,
+		}
+		return problem, nil
 	}
 
 	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
@@ -206,9 +242,9 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 		standup.Comment = msg.SubMessage.Text
 		_, err := bot.db.UpdateStandup(standup)
 		if err != nil {
-			return err
+			return "", err
 		}
-		return nil
+		return "standup updated", nil
 	}
 
 	standup, err = bot.db.CreateStandup(model.Standup{
@@ -219,7 +255,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 		MessageTS: msg.SubMessage.Timestamp,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	item := slack.ItemRef{
@@ -230,21 +266,24 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) error {
 	}
 	err = bot.slack.AddReaction("heavy_check_mark", item)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"TeamName": bot.properties.TeamName,
-			"Item":     item,
-		}).Error("Failed to AddReaction!")
+		return "", err
 	}
 
-	return nil
+	return "standup created", nil
 }
 
-func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) error {
+func (bot *Bot) handleDeleteMessage(msg *slack.MessageEvent) (string, error) {
 	standup, err := bot.db.SelectStandupByMessageTS(msg.DeletedTimestamp)
 	if err != nil {
-		return nil
+		return "", nil
 	}
-	return bot.db.DeleteStandup(standup.ID)
+
+	err = bot.db.DeleteStandup(standup.ID)
+	if err != nil {
+		return "", err
+	}
+
+	return "standup deleted", nil
 }
 
 func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
@@ -261,50 +300,10 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 	loc := time.FixedZone(user.TZ, user.TZOffset)
 
 	if standup.Created.In(loc).Day() == time.Now().UTC().In(loc).Day() {
+		log.Info("not non reporter: ", userID)
 		return true
 	}
 	return false
-}
-
-//HandleAppMention функция которая работает точно так же как и HandleMessage
-//но при этом не говорит пользователю что он уже написал стендап.
-func (bot *Bot) HandleAppMention(msg *slack.MessageEvent) error {
-	msg.Team = bot.properties.TeamID
-	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
-		return nil
-	}
-
-	problem := bot.analizeStandup(msg.Msg.Text)
-	if problem != "" {
-		return nil
-	}
-
-	_, err := bot.db.CreateStandup(model.Standup{
-		TeamID:    msg.Team,
-		ChannelID: msg.Channel,
-		UserID:    msg.User,
-		Comment:   msg.Msg.Text,
-		MessageTS: msg.Msg.Timestamp,
-	})
-	if err != nil {
-		return err
-	}
-
-	item := slack.ItemRef{
-		Channel:   msg.Channel,
-		Timestamp: msg.Msg.Timestamp,
-		File:      "",
-		Comment:   "",
-	}
-	err = bot.slack.AddReaction("heavy_check_mark", item)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"TeamName": bot.properties.TeamName,
-			"Item":     item,
-		}).Error("Failed to AddReaction!")
-	}
-
-	return nil
 }
 
 func (bot *Bot) analizeStandup(message string) string {
@@ -621,9 +620,10 @@ func (bot *Bot) remindAboutWorklogs() error {
 
 		message += fmt.Sprintf("В общем: %.2f", float32(total)/3600)
 
-		err = bot.SendUserMessage(user.UserID, message)
-		if err != nil {
-			log.Error(err)
+		bot.MessageChan <- Message{
+			Type: "direct",
+			User: user.UserID,
+			Text: message,
 		}
 	}
 
