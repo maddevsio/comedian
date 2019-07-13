@@ -503,8 +503,6 @@ func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
 		return bot.quitCommand(command)
 	case "/edit_deadline":
 		return bot.addDeadline(command)
-	case "/show_deadline":
-		return bot.showDeadline(command)
 	default:
 		return ""
 	}

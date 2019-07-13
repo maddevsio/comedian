@@ -104,18 +104,59 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 }
 
 func (bot *Bot) showCommand(command slack.SlashCommand) string {
-	members, err := bot.db.ListChannelStandupers(command.ChannelID)
-	if err != nil || len(members) == 0 {
-		listNoStandupers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+	var deadline string
+	channel, err := bot.db.SelectChannel(command.ChannelID)
+
+	if err != nil {
+		couldNotShowDeadline, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
-				ID:    "listNoStandupers",
-				Other: "No standupers in the team, /join to start standuping",
+				ID:    "couldNotShowDeadline",
+				Other: "Can not show channel deadline",
 			},
 		})
 		if err != nil {
 			log.Error(err)
 		}
-		return listNoStandupers
+		deadline = couldNotShowDeadline
+	} else {
+		showStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "showStandupTime",
+				Other: "Standup deadline is {{.Deadline}}",
+			},
+			TemplateData: map[string]interface{}{"Deadline": channel.StandupTime},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		deadline = showStandupTime
+	}
+
+	if channel.StandupTime == "" {
+		showNoStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "showNoStandupTime",
+				Other: "Standup deadline is not set",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		deadline = showNoStandupTime
+	}
+
+	members, err := bot.db.ListChannelStandupers(command.ChannelID)
+	if err != nil || len(members) == 0 {
+		listNoStandupers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "listNoStandupers",
+				Other: "No standupers in the team, /start to start standuping. ",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		return listNoStandupers + "\n" + deadline
 	}
 
 	var list []string
@@ -133,11 +174,11 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 	listStandupers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "showStandupers",
-			One:   "Only {{.Standupers}} submits standups in the team, '/start' to begin",
-			Two:   "{{.Standupers}} submit standups in the team",
-			Few:   "{{.Standupers}} submit standups in the team",
-			Many:  "{{.Standupers}} submit standups in the team",
-			Other: "{{.Standupers}} submit standups in the team",
+			One:   "Only {{.Standupers}} submits standups in the team, '/start' to begin. ",
+			Two:   "{{.Standupers}} submit standups in the team. ",
+			Few:   "{{.Standupers}} submit standups in the team. ",
+			Many:  "{{.Standupers}} submit standups in the team. ",
+			Other: "{{.Standupers}} submit standups in the team. ",
 		},
 		PluralCount:  len(members),
 		TemplateData: map[string]interface{}{"Standupers": strings.Join(list, ", ")},
@@ -146,7 +187,7 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 		log.Error(err)
 	}
 
-	return listStandupers
+	return listStandupers + "\n" + deadline
 }
 
 func (bot *Bot) quitCommand(command slack.SlashCommand) string {
