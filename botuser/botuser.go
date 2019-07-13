@@ -506,7 +506,7 @@ func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
 	case "/show_deadline":
 		return bot.showDeadline(command)
 	default:
-		return "Unknown command"
+		return ""
 	}
 }
 

@@ -51,11 +51,11 @@ func setupBot() *Bot {
 
 func TestAnalizeStandup(t *testing.T) {
 
-	errors := bot.analizeStandup("yesterday, today, blockers")
+	errors := bot.analizeStandup("yesterday, today, issues")
 	assert.Equal(t, "", errors)
 
 	errors = bot.analizeStandup("wrong standup")
-	assert.Equal(t, "- no 'yesterday' keywords detected: yesterday, friday, monday, tuesday, wednesday, thursday, saturday, sunday, вчера, пятниц, понедельник, вторник, сред, четверг, суббот, воскресенье, - no 'today' keywords detected: today, сегодня, - no 'problems' keywords detected: problem, difficult, issue, block, проблем, мешает", errors)
+	assert.Equal(t, "- no 'yesterday' keywords detected: yesterday, friday, вчера, пятниц, - no 'today' keywords detected: today, сегодня, - no 'problems' keywords detected: issue, мешает", errors)
 }
 
 func TestHandleJoinNewUser(t *testing.T) {

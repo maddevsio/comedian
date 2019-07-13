@@ -9,7 +9,7 @@ import (
 func TestImplementDeadlineCommands(t *testing.T) {
 
 	resp := bot.ImplementCommands(slack.SlashCommand{
-		Command:     "edit_deadline",
+		Command:     "/edit_deadline",
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",
@@ -19,7 +19,7 @@ func TestImplementDeadlineCommands(t *testing.T) {
 	assert.Equal(t, "Updated standup deadline to 12:00", resp)
 
 	resp = bot.ImplementCommands(slack.SlashCommand{
-		Command:     "show_deadline",
+		Command:     "/show_deadline",
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",
@@ -29,7 +29,7 @@ func TestImplementDeadlineCommands(t *testing.T) {
 	assert.Equal(t, "Standup deadline set to 12:00", resp)
 
 	resp = bot.ImplementCommands(slack.SlashCommand{
-		Command:     "edit_deadline",
+		Command:     "/edit_deadline",
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",
@@ -39,7 +39,7 @@ func TestImplementDeadlineCommands(t *testing.T) {
 	assert.Equal(t, "Standup deadline removed", resp)
 
 	resp = bot.ImplementCommands(slack.SlashCommand{
-		Command:     "show_deadline",
+		Command:     "/show_deadline",
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",
