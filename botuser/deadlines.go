@@ -55,9 +55,11 @@ func (bot *Bot) addDeadline(command slack.SlashCommand) string {
 
 	channel.StandupTime = r.Text
 
-	if nt, exist := bot.FindNotifierThread(channel); exist {
-		go bot.StopNotifierThread(nt)
-		bot.DeleteNotifierThreadFromList(channel)
+	for s, nt := range bot.notifierThreads {
+		if nt.channel.ID == channel.ID {
+			nt.quit <- struct{}{}
+			bot.notifierThreads = append(bot.notifierThreads[:s], bot.notifierThreads[s+1:]...)
+		}
 	}
 
 	_, err = bot.db.UpdateChannel(channel)
@@ -104,9 +106,11 @@ func (bot *Bot) removeDeadline(command slack.SlashCommand) string {
 
 	channel.StandupTime = ""
 
-	if nt, exist := bot.FindNotifierThread(channel); exist {
-		go bot.StopNotifierThread(nt)
-		bot.DeleteNotifierThreadFromList(channel)
+	for s, nt := range bot.notifierThreads {
+		if nt.channel.ID == channel.ID {
+			nt.quit <- struct{}{}
+			bot.notifierThreads = append(bot.notifierThreads[:s], bot.notifierThreads[s+1:]...)
+		}
 	}
 
 	_, err = bot.db.UpdateChannel(channel)
