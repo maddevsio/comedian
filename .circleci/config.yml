@@ -1,0 +1,29 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/maddevsio/comedian
+    steps:
+      - checkout
+      - run: go get -u github.com/golang/dep/cmd/dep
+      - run:
+          name: run build
+          command: |
+            dep ensure
+            go build -v
+  test:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/maddevsio/comedian
+    steps:
+      - checkout
+      - run: go get -u github.com/mattn/goveralls
+      - run:
+          name: run test
+          command: |
+            go test -v -cover -race ./... -coverprofile=coverage.out
+      - run:
+          name: send report to coveralls
+          command: |
+            goveralls -coverprofile=coverage.out -service=circle-ci -repotoken=$COVERALLS_TOKEN
