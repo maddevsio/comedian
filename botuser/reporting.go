@@ -124,11 +124,10 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 			var worklogs, commits, standup string
 			var worklogsPoints, commitsPoints, standupPoints int
 
-			// TODO Check if status contains sick or vacation words
-			// userProfile, err := bot.slack.GetUserProfile(member.UserID, false)
-			// if err != nil {
-			// 	continue
-			// }
+			userInfo, err := bot.slack.GetUserInfo(member.UserID)
+			if err != nil {
+				continue
+			}
 
 			dataOnUser, dataOnUserInProject, collectorError := bot.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, -1))
 
@@ -173,7 +172,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 						ID:    "notTagStanduper",
 						Other: "",
 					},
-					TemplateData: map[string]interface{}{"user": UserInfo.RealName, "channel": channel.ChannelName},
+					TemplateData: map[string]interface{}{"user": userInfo.RealName, "channel": channel.ChannelName},
 				})
 				if err != nil {
 					log.Error(err)
@@ -294,11 +293,10 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 			var worklogs, commits string
 			var worklogsPoints, commitsPoints int
 
-			// TODO Check if status contains sick or vacation words
-			// userProfile, err := bot.slack.GetUserProfile(member.UserID, false)
-			// if err != nil {
-			// 	continue
-			// }
+			userInfo, err := bot.slack.GetUserInfo(member.UserID)
+			if err != nil {
+				continue
+			}
 
 			dataOnUser, dataOnUserInProject, collectorError := bot.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, -1))
 
@@ -339,7 +337,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 						ID:    "notTagStanduper",
 						Other: "",
 					},
-					TemplateData: map[string]interface{}{"user": UserInfo.RealName, "channel": channel.ChannelName},
+					TemplateData: map[string]interface{}{"user": userInfo.RealName, "channel": channel.ChannelName},
 				})
 				if err != nil {
 					log.Error(err)

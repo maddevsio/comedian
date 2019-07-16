@@ -117,51 +117,6 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func (api *ComedianAPI) deleteBot(c echo.Context) error {
-
-	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, missingTokenErr)
-	}
-	user := c.Get("user").(*jwt.Token)
-
-	claims := user.Claims.(jwt.MapClaims)
-	botID := claims["bot_id"].(float64)
-	expire := claims["expire"].(float64)
-	if time.Now().Unix() > int64(expire) {
-		return c.JSON(http.StatusForbidden, "Token expired")
-	}
-
-	if int64(botID) != id {
-		return c.JSON(http.StatusForbidden, accessDeniedErr)
-	}
-
-	err = api.db.DeleteBotSettingsByID(id)
-	if err != nil {
-		log.WithFields(log.Fields{"id": id, "error": err}).Error("DeleteBotSettingsByID failed")
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-
-	settings, err := api.db.GetBotSettings(id)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	bot, err := api.comedian.SelectBot(settings.TeamName)
-	if err != nil {
-		log.WithFields(log.Fields{"bot": bot, "error": err}).Error("Could not select bot")
-		return c.JSON(http.StatusOK, id)
-	}
-
-	bot.Stop()
-
-	return c.JSON(http.StatusNoContent, id)
-}
-
 func (api *ComedianAPI) listStandups(c echo.Context) error {
 
 	if c.Get("user") == nil {

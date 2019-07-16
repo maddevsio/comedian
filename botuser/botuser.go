@@ -278,7 +278,7 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 		return false
 	}
 
-	userProfile, err := bot.slack.GetUserInfo(member.UserID)
+	userProfile, err := bot.slack.GetUserInfo(userID)
 	if err != nil {
 		log.Error(err)
 		return false
