@@ -123,32 +123,6 @@ func TestStanduper(t *testing.T) {
 		}
 	}
 }
-
-func TestUser(t *testing.T) {
-	testCases := []struct {
-		teamID       string
-		userName     string
-		userID       string
-		errorMessage string
-	}{
-		{"", "", "", "team ID cannot be empty"},
-		{"teamID", "", "", "user name cannot be empty"},
-		{"teamID", "userName", "", "user ID cannot be empty"},
-		{"teamID", "userName", "userID", ""},
-	}
-	for _, tt := range testCases {
-		bs := User{
-			TeamID:   tt.teamID,
-			UserName: tt.userName,
-			UserID:   tt.userID,
-		}
-		err := bs.Validate()
-		if err != nil {
-			assert.Equal(t, errors.New(tt.errorMessage), err)
-		}
-	}
-}
-
 func TestHelperFunctions(t *testing.T) {
 	standuper := Standuper{
 		RoleInChannel: "pm",

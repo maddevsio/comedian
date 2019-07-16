@@ -124,16 +124,11 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 			var worklogs, commits, standup string
 			var worklogsPoints, commitsPoints, standupPoints int
 
-			UserInfo, err := bot.db.SelectUser(member.UserID)
-			if err != nil {
-				log.Warningf("SelectUser failed for  user %v: %v", member.UserID, err)
-				continue
-			}
-
-			if UserInfo.IsSick() || UserInfo.IsOnVacation() {
-				log.Warningf("user %v is either sick or on vacation. skip", member.UserID)
-				continue
-			}
+			// TODO Check if status contains sick or vacation words
+			// userProfile, err := bot.slack.GetUserProfile(member.UserID, false)
+			// if err != nil {
+			// 	continue
+			// }
 
 			dataOnUser, dataOnUserInProject, collectorError := bot.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, -1))
 
@@ -299,16 +294,11 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 			var worklogs, commits string
 			var worklogsPoints, commitsPoints int
 
-			UserInfo, err := bot.db.SelectUser(member.UserID)
-			if err != nil {
-				log.Warningf("SelectUser failed for  user %v: %v", member.UserID, err)
-				continue
-			}
-
-			if UserInfo.IsSick() || UserInfo.IsOnVacation() {
-				log.Warningf("user %v is either sick or on vacation. skip", member.UserID)
-				continue
-			}
+			// TODO Check if status contains sick or vacation words
+			// userProfile, err := bot.slack.GetUserProfile(member.UserID, false)
+			// if err != nil {
+			// 	continue
+			// }
 
 			dataOnUser, dataOnUserInProject, collectorError := bot.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, -1))
 

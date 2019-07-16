@@ -64,10 +64,6 @@ func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings
 func (bot *Bot) Start() {
 	log.Info("Bot started for ", bot.properties.TeamName)
 
-	err := bot.UpdateUsersList()
-	if err != nil {
-		log.Errorf("UpdateUsersList failed: %v", err)
-	}
 	bot.wg.Add(1)
 	go func() {
 		ticker := time.NewTicker(time.Second * 60).C
@@ -76,7 +72,7 @@ func (bot *Bot) Start() {
 			case <-ticker:
 				bot.warnChannels()
 				bot.alarmChannels()
-				err = bot.CallDisplayYesterdayTeamReport()
+				err := bot.CallDisplayYesterdayTeamReport()
 				if err != nil {
 					log.Error("CallDisplayYesterdayTeamReport failed: ", err)
 				}
@@ -144,19 +140,6 @@ func (bot *Bot) HandleCallBackEvent(eventType string, eventData []byte) error {
 		}
 		_, err := bot.HandleJoin(join.Channel, join.Team)
 		return err
-	case "team_join":
-		join := &slack.TeamJoinEvent{}
-		if err := json.Unmarshal(eventData, join); err != nil {
-			return err
-		}
-		_, err := bot.HandleJoinNewUser(join.User)
-		return err
-	case "user_change":
-		event := &slack.UserChangeEvent{}
-		if err := json.Unmarshal(eventData, event); err != nil {
-			return err
-		}
-		return bot.updateUser(event.User)
 	case "app_uninstalled":
 		bot.Stop()
 		err := bot.db.DeleteBotSettings(bot.properties.TeamID)
@@ -295,12 +278,13 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 		return false
 	}
 
-	user, err := bot.db.SelectUser(userID)
+	userProfile, err := bot.slack.GetUserInfo(member.UserID)
 	if err != nil {
+		log.Error(err)
 		return false
 	}
 
-	loc := time.FixedZone(user.TZ, user.TZOffset)
+	loc := time.FixedZone(userProfile.TZ, userProfile.TZOffset)
 
 	if standup.Created.In(loc).Day() == time.Now().UTC().In(loc).Day() {
 		log.Info("not non reporter: ", userID)
@@ -426,31 +410,6 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 	return newChannel, nil
 }
 
-//HandleJoinNewUser handles comedian joining user
-func (bot *Bot) HandleJoinNewUser(user slack.User) (model.User, error) {
-	newUser, err := bot.db.SelectUser(user.ID)
-	if err == nil {
-		return newUser, nil
-	}
-
-	if user.IsBot || user.Name == "slackbot" {
-		return newUser, nil
-	}
-
-	newUser, err = bot.db.CreateUser(model.User{
-		TeamID:   user.TeamID,
-		UserName: user.Name,
-		UserID:   user.ID,
-		RealName: user.RealName,
-		TZ:       user.TZ,
-		TZOffset: user.TZOffset,
-	})
-	if err != nil {
-		return newUser, err
-	}
-	return newUser, nil
-}
-
 //ImplementCommands implements slash commands such as adding users and managing deadlines
 func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
 	switch command.Command {
@@ -465,95 +424,6 @@ func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
 	default:
 		return ""
 	}
-}
-
-//UpdateUsersList updates users in workspace
-func (bot *Bot) UpdateUsersList() error {
-	users, err := bot.slack.GetUsers()
-	if err != nil {
-		return err
-	}
-	for _, user := range users {
-		err := bot.updateUser(user)
-		if err != nil {
-			log.WithFields(log.Fields{"user": user, "bot": bot, "error": err}).Error("updateUser failed")
-		}
-	}
-	return nil
-}
-
-//AddNewSlackUser add new added slack user to db
-func (bot *Bot) AddNewSlackUser(userID string) error {
-	users, err := bot.slack.GetUsers()
-	if err != nil {
-		return err
-	}
-	for _, user := range users {
-		if user.ID == userID {
-			err := bot.updateUser(user)
-			if err != nil {
-				log.WithFields(log.Fields{"user": user, "bot": bot, "error": err}).Error("AddNewSlackUser.updateUser failed")
-			}
-		}
-	}
-	return nil
-}
-
-func (bot *Bot) updateUser(user slack.User) error {
-	if user.IsBot || user.Name == "slackbot" {
-		return nil
-	}
-
-	u, err := bot.db.SelectUser(user.ID)
-	if err != nil && !user.Deleted {
-		u, err = bot.db.CreateUser(model.User{
-			TeamID:   user.TeamID,
-			UserName: user.Name,
-			UserID:   user.ID,
-			RealName: user.RealName,
-			TZ:       user.TZ,
-			TZOffset: user.TZOffset,
-			Status:   strings.ToLower(user.Profile.StatusText),
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if !user.Deleted {
-		u.UserName = user.Name
-		u.RealName = user.RealName
-		u.TeamID = user.TeamID
-		u.TZ = user.TZ
-		u.TZOffset = user.TZOffset
-		u.Status = strings.ToLower(user.Profile.StatusText)
-		_, err = bot.db.UpdateUser(u)
-		if err != nil {
-			return err
-		}
-	}
-
-	if user.Deleted {
-		err := bot.db.DeleteUser(u.ID)
-		if err != nil {
-			return err
-		}
-
-		standupers, err := bot.db.ListStandupers()
-		if err != nil {
-			return err
-		}
-		for _, standuper := range standupers {
-			if u.UserID == standuper.UserID {
-				err := bot.db.DeleteStanduper(standuper.ID)
-				if err != nil {
-					log.WithFields(log.Fields{"user": user, "bot": bot, "standuper": standuper, "error": err}).Error("DeleteStanduper failed")
-				}
-			}
-		}
-	}
-
-	return nil
 }
 
 //Suits returns true if found desired bot properties
@@ -581,7 +451,7 @@ func (bot *Bot) remindAboutWorklogs() error {
 		return nil
 	}
 
-	users, err := bot.db.ListUsers()
+	users, err := bot.slack.GetUsers()
 	if err != nil {
 		return err
 	}
@@ -591,7 +461,7 @@ func (bot *Bot) remindAboutWorklogs() error {
 			continue
 		}
 
-		standupers, err := bot.db.FindStansupersByUserID(user.UserID)
+		standupers, err := bot.db.FindStansupersByUserID(user.ID)
 		if err != nil {
 			log.Error(err)
 			continue
@@ -625,7 +495,7 @@ func (bot *Bot) remindAboutWorklogs() error {
 
 		bot.MessageChan <- Message{
 			Type: "direct",
-			User: user.UserID,
+			User: user.ID,
 			Text: message,
 		}
 	}

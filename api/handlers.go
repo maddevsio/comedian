@@ -1,17 +1,13 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/maddevsio/comedian/model"
-	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,86 +15,6 @@ var (
 	missingTokenErr = "missing token / unauthorized"
 	accessDeniedErr = "access denied"
 )
-
-//LoginPayload represents loginPayload from UI
-type LoginPayload struct {
-	Code        string `json:"code"`
-	RedirectURI string `json:"redirect_uri"`
-}
-
-//Validate LoginPayload
-func (lp *LoginPayload) Validate() error {
-	if strings.TrimSpace(lp.Code) == "" {
-		return fmt.Errorf("code is required")
-	}
-	return nil
-}
-
-//ChangePasswordData is used to change password
-type ChangePasswordData struct {
-	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password" validate:"min=8,max=40"`
-}
-
-func (api *ComedianAPI) healthcheck(c echo.Context) error {
-	return c.JSON(http.StatusOK, "successful operation")
-}
-
-func (api *ComedianAPI) login(c echo.Context) error {
-	ld := new(LoginPayload)
-	if err := c.Bind(ld); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
-	}
-
-	if ld.Validate() != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": ld.Validate().Error()})
-	}
-
-	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, ld.Code, ld.RedirectURI, false)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
-	}
-
-	userIdentity := &slack.UserIdentityResponse{}
-
-	userIdentityResponse, err := http.Get(fmt.Sprintf("https://slack.com/api/users.identity?token=%s", resp.AccessToken))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
-	}
-
-	err = json.NewDecoder(userIdentityResponse.Body).Decode(userIdentity)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
-	}
-
-	// Create token
-	token := jwt.New(jwt.SigningMethodHS256)
-
-	user, err := api.db.SelectUser(userIdentity.User.ID)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": "No user with such ID"})
-	}
-
-	bot, err := api.db.GetBotSettingsByTeamID(user.TeamID)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": "No comedian bot found"})
-	}
-	// Set claims
-	claims := token.Claims.(jwt.MapClaims)
-	claims["user_id"] = user.UserID
-
-	// Generate encoded token and send it as response.
-	tokenString, err := token.SignedString([]byte(api.config.SlackClientSecret))
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
-	}
-
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"token": tokenString,
-		"user":  user,
-		"bot":   bot,
-	})
-}
 
 func (api *ComedianAPI) listBots(c echo.Context) error {
 	if c.Get("user") == nil {
@@ -381,37 +297,6 @@ func (api *ComedianAPI) deleteStandup(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusNoContent, id)
-}
-
-func (api *ComedianAPI) listUsers(c echo.Context) error {
-
-	if c.Get("user") == nil {
-		return c.JSON(http.StatusUnauthorized, missingTokenErr)
-	}
-	user := c.Get("user").(*jwt.Token)
-
-	claims := user.Claims.(jwt.MapClaims)
-	teamID := claims["team_id"].(string)
-	expire := claims["expire"].(float64)
-	if time.Now().Unix() > int64(expire) {
-		return c.JSON(http.StatusForbidden, "Token expired")
-	}
-
-	users, err := api.db.ListUsers()
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("ListUsers failed")
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-
-	result := make([]model.User, 0)
-
-	for _, user := range users {
-		if user.TeamID == teamID {
-			result = append(result, user)
-		}
-	}
-
-	return c.JSON(http.StatusOK, result)
 }
 
 func (api *ComedianAPI) listChannels(c echo.Context) error {

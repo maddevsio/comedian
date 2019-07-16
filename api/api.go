@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	jwt "github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -42,6 +43,20 @@ type swagger struct {
 	Schemes     []string
 	Paths       map[string]interface{}
 	Definitions map[string]interface{}
+}
+
+//LoginPayload represents loginPayload from UI
+type LoginPayload struct {
+	Code        string `json:"code"`
+	RedirectURI string `json:"redirect_uri"`
+}
+
+//Validate LoginPayload
+func (lp *LoginPayload) Validate() error {
+	if strings.TrimSpace(lp.Code) == "" {
+		return fmt.Errorf("code is required")
+	}
+	return nil
 }
 
 //Event represents slack challenge event
@@ -92,8 +107,6 @@ func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) 
 	r.PATCH("/standups/:id", api.updateStandup)
 	r.DELETE("/standups/:id", api.deleteStandup)
 
-	r.GET("/users", api.listUsers)
-
 	r.GET("/channels", api.listChannels)
 	r.GET("/channels/:id", api.getChannel)
 	r.PATCH("/channels/:id", api.updateChannel)
@@ -120,6 +133,60 @@ func (api *ComedianAPI) Start() error {
 	}
 
 	return api.echo.Start(api.config.HTTPBindAddr)
+}
+
+func (api *ComedianAPI) healthcheck(c echo.Context) error {
+	return c.JSON(http.StatusOK, "successful operation")
+}
+
+func (api *ComedianAPI) login(c echo.Context) error {
+	ld := new(LoginPayload)
+	if err := c.Bind(ld); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+	}
+
+	if ld.Validate() != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": ld.Validate().Error()})
+	}
+
+	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, ld.Code, ld.RedirectURI, false)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+	}
+
+	userIdentity := &slack.UserIdentityResponse{}
+
+	userIdentityResponse, err := http.Get(fmt.Sprintf("https://slack.com/api/users.identity?token=%s", resp.AccessToken))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+	}
+
+	err = json.NewDecoder(userIdentityResponse.Body).Decode(userIdentity)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+	}
+
+	// Create token
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	bot, err := api.db.GetBotSettingsByTeamID(userIdentity.Team.ID)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": "No comedian bot found"})
+	}
+	// Set claims
+	claims := token.Claims.(jwt.MapClaims)
+	claims["user_id"] = userIdentity.User.ID
+
+	// Generate encoded token and send it as response.
+	tokenString, err := token.SignedString([]byte(api.config.SlackClientSecret))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"token": tokenString,
+		"bot":   bot,
+	})
 }
 
 func (api *ComedianAPI) handleEvent(c echo.Context) error {

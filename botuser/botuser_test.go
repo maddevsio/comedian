@@ -5,7 +5,6 @@ import (
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/text/language"
 	"testing"
@@ -56,53 +55,4 @@ func TestAnalizeStandup(t *testing.T) {
 
 	errors = bot.analizeStandup("wrong standup")
 	assert.Equal(t, "- no 'yesterday' keywords detected: yesterday, friday, вчера, пятниц, - no 'today' keywords detected: today, сегодня, - no 'problems' keywords detected: issue, мешает", errors)
-}
-
-func TestHandleJoinNewUser(t *testing.T) {
-
-	user, err := bot.HandleJoinNewUser(slack.User{
-		IsBot: true,
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, model.User{}, user)
-
-	user, err = bot.HandleJoinNewUser(slack.User{
-		Name: "slackbot",
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, model.User{}, user)
-
-	user, err = bot.HandleJoinNewUser(slack.User{
-		Name:     "Thor",
-		ID:       "Thor123",
-		RealName: "Loki",
-		TZ:       "",
-		TZOffset: 0,
-	})
-	assert.Error(t, err)
-	assert.Equal(t, "team ID cannot be empty", err.Error())
-
-	user, err = bot.HandleJoinNewUser(slack.User{
-		TeamID:   "testTeam",
-		Name:     "Thor",
-		ID:       "Thor123",
-		RealName: "Loki",
-		TZ:       "",
-		TZOffset: 0,
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, "Thor", user.UserName)
-
-	user, err = bot.HandleJoinNewUser(slack.User{
-		Name:     "Thor",
-		ID:       "Thor123",
-		RealName: "Loki",
-		TZ:       "",
-		TZOffset: 0,
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, "Thor", user.UserName)
-
-	assert.NoError(t, bot.db.DeleteUser(user.ID))
-
 }
