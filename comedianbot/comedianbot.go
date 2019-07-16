@@ -68,7 +68,7 @@ func (comedian Comedian) SetBots() error {
 	}
 
 	for _, s := range settings {
-		bot := botuser.New(config, comedian.Bundle, s, comedian.DB)
+		bot := botuser.New(config, comedian.Bundle, &s, comedian.DB)
 		comedian.AddBot(bot)
 	}
 	return nil

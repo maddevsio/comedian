@@ -1,11 +1,8 @@
 package storage
 
 import (
-	"time"
-
-	// This line is must for working MySQL database
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/maddevsio/comedian/model"
+	"time"
 )
 
 // CreateStandup creates standup entry in database
@@ -16,7 +13,7 @@ func (m *DB) CreateStandup(s model.Standup) (model.Standup, error) {
 	}
 	res, err := m.db.Exec(
 		"INSERT INTO `standups` (team_id, created, modified, comment, channel_id, user_id, message_ts) VALUES (?,?, ?, ?, ?, ?, ?)",
-		s.TeamID, time.Now().UTC(), time.Now().UTC(), s.Comment, s.ChannelID, s.UserID, s.MessageTS,
+		s.TeamID, s.Created, s.Modified, s.Comment, s.ChannelID, s.UserID, s.MessageTS,
 	)
 	if err != nil {
 		return s, err
@@ -38,7 +35,7 @@ func (m *DB) UpdateStandup(s model.Standup) (model.Standup, error) {
 	}
 	_, err = m.db.Exec(
 		"UPDATE `standups` SET modified=?, comment=?, message_ts=? WHERE id=?",
-		time.Now().UTC(), s.Comment, s.MessageTS, s.ID,
+		s.Modified, s.Comment, s.MessageTS, s.ID,
 	)
 	if err != nil {
 		return s, err

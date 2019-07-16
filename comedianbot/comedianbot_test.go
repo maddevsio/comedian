@@ -41,7 +41,7 @@ func TestBots(t *testing.T) {
 
 	go comedian.StartBots()
 
-	botSettings := model.BotSettings{
+	botSettings := &model.BotSettings{
 		TeamID: "testTeam",
 	}
 
@@ -57,7 +57,21 @@ func TestBots(t *testing.T) {
 	_, err = comedian.SelectBot("testTeam")
 	assert.NoError(t, err)
 
-	newBot, err := db.CreateBotSettings("token", "userID", "teamID", "teamName")
+	bs := &model.BotSettings{
+		NotifierInterval:    30,
+		Language:            "en_US",
+		ReminderRepeatsMax:  3,
+		ReminderTime:        int64(10),
+		AccessToken:         "token",
+		UserID:              "userID",
+		TeamID:              "teamID",
+		TeamName:            "teamName",
+		ReportingChannel:    "",
+		ReportingTime:       "9:00",
+		IndividualReportsOn: false,
+	}
+
+	newBot, err := db.CreateBotSettings(bs)
 	assert.NoError(t, err)
 
 	err = comedian.SetBots()
@@ -85,7 +99,7 @@ func TestHandleEvent(t *testing.T) {
 	})
 	assert.Equal(t, errors.New("no bot found to implement the request"), err)
 
-	botSettings := model.BotSettings{
+	botSettings := &model.BotSettings{
 		TeamID:      "testTeam",
 		AccessToken: "foo",
 	}
@@ -126,7 +140,7 @@ func TestHandleCallbackEvent(t *testing.T) {
 
 	go comedian.StartBots()
 
-	bot := botuser.New(nil, bundle, model.BotSettings{
+	bot := botuser.New(nil, bundle, &model.BotSettings{
 		TeamID:      "testTeam",
 		AccessToken: "foo",
 	}, nil)

@@ -7,6 +7,7 @@ import (
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
 	"strings"
+	"time"
 )
 
 func (bot *Bot) joinCommand(command slack.SlashCommand) string {
@@ -38,6 +39,7 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 	}
 
 	_, err = bot.db.CreateStanduper(model.Standuper{
+		Created:       time.Now().UTC(),
 		TeamID:        command.TeamID,
 		UserID:        command.UserID,
 		ChannelID:     command.ChannelID,

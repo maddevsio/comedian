@@ -327,7 +327,22 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	botSettings, err := api.db.GetBotSettingsByTeamID(resp.TeamID)
 	if err != nil {
-		cp, err := api.db.CreateBotSettings(resp.Bot.BotAccessToken, resp.Bot.BotUserID, resp.TeamID, resp.TeamName)
+
+		bs := &model.BotSettings{
+			NotifierInterval:    30,
+			Language:            "en_US",
+			ReminderRepeatsMax:  3,
+			ReminderTime:        int64(10),
+			AccessToken:         resp.Bot.BotAccessToken,
+			UserID:              resp.Bot.BotUserID,
+			TeamID:              resp.TeamID,
+			TeamName:            resp.TeamName,
+			ReportingChannel:    "",
+			ReportingTime:       "9:00",
+			IndividualReportsOn: false,
+		}
+
+		cp, err := api.db.CreateBotSettings(bs)
 		if err != nil {
 			return err
 		}

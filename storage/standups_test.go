@@ -1,13 +1,9 @@
 package storage
 
 import (
-
-	// This line is must for working MySQL database
-	"testing"
-
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
+	"testing"
 	"time"
 )
 
@@ -17,6 +13,8 @@ func TestCreateStandup(t *testing.T) {
 	assert.Error(t, err)
 
 	st, err := db.CreateStandup(model.Standup{
+		Created:   time.Now(),
+		Modified:  time.Now(),
 		TeamID:    "foo",
 		UserID:    "bar",
 		ChannelID: "bar12",
@@ -31,6 +29,8 @@ func TestCreateStandup(t *testing.T) {
 func TestGetStandups(t *testing.T) {
 
 	st, err := db.CreateStandup(model.Standup{
+		Created:   time.Now(),
+		Modified:  time.Now(),
 		TeamID:    "foo",
 		UserID:    "bar",
 		ChannelID: "bar12",
@@ -76,6 +76,8 @@ func TestGetStandups(t *testing.T) {
 func TestUpdateStandup(t *testing.T) {
 
 	st, err := db.CreateStandup(model.Standup{
+		Created:   time.Now(),
+		Modified:  time.Now(),
 		TeamID:    "foo",
 		UserID:    "bar",
 		ChannelID: "bar12",

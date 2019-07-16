@@ -26,7 +26,7 @@ func setupBot() *Bot {
 		return nil
 	}
 
-	settings := model.BotSettings{
+	settings := &model.BotSettings{
 		TeamID:      "testTeam",
 		AccessToken: "foo",
 	}

@@ -1,12 +1,9 @@
 package storage
 
 import (
-	// This line is must for working MySQL database
-	"testing"
-
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestCreateChannel(t *testing.T) {

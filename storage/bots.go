@@ -1,51 +1,36 @@
 package storage
 
 import (
-
-	// This line is must for working MySQL database
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/maddevsio/comedian/model"
 )
 
 //CreateBotSettings creates bot properties for the newly created bot
-func (m *DB) CreateBotSettings(token, userID, teamID, teamName string) (model.BotSettings, error) {
-	bs := model.BotSettings{
-		NotifierInterval:    30,
-		Language:            "en_US",
-		ReminderRepeatsMax:  3,
-		ReminderTime:        int64(10),
-		AccessToken:         token,
-		UserID:              userID,
-		TeamID:              teamID,
-		TeamName:            teamName,
-		ReportingChannel:    "",
-		ReportingTime:       "9:00",
-		IndividualReportsOn: false,
-	}
-
+func (m *DB) CreateBotSettings(bs *model.BotSettings) (*model.BotSettings, error) {
 	err := bs.Validate()
 	if err != nil {
 		return bs, err
 	}
 
-	_, err = m.db.Exec(
+	res, err := m.db.Exec(
 		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, user_id, team_id, team_name, reporting_channel, reporting_time, individual_reports_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.UserID, bs.TeamID, bs.TeamName, bs.ReportingChannel, bs.ReportingTime, bs.IndividualReportsOn)
 	if err != nil {
 		return bs, err
 	}
 
-	bs, err = m.GetBotSettingsByTeamName(teamName)
+	id, err := res.LastInsertId()
 	if err != nil {
 		return bs, err
 	}
+
+	bs.ID = id
 
 	return bs, nil
 }
 
 //GetAllBotSettings returns all bots
 func (m *DB) GetAllBotSettings() ([]model.BotSettings, error) {
-	var bs []model.BotSettings
+	bs := []model.BotSettings{}
 	err := m.db.Select(&bs, "SELECT * FROM `bot_settings`")
 	if err != nil {
 		return bs, err
@@ -53,20 +38,10 @@ func (m *DB) GetAllBotSettings() ([]model.BotSettings, error) {
 	return bs, nil
 }
 
-//GetBotSettingsByTeamName returns a particular bot
-func (m *DB) GetBotSettingsByTeamName(teamName string) (model.BotSettings, error) {
-	var bs model.BotSettings
-	err := m.db.Get(&bs, "SELECT * FROM `bot_settings` where team_name=?", teamName)
-	if err != nil {
-		return bs, err
-	}
-	return bs, nil
-}
-
 //GetBotSettingsByTeamID returns a particular bot
-func (m *DB) GetBotSettingsByTeamID(teamID string) (model.BotSettings, error) {
-	var bs model.BotSettings
-	err := m.db.Get(&bs, "SELECT * FROM `bot_settings` where team_id=?", teamID)
+func (m *DB) GetBotSettingsByTeamID(teamID string) (*model.BotSettings, error) {
+	bs := &model.BotSettings{}
+	err := m.db.Get(bs, "SELECT * FROM `bot_settings` where team_id=?", teamID)
 	if err != nil {
 		return bs, err
 	}
@@ -74,9 +49,9 @@ func (m *DB) GetBotSettingsByTeamID(teamID string) (model.BotSettings, error) {
 }
 
 //GetBotSettings returns a particular bot
-func (m *DB) GetBotSettings(id int64) (model.BotSettings, error) {
-	var bs model.BotSettings
-	err := m.db.Get(&bs, "SELECT * FROM `bot_settings` where id=?", id)
+func (m *DB) GetBotSettings(id int64) (*model.BotSettings, error) {
+	bs := &model.BotSettings{}
+	err := m.db.Get(bs, "SELECT * FROM `bot_settings` where id=?", id)
 	if err != nil {
 		return bs, err
 	}
@@ -84,7 +59,7 @@ func (m *DB) GetBotSettings(id int64) (model.BotSettings, error) {
 }
 
 //UpdateBotSettings updates bot
-func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
+func (m *DB) UpdateBotSettings(settings *model.BotSettings) (*model.BotSettings, error) {
 	err := settings.Validate()
 	if err != nil {
 		return settings, err
@@ -97,8 +72,8 @@ func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, e
 	if err != nil {
 		return settings, err
 	}
-	var bs model.BotSettings
-	err = m.db.Get(&bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
+	bs := &model.BotSettings{}
+	err = m.db.Get(bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
 	if err != nil {
 		return settings, err
 	}

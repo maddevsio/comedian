@@ -37,7 +37,7 @@ type Message struct {
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
 	slack           *slack.Client
-	properties      model.BotSettings
+	properties      *model.BotSettings
 	db              *storage.DB
 	localizer       *i18n.Localizer
 	wg              sync.WaitGroup
@@ -48,7 +48,7 @@ type Bot struct {
 }
 
 //New creates new Bot instance
-func New(config *config.Config, bundle *i18n.Bundle, settings model.BotSettings, db *storage.DB) *Bot {
+func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings, db *storage.DB) *Bot {
 	bot := &Bot{}
 	bot.slack = slack.New(settings.AccessToken)
 	bot.properties = settings
@@ -203,6 +203,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) (string, error) {
 	}
 
 	_, err := bot.db.CreateStandup(model.Standup{
+		Created:   time.Now().UTC(),
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
 		UserID:    msg.User,
@@ -240,6 +241,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) (string, error) {
 	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 	if err == nil {
 		standup.Comment = msg.SubMessage.Text
+		standup.Modified = time.Now().UTC()
 		_, err := bot.db.UpdateStandup(standup)
 		if err != nil {
 			return "", err
@@ -248,6 +250,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) (string, error) {
 	}
 
 	standup, err = bot.db.CreateStandup(model.Standup{
+		Created:   time.Now().UTC(),
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
 		UserID:    msg.SubMessage.User,
@@ -559,12 +562,12 @@ func (bot *Bot) Suits(team string) bool {
 }
 
 //Settings just returns bot settings
-func (bot *Bot) Settings() model.BotSettings {
+func (bot *Bot) Settings() *model.BotSettings {
 	return bot.properties
 }
 
 //SetProperties updates bot settings
-func (bot *Bot) SetProperties(settings model.BotSettings) model.BotSettings {
+func (bot *Bot) SetProperties(settings *model.BotSettings) *model.BotSettings {
 	bot.properties = settings
 	return bot.properties
 }

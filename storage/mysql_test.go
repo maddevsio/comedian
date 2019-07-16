@@ -1,13 +1,9 @@
 package storage
 
 import (
-
-	// This line is must for working MySQL database
+	"github.com/maddevsio/comedian/config"
 	"log"
 	"time"
-
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/maddevsio/comedian/config"
 )
 
 var db = setupDB()

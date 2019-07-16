@@ -1,9 +1,6 @@
 package storage
 
 import (
-
-	// This line is must for working MySQL database
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/maddevsio/comedian/model"
 )
 
@@ -29,26 +26,6 @@ func (m *DB) CreateUser(u model.User) (model.User, error) {
 	return u, nil
 }
 
-// SelectUser selects User entry from database
-func (m *DB) SelectUser(userID string) (model.User, error) {
-	var c model.User
-	err := m.db.Get(&c, "SELECT * FROM `users` WHERE user_id=?", userID)
-	if err != nil {
-		return c, err
-	}
-	return c, err
-}
-
-// GetUser selects User entry from database
-func (m *DB) GetUser(id int64) (model.User, error) {
-	var c model.User
-	err := m.db.Get(&c, "SELECT * FROM `users` WHERE id=?", id)
-	if err != nil {
-		return c, err
-	}
-	return c, err
-}
-
 // UpdateUser updates User entry in database
 func (m *DB) UpdateUser(u model.User) (model.User, error) {
 	err := u.Validate()
@@ -65,6 +42,16 @@ func (m *DB) UpdateUser(u model.User) (model.User, error) {
 	var i model.User
 	err = m.db.Get(&i, "SELECT * FROM `users` WHERE id=?", u.ID)
 	return i, err
+}
+
+// SelectUser selects User entry from database
+func (m *DB) SelectUser(userID string) (model.User, error) {
+	var c model.User
+	err := m.db.Get(&c, "SELECT * FROM `users` WHERE user_id=?", userID)
+	if err != nil {
+		return c, err
+	}
+	return c, err
 }
 
 // ListUsers selects Users from database

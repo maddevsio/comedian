@@ -1,20 +1,31 @@
 package storage
 
 import (
-
-	// This line is must for working MySQL database
-	"testing"
-
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestCreateBotSettings(t *testing.T) {
-	bot, err := db.CreateBotSettings("", "", "", "")
+	bot, err := db.CreateBotSettings(&model.BotSettings{})
 	assert.Error(t, err)
 	assert.Equal(t, int64(0), bot.ID)
 
-	bot, err = db.CreateBotSettings("token", "userID", "teamID", "foo")
+	bs := &model.BotSettings{
+		NotifierInterval:    30,
+		Language:            "en_US",
+		ReminderRepeatsMax:  3,
+		ReminderTime:        int64(10),
+		AccessToken:         "token",
+		UserID:              "userID",
+		TeamID:              "teamID",
+		TeamName:            "foo",
+		ReportingChannel:    "",
+		ReportingTime:       "9:00",
+		IndividualReportsOn: false,
+	}
+
+	bot, err = db.CreateBotSettings(bs)
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 
@@ -26,7 +37,21 @@ func TestBotSettings(t *testing.T) {
 	_, err := db.GetAllBotSettings()
 	assert.NoError(t, err)
 
-	bot, err := db.CreateBotSettings("token", "", "teamID", "foo")
+	bs := &model.BotSettings{
+		NotifierInterval:    30,
+		Language:            "en_US",
+		ReminderRepeatsMax:  3,
+		ReminderTime:        int64(10),
+		AccessToken:         "token",
+		UserID:              "userID",
+		TeamID:              "teamID",
+		TeamName:            "foo",
+		ReportingChannel:    "",
+		ReportingTime:       "9:00",
+		IndividualReportsOn: false,
+	}
+
+	bot, err := db.CreateBotSettings(bs)
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 
@@ -44,19 +69,25 @@ func TestBotSettings(t *testing.T) {
 	bot, err = db.GetBotSettingsByTeamID("teamWrongID")
 	assert.Error(t, err)
 
-	bot, err = db.GetBotSettingsByTeamName("foo")
-	assert.NoError(t, err)
-	assert.Equal(t, "teamID", bot.TeamID)
-
-	bot, err = db.GetBotSettingsByTeamName("bar")
-	assert.Error(t, err)
-
 	assert.NoError(t, db.DeleteBotSettingsByID(bot.ID))
 }
 
 func TestUpdateAndDeleteBotSettings(t *testing.T) {
+	bs := &model.BotSettings{
+		NotifierInterval:    30,
+		Language:            "en_US",
+		ReminderRepeatsMax:  3,
+		ReminderTime:        int64(10),
+		AccessToken:         "token",
+		UserID:              "userID",
+		TeamID:              "teamID",
+		TeamName:            "foo",
+		ReportingChannel:    "",
+		ReportingTime:       "9:00",
+		IndividualReportsOn: false,
+	}
 
-	bot, err := db.CreateBotSettings("token", "", "teamID", "foo")
+	bot, err := db.CreateBotSettings(bs)
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bot.TeamName)
 	assert.Equal(t, "en_US", bot.Language)

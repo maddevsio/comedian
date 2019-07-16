@@ -337,6 +337,8 @@ func (api *ComedianAPI) updateStandup(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, accessDeniedErr)
 	}
 
+	standup.Modified = time.Now().UTC()
+
 	res, err := api.db.UpdateStandup(standup)
 	if err != nil {
 		log.WithFields(log.Fields{"standup": standup, "error": err}).Error("UpdateStandup failed")
