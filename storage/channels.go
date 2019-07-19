@@ -51,6 +51,13 @@ func (m *DB) ListChannels() ([]model.Channel, error) {
 	return channels, err
 }
 
+//ListTeamChannels returns list of channels
+func (m *DB) ListTeamChannels(teamID string) ([]model.Channel, error) {
+	channels := []model.Channel{}
+	err := m.db.Select(&channels, "SELECT * FROM `channels` where team_id=?", teamID)
+	return channels, err
+}
+
 // SelectChannel selects Channel entry from database
 func (m *DB) SelectChannel(channelID string) (model.Channel, error) {
 	var c model.Channel

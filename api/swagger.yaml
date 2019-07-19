@@ -12,8 +12,6 @@ basePath: "/"
 tags:
 - name: "standups"
   description: "Everything about standups"
-- name: "users"
-  description: "Slack team users"
 - name: "channels"
   description: "Slack team channels (aka projects) tracked by Comedian"
 - name: "standupers"
@@ -24,8 +22,8 @@ schemes:
   - "https"
   - "http"
 securityDefinitions:
-  JWT:
-    description: "insert as follows: Bearer + JWT from login responce"
+  Auth:
+    description: "Bot Access Token gained during login"
     type: apiKey
     name: Authorization
     in: header
@@ -116,7 +114,7 @@ paths:
   /v1/bots:
     get:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "bots"
       summary: "Returns all bots"
@@ -137,7 +135,7 @@ paths:
   /v1/bots/{id}:
     get:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "bots"
       summary: "Find bot by id"
@@ -165,7 +163,7 @@ paths:
           description: "Internal Error"
     patch:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "bots"
       summary: "Updates a bot in the database with form data"
@@ -201,7 +199,7 @@ paths:
           description: "Internal Error"
     delete:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "bots"
       summary: "Deletes a bot"
@@ -226,31 +224,10 @@ paths:
           description: "No access to resource"
         500:
           description: "Internal Error"   
-  /v1/users:
-    get:
-      security:
-        - JWT: []
-      tags:
-      - "users"
-      summary: "Returns all users belonging to one slack team"
-      description: "Returns a map of users"
-      produces:
-      - "application/json"
-      responses:
-        200:
-          description: "success"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/User"
-        401: 
-          description: "Unauthorized"
-        500:
-          description: "Internal Error"
   /v1/channels:
     get:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "channels"
       summary: "Returns all channels"
@@ -272,7 +249,7 @@ paths:
   /v1/channels/{id}:
     get:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "channels"
       summary: "Find channel by id"
@@ -300,7 +277,7 @@ paths:
           description: "Internal Error"
     patch:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "channels"
       summary: "Updates a channel in the database"
@@ -336,7 +313,7 @@ paths:
   /v1/standupers:
     get:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "standupers"
       summary: "Returns all standupers"
@@ -358,7 +335,7 @@ paths:
   /v1/standupers/{id}:
     get:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "standupers"
       summary: "Find standuper by id"
@@ -386,7 +363,7 @@ paths:
           description: "Internal Error"
     patch:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "standupers"
       summary: "Updates a standuper in the database with form data"
@@ -421,7 +398,7 @@ paths:
           description: "Internal Error"
     delete:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "standupers"
       summary: "Deletes a standuper"
@@ -449,7 +426,7 @@ paths:
   /v1/standups:
     get:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "standups"
       summary: "Returns all standups"
@@ -471,7 +448,7 @@ paths:
   /v1/standups/{id}:
     get:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "standups"
       summary: "Find standup by id"
@@ -501,7 +478,7 @@ paths:
           description: "Internal Error"
     patch:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "standups"
       summary: "Updates a standup in the database with form data"
@@ -536,7 +513,7 @@ paths:
           description: "Internal Error"
     delete:
       security:
-        - JWT: []
+        - Auth: []
       tags:
       - "standups"
       summary: "Deletes a standup"
@@ -580,19 +557,6 @@ definitions:
       channel:
         type: "string"
       message:
-        type: "string"
-  User:
-    type: "object"
-    properties:
-      id:
-        type: "integer"
-      user_name:
-        type: "string"
-      userID:
-        type: "string"
-      role:
-        type: "string"
-      realName:
         type: "string"
   Channel:
     type: "object"

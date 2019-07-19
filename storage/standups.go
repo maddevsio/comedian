@@ -45,6 +45,20 @@ func (m *DB) UpdateStandup(s model.Standup) (model.Standup, error) {
 	return i, err
 }
 
+// ListStandups returns array of standup entries from database
+func (m *DB) ListStandups() ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.db.Select(&items, "SELECT * FROM `standups` order by id desc")
+	return items, err
+}
+
+// ListTeamStandups returns array of standup entries from database
+func (m *DB) ListTeamStandups(teamID string) ([]model.Standup, error) {
+	items := []model.Standup{}
+	err := m.db.Select(&items, "SELECT * FROM `standups` where team_id=? order by id desc", teamID)
+	return items, err
+}
+
 //GetStandup returns standup by its ID
 func (m *DB) GetStandup(id int64) (model.Standup, error) {
 	var s model.Standup
@@ -83,13 +97,6 @@ func (m *DB) GetStandupForPeriod(userID, channelID string, timeFrom, timeTo time
 		return s, err
 	}
 	return s, nil
-}
-
-// ListStandups returns array of standup entries from database
-func (m *DB) ListStandups() ([]model.Standup, error) {
-	items := []model.Standup{}
-	err := m.db.Select(&items, "SELECT * FROM `standups` order by id desc")
-	return items, err
 }
 
 // DeleteStandup deletes standup entry from database

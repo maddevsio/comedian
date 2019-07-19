@@ -64,6 +64,13 @@ func (m *DB) ListStandupers() ([]model.Standuper, error) {
 	return items, err
 }
 
+// ListTeamStandupers returns array of standup entries from database
+func (m *DB) ListTeamStandupers(teamID string) ([]model.Standuper, error) {
+	items := []model.Standuper{}
+	err := m.db.Select(&items, "SELECT * FROM `channel_members` where team_id=?", teamID)
+	return items, err
+}
+
 //GetStanduper returns a standuper
 func (m *DB) GetStanduper(id int64) (model.Standuper, error) {
 	standuper := model.Standuper{}

@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	jwt "github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -51,14 +50,6 @@ type LoginPayload struct {
 	RedirectURI string `json:"redirect_uri"`
 }
 
-//Validate LoginPayload
-func (lp *LoginPayload) Validate() error {
-	if strings.TrimSpace(lp.Code) == "" {
-		return fmt.Errorf("code is required")
-	}
-	return nil
-}
-
 //Event represents slack challenge event
 type Event struct {
 	Token     string `json:"token"`
@@ -72,6 +63,7 @@ type teamMember struct {
 }
 
 var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>.*)`)
+var dbService *storage.DB
 
 //New creates API instance
 func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) ComedianAPI {
@@ -82,6 +74,8 @@ func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) 
 	echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method:${method}, uri:${uri}, status:${status}\n",
 	}))
+
+	dbService = db
 
 	api := ComedianAPI{
 		echo:     echo,
@@ -99,28 +93,24 @@ func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) 
 	echo.POST("/user-commands", api.handleUsersCommands)
 	echo.GET("/auth", api.auth)
 
-	r := echo.Group("/v1")
-	r.Use(middleware.JWT([]byte(config.SlackClientSecret)))
+	g := echo.Group("/v1")
+	g.Use(AuthPreRequest)
 
-	r.GET("/standups", api.listStandups)
-	r.GET("/standups/:id", api.getStandup)
-	r.PATCH("/standups/:id", api.updateStandup)
-	r.DELETE("/standups/:id", api.deleteStandup)
+	g.GET("/bots/:id", api.getBot)
+	g.PATCH("/bots/:id", api.updateBot)
 
-	r.GET("/channels", api.listChannels)
-	r.GET("/channels/:id", api.getChannel)
-	r.PATCH("/channels/:id", api.updateChannel)
-	r.DELETE("/channels/:id", api.deleteChannel)
+	g.GET("/standups", api.listStandups)
+	g.GET("/standups/:id", api.getStandup)
+	g.PATCH("/standups/:id", api.updateStandup)
+	g.DELETE("/standups/:id", api.deleteStandup)
 
-	r.GET("/standupers", api.listStandupers)
-	r.GET("/standupers/:id", api.getStanduper)
-	r.PATCH("/standupers/:id", api.updateStanduper)
-	r.DELETE("/standupers/:id", api.deleteStanduper)
+	g.GET("/channels", api.listChannels)
+	g.PATCH("/channels/:id", api.updateChannel)
+	g.DELETE("/channels/:id", api.deleteChannel)
 
-	r.GET("/bots", api.listBots)
-	r.GET("/bots/:id", api.getBot)
-	r.PATCH("/bots/:id", api.updateBot)
-	r.DELETE("/bots/:id", api.deleteBot)
+	g.GET("/standupers", api.listStandupers)
+	g.PATCH("/standupers/:id", api.updateStanduper)
+	g.DELETE("/standupers/:id", api.deleteStanduper)
 
 	return api
 }
@@ -145,47 +135,31 @@ func (api *ComedianAPI) login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
 	}
 
-	if ld.Validate() != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": ld.Validate().Error()})
-	}
-
 	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, ld.Code, ld.RedirectURI, false)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
 	}
 
-	userIdentity := &slack.UserIdentityResponse{}
+	slackClient := slack.New(resp.AccessToken)
 
-	userIdentityResponse, err := http.Get(fmt.Sprintf("https://slack.com/api/users.identity?token=%s", resp.AccessToken))
+	userIdentity, err := slackClient.GetUserIdentity()
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
 	}
 
-	err = json.NewDecoder(userIdentityResponse.Body).Decode(userIdentity)
+	userInfo, err := slackClient.GetUserInfo(userIdentity.User.ID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
 	}
-
-	// Create token
-	token := jwt.New(jwt.SigningMethodHS256)
 
 	bot, err := api.db.GetBotSettingsByTeamID(userIdentity.Team.ID)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": "No comedian bot found"})
 	}
-	// Set claims
-	claims := token.Claims.(jwt.MapClaims)
-	claims["user_id"] = userIdentity.User.ID
-
-	// Generate encoded token and send it as response.
-	tokenString, err := token.SignedString([]byte(api.config.SlackClientSecret))
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
-	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"token": tokenString,
-		"bot":   bot,
+		"user": userInfo,
+		"bot":  bot,
 	})
 }
 
@@ -474,4 +448,25 @@ func sweep(entries []teamMember, prevPasses int) bool {
 	}
 
 	return didSwap
+}
+
+// AuthPreRequest is the middleware function.
+func AuthPreRequest(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		accessToken := c.Request().Header.Get(echo.HeaderAuthorization)
+		if accessToken == "" {
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": "no bot access token"})
+		}
+
+		bot, err := dbService.GetBotSettingsByBotAccessToken(accessToken)
+		if err != nil {
+			log.WithFields(log.Fields{"error": err}).Warning("GetBotSettingsByBotAccessToken failed")
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": "wrong bot access token"})
+		}
+
+		c.Set("teamID", bot.TeamID)
+
+		return next(c)
+	}
 }

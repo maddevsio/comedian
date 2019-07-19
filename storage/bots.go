@@ -48,6 +48,16 @@ func (m *DB) GetBotSettingsByTeamID(teamID string) (*model.BotSettings, error) {
 	return bs, nil
 }
 
+//GetBotSettingsByBotAccessToken returns a particular bot
+func (m *DB) GetBotSettingsByBotAccessToken(botAccessToken string) (*model.BotSettings, error) {
+	bs := &model.BotSettings{}
+	err := m.db.Get(bs, "SELECT * FROM `bot_settings` where bot_access_token=?", botAccessToken)
+	if err != nil {
+		return bs, err
+	}
+	return bs, nil
+}
+
 //GetBotSettings returns a particular bot
 func (m *DB) GetBotSettings(id int64) (*model.BotSettings, error) {
 	bs := &model.BotSettings{}

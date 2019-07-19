@@ -12,17 +12,6 @@ import (
 )
 
 func main() {
-	bundle := i18n.NewBundle(language.English)
-	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-
-	_, err := bundle.LoadMessageFile("active.en.toml")
-	if err != nil {
-		log.Fatal("Load active.en.toml message file failed: ", err)
-	}
-	_, err = bundle.LoadMessageFile("active.ru.toml")
-	if err != nil {
-		log.Fatal("Load active.ru.toml message file failed: ", err)
-	}
 
 	config, err := config.Get()
 	if err != nil {
@@ -34,14 +23,18 @@ func main() {
 		log.Fatal("New storage failed: ", err)
 	}
 
+	bundle := i18n.NewBundle(language.English)
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	bundle.MustLoadMessageFile("active.en.toml")
+	bundle.MustLoadMessageFile("active.ru.toml")
+
 	comedian := comedianbot.New(bundle, db)
 
 	go comedian.StartBots()
 
 	api := api.New(config, db, comedian)
 
-	err = api.Start()
-	if err != nil {
+	if err = api.Start(); err != nil {
 		log.Fatal("API start failed: ", err)
 	}
 }
