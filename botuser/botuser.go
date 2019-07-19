@@ -161,11 +161,20 @@ func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
 	msg.Team = bot.properties.TeamID
 	switch msg.SubType {
 	case typeMessage:
-		bot.handleNewMessage(msg)
+		_, err := bot.handleNewMessage(msg)
+		if err != nil {
+			log.Error("handleNewMessage failed: ", err)
+		}
 	case typeEditMessage:
-		bot.handleEditMessage(msg)
+		_, err := bot.handleEditMessage(msg)
+		if err != nil {
+			log.Error("handleEditMessage failed: ", err)
+		}
 	case typeDeleteMessage:
-		bot.handleDeleteMessage(msg)
+		_, err := bot.handleDeleteMessage(msg)
+		if err != nil {
+			log.Error("handleDeleteMessage failed: ", err)
+		}
 	case "bot_message":
 		return nil
 	}
@@ -187,6 +196,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) (string, error) {
 
 	_, err := bot.db.CreateStandup(model.Standup{
 		Created:   time.Now().UTC(),
+		Modified:  time.Now().UTC(),
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
 		UserID:    msg.User,
@@ -234,6 +244,7 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) (string, error) {
 
 	standup, err = bot.db.CreateStandup(model.Standup{
 		Created:   time.Now().UTC(),
+		Modified:  time.Now().UTC(),
 		TeamID:    msg.Team,
 		ChannelID: msg.Channel,
 		UserID:    msg.SubMessage.User,
