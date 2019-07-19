@@ -65,15 +65,13 @@ You can use the following commands:
 ***
 | Name | Hint | Description |
 | --- | --- | --- | 
-| /comedian | | displays helpful info about all commands |
-| /comedian add | @user @user1 / (admin, pm, developer) | Adds a new user with selected role |
-| /comedian remove | @user @user1 / (admin, pm, developer) | Removes user with selected role |
-| /comedian show | - | Shows users assigned to standup |
-| /comedian add_deadline | hh:mm | Set standup time |
-| /comedian show_deadline | - | Show standup time in current channel |
-| /comedian remove_deadline | - | Delete standup time in current channel |
+| /start | start standuping with role | Adds a new user with selected role  |
+| /quit | - | Removes user with selected role from standup team |
+| /show | - | Shows users assigned to standup in the current chat |
+| /show_deadline | - | Show standup time in current channel |
+| /update_deadline | - | Update or delete standup time in current channel |
 
-To update messages: 
+To update translations proceed with the following commands: 
 ```
 goi18n extract
 goi18n merge active.*.toml translate.*.toml
