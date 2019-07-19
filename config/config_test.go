@@ -12,10 +12,10 @@ func TestConfig(t *testing.T) {
 	conf, err := Get()
 	assert.NoError(t, err)
 
-	os.Setenv("COMEDIAN_DATABASE", "DB")
-	os.Setenv("COMEDIAN_HTTP_BIND_ADDR", "0.0.0.0:8080")
-	os.Setenv("COMEDIAN_SLACK_CLIENT_ID", "ID")
-	os.Setenv("COMEDIAN_SLACK_CLIENT_SECRET", "SECRET")
+	os.Setenv("DATABASE", "DB")
+	os.Setenv("HTTP_BIND_ADDR", "0.0.0.0:8080")
+	os.Setenv("SLACK_CLIENT_ID", "ID")
+	os.Setenv("SLACK_CLIENT_SECRET", "SECRET")
 
 	conf, err = Get()
 	assert.NoError(t, err)

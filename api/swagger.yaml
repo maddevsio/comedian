@@ -133,34 +133,6 @@ paths:
         500:
           description: "Internal Error"
   /v1/bots/{id}:
-    get:
-      security:
-        - Auth: []
-      tags:
-      - "bots"
-      summary: "Find bot by id"
-      description: "Returns a single bot"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "id of bot to return"
-        required: true
-        type: "integer"
-      responses:
-        200:
-          description: "success"
-          schema:
-            $ref: "#/definitions/Bot"
-        400:
-          description: "Invalid data format"
-        401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
     patch:
       security:
         - Auth: []
@@ -196,34 +168,7 @@ paths:
         403:
           description: "No access to resource"
         500:
-          description: "Internal Error"
-    delete:
-      security:
-        - Auth: []
-      tags:
-      - "bots"
-      summary: "Deletes a bot"
-      description: "Turns off the bot in someone's slack"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "Bot id to delete"
-        required: true
-        type: "integer"
-        format: "int"
-      responses:
-        204:
-          description: "successful operation"
-        400:
-          description: "Invalid data format"
-        401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"   
+          description: "Internal Error" 
   /v1/channels:
     get:
       security:
@@ -247,34 +192,6 @@ paths:
         500:
           description: "Internal Error"
   /v1/channels/{id}:
-    get:
-      security:
-        - Auth: []
-      tags:
-      - "channels"
-      summary: "Find channel by id"
-      description: "Returns a single channel"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "id of a channel to return"
-        required: true
-        type: "integer"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Channel"
-        400:
-          description: "Invalid data format"
-        401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
     patch:
       security:
         - Auth: []
@@ -333,34 +250,6 @@ paths:
         500:
           description: "Internal Error"
   /v1/standupers/{id}:
-    get:
-      security:
-        - Auth: []
-      tags:
-      - "standupers"
-      summary: "Find standuper by id"
-      description: "Returns a single standuper"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "id of a standuper to return"
-        required: true
-        type: "integer"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Standuper"
-        400:
-          description: "Invalid data format"
-        401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
     patch:
       security:
         - Auth: []
