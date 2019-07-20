@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	incorrectID         = "incorrect value for 'id', must be integer"
-	accessDenied        = "entity belongs to a different team, access denied"
-	doesNotExist        = "entity does not yet exist"
-	incorrectDataFormat = "incorrect data format, double check request body"
-	somethingWentWrong  = "something went wrong"
+	incorrectID         = "Incorrect value for 'id', must be integer"
+	accessDenied        = "Entity belongs to a different team, access denied"
+	doesNotExist        = "Entity does not yet exist"
+	incorrectDataFormat = "Incorrect data format, double check request body"
+	somethingWentWrong  = "Something went wrong"
 )
 
 func (api *ComedianAPI) getBot(c echo.Context) error {
@@ -25,6 +25,10 @@ func (api *ComedianAPI) getBot(c echo.Context) error {
 	bot, err := api.db.GetBotSettings(id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
+	}
+
+	if bot.TeamID != c.Get("teamID") {
+		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"bot": bot})

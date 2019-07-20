@@ -123,12 +123,12 @@ func AuthPreRequest(next echo.HandlerFunc) echo.HandlerFunc {
 
 		accessToken := c.Request().Header.Get(echo.HeaderAuthorization)
 		if accessToken == "" {
-			return echo.NewHTTPError(http.StatusBadRequest, "missing bot access token")
+			return echo.NewHTTPError(http.StatusUnauthorized, "Missing or incorrect Bot Access Token")
 		}
 
 		bot, err := dbService.GetBotSettingsByBotAccessToken(accessToken)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "incorrect bot access token")
+			return echo.NewHTTPError(http.StatusUnauthorized, "Missing or incorrect Bot Access Token")
 		}
 
 		c.Set("teamID", bot.TeamID)
