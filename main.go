@@ -27,9 +27,9 @@ func main() {
 	bundle.MustLoadMessageFile("active.en.toml")
 	bundle.MustLoadMessageFile("active.ru.toml")
 
-	api := api.New(config, db, bundle)
+	comedian := api.New(config, db, bundle)
 
-	if err = api.Start(); err != nil {
-		log.Fatal("Failed to start API: ", err)
+	if err = comedian.Start(); err != nil {
+		log.Fatal("Failed to start Comedian API: ", err)
 	}
 }
