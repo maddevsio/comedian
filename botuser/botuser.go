@@ -40,7 +40,6 @@ type Bot struct {
 	properties      *model.BotSettings
 	db              *storage.DB
 	localizer       *i18n.Localizer
-	wg              sync.WaitGroup
 	QuitChan        chan struct{}
 	notifierThreads []*NotifierThread
 	conf            *config.Config
@@ -48,8 +47,8 @@ type Bot struct {
 }
 
 //New creates new Bot instance
-func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings, db *storage.DB) *Bot {
-	bot := &Bot{}
+func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings, db *storage.DB) Bot {
+	bot := Bot{}
 	bot.slack = slack.New(settings.AccessToken)
 	bot.properties = settings
 	bot.db = db
@@ -62,9 +61,11 @@ func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings
 
 //Start updates Users list and launches notifications
 func (bot *Bot) Start() {
+	var wg sync.WaitGroup
+
 	log.Info("Bot started for ", bot.properties.TeamName)
 
-	bot.wg.Add(1)
+	wg.Add(1)
 	go func() {
 		ticker := time.NewTicker(time.Second * 60).C
 		for {
@@ -85,7 +86,7 @@ func (bot *Bot) Start() {
 					log.Error("remindAboutWorklogs failed: ", err)
 				}
 			case <-bot.QuitChan:
-				bot.wg.Done()
+				wg.Done()
 				return
 			case msg := <-bot.MessageChan:
 				bot.send(msg)

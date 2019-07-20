@@ -47,12 +47,7 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 
 	}
 
-	bot, err := api.comedian.SelectBot(botSettings.TeamName)
-	if err != nil {
-		log.WithFields(log.Fields{"bot": bot, "error": err}).Error("Could not select bot")
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
-	}
-
+	bot := api.SelectBot(botSettings.TeamName)
 	bot.SetProperties(&res)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"bot": bot})

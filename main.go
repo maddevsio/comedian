@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/maddevsio/comedian/api"
-	"github.com/maddevsio/comedian/comedianbot"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -28,11 +27,7 @@ func main() {
 	bundle.MustLoadMessageFile("active.en.toml")
 	bundle.MustLoadMessageFile("active.ru.toml")
 
-	comedian := comedianbot.New(bundle, db)
-
-	go comedian.StartBots()
-
-	api := api.New(config, db, comedian)
+	api := api.New(config, db, bundle)
 
 	if err = api.Start(); err != nil {
 		log.Fatal("API start failed: ", err)

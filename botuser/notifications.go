@@ -91,13 +91,11 @@ func (bot *Bot) alarmChannel(channel model.Channel) string {
 
 	nt := &NotifierThread{channel: channel, quit: make(chan struct{})}
 
-	bot.wg.Add(1)
 	go func(nt *NotifierThread) {
 		err := bot.sendAlarm(nt)
 		if err != nil {
 			log.Error(err)
 		}
-		bot.wg.Done()
 	}(nt)
 	bot.notifierThreads = append(bot.notifierThreads, nt)
 

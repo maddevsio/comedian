@@ -2,7 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -13,7 +15,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/maddevsio/comedian/botuser"
-	"github.com/maddevsio/comedian/comedianbot"
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
@@ -25,9 +26,11 @@ import (
 // ComedianAPI struct used to handle slack requests (slash commands)
 type ComedianAPI struct {
 	echo     *echo.Echo
-	comedian *comedianbot.Comedian
 	db       *storage.DB
 	config   *config.Config
+	bundle   *i18n.Bundle
+	bots     []botuser.Bot
+	botsChan chan botuser.Bot
 }
 
 type swagger struct {
@@ -66,7 +69,7 @@ var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>
 var dbService *storage.DB
 
 //New creates API instance
-func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) ComedianAPI {
+func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) ComedianAPI {
 
 	echo := echo.New()
 	echo.Use(middleware.CORS())
@@ -79,9 +82,10 @@ func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) 
 
 	api := ComedianAPI{
 		echo:     echo,
-		comedian: comedian,
 		db:       db,
 		config:   config,
+		bots:     []botuser.Bot{},
+		botsChan: make(chan botuser.Bot),
 	}
 
 	echo.GET("/healthcheck", api.healthcheck)
@@ -115,13 +119,26 @@ func New(config *config.Config, db *storage.DB, comedian *comedianbot.Comedian) 
 	return api
 }
 
-// Start starts http server
-func (api *ComedianAPI) Start() error {
-	err := api.comedian.SetBots()
-	if err != nil {
-		return err
+// for bot := range comedian.botsChan {
+// 	comedian.bots = append(comedian.bots, bot)
+// 	bot.Start()
+// }
+
+//SelectBot returns bot by its team id or teamname if found
+func (api *ComedianAPI) SelectBot(team string) botuser.Bot {
+	var bot botuser.Bot
+
+	for _, b := range api.bots {
+		if b.Suits(team) {
+			return b
+		}
 	}
 
+	return bot
+}
+
+// Start starts http server
+func (api *ComedianAPI) Start() error {
 	return api.echo.Start(api.config.HTTPBindAddr)
 }
 
@@ -191,7 +208,7 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, err)
 		}
 
-		err = api.comedian.HandleCallbackEvent(event)
+		err = api.HandleCallbackEvent(event)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, err)
 		}
@@ -214,7 +231,7 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	err = api.comedian.HandleEvent(incomingEvent)
+	err = api.HandleEvent(incomingEvent)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -232,10 +249,7 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "wrong verification token")
 	}
 
-	bot, err := api.comedian.SelectBot(slashCommand.TeamID)
-	if err != nil {
-		return err
-	}
+	bot := api.SelectBot(slashCommand.TeamID)
 
 	message := bot.ImplementCommands(slashCommand)
 
@@ -252,11 +266,7 @@ func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "Invalid verification token")
 	}
 
-	bot, err := api.comedian.SelectBot(slashCommand.TeamID)
-	if err != nil {
-		return c.JSON(http.StatusOK, "No bot found to implement the request. Please, report this to Comedian development team")
-	}
-
+	bot := api.SelectBot(slashCommand.TeamID)
 	today := time.Now()
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", today.Year(), today.Month(), 1)
 	dateTo := fmt.Sprintf("%d-%02d-%02d", today.Year(), today.Month(), today.Day())
@@ -270,6 +280,34 @@ func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 	return c.JSON(http.StatusOK, message)
 }
 
+//HandleEvent sends message to Slack Workspace
+func (api *ComedianAPI) HandleEvent(incomingEvent model.ServiceEvent) error {
+	bot := api.SelectBot(incomingEvent.TeamName)
+
+	if bot.Settings().AccessToken != incomingEvent.AccessToken {
+		return errors.New("Wrong access token")
+	}
+
+	return bot.SendMessage(incomingEvent.Channel, incomingEvent.Message, incomingEvent.Attachments)
+}
+
+//HandleCallbackEvent choses bot to deal with event and then handles event
+func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackEvent) error {
+	bot := api.SelectBot(event.TeamID)
+
+	ev := map[string]interface{}{}
+	data, err := event.InnerEvent.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(data, &ev); err != nil {
+		return err
+	}
+
+	return bot.HandleCallBackEvent(ev["type"].(string), data)
+}
+
 func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	slashCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
@@ -280,10 +318,7 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "Invalid verification token")
 	}
 
-	bot, err := api.comedian.SelectBot(slashCommand.TeamID)
-	if err != nil {
-		return c.JSON(http.StatusOK, "No bot found to implement the request. Please, report this to Comedian development team")
-	}
+	bot := api.SelectBot(slashCommand.TeamID)
 
 	standupers, err := api.db.ListChannelStandupers(slashCommand.ChannelID)
 	if err != nil {
@@ -388,8 +423,8 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 			return err
 		}
 
-		bot := botuser.New(api.config, api.comedian.Bundle, &cp, api.comedian.DB)
-		api.comedian.AddBot(bot)
+		bot := botuser.New(api.config, api.bundle, &cp, api.db)
+		api.botsChan <- bot
 
 		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 	}
@@ -402,11 +437,8 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	bot, err := api.comedian.SelectBot(resp.TeamID)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
+	bot := api.SelectBot(resp.TeamID)
+
 	bot.SetProperties(&settings)
 
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)

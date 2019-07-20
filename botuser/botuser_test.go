@@ -45,7 +45,7 @@ func setupBot() *Bot {
 		StandupTime: "12:00",
 	})
 
-	return bot
+	return &bot
 }
 
 func TestAnalizeStandup(t *testing.T) {
