@@ -91,31 +91,36 @@ func (bot *Bot) Start() {
 				wg.Done()
 				return
 			case msg := <-bot.messageChan:
-				bot.send(msg)
+				err := bot.send(msg)
+				if err != nil {
+					log.Error(err)
+				}
 			}
 		}
 	}()
 }
 
-func (bot *Bot) send(msg Message) {
+func (bot *Bot) send(msg Message) error {
 	if msg.Type == "message" {
 		err := bot.SendMessage(msg.Channel, msg.Text, msg.Attachments)
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 	}
 	if msg.Type == "ephemeral" {
 		err := bot.SendEphemeralMessage(msg.Channel, msg.User, msg.Text)
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 	}
 	if msg.Type == "direct" {
 		err := bot.SendUserMessage(msg.User, msg.Text)
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 	}
+
+	return nil
 }
 
 //Stop closes bot quitChan making bot goroutine to exit
@@ -133,17 +138,17 @@ func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
 	case typeMessage:
 		_, err := bot.handleNewMessage(msg)
 		if err != nil {
-			log.Error("handleNewMessage failed: ", err)
+			return err
 		}
 	case typeEditMessage:
 		_, err := bot.handleEditMessage(msg)
 		if err != nil {
-			log.Error("handleEditMessage failed: ", err)
+			return err
 		}
 	case typeDeleteMessage:
 		_, err := bot.handleDeleteMessage(msg)
 		if err != nil {
-			log.Error("handleDeleteMessage failed: ", err)
+			return err
 		}
 	case "bot_message":
 		return nil
