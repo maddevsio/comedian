@@ -39,9 +39,7 @@ func (m *DB) UpdateChannel(ch model.Channel) (model.Channel, error) {
 	if err != nil {
 		return ch, err
 	}
-	var i model.Channel
-	err = m.db.Get(&i, "SELECT * FROM `channels` WHERE id=?", ch.ID)
-	return i, err
+	return ch, nil
 }
 
 //ListChannels returns list of channels

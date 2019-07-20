@@ -5,7 +5,7 @@ import (
 )
 
 //CreateBotSettings creates bot properties for the newly created bot
-func (m *DB) CreateBotSettings(bs *model.BotSettings) (*model.BotSettings, error) {
+func (m *DB) CreateBotSettings(bs model.BotSettings) (model.BotSettings, error) {
 	err := bs.Validate()
 	if err != nil {
 		return bs, err
@@ -39,9 +39,9 @@ func (m *DB) GetAllBotSettings() ([]model.BotSettings, error) {
 }
 
 //GetBotSettingsByTeamID returns a particular bot
-func (m *DB) GetBotSettingsByTeamID(teamID string) (*model.BotSettings, error) {
-	bs := &model.BotSettings{}
-	err := m.db.Get(bs, "SELECT * FROM `bot_settings` where team_id=?", teamID)
+func (m *DB) GetBotSettingsByTeamID(teamID string) (model.BotSettings, error) {
+	bs := model.BotSettings{}
+	err := m.db.Get(&bs, "SELECT * FROM `bot_settings` where team_id=?", teamID)
 	if err != nil {
 		return bs, err
 	}
@@ -49,9 +49,9 @@ func (m *DB) GetBotSettingsByTeamID(teamID string) (*model.BotSettings, error) {
 }
 
 //GetBotSettingsByBotAccessToken returns a particular bot
-func (m *DB) GetBotSettingsByBotAccessToken(botAccessToken string) (*model.BotSettings, error) {
-	bs := &model.BotSettings{}
-	err := m.db.Get(bs, "SELECT * FROM `bot_settings` where bot_access_token=?", botAccessToken)
+func (m *DB) GetBotSettingsByBotAccessToken(botAccessToken string) (model.BotSettings, error) {
+	bs := model.BotSettings{}
+	err := m.db.Get(&bs, "SELECT * FROM `bot_settings` where bot_access_token=?", botAccessToken)
 	if err != nil {
 		return bs, err
 	}
@@ -59,9 +59,9 @@ func (m *DB) GetBotSettingsByBotAccessToken(botAccessToken string) (*model.BotSe
 }
 
 //GetBotSettings returns a particular bot
-func (m *DB) GetBotSettings(id int64) (*model.BotSettings, error) {
-	bs := &model.BotSettings{}
-	err := m.db.Get(bs, "SELECT * FROM `bot_settings` where id=?", id)
+func (m *DB) GetBotSettings(id int64) (model.BotSettings, error) {
+	bs := model.BotSettings{}
+	err := m.db.Get(&bs, "SELECT * FROM `bot_settings` where id=?", id)
 	if err != nil {
 		return bs, err
 	}
@@ -69,7 +69,7 @@ func (m *DB) GetBotSettings(id int64) (*model.BotSettings, error) {
 }
 
 //UpdateBotSettings updates bot
-func (m *DB) UpdateBotSettings(settings *model.BotSettings) (*model.BotSettings, error) {
+func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
 	err := settings.Validate()
 	if err != nil {
 		return settings, err
@@ -82,12 +82,7 @@ func (m *DB) UpdateBotSettings(settings *model.BotSettings) (*model.BotSettings,
 	if err != nil {
 		return settings, err
 	}
-	bs := &model.BotSettings{}
-	err = m.db.Get(bs, "SELECT * FROM `bot_settings` where id=?", settings.ID)
-	if err != nil {
-		return settings, err
-	}
-	return bs, err
+	return settings, err
 }
 
 //DeleteBotSettingsByID deletes bot

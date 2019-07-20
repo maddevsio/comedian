@@ -7,11 +7,11 @@ import (
 )
 
 func TestCreateBotSettings(t *testing.T) {
-	bot, err := db.CreateBotSettings(&model.BotSettings{})
+	bot, err := db.CreateBotSettings(model.BotSettings{})
 	assert.Error(t, err)
 	assert.Equal(t, int64(0), bot.ID)
 
-	bs := &model.BotSettings{
+	bs := model.BotSettings{
 		NotifierInterval:    30,
 		Language:            "en_US",
 		ReminderRepeatsMax:  3,
@@ -37,7 +37,7 @@ func TestBotSettings(t *testing.T) {
 	_, err := db.GetAllBotSettings()
 	assert.NoError(t, err)
 
-	bs := &model.BotSettings{
+	bs := model.BotSettings{
 		NotifierInterval:    30,
 		Language:            "en_US",
 		ReminderRepeatsMax:  3,
@@ -73,7 +73,7 @@ func TestBotSettings(t *testing.T) {
 }
 
 func TestUpdateAndDeleteBotSettings(t *testing.T) {
-	bs := &model.BotSettings{
+	bs := model.BotSettings{
 		NotifierInterval:    30,
 		Language:            "en_US",
 		ReminderRepeatsMax:  3,

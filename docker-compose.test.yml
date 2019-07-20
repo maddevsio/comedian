@@ -18,7 +18,7 @@ services:
     working_dir: /go/src/github.com/maddevsio/comedian/
     volumes:
       - ./:/go/src/github.com/maddevsio/comedian/
-    command: bash -c "./goose -dir migrations mysql 'comedian:comedian@tcp(db:3306)/comedian' up && go test -v -timeout 30s ./... "
+    command: bash -c "./goose -dir migrations mysql 'comedian:comedian@tcp(db:3306)/comedian' up && go test -v -cover -race -timeout 30s ./... "
     depends_on:
       db:
         condition: service_healthy

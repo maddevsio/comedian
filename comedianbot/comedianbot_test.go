@@ -57,7 +57,7 @@ func TestBots(t *testing.T) {
 	_, err = comedian.SelectBot("testTeam")
 	assert.NoError(t, err)
 
-	bs := &model.BotSettings{
+	bs := model.BotSettings{
 		NotifierInterval:    30,
 		Language:            "en_US",
 		ReminderRepeatsMax:  3,

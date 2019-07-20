@@ -53,7 +53,7 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
 	}
 
-	bot.SetProperties(res)
+	bot.SetProperties(&res)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"bot": bot})
 }

@@ -369,7 +369,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	botSettings, err := api.db.GetBotSettingsByTeamID(resp.TeamID)
 	if err != nil {
 
-		bs := &model.BotSettings{
+		bs := model.BotSettings{
 			NotifierInterval:    30,
 			Language:            "en_US",
 			ReminderRepeatsMax:  3,
@@ -388,7 +388,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 			return err
 		}
 
-		bot := botuser.New(api.config, api.comedian.Bundle, cp, api.comedian.DB)
+		bot := botuser.New(api.config, api.comedian.Bundle, &cp, api.comedian.DB)
 		api.comedian.AddBot(bot)
 
 		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
@@ -407,7 +407,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		log.Error(err)
 		return err
 	}
-	bot.SetProperties(settings)
+	bot.SetProperties(&settings)
 
 	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 }
