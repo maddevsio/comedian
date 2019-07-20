@@ -14,12 +14,12 @@ func main() {
 
 	config, err := config.Get()
 	if err != nil {
-		log.Fatal("Get config failed: ", err)
+		log.Fatal("Failed to get config : ", err)
 	}
 
 	db, err := storage.New(config)
 	if err != nil {
-		log.Fatal("New storage failed: ", err)
+		log.Fatal("Failed to connect to db: ", err)
 	}
 
 	bundle := i18n.NewBundle(language.English)
@@ -30,6 +30,6 @@ func main() {
 	api := api.New(config, db, bundle)
 
 	if err = api.Start(); err != nil {
-		log.Fatal("API start failed: ", err)
+		log.Fatal("Failed to start API: ", err)
 	}
 }

@@ -69,7 +69,7 @@ func (bot *Bot) warnChannel(channel model.Channel) string {
 		return "could not warn non reporters"
 	}
 
-	bot.MessageChan <- Message{
+	bot.messageChan <- Message{
 		Type:    "message",
 		Channel: channel.ChannelID,
 		Text:    message,
@@ -255,7 +255,7 @@ func (bot *Bot) alarmRepeat(channel model.Channel, repeats *int) error {
 
 	message, err := bot.composeAlarmMessage(nonReporters)
 
-	bot.MessageChan <- Message{
+	bot.messageChan <- Message{
 		Type:    "message",
 		Channel: channel.ChannelID,
 		Text:    message,

@@ -25,12 +25,11 @@ import (
 
 // ComedianAPI struct used to handle slack requests (slash commands)
 type ComedianAPI struct {
-	echo     *echo.Echo
-	db       *storage.DB
-	config   *config.Config
-	bundle   *i18n.Bundle
-	bots     []botuser.Bot
-	botsChan chan botuser.Bot
+	echo   *echo.Echo
+	db     *storage.DB
+	config *config.Config
+	bundle *i18n.Bundle
+	bots   []botuser.Bot
 }
 
 type swagger struct {
@@ -81,11 +80,10 @@ func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) ComedianAPI
 	dbService = db
 
 	api := ComedianAPI{
-		echo:     echo,
-		db:       db,
-		config:   config,
-		bots:     []botuser.Bot{},
-		botsChan: make(chan botuser.Bot),
+		echo:   echo,
+		db:     db,
+		config: config,
+		bots:   []botuser.Bot{},
 	}
 
 	echo.GET("/healthcheck", api.healthcheck)
@@ -119,11 +117,6 @@ func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) ComedianAPI
 	return api
 }
 
-// for bot := range comedian.botsChan {
-// 	comedian.bots = append(comedian.bots, bot)
-// 	bot.Start()
-// }
-
 //SelectBot returns bot by its team id or teamname if found
 func (api *ComedianAPI) SelectBot(team string) botuser.Bot {
 	var bot botuser.Bot
@@ -139,6 +132,18 @@ func (api *ComedianAPI) SelectBot(team string) botuser.Bot {
 
 // Start starts http server
 func (api *ComedianAPI) Start() error {
+
+	settings, err := api.db.GetAllBotSettings()
+	if err != nil {
+		return err
+	}
+
+	for _, bs := range settings {
+		bot := botuser.New(api.config, api.bundle, &bs, api.db)
+		api.bots = append(api.bots, bot)
+		bot.Start()
+	}
+
 	return api.echo.Start(api.config.HTTPBindAddr)
 }
 
@@ -305,7 +310,31 @@ func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackE
 		return err
 	}
 
-	return bot.HandleCallBackEvent(ev["type"].(string), data)
+	switch ev["type"].(string) {
+	case "message":
+		log.Info("message!")
+		message := &slack.MessageEvent{}
+		if err := json.Unmarshal(data, message); err != nil {
+			return err
+		}
+		return bot.HandleMessage(message)
+	case "app_mention":
+		log.Info("app_mention!")
+		return nil
+	case "member_joined_channel":
+		join := &slack.MemberJoinedChannelEvent{}
+		if err := json.Unmarshal(data, join); err != nil {
+			return err
+		}
+		_, err := bot.HandleJoin(join.Channel, join.Team)
+		return err
+	case "app_uninstalled":
+		bot.Stop()
+		return api.db.DeleteBotSettings(event.TeamID)
+	default:
+		log.WithFields(log.Fields{"event": string(data)}).Warning("unrecognized event!")
+		return nil
+	}
 }
 
 func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
@@ -424,7 +453,8 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		}
 
 		bot := botuser.New(api.config, api.bundle, &cp, api.db)
-		api.botsChan <- bot
+		api.bots = append(api.bots, bot)
+		bot.Start()
 
 		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 	}

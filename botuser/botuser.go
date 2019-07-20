@@ -1,7 +1,6 @@
 package botuser
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -36,27 +35,27 @@ type Message struct {
 
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
-	slack           *slack.Client
-	properties      *model.BotSettings
+	conf            *config.Config
 	db              *storage.DB
 	localizer       *i18n.Localizer
-	QuitChan        chan struct{}
+	properties      *model.BotSettings
+	slack           *slack.Client
 	notifierThreads []*NotifierThread
-	conf            *config.Config
-	MessageChan     chan Message
+	quitChan        chan struct{}
+	messageChan     chan Message
 }
 
 //New creates new Bot instance
 func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings, db *storage.DB) Bot {
-	bot := Bot{}
-	bot.slack = slack.New(settings.AccessToken)
-	bot.properties = settings
-	bot.db = db
-	bot.localizer = i18n.NewLocalizer(bundle, settings.Language)
-	bot.QuitChan = make(chan struct{})
-	bot.conf = config
-	bot.MessageChan = make(chan Message)
-	return bot
+	return Bot{
+		conf:        config,
+		db:          db,
+		slack:       slack.New(settings.AccessToken),
+		properties:  settings,
+		localizer:   i18n.NewLocalizer(bundle, settings.Language),
+		quitChan:    make(chan struct{}),
+		messageChan: make(chan Message),
+	}
 }
 
 //Start updates Users list and launches notifications
@@ -85,10 +84,10 @@ func (bot *Bot) Start() {
 				if err != nil {
 					log.Error("remindAboutWorklogs failed: ", err)
 				}
-			case <-bot.QuitChan:
+			case <-bot.quitChan:
 				wg.Done()
 				return
-			case msg := <-bot.MessageChan:
+			case msg := <-bot.messageChan:
 				bot.send(msg)
 			}
 		}
@@ -116,42 +115,9 @@ func (bot *Bot) send(msg Message) {
 	}
 }
 
-//Stop closes bot QuitChan making bot goroutine to exit
+//Stop closes bot quitChan making bot goroutine to exit
 func (bot *Bot) Stop() {
-	close(bot.QuitChan)
-}
-
-//HandleCallBackEvent handles different callback events from Slack Event Subscription list
-func (bot *Bot) HandleCallBackEvent(eventType string, eventData []byte) error {
-	switch eventType {
-	case "message":
-		log.Info("message!")
-		message := &slack.MessageEvent{}
-		if err := json.Unmarshal(eventData, message); err != nil {
-			return err
-		}
-		return bot.HandleMessage(message)
-	case "app_mention":
-		log.Info("app_mention!")
-		return nil
-	case "member_joined_channel":
-		join := &slack.MemberJoinedChannelEvent{}
-		if err := json.Unmarshal(eventData, join); err != nil {
-			return err
-		}
-		_, err := bot.HandleJoin(join.Channel, join.Team)
-		return err
-	case "app_uninstalled":
-		bot.Stop()
-		err := bot.db.DeleteBotSettings(bot.properties.TeamID)
-		if err != nil {
-			return err
-		}
-		return nil
-	default:
-		log.WithFields(log.Fields{"event": string(eventData)}).Warning("unrecognized event!")
-		return nil
-	}
+	close(bot.quitChan)
 }
 
 //HandleMessage handles slack message event
@@ -186,7 +152,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) (string, error) {
 
 	problem := bot.analizeStandup(msg.Msg.Text)
 	if problem != "" {
-		bot.MessageChan <- Message{
+		bot.messageChan <- Message{
 			Type:    "ephemeral",
 			Channel: msg.Channel,
 			User:    msg.User,
@@ -223,7 +189,7 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) (string, error) {
 func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) (string, error) {
 	problem := bot.analizeStandup(msg.SubMessage.Text)
 	if problem != "" {
-		bot.MessageChan <- Message{
+		bot.messageChan <- Message{
 			Type:    "ephemeral",
 			Channel: msg.Channel,
 			User:    msg.User,
@@ -505,7 +471,7 @@ func (bot *Bot) remindAboutWorklogs() error {
 
 		message += fmt.Sprintf("В общем: %.2f", float32(total)/3600)
 
-		bot.MessageChan <- Message{
+		bot.messageChan <- Message{
 			Type: "direct",
 			User: user.ID,
 			Text: message,

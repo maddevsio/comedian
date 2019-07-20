@@ -221,7 +221,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 
 		attachments = bot.sortReportEntries(attachmentsPull)
 		if bot.properties.IndividualReportsOn {
-			bot.MessageChan <- Message{
+			bot.messageChan <- Message{
 				Type:        "message",
 				Channel:     channel.ChannelID,
 				Text:        reportHeader,
@@ -243,7 +243,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 		}
 	}
 
-	bot.MessageChan <- Message{
+	bot.messageChan <- Message{
 		Type:        "message",
 		Channel:     reportingChannelID,
 		Text:        reportHeader,
@@ -383,7 +383,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		attachments = bot.sortReportEntries(attachmentsPull)
 
 		if bot.properties.IndividualReportsOn {
-			bot.MessageChan <- Message{
+			bot.messageChan <- Message{
 				Type:        "message",
 				Channel:     channel.ChannelID,
 				Text:        reportHeaderWeekly,
@@ -404,7 +404,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		}
 	}
 
-	bot.MessageChan <- Message{
+	bot.messageChan <- Message{
 		Type:        "message",
 		Channel:     reportingChannelID,
 		Text:        reportHeaderWeekly,
