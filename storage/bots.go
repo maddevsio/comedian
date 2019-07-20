@@ -82,7 +82,7 @@ func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, e
 	if err != nil {
 		return settings, err
 	}
-	return settings, err
+	return settings, nil
 }
 
 //DeleteBotSettingsByID deletes bot

@@ -6,20 +6,25 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
-	log "github.com/sirupsen/logrus"
 )
 
-var accessDeniedErr = "access denied"
+var (
+	incorrectID         = "incorrect value for 'id', must be integer"
+	accessDenied        = "entity belongs to a different team, access denied"
+	doesNotExist        = "entity does not yet exist"
+	incorrectDataFormat = "incorrect data format, double check request body"
+	somethingWentWrong  = "something went wrong"
+)
 
 func (api *ComedianAPI) getBot(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	bot, err := api.db.GetBotSettings(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"bot": bot})
@@ -28,23 +33,25 @@ func (api *ComedianAPI) getBot(c echo.Context) error {
 func (api *ComedianAPI) updateBot(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	botSettings, err := api.db.GetBotSettings(id)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
 	if err := c.Bind(&botSettings); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
+	}
+
+	if botSettings.TeamID != c.Get("teamID") {
+		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
 	res, err := api.db.UpdateBotSettings(botSettings)
 	if err != nil {
-		log.WithFields(log.Fields{"bot": botSettings, "error": err}).Error("UpdateBotSettings failed")
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
-
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	bot := api.SelectBot(botSettings.TeamName)
@@ -53,62 +60,59 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{"bot": bot})
 }
 
-func (api *ComedianAPI) listStandups(c echo.Context) error {
-
-	standups, err := api.db.ListTeamStandups(c.Get("teamID").(string))
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("ListStandups failed")
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
-	}
-
-	return c.JSON(http.StatusOK, map[string]interface{}{"standups": standups})
-}
-
 func (api *ComedianAPI) getStandup(c echo.Context) error {
 
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
 	if standup.TeamID != c.Get("teamID") {
-		return c.JSON(http.StatusForbidden, map[string]interface{}{"error": accessDeniedErr})
+		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"standup": standup})
 }
 
+func (api *ComedianAPI) listStandups(c echo.Context) error {
+
+	standups, err := api.db.ListTeamStandups(c.Get("teamID").(string))
+	if err != nil {
+		echo.NewHTTPError(http.StatusUnauthorized, somethingWentWrong)
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{"standups": standups})
+}
+
 func (api *ComedianAPI) updateStandup(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
 	if err := c.Bind(&standup); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
 	if standup.TeamID != c.Get("teamID") {
-		return c.JSON(http.StatusForbidden, map[string]interface{}{"error": accessDeniedErr})
+		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
 	standup.Modified = time.Now().UTC()
 
 	standup, err = api.db.UpdateStandup(standup)
 	if err != nil {
-		log.WithFields(log.Fields{"standup": standup, "error": err}).Error("UpdateStandup failed")
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
-
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"standup": standup})
@@ -117,23 +121,21 @@ func (api *ComedianAPI) updateStandup(c echo.Context) error {
 func (api *ComedianAPI) deleteStandup(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	standup, err := api.db.GetStandup(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
 	if standup.TeamID != c.Get("teamID") {
-		return c.JSON(http.StatusForbidden, map[string]interface{}{"error": accessDeniedErr})
+		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
 	err = api.db.DeleteStandup(id)
 	if err != nil {
-		log.WithFields(log.Fields{"id": id, "error": err}).Error("DeleteStandup failed")
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
-
+		echo.NewHTTPError(http.StatusInternalServerError, somethingWentWrong)
 	}
 
 	return c.JSON(http.StatusNoContent, "")
@@ -143,8 +145,7 @@ func (api *ComedianAPI) listChannels(c echo.Context) error {
 
 	channels, err := api.db.ListTeamChannels(c.Get("teamID").(string))
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("ListChannels failed")
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+		echo.NewHTTPError(http.StatusInternalServerError, somethingWentWrong)
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"channels": channels})
@@ -153,25 +154,25 @@ func (api *ComedianAPI) listChannels(c echo.Context) error {
 func (api *ComedianAPI) updateChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err.Error())
+		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
 	if err := c.Bind(&channel); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
 	if channel.TeamID != c.Get("teamID") {
-		return c.JSON(http.StatusForbidden, map[string]interface{}{"error": accessDeniedErr})
+		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
 	channel, err = api.db.UpdateChannel(channel)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"channel": channel})
@@ -180,23 +181,21 @@ func (api *ComedianAPI) updateChannel(c echo.Context) error {
 func (api *ComedianAPI) deleteChannel(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	channel, err := api.db.GetChannel(id)
 	if err != nil {
-		log.WithFields(log.Fields{"id": id, "error": err}).Error("GetChannel failed")
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
-
+		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
 	if channel.TeamID != c.Get("teamID") {
-		return c.JSON(http.StatusForbidden, map[string]interface{}{"error": accessDeniedErr})
+		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
 	err = api.db.DeleteChannel(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusInternalServerError, somethingWentWrong)
 	}
 
 	return c.JSON(http.StatusNoContent, "")
@@ -206,8 +205,7 @@ func (api *ComedianAPI) listStandupers(c echo.Context) error {
 
 	standupers, err := api.db.ListTeamStandupers(c.Get("teamID").(string))
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("ListStandupers failed")
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusInternalServerError, somethingWentWrong)
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"standupers": standupers})
@@ -216,26 +214,25 @@ func (api *ComedianAPI) listStandupers(c echo.Context) error {
 func (api *ComedianAPI) updateStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
 	if err := c.Bind(&standuper); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
 	if standuper.TeamID != c.Get("teamID") {
-		return c.JSON(http.StatusForbidden, map[string]interface{}{"error": accessDeniedErr})
+		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
 	standuper, err = api.db.UpdateStanduper(standuper)
 	if err != nil {
-		log.WithFields(log.Fields{"standuper": standuper, "error": err}).Error("UpdateStanduper failed")
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"standuper": standuper})
@@ -244,21 +241,21 @@ func (api *ComedianAPI) updateStanduper(c echo.Context) error {
 func (api *ComedianAPI) deleteStanduper(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	standuper, err := api.db.GetStanduper(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
 	if standuper.TeamID != c.Get("teamID") {
-		return c.JSON(http.StatusForbidden, map[string]interface{}{"error": accessDeniedErr})
+		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
 	err = api.db.DeleteStanduper(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusInternalServerError, somethingWentWrong)
 	}
 
 	return c.JSON(http.StatusNoContent, "")

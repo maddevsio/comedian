@@ -117,6 +117,26 @@ func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) *ComedianAP
 	return &api
 }
 
+// AuthPreRequest is the middleware function.
+func AuthPreRequest(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		accessToken := c.Request().Header.Get(echo.HeaderAuthorization)
+		if accessToken == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "missing bot access token")
+		}
+
+		bot, err := dbService.GetBotSettingsByBotAccessToken(accessToken)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "incorrect bot access token")
+		}
+
+		c.Set("teamID", bot.TeamID)
+
+		return next(c)
+	}
+}
+
 //SelectBot returns bot by its team id or teamname if found
 func (api *ComedianAPI) SelectBot(team string) *botuser.Bot {
 	var bot botuser.Bot
@@ -162,35 +182,35 @@ func (api *ComedianAPI) Start() error {
 }
 
 func (api *ComedianAPI) healthcheck(c echo.Context) error {
-	return c.JSON(http.StatusOK, "successful operation")
+	return c.JSON(http.StatusOK, "Comedian is healthy")
 }
 
 func (api *ComedianAPI) login(c echo.Context) error {
 	ld := new(LoginPayload)
 	if err := c.Bind(ld); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
 	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, ld.Code, ld.RedirectURI, false)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	slackClient := slack.New(resp.AccessToken)
 
 	userIdentity, err := slackClient.GetUserIdentity()
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	userInfo, err := slackClient.GetUserInfo(userIdentity.User.ID)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	bot, err := api.db.GetBotSettingsByTeamID(userIdentity.Team.ID)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{"error": "No comedian bot found"})
+		return echo.NewHTTPError(http.StatusNotFound, "Comedian was not invited to your Slack. Please, add it and try again")
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
@@ -204,16 +224,16 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	if incomingEvent.Token != api.config.SlackVerificationToken {
-		return c.JSON(http.StatusForbidden, "verification token does not match")
+		return echo.NewHTTPError(http.StatusUnauthorized, "verification token does not match")
 	}
 
 	if incomingEvent.Type == slackevents.URLVerification {
@@ -224,12 +244,12 @@ func (api *ComedianAPI) handleEvent(c echo.Context) error {
 		var event slackevents.EventsAPICallbackEvent
 		err = json.Unmarshal(body, &event)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
 		err = api.HandleCallbackEvent(event)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, err)
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 	}
 
@@ -242,17 +262,17 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	err = json.Unmarshal(body, &incomingEvent)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	err = api.HandleEvent(incomingEvent)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, "Message handled!")
@@ -261,7 +281,7 @@ func (api *ComedianAPI) handleServiceMessage(c echo.Context) error {
 func (api *ComedianAPI) handleCommands(c echo.Context) error {
 	slashCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
@@ -278,7 +298,7 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 	slashCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
@@ -356,7 +376,7 @@ func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackE
 func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 	slashCommand, err := slack.SlashCommandParse(c.Request())
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
@@ -439,8 +459,6 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	code := urlValues.Get("code")
 
-	log.Info(code)
-
 	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
 	if err != nil {
 		return err
@@ -482,6 +500,8 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	log.Info("New bot: ", settings)
 
 	bot := api.SelectBot(resp.TeamID)
 
@@ -526,25 +546,4 @@ func sweep(entries []teamMember, prevPasses int) bool {
 	}
 
 	return didSwap
-}
-
-// AuthPreRequest is the middleware function.
-func AuthPreRequest(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-
-		accessToken := c.Request().Header.Get(echo.HeaderAuthorization)
-		if accessToken == "" {
-			return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": "no bot access token"})
-		}
-
-		bot, err := dbService.GetBotSettingsByBotAccessToken(accessToken)
-		if err != nil {
-			log.WithFields(log.Fields{"error": err}).Warning("GetBotSettingsByBotAccessToken failed")
-			return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": "wrong bot access token"})
-		}
-
-		c.Set("teamID", bot.TeamID)
-
-		return next(c)
-	}
 }
