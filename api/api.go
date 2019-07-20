@@ -29,7 +29,7 @@ type ComedianAPI struct {
 	db     *storage.DB
 	config *config.Config
 	bundle *i18n.Bundle
-	bots   []botuser.Bot
+	bots   []*botuser.Bot
 }
 
 type swagger struct {
@@ -68,7 +68,7 @@ var echoRouteRegex = regexp.MustCompile(`(?P<start>.*):(?P<param>[^\/]*)(?P<end>
 var dbService *storage.DB
 
 //New creates API instance
-func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) ComedianAPI {
+func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) *ComedianAPI {
 
 	echo := echo.New()
 	echo.Use(middleware.CORS())
@@ -83,7 +83,7 @@ func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) ComedianAPI
 		echo:   echo,
 		db:     db,
 		config: config,
-		bots:   []botuser.Bot{},
+		bots:   []*botuser.Bot{},
 	}
 
 	echo.GET("/healthcheck", api.healthcheck)
@@ -114,11 +114,11 @@ func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) ComedianAPI
 	g.PATCH("/standupers/:id", api.updateStanduper)
 	g.DELETE("/standupers/:id", api.deleteStanduper)
 
-	return api
+	return &api
 }
 
 //SelectBot returns bot by its team id or teamname if found
-func (api *ComedianAPI) SelectBot(team string) botuser.Bot {
+func (api *ComedianAPI) SelectBot(team string) *botuser.Bot {
 	var bot botuser.Bot
 
 	for _, b := range api.bots {
@@ -127,7 +127,18 @@ func (api *ComedianAPI) SelectBot(team string) botuser.Bot {
 		}
 	}
 
-	return bot
+	return &bot
+}
+
+func (api *ComedianAPI) removeBot(team string) {
+	var index int
+	for i, b := range api.bots {
+		if b.Suits(team) {
+			index = i
+		}
+	}
+
+	api.bots = append(api.bots[:index], api.bots[index+1:]...)
 }
 
 // Start starts http server
@@ -140,9 +151,12 @@ func (api *ComedianAPI) Start() error {
 
 	for _, bs := range settings {
 		bot := botuser.New(api.config, api.bundle, &bs, api.db)
+		log.Info("New bot to append: ", bot)
 		api.bots = append(api.bots, bot)
 		bot.Start()
 	}
+
+	log.Info("Bots after append: ", api.bots)
 
 	return api.echo.Start(api.config.HTTPBindAddr)
 }
@@ -299,6 +313,7 @@ func (api *ComedianAPI) HandleEvent(incomingEvent model.ServiceEvent) error {
 //HandleCallbackEvent choses bot to deal with event and then handles event
 func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackEvent) error {
 	bot := api.SelectBot(event.TeamID)
+	log.Info("Selected bot for HandleCallbackEvent: ", bot)
 
 	ev := map[string]interface{}{}
 	data, err := event.InnerEvent.MarshalJSON()
@@ -330,6 +345,7 @@ func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackE
 		return err
 	case "app_uninstalled":
 		bot.Stop()
+		api.removeBot(event.TeamID)
 		return api.db.DeleteBotSettings(event.TeamID)
 	default:
 		log.WithFields(log.Fields{"event": string(data)}).Warning("unrecognized event!")

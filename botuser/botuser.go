@@ -46,16 +46,19 @@ type Bot struct {
 }
 
 //New creates new Bot instance
-func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings, db *storage.DB) Bot {
-	return Bot{
-		conf:        config,
-		db:          db,
-		slack:       slack.New(settings.AccessToken),
-		properties:  settings,
-		localizer:   i18n.NewLocalizer(bundle, settings.Language),
-		quitChan:    make(chan struct{}),
-		messageChan: make(chan Message),
+func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings, db *storage.DB) *Bot {
+	bot := &Bot{
+		conf:       config,
+		db:         db,
+		slack:      slack.New(settings.AccessToken),
+		properties: settings,
+		localizer:  i18n.NewLocalizer(bundle, settings.Language),
 	}
+
+	bot.quitChan = make(chan struct{})
+	bot.messageChan = make(chan Message)
+
+	return bot
 }
 
 //Start updates Users list and launches notifications
