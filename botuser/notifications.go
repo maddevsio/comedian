@@ -1,17 +1,15 @@
 package botuser
 
 import (
-	"errors"
-	"strings"
-	"time"
-
-	"github.com/cenkalti/backoff"
+	"fmt"
 	"github.com/maddevsio/comedian/model"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules/en"
 	"github.com/olebedev/when/rules/ru"
 	log "github.com/sirupsen/logrus"
+	"strings"
+	"time"
 )
 
 //NotifierThread struct to manage notifier goroutines
@@ -20,86 +18,77 @@ type NotifierThread struct {
 	quit    chan struct{}
 }
 
-func (bot *Bot) warnChannels() {
+func (bot *Bot) notifyChannels() error {
 	channels, err := bot.listTeamActiveChannels()
 	if err != nil {
-		log.Error(err)
-		return
+		return err
 	}
 	if len(channels) == 0 {
-		return
+		return nil
 	}
 
 	for _, channel := range channels {
-		bot.warnChannel(channel)
-	}
-}
-
-func (bot *Bot) alarmChannels() {
-	channels, err := bot.listTeamActiveChannels()
-	if err != nil {
-		return
-	}
-
-	for _, channel := range channels {
-		bot.alarmChannel(channel)
-	}
-}
-
-func (bot *Bot) warnChannel(channel model.Channel) string {
-	w := when.New(nil)
-	w.Add(en.All...)
-	w.Add(ru.All...)
-
-	r, _ := w.Parse(channel.StandupTime, time.Now())
-
-	warningTime := time.Unix(r.Time.Unix()-bot.properties.ReminderTime*60, 0)
-
-	if time.Now().Hour() != warningTime.Hour() || time.Now().Minute() != warningTime.Minute() {
-		return "not warning time yet"
-	}
-
-	nonReporters, err := bot.findChannelNonReporters(channel)
-	if err != nil {
-		return "could not get non reporters"
-	}
-
-	message, err := bot.composeWarnMessage(nonReporters)
-	if err != nil {
-		return "could not warn non reporters"
-	}
-
-	bot.messageChan <- Message{
-		Type:    "message",
-		Channel: channel.ChannelID,
-		Text:    message,
-	}
-
-	return "message sent to channel"
-}
-
-func (bot *Bot) alarmChannel(channel model.Channel) string {
-	w := when.New(nil)
-	w.Add(en.All...)
-	w.Add(ru.All...)
-
-	r, _ := w.Parse(channel.StandupTime, time.Now())
-
-	if time.Now().Hour() != r.Time.Hour() || time.Now().Minute() != r.Time.Minute() {
-		return "not alarm time yet"
-	}
-
-	nt := &NotifierThread{channel: channel, quit: make(chan struct{})}
-
-	go func(nt *NotifierThread) {
-		err := bot.sendAlarm(nt)
+		err := bot.notify(channel)
 		if err != nil {
 			log.Error(err)
 		}
-	}(nt)
-	bot.notifierThreads = append(bot.notifierThreads, nt)
+	}
 
-	return "alarm begun"
+	return nil
+}
+
+func (bot *Bot) notify(channel model.Channel) error {
+	w := when.New(nil)
+	w.Add(en.All...)
+	w.Add(ru.All...)
+
+	r, _ := w.Parse(channel.StandupTime, time.Now())
+
+	alarmtime := time.Unix(r.Time.Unix(), 0)
+	warningTime := time.Unix(r.Time.Unix()-bot.properties.ReminderTime*60, 0)
+
+	switch {
+	case time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute():
+		nonReporters, err := bot.findChannelNonReporters(channel)
+		if err != nil {
+			return fmt.Errorf("could not get non reporters: %v", err)
+		}
+
+		message, err := bot.composeWarnMessage(nonReporters)
+		if err != nil {
+			return fmt.Errorf("could not compose Warn Message: %v", err)
+		}
+
+		bot.messageChan <- Message{
+			Type:    "message",
+			Channel: channel.ChannelID,
+			Text:    message,
+		}
+
+		return nil
+
+	case time.Now().Hour() == alarmtime.Hour() && time.Now().Minute() == alarmtime.Minute():
+		nonReporters, err := bot.findChannelNonReporters(channel)
+		if err != nil {
+			return fmt.Errorf("could not get non reporters: %v", err)
+		}
+
+		message, err := bot.composeAlarmMessage(nonReporters)
+		if err != nil {
+			return fmt.Errorf("could not compose Alarm Message: %v", err)
+		}
+
+		bot.messageChan <- Message{
+			Type:    "message",
+			Channel: channel.ChannelID,
+			Text:    message,
+		}
+		return nil
+
+	default:
+		return nil
+	}
+
 }
 
 func (bot *Bot) listTeamActiveChannels() ([]model.Channel, error) {
@@ -216,51 +205,4 @@ func (bot *Bot) composeAlarmMessage(nonReporters []string) (string, error) {
 	}
 
 	return alarmNonReporters, nil
-}
-
-func (bot *Bot) sendAlarm(nt *NotifierThread) error {
-	var repeats int
-
-	alarm := func() error {
-		select {
-		case <-nt.quit:
-			return nil
-		default:
-			err := bot.alarmRepeat(nt.channel, &repeats)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-
-	b := backoff.NewConstantBackOff(time.Duration(bot.properties.NotifierInterval) * time.Minute)
-	err := backoff.Retry(alarm, b)
-	if err != nil {
-		return errors.New("BackOff failed")
-	}
-	return nil
-}
-
-func (bot *Bot) alarmRepeat(channel model.Channel, repeats *int) error {
-
-	if *repeats >= bot.properties.ReminderRepeatsMax {
-		return nil
-	}
-
-	nonReporters, err := bot.findChannelNonReporters(channel)
-	if err != nil {
-		return nil
-	}
-
-	message, err := bot.composeAlarmMessage(nonReporters)
-
-	bot.messageChan <- Message{
-		Type:    "message",
-		Channel: channel.ChannelID,
-		Text:    message,
-	}
-
-	*repeats++
-	return errors.New("Continue backoff")
 }

@@ -73,9 +73,11 @@ func (bot *Bot) Start() {
 		for {
 			select {
 			case <-ticker:
-				bot.warnChannels()
-				bot.alarmChannels()
-				err := bot.CallDisplayYesterdayTeamReport()
+				err := bot.notifyChannels()
+				if err != nil {
+					log.Error("notifyChannels failed: ", err)
+				}
+				err = bot.CallDisplayYesterdayTeamReport()
 				if err != nil {
 					log.Error("CallDisplayYesterdayTeamReport failed: ", err)
 				}
