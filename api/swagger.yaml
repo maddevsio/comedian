@@ -68,7 +68,7 @@ paths:
                 $ref: "#/definitions/Bot"
   /event:
     post:
-      summary: "Not UR related. Handles Slack events"
+      summary: "Not UI related. Handles Slack events"
       description: "Handles different Slack triggers such as bot removal, or URL verification"
       responses:
         200:
@@ -79,7 +79,7 @@ paths:
           description: "verification token does not match" 
   /service-message:
     post:
-      summary: "Not UR related. Handles messages from different Comedian services."
+      summary: "Not UI related. Handles messages from different Comedian services."
       consumes:
       - "application/json"
       produces:
@@ -98,7 +98,7 @@ paths:
           description: "Message handled!"
   /commands:
     post:
-      summary: "Not UR related. Handles Slack slash commands requests."
+      summary: "Not UI related. Handles Slack slash commands requests."
       description: "This endpoint is needed for integration with Slack API"
       responses:
         200:
@@ -107,7 +107,7 @@ paths:
           description: "Contains error description"
   /auth:
     get:
-      summary: "Not UR related. Handles Comedian distribution into other Slack Teams."
+      summary: "Not UI related. Handles Comedian distribution into other Slack Teams."
       responses:
         200:
           description: "Renders Comedian login page"
@@ -134,9 +134,9 @@ paths:
           schema:
             $ref: "#/definitions/Bot"
         400:
-          description: "Incorrect value for 'id', must be integer"
+          description: "Incorrect value for bot id, must be integer"
         401:
-          description: "Missing or incorrect Bot Access Token"
+          description: "Missing/incorrect Bot Access Token or trying to access resource from another workspace"
         404:
           description: "Entity does not yet exist"
     patch:
@@ -168,13 +168,11 @@ paths:
           schema:
             $ref: "#/definitions/Bot"
         400:
-          description: "Invalid data format"
+          description: "Incorrect value for bot id, must be integer or incorrect payload for bot entity"
         401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error" 
+          description: "Missing/incorrect Bot Access Token or trying to access resource from another workspace"
+        404:
+          description: "Entity does not yet exist"
   /v1/channels:
     get:
       security:
@@ -193,10 +191,10 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Channel"
-        401: 
-          description: "Unauthorized"
+        401:
+          description: "Missing/incorrect Bot Access Token"
         500:
-          description: "Internal Error"
+          description: "unexpected error occured, need to report to maintainers"
   /v1/channels/{id}:
     patch:
       security:
@@ -226,13 +224,11 @@ paths:
           schema:
             $ref: "#/definitions/Channel"
         400:
-          description: "Invalid data format"
+          description: "Incorrect value for channel id, must be integer or incorrect payload for channel entity"
         401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
+          description: "Missing/incorrect Bot Access Token or trying to access resource from another workspace"
+        404:
+          description: "Entity does not yet exist"
   /v1/standupers:
     get:
       security:
@@ -251,10 +247,10 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Standuper"
-        401: 
-          description: "Unauthorized"
+        401:
+          description: "Missing/incorrect Bot Access Token"
         500:
-          description: "Internal Error"
+          description: "unexpected error occured, need to report to maintainers"
   /v1/standupers/{id}:
     patch:
       security:
@@ -284,13 +280,11 @@ paths:
           schema:
             $ref: "#/definitions/Standuper"
         400:
-          description: "Invalid data format"
+          description: "Incorrect value for standuper id, must be integer or incorrect payload for standuper entity"
         401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
+          description: "Missing/incorrect Bot Access Token or trying to access resource from another workspace"
+        404:
+          description: "Entity does not yet exist"
     delete:
       security:
         - Auth: []
@@ -309,15 +303,15 @@ paths:
         format: "int"
       responses:
         204:
-          description: "successful operation"
+          description: "entity was deleted, returns no content"
         400:
-          description: "Invalid data format"
+          description: "Incorrect value for standuper id, must be integer or incorrect payload for standuper entity"
         401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
+          description: "Missing/incorrect Bot Access Token or trying to access resource from another workspace"
+        404:
+          description: "Entity does not yet exist"
         500:
-          description: "Internal Error"
+          description: "unexpected error occured, need to report to maintainers"
   /v1/standups:
     get:
       security:
@@ -336,10 +330,10 @@ paths:
             type: "array"
             items: 
               $ref: "#/definitions/Standup"
-        401: 
-          description: "Unauthorized"
+        401:
+          description: "Missing/incorrect Bot Access Token"
         500:
-          description: "Internal Error"
+          description: "unexpected error occured, need to report to maintainers"
   /v1/standups/{id}:
     get:
       security:
@@ -364,7 +358,7 @@ paths:
         400:
           description: "Invalid data format"
         401:
-          description: "No JWT Token"
+          description: "Missing/incorrect Bot Access Token or trying to access resource from another workspace"
         404: 
           description: "Not found"
         403:
@@ -399,13 +393,11 @@ paths:
           schema:
             $ref: "#/definitions/Standup"
         400:
-          description: "Invalid data format"
+          description: "Incorrect value for standuper id, must be integer or incorrect payload for standuper entity"
         401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
-        500:
-          description: "Internal Error"
+          description: "Missing/incorrect Bot Access Token or trying to access resource from another workspace"
+        404:
+          description: "Entity does not yet exist"
     delete:
       security:
         - Auth: []
@@ -423,15 +415,15 @@ paths:
         format: "int"
       responses:
         204:
-          description: "successful operation"
+          description: "entity was deleted, returns no content"
         400:
-          description: "Invalid data format"
+          description: "Incorrect value for standup id, must be integer or incorrect payload for standup entity"
         401:
-          description: "No JWT Token"
-        403:
-          description: "No access to resource"
+          description: "Missing/incorrect Bot Access Token or trying to access resource from another workspace"
+        404:
+          description: "Entity does not yet exist"
         500:
-          description: "Internal Error"
+          description: "unexpected error occured, need to report to maintainers"
 definitions:
   Login: 
     type: "object"
@@ -463,8 +455,8 @@ definitions:
       channel_id:
         type: "string"
       channel_standup_time:
-        type: "integer"
-        format: "bigint"
+        type: "string"
+        example: "11:30"
   Standuper:
     type: "object"
     properties:
@@ -478,6 +470,7 @@ definitions:
         type: "boolean"
       created:
         type: "string"
+        format: date-time
       role_in_channel:
         type: "string"
       real_name: 
@@ -513,20 +506,14 @@ definitions:
       team_id:
         type: "string"
         example: "TB9KS3E13"
-      admin:
-        type: "boolean"
-        example: false
       team_name:
-        type: "string"
-        example: "example"
-      password:
         type: "string"
         example: "example"
       language:
         type: "string"
         description: "bot language"
         enum:
-        - "ru_Ru"
+        - "ru_RU"
         - "en_US"
       notifier_interval:
         type: "integer"
@@ -549,42 +536,47 @@ definitions:
   User:
     type: "object"
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-      team_id:
+      id: 
         type: "string"
-        example: "TB9KS3E13"
-      admin:
+      team_id: 
+        type: "string"
+      name: 
+        type: "string"
+      deleted: 
         type: "boolean"
-        example: false
-      team_name:
+      color: 
         type: "string"
-        example: "example"
-      password:
+      real_name: 
         type: "string"
-        example: "example"
-      language:
+      tz,omitempty: 
         type: "string"
-        description: "bot language"
-        enum:
-        - "ru_Ru"
-        - "en_US"
-      notifier_interval:
+      tz_label: 
+        type: "string"
+      tz_offset: 
         type: "integer"
-        format: "int64"
-      reminder_repeat_max:
-        type: "integer"
-        format: "int64"
-      reminder_time:
-        type: "integer"
-        format: "int64"
-      reporting_channel:
-        type: "string"
-        example: "TBA234GH"
-      reporting_time:
-        type: "string"
-        example: "9:00"
-      individual_reports_on: 
+      profile: 
+        type: "object"
+      is_bot: 
         type: "boolean"
-        example: false
+      is_admin: 
+        type: "boolean"
+      is_owner: 
+        type: "boolean"
+      is_primary_owner: 
+        type: "boolean"
+      is_restricted: 
+        type: "boolean"
+      is_ultra_restricted: 
+        type: "boolean"
+      is_stranger: 
+        type: "boolean"
+      is_app_user: 
+        type: "boolean"
+      has_2fa: 
+        type: "boolean"
+      has_files: 
+        type: "boolean"
+      presence: 
+        type: "string"
+      locale: 
+        type: "string"
