@@ -5,7 +5,7 @@ networks:
     driver: bridge
 
 services:
-  comedian:
+  sut:
     image: golang:1.11.4
     links:
       - db:db
