@@ -26,14 +26,6 @@
   revision = "0fb0a474d195a3449cf412ae0176faa193f0ef0b"
 
 [[projects]]
-  digest = "1:29fb1d9358f24856ab2a3747e2f3d97be41897b22b46bf20fbb984ba7be439af"
-  name = "github.com/cenkalti/backoff"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "2146c93394225c3732078705043ce9f26584d334"
-  version = "v2.2.0"
-
-[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -292,7 +284,6 @@
   input-imports = [
     "github.com/BurntSushi/toml",
     "github.com/araddon/dateparse",
-    "github.com/cenkalti/backoff",
     "github.com/go-sql-driver/mysql",
     "github.com/jmoiron/sqlx",
     "github.com/kelseyhightower/envconfig",
