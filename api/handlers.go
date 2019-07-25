@@ -58,7 +58,11 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	bot := api.SelectBot(botSettings.TeamName)
+	bot, err := api.SelectBot(botSettings.TeamName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
 	bot.SetProperties(&res)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"bot": bot})

@@ -84,6 +84,7 @@ func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) *ComedianAP
 		db:     db,
 		config: config,
 		bots:   []*botuser.Bot{},
+		bundle: bundle,
 	}
 
 	echo.GET("/healthcheck", api.healthcheck)

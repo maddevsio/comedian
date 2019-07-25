@@ -11,6 +11,8 @@ import (
 )
 
 func (bot *Bot) joinCommand(command slack.SlashCommand) string {
+	log.Info("1")
+	log.Info("Bot localizer: ", bot.localizer)
 	_, err := bot.db.FindStansuperByUserID(command.UserID, command.ChannelID)
 	if err == nil {
 		youAlreadyStandup, err := bot.localizer.Localize(&i18n.LocalizeConfig{
@@ -24,6 +26,7 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 		}
 		return youAlreadyStandup
 	}
+	log.Info("2")
 
 	u, err := bot.slack.GetUserInfo(command.UserID)
 	if err != nil {
@@ -60,6 +63,8 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 		log.Error("CreateStanduper failed: ", err)
 		return createStanduperFailed
 	}
+
+	log.Info("3")
 
 	channel, err := bot.db.SelectChannel(command.ChannelID)
 	if err != nil {

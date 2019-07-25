@@ -400,6 +400,7 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 
 //ImplementCommands implements slash commands such as adding users and managing deadlines
 func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
+	log.Info("Command to go with: ", command.Command)
 	switch command.Command {
 	case "/start":
 		return bot.joinCommand(command)
