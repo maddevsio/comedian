@@ -138,16 +138,16 @@ func AuthPreRequest(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 //SelectBot returns bot by its team id or teamname if found
-func (api *ComedianAPI) SelectBot(team string) *botuser.Bot {
+func (api *ComedianAPI) SelectBot(team string) (*botuser.Bot, error) {
 	var bot botuser.Bot
 
 	for _, b := range api.bots {
 		if b.Suits(team) {
-			return b
+			return b, nil
 		}
 	}
 
-	return &bot
+	return &bot, errors.New("bot not found")
 }
 
 func (api *ComedianAPI) removeBot(team string) {
@@ -285,10 +285,13 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 	}
 
 	if !slashCommand.ValidateToken(api.config.SlackVerificationToken) {
-		return c.JSON(http.StatusBadRequest, "wrong verification token")
+		return echo.NewHTTPError(http.StatusBadRequest, "wrong verification token")
 	}
 
-	bot := api.SelectBot(slashCommand.TeamID)
+	bot, err := api.SelectBot(slashCommand.TeamID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
 
 	message := bot.ImplementCommands(slashCommand)
 
@@ -305,7 +308,11 @@ func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "Invalid verification token")
 	}
 
-	bot := api.SelectBot(slashCommand.TeamID)
+	bot, err := api.SelectBot(slashCommand.TeamID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
 	today := time.Now()
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", today.Year(), today.Month(), 1)
 	dateTo := fmt.Sprintf("%d-%02d-%02d", today.Year(), today.Month(), today.Day())
@@ -321,7 +328,10 @@ func (api *ComedianAPI) handleUsersCommands(c echo.Context) error {
 
 //HandleEvent sends message to Slack Workspace
 func (api *ComedianAPI) HandleEvent(incomingEvent model.ServiceEvent) error {
-	bot := api.SelectBot(incomingEvent.TeamName)
+	bot, err := api.SelectBot(incomingEvent.TeamName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
 
 	if bot.Settings().AccessToken != incomingEvent.AccessToken {
 		return errors.New("Wrong access token")
@@ -332,7 +342,11 @@ func (api *ComedianAPI) HandleEvent(incomingEvent model.ServiceEvent) error {
 
 //HandleCallbackEvent choses bot to deal with event and then handles event
 func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackEvent) error {
-	bot := api.SelectBot(event.TeamID)
+	bot, err := api.SelectBot(event.TeamID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
 	log.Info("Selected bot for HandleCallbackEvent: ", bot)
 
 	ev := map[string]interface{}{}
@@ -383,7 +397,10 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "Invalid verification token")
 	}
 
-	bot := api.SelectBot(slashCommand.TeamID)
+	bot, err := api.SelectBot(slashCommand.TeamID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
 
 	standupers, err := api.db.ListChannelStandupers(slashCommand.ChannelID)
 	if err != nil {
@@ -486,7 +503,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		cp, err := api.db.CreateBotSettings(bs)
 		if err != nil {
 			log.Error("CreateBotSettings failed: ", err)
-			return err
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
 		bot := botuser.New(api.config, api.bundle, &cp, api.db)
@@ -496,7 +513,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		bot.Start()
 
 		log.Info("api.bots contains: ", api.bots)
-		return c.Redirect(http.StatusMovedPermanently, "maddevs.io")
+		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 	}
 
 	botSettings.AccessToken = resp.Bot.BotAccessToken
@@ -504,12 +521,16 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	settings, err := api.db.UpdateBotSettings(botSettings)
 	if err != nil {
-		return err
+		log.Error("UpdateBotSettings failed: ", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	log.Info("New bot: ", settings)
 
-	bot := api.SelectBot(resp.TeamID)
+	bot, err := api.SelectBot(resp.TeamID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
 
 	bot.SetProperties(&settings)
 
