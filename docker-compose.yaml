@@ -13,7 +13,7 @@ services:
       MYSQL_PASSWORD: comedian
 
   comedian:
-    build: .
+    image: maddevsio/comedian
     restart: on-failure
     links:
       - db:db

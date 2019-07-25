@@ -461,11 +461,13 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
 	if err != nil {
+		log.Error("slack.GetOAuthResponse failed: ", err)
 		return err
 	}
 
 	botSettings, err := api.db.GetBotSettingsByTeamID(resp.TeamID)
 	if err != nil {
+		log.Error("GetBotSettingsByTeamID failed: ", err)
 
 		bs := model.BotSettings{
 			NotifierInterval:    30,
@@ -483,14 +485,18 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 		cp, err := api.db.CreateBotSettings(bs)
 		if err != nil {
+			log.Error("CreateBotSettings failed: ", err)
 			return err
 		}
 
 		bot := botuser.New(api.config, api.bundle, &cp, api.db)
+		log.Info("botuser.New resulted in bot: ", bot)
 		api.bots = append(api.bots, bot)
+		log.Info("api.bots contains: ", api.bots)
 		bot.Start()
 
-		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
+		log.Info("api.bots contains: ", api.bots)
+		return c.Redirect(http.StatusMovedPermanently, "maddevs.io")
 	}
 
 	botSettings.AccessToken = resp.Bot.BotAccessToken
