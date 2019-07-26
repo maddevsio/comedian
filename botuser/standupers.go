@@ -103,7 +103,9 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 	if err != nil {
 		ch, err := bot.slack.GetChannelInfo(command.ChannelID)
 		if err != nil {
-			log.Error(err)
+			log.Error("Failed to GetChannelInfo in show command: ", err)
+			ch = &slack.Channel{}
+			ch.Name = command.ChannelName
 		}
 
 		channel, err = bot.db.CreateChannel(model.Channel{
@@ -112,6 +114,9 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 			ChannelName: ch.Name,
 			StandupTime: "",
 		})
+		if err != nil {
+			log.Error("Failed to create channel in show command: ", err)
+		}
 	}
 
 	if channel.StandupTime == "" {
