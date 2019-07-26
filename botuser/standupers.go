@@ -30,12 +30,9 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 		log.Error(err)
 	}
 
-	var realName string
-
-	if u == nil {
-		realName = "S.T.A.L.K.E.R."
-	} else {
-		realName = u.RealName
+	ch, err := bot.slack.GetChannelInfo(command.ChannelID)
+	if err != nil {
+		log.Error(err)
 	}
 
 	_, err = bot.db.CreateStanduper(model.Standuper{
@@ -43,8 +40,8 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 		TeamID:        command.TeamID,
 		UserID:        command.UserID,
 		ChannelID:     command.ChannelID,
-		ChannelName:   command.ChannelName,
-		RealName:      realName,
+		ChannelName:   ch.Name,
+		RealName:      u.RealName,
 		RoleInChannel: command.Text,
 	})
 	if err != nil {
@@ -63,17 +60,12 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 
 	channel, err := bot.db.SelectChannel(command.ChannelID)
 	if err != nil {
-		selectChannelFailed, err := bot.localizer.Localize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:    "selectChannelFailed",
-				Other: "Could not add you to standup team, try kick and re-add me to the channel",
-			},
+		channel, err = bot.db.CreateChannel(model.Channel{
+			TeamID:      command.TeamID,
+			ChannelID:   command.ChannelID,
+			ChannelName: ch.Name,
+			StandupTime: "",
 		})
-		if err != nil {
-			log.Error(err)
-		}
-		log.Error("SelectChannel failed: ", err)
-		return selectChannelFailed
 	}
 
 	if channel.StandupTime == "" {
@@ -107,30 +99,18 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 func (bot *Bot) showCommand(command slack.SlashCommand) string {
 	var deadline string
 	channel, err := bot.db.SelectChannel(command.ChannelID)
-
 	if err != nil {
-		couldNotShowDeadline, err := bot.localizer.Localize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:    "couldNotShowDeadline",
-				Other: "Can not show channel deadline",
-			},
-		})
+		ch, err := bot.slack.GetChannelInfo(command.ChannelID)
 		if err != nil {
 			log.Error(err)
 		}
-		deadline = couldNotShowDeadline
-	} else {
-		showStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:    "showStandupTime",
-				Other: "Standup deadline is {{.Deadline}}",
-			},
-			TemplateData: map[string]interface{}{"Deadline": channel.StandupTime},
+
+		channel, err = bot.db.CreateChannel(model.Channel{
+			TeamID:      command.TeamID,
+			ChannelID:   command.ChannelID,
+			ChannelName: ch.Name,
+			StandupTime: "",
 		})
-		if err != nil {
-			log.Error(err)
-		}
-		deadline = showStandupTime
 	}
 
 	if channel.StandupTime == "" {
@@ -144,6 +124,18 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 			log.Error(err)
 		}
 		deadline = showNoStandupTime
+	} else {
+		showStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "showStandupTime",
+				Other: "Standup deadline is {{.Deadline}}",
+			},
+			TemplateData: map[string]interface{}{"Deadline": channel.StandupTime},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		deadline = showStandupTime
 	}
 
 	members, err := bot.db.ListChannelStandupers(command.ChannelID)
