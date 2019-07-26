@@ -82,13 +82,12 @@ func (bot *Bot) CallDisplayWeeklyTeamReport() error {
 }
 
 // displayYesterdayTeamReport generates report on users who submit standups
-func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
+func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 	var allReports []slack.Attachment
 
-	channels, err := bot.db.ListChannels()
+	channels, err := bot.db.ListTeamChannels(bot.properties.TeamID)
 	if err != nil {
-		log.Errorf("GetAllChannels failed: %v", err)
-		return FinalReport, err
+		return "", err
 	}
 
 	reportHeader, err := bot.localizer.Localize(&i18n.LocalizeConfig{
@@ -102,41 +101,34 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 	}
 
 	for _, channel := range channels {
-		if channel.TeamID != bot.properties.TeamID {
-			continue
-		}
+
 		var attachments []slack.Attachment
 		var attachmentsPull []AttachmentItem
 
-		Standupers, err := bot.db.ListChannelStandupers(channel.ChannelID)
+		standupers, err := bot.db.ListChannelStandupers(channel.ChannelID)
 		if err != nil {
 			log.Errorf("ListChannelStandupers failed for channel %v: %v", channel.ChannelName, err)
 			continue
 		}
 
-		if len(Standupers) == 0 {
+		if len(standupers) == 0 {
 			continue
 		}
 
-		for _, member := range Standupers {
+		for _, standuper := range standupers {
 			var attachment slack.Attachment
 			var attachmentFields []slack.AttachmentField
 			var worklogs, commits, standup string
 			var worklogsPoints, commitsPoints, standupPoints int
 
-			userInfo, err := bot.slack.GetUserInfo(member.UserID)
-			if err != nil {
-				continue
-			}
-
-			dataOnUser, dataOnUserInProject, collectorError := bot.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, -1))
+			dataOnUser, dataOnUserInProject, collectorError := bot.GetCollectorDataOnMember(standuper, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, -1))
 
 			if collectorError == nil {
 				worklogs, worklogsPoints = bot.processWorklogs(dataOnUser.Worklogs, dataOnUserInProject.Worklogs)
 				commits, commitsPoints = bot.processCommits(dataOnUser.Commits, dataOnUserInProject.Commits)
 			}
 
-			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
+			if standuper.RoleInChannel == "pm" || standuper.RoleInChannel == "designer" {
 				commits = ""
 				commitsPoints++
 			}
@@ -148,13 +140,13 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 				commitsPoints++
 			}
 
-			standup, standupPoints = bot.processStandup(member)
+			standup, standupPoints = bot.processStandup(standuper)
 
 			fieldValue := worklogs + commits + standup
 
 			//if there is nothing to show, do not create attachment
 			if fieldValue == "" {
-				log.Warningf("Nothing to show... skip member! %v", member)
+				log.Warningf("Nothing to show... skip standuper! %v", standuper)
 				continue
 			}
 
@@ -172,7 +164,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 						ID:    "notTagStanduper",
 						Other: "",
 					},
-					TemplateData: map[string]interface{}{"user": userInfo.RealName, "channel": channel.ChannelName},
+					TemplateData: map[string]interface{}{"user": standuper.RealName, "channel": channel.ChannelName},
 				})
 				if err != nil {
 					log.Error(err)
@@ -184,7 +176,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 						ID:    "tagStanduper",
 						Other: "",
 					},
-					TemplateData: map[string]interface{}{"user": member.UserID, "channel": channel.ChannelName},
+					TemplateData: map[string]interface{}{"user": standuper.UserID, "channel": channel.ChannelName},
 				})
 				if err != nil {
 					log.Error(err)
@@ -233,7 +225,7 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 	}
 
 	if len(allReports) == 0 {
-		return
+		return "", nil
 	}
 
 	reportingChannelID := ""
@@ -249,18 +241,17 @@ func (bot *Bot) displayYesterdayTeamReport() (FinalReport string, err error) {
 		Text:        reportHeader,
 		Attachments: allReports,
 	}
-	FinalReport = fmt.Sprintf(reportHeader, allReports)
-	return FinalReport, nil
+
+	return fmt.Sprintf(reportHeader, allReports), nil
 }
 
 // displayWeeklyTeamReport generates report on users who submit standups
 func (bot *Bot) displayWeeklyTeamReport() (string, error) {
-	var FinalReport string
 	var allReports []slack.Attachment
 
 	channels, err := bot.db.ListChannels()
 	if err != nil {
-		return FinalReport, err
+		return "", err
 	}
 
 	reportHeaderWeekly, err := bot.localizer.Localize(&i18n.LocalizeConfig{
@@ -277,35 +268,30 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		var attachmentsPull []AttachmentItem
 		var attachments []slack.Attachment
 
-		Standupers, err := bot.db.ListChannelStandupers(channel.ChannelID)
+		standupers, err := bot.db.ListChannelStandupers(channel.ChannelID)
 		if err != nil {
 			log.Errorf("ListChannelStandupers failed for channel %v: %v", channel.ChannelName, err)
 			continue
 		}
 
-		if len(Standupers) == 0 {
+		if len(standupers) == 0 {
 			continue
 		}
 
-		for _, member := range Standupers {
+		for _, standuper := range standupers {
 			var attachment slack.Attachment
 			var attachmentFields []slack.AttachmentField
 			var worklogs, commits string
 			var worklogsPoints, commitsPoints int
 
-			userInfo, err := bot.slack.GetUserInfo(member.UserID)
-			if err != nil {
-				continue
-			}
-
-			dataOnUser, dataOnUserInProject, collectorError := bot.GetCollectorDataOnMember(member, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, -1))
+			dataOnUser, dataOnUserInProject, collectorError := bot.GetCollectorDataOnMember(standuper, time.Now().AddDate(0, 0, -7), time.Now().AddDate(0, 0, -1))
 
 			if collectorError == nil {
 				worklogs, worklogsPoints = bot.processWeeklyWorklogs(dataOnUser.Worklogs, dataOnUserInProject.Worklogs)
 				commits, commitsPoints = bot.processCommits(dataOnUser.Commits, dataOnUserInProject.Commits)
 			}
 
-			if member.RoleInChannel == "pm" || member.RoleInChannel == "designer" {
+			if standuper.RoleInChannel == "pm" || standuper.RoleInChannel == "designer" {
 				commits = ""
 				commitsPoints++
 			}
@@ -337,7 +323,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 						ID:    "notTagStanduper",
 						Other: "",
 					},
-					TemplateData: map[string]interface{}{"user": userInfo.RealName, "channel": channel.ChannelName},
+					TemplateData: map[string]interface{}{"user": standuper.RealName, "channel": channel.ChannelName},
 				})
 				if err != nil {
 					log.Error(err)
@@ -349,7 +335,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 						ID:    "tagStanduper",
 						Other: "",
 					},
-					TemplateData: map[string]interface{}{"user": member.UserID, "channel": channel.ChannelName},
+					TemplateData: map[string]interface{}{"user": standuper.UserID, "channel": channel.ChannelName},
 				})
 				if err != nil {
 					log.Error(err)
@@ -394,7 +380,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 	}
 
 	if len(allReports) == 0 {
-		return FinalReport, nil
+		return "", nil
 	}
 
 	reportingChannelID := ""
@@ -410,8 +396,8 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		Text:        reportHeaderWeekly,
 		Attachments: allReports,
 	}
-	FinalReport = fmt.Sprintf(reportHeaderWeekly, allReports)
-	return FinalReport, nil
+
+	return fmt.Sprintf(reportHeaderWeekly, allReports), nil
 }
 
 func (bot *Bot) processWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
