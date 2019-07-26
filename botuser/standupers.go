@@ -27,12 +27,13 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 
 	u, err := bot.slack.GetUserInfo(command.UserID)
 	if err != nil {
-		log.Error(err)
+		u = &slack.User{RealName: command.UserName}
 	}
 
 	ch, err := bot.slack.GetChannelInfo(command.ChannelID)
 	if err != nil {
-		log.Error(err)
+		ch = &slack.Channel{}
+		ch.Name = command.ChannelName
 	}
 
 	_, err = bot.db.CreateStanduper(model.Standuper{
