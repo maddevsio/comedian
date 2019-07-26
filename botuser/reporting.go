@@ -224,7 +224,8 @@ func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 		return "", nil
 	}
 
-	reportingChannelID := ""
+	var reportingChannelID string
+
 	for _, ch := range channels {
 		if (ch.ChannelName == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) || (ch.ChannelID == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) {
 			reportingChannelID = ch.ChannelID
@@ -379,7 +380,8 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		return "", nil
 	}
 
-	reportingChannelID := ""
+	var reportingChannelID string
+
 	for _, ch := range channels {
 		if (ch.ChannelName == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) || (ch.ChannelID == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) {
 			reportingChannelID = ch.ChannelID
