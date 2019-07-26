@@ -12,7 +12,7 @@ services:
       MYSQL_USER: comedian
       MYSQL_PASSWORD: comedian
 
-  comedian:
+  comedian: 
     image: maddevsio/comedian
     restart: on-failure
     links:

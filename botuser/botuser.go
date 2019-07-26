@@ -355,7 +355,7 @@ func (bot *Bot) analizeStandup(message string) string {
 
 // SendMessage posts a message in a specified channel visible for everyone
 func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachment) error {
-	_, _, err := bot.slack.PostMessage(channel, message, slack.PostMessageParameters{Attachments: attachments})
+	_, _, err := bot.slack.PostMessage(channel, slack.MsgOptionText(message, true), slack.MsgOptionAttachments(attachments...))
 	return err
 }
 
@@ -400,7 +400,6 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 
 //ImplementCommands implements slash commands such as adding users and managing deadlines
 func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
-	log.Info("Command to go with: ", command.Command)
 	switch command.Command {
 	case "/start":
 		return bot.joinCommand(command)

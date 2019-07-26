@@ -9,12 +9,13 @@ import (
 // EventsAPIEvent is the base EventsAPIEvent
 type EventsAPIEvent struct {
 	Token      string `json:"token"`
+	TeamID     string `json:"team_id"`
 	Type       string `json:"type"`
 	Data       interface{}
 	InnerEvent EventsAPIInnerEvent
 }
 
-// EventsAPIURLVerificationEvent recieved when configuring a EventsAPI driven app
+// EventsAPIURLVerificationEvent received when configuring a EventsAPI driven app
 type EventsAPIURLVerificationEvent struct {
 	Token     string `json:"token"`
 	Challenge string `json:"challenge"`

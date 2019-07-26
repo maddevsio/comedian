@@ -172,7 +172,6 @@ func (api *ComedianAPI) Start() error {
 
 	for _, bs := range settings {
 		bot := botuser.New(api.config, api.bundle, &bs, api.db)
-		log.Info("New bot to append: ", bot)
 		api.bots = append(api.bots, bot)
 		bot.Start()
 	}
@@ -192,7 +191,7 @@ func (api *ComedianAPI) login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
-	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, ld.Code, ld.RedirectURI, false)
+	resp, err := slack.GetOAuthResponse(http.DefaultClient, api.config.SlackClientID, api.config.SlackClientSecret, ld.Code, ld.RedirectURI)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -348,8 +347,6 @@ func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackE
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	log.Info("Selected bot for HandleCallbackEvent: ", bot)
-
 	ev := map[string]interface{}{}
 	data, err := event.InnerEvent.MarshalJSON()
 	if err != nil {
@@ -360,17 +357,16 @@ func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackE
 		return err
 	}
 
+	log.Info("New event: ", ev["type"].(string))
+
 	switch ev["type"].(string) {
 	case "message":
-		log.Info("message!")
 		message := &slack.MessageEvent{}
 		if err := json.Unmarshal(data, message); err != nil {
 			return err
 		}
 		return bot.HandleMessage(message)
-	case "app_mention":
-		log.Info("app_mention!")
-		return nil
+
 	case "member_joined_channel":
 		join := &slack.MemberJoinedChannelEvent{}
 		if err := json.Unmarshal(data, join); err != nil {
@@ -477,7 +473,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	code := urlValues.Get("code")
 
-	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
+	resp, err := slack.GetOAuthResponse(http.DefaultClient, api.config.SlackClientID, api.config.SlackClientSecret, code, "")
 	if err != nil {
 		log.Error("slack.GetOAuthResponse failed: ", err)
 		return err
