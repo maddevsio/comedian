@@ -44,15 +44,13 @@ func (bot *Bot) CallDisplayYesterdayTeamReport() error {
 		return err
 	}
 
-	if time.Now().Hour() == r.Time.Hour() && time.Now().Minute() == r.Time.Minute() {
-		_, err := bot.displayYesterdayTeamReport()
-		if err != nil {
-			return err
-		}
+	if time.Now().Hour() != r.Time.Hour() || time.Now().Minute() != r.Time.Minute() {
 		return nil
 	}
 
-	return nil
+	_, err = bot.displayYesterdayTeamReport()
+	return err
+
 }
 
 // CallDisplayWeeklyTeamReport calls displayWeeklyTeamReport
@@ -71,14 +69,12 @@ func (bot *Bot) CallDisplayWeeklyTeamReport() error {
 
 	r, err := w.Parse(bot.properties.ReportingTime, time.Now())
 
-	if time.Now().Hour() == r.Time.Hour() && time.Now().Minute() == r.Time.Minute() {
-		_, err = bot.displayWeeklyTeamReport()
-		if err != nil {
-			return err
-		}
+	if time.Now().Hour() != r.Time.Hour() || time.Now().Minute() != r.Time.Minute() {
 		return nil
 	}
-	return nil
+
+	_, err = bot.displayWeeklyTeamReport()
+	return err
 }
 
 // displayYesterdayTeamReport generates report on users who submit standups
