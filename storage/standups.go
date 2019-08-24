@@ -1,8 +1,9 @@
 package storage
 
 import (
-	"github.com/maddevsio/comedian/model"
 	"time"
+
+	"github.com/maddevsio/comedian/model"
 )
 
 // CreateStandup creates standup entry in database
@@ -12,8 +13,22 @@ func (m *DB) CreateStandup(s model.Standup) (model.Standup, error) {
 		return s, err
 	}
 	res, err := m.db.Exec(
-		"INSERT INTO `standups` (team_id, created, modified, comment, channel_id, user_id, message_ts) VALUES (?,?, ?, ?, ?, ?, ?)",
-		s.TeamID, s.Created, s.Modified, s.Comment, s.ChannelID, s.UserID, s.MessageTS,
+		`INSERT INTO 'standups' (
+			team_id, 
+			created, 
+			modified, 
+			comment, 
+			channel_id, 
+			user_id, 
+			message_ts
+		) VALUES (?,?, ?, ?, ?, ?, ?)`,
+		s.TeamID,
+		s.Created,
+		s.Modified,
+		s.Comment,
+		s.ChannelID,
+		s.UserID,
+		s.MessageTS,
 	)
 	if err != nil {
 		return s, err
@@ -82,7 +97,12 @@ func (m *DB) SelectStandupByMessageTS(messageTS string) (model.Standup, error) {
 // SelectLatestStandupByUser selects standup entry from database filtered by user
 func (m *DB) SelectLatestStandupByUser(userID, channelID string) (model.Standup, error) {
 	var s model.Standup
-	err := m.db.Get(&s, "select * from standups where user_id=? and channel_id=? order by id desc limit 1", userID, channelID)
+	err := m.db.Get(&s,
+		`select * from standups 
+		where user_id=? and channel_id=? 
+		order by id desc limit 1`,
+		userID, channelID,
+	)
 	if err != nil {
 		return s, err
 	}
@@ -92,7 +112,16 @@ func (m *DB) SelectLatestStandupByUser(userID, channelID string) (model.Standup,
 // GetStandupForPeriod selects standup entry from database filtered by user
 func (m *DB) GetStandupForPeriod(userID, channelID string, timeFrom, timeTo time.Time) (*model.Standup, error) {
 	s := &model.Standup{}
-	err := m.db.Get(s, "select * from standups where user_id=? and channel_id=? and created BETWEEN ? AND ? limit 1", userID, channelID, timeFrom, timeTo)
+	err := m.db.Get(s,
+		`select * from standups 
+		where user_id=? and channel_id=? 
+		and created BETWEEN ? AND ? 
+		limit 1`,
+		userID,
+		channelID,
+		timeFrom,
+		timeTo,
+	)
 	if err != nil {
 		return s, err
 	}

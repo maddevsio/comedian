@@ -12,8 +12,31 @@ func (m *DB) CreateBotSettings(bs model.BotSettings) (model.BotSettings, error) 
 	}
 
 	res, err := m.db.Exec(
-		"INSERT INTO `bot_settings` (notifier_interval, language, reminder_repeats_max, reminder_time, bot_access_token, user_id, team_id, team_name, reporting_channel, reporting_time, individual_reports_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		bs.NotifierInterval, bs.Language, bs.ReminderRepeatsMax, bs.ReminderTime, bs.AccessToken, bs.UserID, bs.TeamID, bs.TeamName, bs.ReportingChannel, bs.ReportingTime, bs.IndividualReportsOn)
+		`INSERT INTO 'bot_settings' (
+			notifier_interval, 
+			language, 
+			reminder_repeats_max, 
+			reminder_time, 
+			bot_access_token, 
+			user_id, 
+			team_id, 
+			team_name, 
+			reporting_channel, 
+			reporting_time, 
+			individual_reports_on
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		bs.NotifierInterval,
+		bs.Language,
+		bs.ReminderRepeatsMax,
+		bs.ReminderTime,
+		bs.AccessToken,
+		bs.UserID,
+		bs.TeamID,
+		bs.TeamName,
+		bs.ReportingChannel,
+		bs.ReportingTime,
+		bs.IndividualReportsOn,
+	)
 	if err != nil {
 		return bs, err
 	}
@@ -26,6 +49,42 @@ func (m *DB) CreateBotSettings(bs model.BotSettings) (model.BotSettings, error) 
 	bs.ID = id
 
 	return bs, nil
+}
+
+//UpdateBotSettings updates bot
+func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
+	err := settings.Validate()
+	if err != nil {
+		return settings, err
+	}
+
+	_, err = m.db.Exec(
+		`UPDATE 'bot_settings' set 
+		bot_access_token=?, 
+		user_id=?, 
+		notifier_interval=?, 
+		language=?, 
+		reminder_repeats_max=?, 
+		reminder_time=?, 
+		reporting_channel=?, 
+		reporting_time=?, 
+		individual_reports_on=? 
+		where id=?`,
+		settings.AccessToken,
+		settings.UserID,
+		settings.NotifierInterval,
+		settings.Language,
+		settings.ReminderRepeatsMax,
+		settings.ReminderTime,
+		settings.ReportingChannel,
+		settings.ReportingTime,
+		settings.IndividualReportsOn,
+		settings.ID,
+	)
+	if err != nil {
+		return settings, err
+	}
+	return settings, nil
 }
 
 //GetAllBotSettings returns all bots
@@ -66,23 +125,6 @@ func (m *DB) GetBotSettings(id int64) (model.BotSettings, error) {
 		return bs, err
 	}
 	return bs, nil
-}
-
-//UpdateBotSettings updates bot
-func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, error) {
-	err := settings.Validate()
-	if err != nil {
-		return settings, err
-	}
-
-	_, err = m.db.Exec(
-		"UPDATE `bot_settings` set bot_access_token=?, user_id=?, notifier_interval=?, language=?, reminder_repeats_max=?, reminder_time=?, reporting_channel=?, reporting_time=?, individual_reports_on=? where id=?",
-		settings.AccessToken, settings.UserID, settings.NotifierInterval, settings.Language, settings.ReminderRepeatsMax, settings.ReminderTime, settings.ReportingChannel, settings.ReportingTime, settings.IndividualReportsOn, settings.ID,
-	)
-	if err != nil {
-		return settings, err
-	}
-	return settings, nil
 }
 
 //DeleteBotSettingsByID deletes bot

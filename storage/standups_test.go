@@ -1,10 +1,11 @@
 package storage
 
 import (
-	"github.com/maddevsio/comedian/model"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/maddevsio/comedian/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateStandup(t *testing.T) {

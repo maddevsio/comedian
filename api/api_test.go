@@ -17,7 +17,7 @@ func TestSwaggerRoutesExistInEcho(t *testing.T) {
 	assert.NoError(t, err)
 	sw, err := getSwagger()
 	assert.NoError(t, err)
-	db, err := storage.New(c)
+	db, err := storage.New(c.DatabaseURL)
 	assert.NoError(t, err)
 	api := New(c, db, nil)
 	routes := api.echo.Routes()

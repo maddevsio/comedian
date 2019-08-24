@@ -33,9 +33,7 @@ func New(dbConn string) (*DB, error) {
 		return nil, fmt.Errorf("failed to EnsureDBVersion: %v", err)
 	}
 
-	fmt.Println(current)
-
-	migrations, err := goose.CollectMigrations("migrations", current, 51)
+	migrations, err := goose.CollectMigrations("migrations", current, 53)
 	if err != nil {
 		return nil, err
 	}
