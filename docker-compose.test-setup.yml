@@ -5,21 +5,15 @@ networks:
     driver: bridge
 
 services:
-  comedian:
-    image: golang:1.11.4
-    links:
-      - db:db
+
+  adminer:
+    container_name: comedian_adminer
+    image: adminer:4.7.0
+    restart: always
+    ports:
+      - 8081:8080
     networks:
       - integration-tests
-    environment:
-      - DATABASE=comedian:comedian@tcp(db:3306)/comedian?parseTime=true
-    working_dir: /go/src/github.com/maddevsio/comedian/
-    volumes:
-      - ./:/go/src/github.com/maddevsio/comedian/
-    command: bash -c "./goose -dir migrations mysql 'comedian:comedian@tcp(db:3306)/comedian' up "
-    depends_on:
-      db:
-        condition: service_healthy
 
   db:
     image: mysql:5.7
