@@ -1,9 +1,10 @@
 package storage
 
 import (
-	"github.com/maddevsio/comedian/config"
 	"log"
 	"time"
+
+	"github.com/maddevsio/comedian/config"
 )
 
 var db = setupDB()
@@ -13,7 +14,7 @@ func setupDB() *DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db, err := New(c)
+	db, err := New(c.DatabaseURL)
 	if err != nil {
 		log.Fatal(err)
 	}

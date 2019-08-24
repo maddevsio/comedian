@@ -12,12 +12,12 @@ import (
 
 func main() {
 
-	config, err := config.Get()
+	cnf, err := config.Get()
 	if err != nil {
 		log.Fatal("Failed to get config : ", err)
 	}
 
-	db, err := storage.New(config)
+	db, err := storage.New(cnf.DatabaseURL)
 	if err != nil {
 		log.Fatal("Failed to connect to db: ", err)
 	}
@@ -27,7 +27,7 @@ func main() {
 	bundle.MustLoadMessageFile("active.en.toml")
 	bundle.MustLoadMessageFile("active.ru.toml")
 
-	comedian := api.New(config, db, bundle)
+	comedian := api.New(cnf, db, bundle)
 
 	if err = comedian.Start(); err != nil {
 		log.Fatal("Failed to start Comedian API: ", err)

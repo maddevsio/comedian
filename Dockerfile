@@ -20,8 +20,5 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
 COPY active.en.toml  /
 COPY active.ru.toml  /  
 COPY --from=0  /go/src/github.com/maddevsio/comedian/comedian /
-COPY goose /
 COPY migrations /migrations
-COPY entrypoint.sh /
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["./comedian"]

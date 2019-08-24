@@ -180,6 +180,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:7d99649602f68b73ade640ca6975ccc38735f329e159c6a507b63f00213678c0"
+  name = "github.com/pressly/goose"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e4b98955473e91a12fc7d8816c28d06376d1d92c"
+  version = "v2.6.0"
+
+[[projects]]
   digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -296,6 +304,7 @@
     "github.com/olebedev/when",
     "github.com/olebedev/when/rules/en",
     "github.com/olebedev/when/rules/ru",
+    "github.com/pressly/goose",
     "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "golang.org/x/text/language",

@@ -1,19 +1,13 @@
 -- +goose Up
 -- SQL in this section is executed when the migration is applied.
-
-CREATE TABLE `controll_pannel` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `notifier_interval` INTEGER NOT NULL,
-    `manager_slack_user_id` VARCHAR(255) NOT NULL,
-    `reporting_channel` VARCHAR(255) NOT NULL,
-    `report_time` VARCHAR(255) NOT NULL,
-    `language` VARCHAR(255) NOT NULL,
-    `reminder_repeats_max` INTEGER NOT NULL,
-    `reminder_time` INTEGER NOT NULL,
-    `collector_enabled` BOOLEAN NOT NULL
-);
-
+ALTER TABLE `controll_pannel` ADD `sprint_report_status` BOOLEAN NOT NULL;
+ALTER TABLE `controll_pannel` ADD `sprint_report_time` VARCHAR(255) NOT NULL;
+ALTER TABLE `controll_pannel` ADD `sprint_report_channel` VARCHAR(255) NOT NULL;
+ALTER TABLE `controll_pannel` ADD `sprint_weekdays` VARCHAR(255) NOT NULL;
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
+ALTER TABLE `controll_pannel` DROP `sprint_report_status`;
+ALTER TABLE `controll_pannel` DROP `sprint_report_time`;
+ALTER TABLE `controll_pannel` DROP `sprint_report_channel`;
+ALTER TABLE `controll_pannel` DROP `sprint_weekdays`;
 
-DROP TABLE `controll_pannel`;
