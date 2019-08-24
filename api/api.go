@@ -473,65 +473,36 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	code := urlValues.Get("code")
 
+	log.Info("CODE: ", code)
+
 	resp, err := slack.GetOAuthResponse(http.DefaultClient, api.config.SlackClientID, api.config.SlackClientSecret, code, "")
 	if err != nil {
 		log.Error("slack.GetOAuthResponse failed: ", err)
 		return err
 	}
 
-	botSettings, err := api.db.GetBotSettingsByTeamID(resp.TeamID)
+	slackClient := slack.New(resp.AccessToken)
+
+	userIdentity, err := slackClient.GetUserIdentity()
 	if err != nil {
-		log.Error("GetBotSettingsByTeamID failed: ", err)
-
-		bs := model.BotSettings{
-			NotifierInterval:    30,
-			Language:            "en_US",
-			ReminderRepeatsMax:  3,
-			ReminderTime:        int64(10),
-			AccessToken:         resp.Bot.BotAccessToken,
-			UserID:              resp.Bot.BotUserID,
-			TeamID:              resp.TeamID,
-			TeamName:            resp.TeamName,
-			ReportingChannel:    "",
-			ReportingTime:       "9:00",
-			IndividualReportsOn: false,
-		}
-
-		cp, err := api.db.CreateBotSettings(bs)
-		if err != nil {
-			log.Error("CreateBotSettings failed: ", err)
-			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-		}
-
-		bot := botuser.New(api.config, api.bundle, &cp, api.db)
-		log.Info("botuser.New resulted in bot: ", bot)
-		api.bots = append(api.bots, bot)
-		log.Info("api.bots contains: ", api.bots)
-		bot.Start()
-
-		log.Info("api.bots contains: ", api.bots)
-		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	botSettings.AccessToken = resp.Bot.BotAccessToken
-	botSettings.UserID = resp.Bot.BotUserID
-
-	settings, err := api.db.UpdateBotSettings(botSettings)
+	userInfo, err := slackClient.GetUserInfo(userIdentity.User.ID)
 	if err != nil {
-		log.Error("UpdateBotSettings failed: ", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	log.Info("New bot: ", settings)
-
-	bot, err := api.SelectBot(resp.TeamID)
+	bot, err := api.db.GetBotSettingsByTeamID(userIdentity.Team.ID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return echo.NewHTTPError(http.StatusNotFound, "Comedian was not invited to your Slack. Please, add it and try again")
 	}
 
-	bot.SetProperties(&settings)
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"user": userInfo,
+		"bot":  bot,
+	})
 
-	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 }
 
 func sortTeamMembers(entries []teamMember) []teamMember {

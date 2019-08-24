@@ -12,17 +12,12 @@ import (
 	"time"
 )
 
-//NotifierThread struct to manage notifier goroutines
-type NotifierThread struct {
-	channel model.Channel
-	quit    chan struct{}
-}
-
 func (bot *Bot) notifyChannels() error {
 	channels, err := bot.listTeamActiveChannels()
 	if err != nil {
 		return err
 	}
+
 	if len(channels) == 0 {
 		return nil
 	}
@@ -42,10 +37,14 @@ func (bot *Bot) notify(channel model.Channel) error {
 	w.Add(en.All...)
 	w.Add(ru.All...)
 
+	//the error is ommited here since to get to this stage the channel
+	//needs to have proper standup time
 	r, _ := w.Parse(channel.StandupTime, time.Now())
 
 	alarmtime := time.Unix(r.Time.Unix(), 0)
 	warningTime := time.Unix(r.Time.Unix()-bot.properties.ReminderTime*60, 0)
+
+	var message string
 
 	switch {
 	case time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute():
@@ -54,18 +53,10 @@ func (bot *Bot) notify(channel model.Channel) error {
 			return fmt.Errorf("could not get non reporters: %v", err)
 		}
 
-		message, err := bot.composeWarnMessage(nonReporters)
+		message, err = bot.composeWarnMessage(nonReporters)
 		if err != nil {
 			return fmt.Errorf("could not compose Warn Message: %v", err)
 		}
-
-		bot.messageChan <- Message{
-			Type:    "message",
-			Channel: channel.ChannelID,
-			Text:    message,
-		}
-
-		return nil
 
 	case time.Now().Hour() == alarmtime.Hour() && time.Now().Minute() == alarmtime.Minute():
 		nonReporters, err := bot.findChannelNonReporters(channel)
@@ -73,37 +64,38 @@ func (bot *Bot) notify(channel model.Channel) error {
 			return fmt.Errorf("could not get non reporters: %v", err)
 		}
 
-		message, err := bot.composeAlarmMessage(nonReporters)
+		message, err = bot.composeAlarmMessage(nonReporters)
 		if err != nil {
 			return fmt.Errorf("could not compose Alarm Message: %v", err)
 		}
 
-		bot.messageChan <- Message{
-			Type:    "message",
-			Channel: channel.ChannelID,
-			Text:    message,
-		}
-		return nil
-
 	default:
 		return nil
 	}
+
+	if message == "" {
+		return nil
+	}
+
+	bot.messageChan <- Message{
+		Type:    "message",
+		Channel: channel.ChannelID,
+		Text:    message,
+	}
+
+	return nil
 
 }
 
 func (bot *Bot) listTeamActiveChannels() ([]model.Channel, error) {
 	var channels []model.Channel
 
-	chs, err := bot.db.ListChannels()
+	chs, err := bot.db.ListTeamChannels(bot.properties.TeamID)
 	if err != nil {
 		return channels, err
 	}
 
 	for _, channel := range chs {
-		if channel.TeamID != bot.properties.TeamID {
-			continue
-		}
-
 		if channel.StandupTime == "" {
 			continue
 		}
@@ -114,10 +106,12 @@ func (bot *Bot) listTeamActiveChannels() ([]model.Channel, error) {
 
 		r, err := w.Parse(channel.StandupTime, time.Now())
 		if err != nil {
+			log.Errorf("Failed to parse channel standup time for %v, err: %v", channel.ChannelID, err)
 			continue
 		}
 
 		if r == nil {
+			log.Errorf("r is nil for %v, err: %v", channel.ChannelID, err)
 			continue
 		}
 

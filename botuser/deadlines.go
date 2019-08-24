@@ -55,13 +55,6 @@ func (bot *Bot) addDeadline(command slack.SlashCommand) string {
 
 	channel.StandupTime = r.Text
 
-	for s, nt := range bot.notifierThreads {
-		if nt.channel.ID == channel.ID {
-			nt.quit <- struct{}{}
-			bot.notifierThreads = append(bot.notifierThreads[:s], bot.notifierThreads[s+1:]...)
-		}
-	}
-
 	_, err = bot.db.UpdateChannel(channel)
 	if err != nil {
 		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
@@ -105,13 +98,6 @@ func (bot *Bot) removeDeadline(command slack.SlashCommand) string {
 	}
 
 	channel.StandupTime = ""
-
-	for s, nt := range bot.notifierThreads {
-		if nt.channel.ID == channel.ID {
-			nt.quit <- struct{}{}
-			bot.notifierThreads = append(bot.notifierThreads[:s], bot.notifierThreads[s+1:]...)
-		}
-	}
 
 	_, err = bot.db.UpdateChannel(channel)
 	if err != nil {

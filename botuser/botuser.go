@@ -40,7 +40,6 @@ type Bot struct {
 	localizer       *i18n.Localizer
 	properties      *model.BotSettings
 	slack           *slack.Client
-	notifierThreads []*NotifierThread
 	quitChan        chan struct{}
 	messageChan     chan Message
 }
