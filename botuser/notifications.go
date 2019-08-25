@@ -112,21 +112,6 @@ func (bot *Bot) listTeamActiveChannels() ([]model.Channel, error) {
 			continue
 		}
 
-		w := when.New(nil)
-		w.Add(en.All...)
-		w.Add(ru.All...)
-
-		r, err := w.Parse(channel.StandupTime, time.Now())
-		if err != nil {
-			log.Errorf("Failed to parse channel standup time for %v, err: %v", channel.ChannelID, err)
-			continue
-		}
-
-		if r == nil {
-			log.Errorf("r is nil for %v, err: %v", channel.ChannelID, err)
-			continue
-		}
-
 		channels = append(channels, channel)
 	}
 
