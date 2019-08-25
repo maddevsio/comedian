@@ -72,9 +72,12 @@ func (bot *Bot) modifyDeadline(command slack.SlashCommand) string {
 	addStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "addStandupTime",
-			Other: "Updated standup deadline to {{.Deadline}}",
+			Other: "Updated standup deadline to {{.Deadline}} in {{.TZ}} timezone",
 		},
-		TemplateData: map[string]interface{}{"Deadline": command.Text},
+		TemplateData: map[string]interface{}{
+			"Deadline": command.Text,
+			"TZ":       channel.TZ,
+		},
 	})
 	if err != nil {
 		log.Error(err)

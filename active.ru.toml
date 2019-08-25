@@ -1,6 +1,6 @@
 [addStandupTime]
-hash = "sha1-df341ea8a1df59b68859296dbebfa4c8ac48e9d6"
-other = "Крайний срок сдачи стендапов обновлен на {{.Deadline}}"
+hash = "sha1-d820883161054de1a4528d2254f2f4190ceda0aa"
+other = "Время сдачи стендапов установленно на {{.Deadline}} по часовому поясу {{.TZ}}"
 
 [createStanduperFailed]
 hash = "sha1-0c2c7f510c062191a09701b7d62a1f7ce754054b"

@@ -1,4 +1,4 @@
-addStandupTime = "Updated standup deadline to {{.Deadline}}"
+addStandupTime = "Updated standup deadline to {{.Deadline}} in {{.TZ}} timezone"
 createStanduperFailed = "Could not add you to standup team"
 deadlineNotSet = "Could not change channel deadline"
 failedLeaveStandupers = "Could not remove you from standup team"
