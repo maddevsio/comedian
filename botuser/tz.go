@@ -33,7 +33,7 @@ func (bot *Bot) modifyTZ(command slack.SlashCommand) string {
 
 	channel, err := bot.db.SelectChannel(command.ChannelID)
 	if err != nil {
-		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		failed, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "tzNotSet",
 				Other: "Could not change channel time zone",
@@ -42,7 +42,7 @@ func (bot *Bot) modifyTZ(command slack.SlashCommand) string {
 		if err != nil {
 			log.Error(err)
 		}
-		return deadlineNotSet
+		return failed
 	}
 
 	channel.TZ = tz

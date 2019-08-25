@@ -74,8 +74,10 @@ You can use the following commands:
 To update translations proceed with the following commands: 
 ```
 goi18n extract
+create file translate.*.toml
 goi18n merge active.*.toml translate.*.toml
-goi18n merge active.*.toml
+after you translate all the message 
+goi18n merge active.*.toml translate.*.toml
 ```
 
 ## Testing

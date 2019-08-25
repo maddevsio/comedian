@@ -2,10 +2,6 @@
 hash = "sha1-df341ea8a1df59b68859296dbebfa4c8ac48e9d6"
 other = "Крайний срок сдачи стендапов обновлен на {{.Deadline}}"
 
-[couldNotShowDeadline]
-hash = "sha1-5dbe21767924ce5a14ec8c5115e7aa32d852a06f"
-other = "Не удалось показать срок сдачи"
-
 [createStanduperFailed]
 hash = "sha1-0c2c7f510c062191a09701b7d62a1f7ce754054b"
 other = "Не смог добавить вас в стендаперы"
@@ -18,9 +14,36 @@ other = "Не смог изменить срок сдачи стендапов"
 hash = "sha1-c7374272c4a00a4dc1b1d8f6ac46c75a5e2f8129"
 other = "Не смог убрать вас из стендаперов"
 
+[failedRecognizeTZ]
+hash = "sha1-a31bd479bb70e1789ef1b53beaca1f4ee22931c5"
+other = "Не смог распознать часовую зону, перепроветь и попробуй заново"
+
+[failedUpdateOnbordingMessage]
+hash = "sha1-08f3ab189f4d4ec308afc8f6abd28a1c582be68e"
+other = "Не смог обновить приветственное сообщение"
+
+[failedUpdateSumittionDays]
+hash = "sha1-601994513da4afccda485542532c2d2703bf4e02"
+other = "Не смог обновить дни сдачи стендапа"
+
+[failedUpdateTZ]
+hash = "sha1-ce1fbc677f0e60cb0930a0daffc6cf3effeea900"
+other = "Не смог обновить часовой пояс группы"
+
 [leaveStanupers]
 hash = "sha1-aa349b49e8cfa8132c055dabfa72436424101503"
 other = "Спасибо за все ваши сообщения, вы можете больше не стендапить"
+
+[listNoStandupers]
+hash = "sha1-b632f5be18aab00f18e7e524a5367ccdfdef01bb"
+other = "Никто не стендапит, сделай /start чтобы начать!"
+
+[minutes]
+few = "{{.time}} минуты"
+hash = "sha1-5ae748c57f8a044c6a481e3b0d9304fe3b5446ef"
+many = "{{.time}} минут"
+one = "{{.time}} минута"
+other = "{{.time}} минут"
 
 [noProblemsMention]
 hash = "sha1-fd5ada3d46270c013bc30233b94e7c12a304fbc0"
@@ -38,17 +61,74 @@ other = "- нет ключевых слов блока 'вчера': {{.Keywords
 hash = "sha1-1c88a37c3eb3279a3f0cf6b8cb6f0a0ee737f61b"
 other = "Вы еще не стендапите"
 
+[onbordingMessageNotSet]
+hash = "sha1-062d1abd28341ca8af3dfedc76eb77428785c640"
+other = "Не смог изменить приветственное сообщение"
+
 [removeStandupTime]
 hash = "sha1-6444dd89936abbd9a8cc0a99e16394a0ca1b9dc6"
 other = "Удалил срок сдачи стендапов"
 
-[selectChannelFailed]
-hash = "sha1-c3fc0257d180ca51328a5ed70197d59b373f83da"
-other = "Не смог добавить вас в стендап команду. попробуйте передобавить меня в канал"
-
 [showNoStandupTime]
 hash = "sha1-a1e4959733ee1f6f257bc4e5b81be38cf58ecc6b"
 other = "Время сдачи стендапов не установлено"
+
+[showNoSubmittionDays]
+hash = "sha1-9d8a19dd0e76f70a8b072333b20502bfc38cb8ab"
+other = "Не установлены дни в которые надо стендапить"
+
+[showStandupTime]
+hash = "sha1-154ef4fc36a38ceccf1a1238ed6abcbcc7b43ee9"
+other = "Крайний срок сдачи стендапов: {{.Deadline}}"
+
+[showStandupers]
+few = "{{.Standupers}} пишут стендапы в группе. "
+hash = "sha1-dc9d26b759ed97660216e735b676a6996a0700e4"
+many = "{{.Standupers}} пишут стендапы в группе. "
+one = "{{.Standupers}} пишет стендапы в группе. "
+other = "{{.Standupers}} пишут стендапы в группе. "
+
+[showSubmittionDays]
+hash = "sha1-d2549596eff1f3106ba4355b7932077f725545be"
+other = "Сдавать стендапы на по следующим дням: {{.SD}}"
+
+[showTZ]
+hash = "sha1-e4b985b98f56db40949e7c51a972d094b93fe42b"
+other = "Часовой пояс группы: {{.TZ}}"
+
+[submittionDaysNotSet]
+hash = "sha1-98faae8499372fc181a60286f8b63f5b0dd1316a"
+other = "Не установлены дни в которые надо стендапить"
+
+[tagNonReporters]
+few = "{{.users}} не сдали стендапы, позор!"
+hash = "sha1-626cd784df0f80c1c2f83a488c1c6c32832a8e82"
+many = "{{.users}} не сдали стендапы, позор!"
+one = "{{.users}} не сдал стендап, позор!"
+other = "{{.users}} не сдали стендапы, позор!"
+
+[tzNotSet]
+hash = "sha1-1786b808bc0bcc03fbf56dbf9598eccb6732db4f"
+other = "Не смог обновить часовой пояс группы"
+
+[updateOnbordingMessage]
+hash = "sha1-cf1c8d20b7a967b9967ec964576c25a91b06891a"
+other = "Приветственное сообщение обновленно: {{.OM}}"
+
+[updateSubmittionDays]
+hash = "sha1-05e56c98213460891d47a8c75095e8ad4ec15bf3"
+other = "Новое расписание: {{.SD}}"
+
+[updateTZ]
+hash = "sha1-7e97c0499ee4d1c4e7deb06dcac91bd85b99ba43"
+other = "Новый часовой пояс группы: {{.TZ}}"
+
+[warnNonReporters]
+few = "{{.users}}, вы пропустите дедлайн через {{.minutes}}"
+hash = "sha1-cc2c2df6f8c38a8ef85324ebc6f98ef590476c7e"
+many = "{{.users}}, вы пропустите дедлайн через {{.minutes}}"
+one = "{{.users}}, по пропустишь дедлайн через {{.minutes}}"
+other = "{{.users}}, вы пропустите дедлайн через {{.minutes}}"
 
 [welcomeNoDedline]
 hash = "sha1-e57fbe3ef11584376832f8981aa8728f0b291e32"
