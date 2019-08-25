@@ -89,7 +89,7 @@ func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) *ComedianAP
 	}
 
 	echo.GET("/healthcheck", api.healthcheck)
-	echo.GET("/login", api.login)
+	echo.POST("/login", api.login)
 	echo.POST("/event", api.handleEvent)
 	echo.POST("/service-message", api.handleServiceMessage)
 	echo.POST("/commands", api.handleCommands)
