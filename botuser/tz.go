@@ -49,6 +49,7 @@ func (bot *Bot) modifyTZ(command slack.SlashCommand) string {
 
 	_, err = bot.db.UpdateChannel(channel)
 	if err != nil {
+		log.Error(err)
 		msg, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "failedUpdateTZ",

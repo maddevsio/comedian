@@ -18,7 +18,7 @@ func (m *DB) CreateChannel(ch model.Channel) (model.Channel, error) {
 			channel_standup_time,
 			tz,
 			onbording_message,
-			submittion_days
+			submission_days
 		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		ch.TeamID,
 		ch.ChannelName,
@@ -51,7 +51,7 @@ func (m *DB) UpdateChannel(ch model.Channel) (model.Channel, error) {
 		channel_standup_time=?,
 		tz=?,
 		onbording_message=?,
-		submittion_days=? 
+		submission_days=? 
 		WHERE id=?`,
 		ch.StandupTime,
 		ch.TZ,
