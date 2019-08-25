@@ -2,17 +2,19 @@ package botuser
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/maddevsio/comedian/model"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules/en"
 	"github.com/olebedev/when/rules/ru"
 	log "github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
 
 func (bot *Bot) notifyChannels() error {
+	log.Info("notifyChannels")
 	channels, err := bot.listTeamActiveChannels()
 	if err != nil {
 		return err
@@ -33,6 +35,7 @@ func (bot *Bot) notifyChannels() error {
 }
 
 func (bot *Bot) notify(channel model.Channel) error {
+	log.Info("notify")
 	w := when.New(nil)
 	w.Add(en.All...)
 	w.Add(ru.All...)
@@ -45,6 +48,10 @@ func (bot *Bot) notify(channel model.Channel) error {
 	warningTime := time.Unix(r.Time.Unix()-bot.properties.ReminderTime*60, 0)
 
 	var message string
+
+	log.Info("time.Now ", time.Now())
+	log.Info("warningTime ", warningTime)
+	log.Info("alarmtime ", alarmtime)
 
 	switch {
 	case time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute():
@@ -59,29 +66,31 @@ func (bot *Bot) notify(channel model.Channel) error {
 		}
 
 	case time.Now().Hour() == alarmtime.Hour() && time.Now().Minute() == alarmtime.Minute():
+		log.Info("ALARM GROUP: ", channel)
 		nonReporters, err := bot.findChannelNonReporters(channel)
 		if err != nil {
 			return fmt.Errorf("could not get non reporters: %v", err)
 		}
+
+		log.Info("nonReporters ", nonReporters)
 
 		message, err = bot.composeAlarmMessage(nonReporters)
 		if err != nil {
 			return fmt.Errorf("could not compose Alarm Message: %v", err)
 		}
 
-	default:
-		return nil
+		log.Info("message ", message)
 	}
 
 	if message == "" {
 		return nil
 	}
 
-	bot.messageChan <- Message{
+	bot.send(&Message{
 		Type:    "message",
 		Channel: channel.ChannelID,
 		Text:    message,
-	}
+	})
 
 	return nil
 

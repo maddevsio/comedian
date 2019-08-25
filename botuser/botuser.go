@@ -35,13 +35,12 @@ type Message struct {
 
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
-	conf        *config.Config
-	db          *storage.DB
-	localizer   *i18n.Localizer
-	properties  *model.BotSettings
-	slack       *slack.Client
-	quitChan    chan struct{}
-	messageChan chan Message
+	conf       *config.Config
+	db         *storage.DB
+	localizer  *i18n.Localizer
+	properties *model.BotSettings
+	slack      *slack.Client
+	quitChan   chan struct{}
 }
 
 //New creates new Bot instance
@@ -55,7 +54,6 @@ func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings
 	}
 
 	bot.quitChan = make(chan struct{})
-	bot.messageChan = make(chan Message)
 
 	return bot
 }
@@ -91,17 +89,12 @@ func (bot *Bot) Start() {
 			case <-bot.quitChan:
 				wg.Done()
 				return
-			case msg := <-bot.messageChan:
-				err := bot.send(msg)
-				if err != nil {
-					log.Error(err)
-				}
 			}
 		}
 	}()
 }
 
-func (bot *Bot) send(msg Message) error {
+func (bot *Bot) send(msg *Message) error {
 	if msg.Type == "message" {
 		err := bot.SendMessage(msg.Channel, msg.Text, msg.Attachments)
 		if err != nil {
@@ -164,13 +157,13 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) (string, error) {
 
 	problem := bot.analizeStandup(msg.Msg.Text)
 	if problem != "" {
-		bot.messageChan <- Message{
+		err := bot.send(&Message{
 			Type:    "ephemeral",
 			Channel: msg.Channel,
 			User:    msg.User,
 			Text:    problem,
-		}
-		return problem, nil
+		})
+		return problem, err
 	}
 
 	_, err := bot.db.CreateStandup(model.Standup{
@@ -201,13 +194,13 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) (string, error) {
 func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) (string, error) {
 	problem := bot.analizeStandup(msg.SubMessage.Text)
 	if problem != "" {
-		bot.messageChan <- Message{
+		err := bot.send(&Message{
 			Type:    "ephemeral",
 			Channel: msg.Channel,
 			User:    msg.User,
 			Text:    problem,
-		}
-		return problem, nil
+		})
+		return problem, err
 	}
 
 	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
@@ -357,9 +350,7 @@ func (bot *Bot) analizeStandup(message string) string {
 
 // SendMessage posts a message in a specified channel visible for everyone
 func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachment) error {
-	msgParams := slack.NewPostMessageParameters()
-	msgParams.Attachments = attachments
-	_, _, err := bot.slack.PostMessage(channel, message, msgParams)
+	_, _, err := bot.slack.PostMessage(channel, message, slack.PostMessageParameters{Attachments: attachments})
 	return err
 }
 
@@ -485,10 +476,13 @@ func (bot *Bot) remindAboutWorklogs() error {
 
 		message += fmt.Sprintf("В общем: %.2f", float32(total)/3600)
 
-		bot.messageChan <- Message{
+		err = bot.send(&Message{
 			Type: "direct",
 			User: user.ID,
 			Text: message,
+		})
+		if err != nil {
+			log.Error("send direct message failed: ", err)
 		}
 	}
 

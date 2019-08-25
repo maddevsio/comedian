@@ -209,11 +209,14 @@ func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 
 		attachments = bot.sortReportEntries(attachmentsPull)
 		if bot.properties.IndividualReportsOn {
-			bot.messageChan <- Message{
+			err := bot.send(&Message{
 				Type:        "message",
 				Channel:     channel.ChannelID,
 				Text:        reportHeader,
 				Attachments: attachments,
+			})
+			if err != nil {
+				log.Error("send message failed ", err)
 			}
 		}
 
@@ -232,14 +235,14 @@ func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 		}
 	}
 
-	bot.messageChan <- Message{
+	err = bot.send(&Message{
 		Type:        "message",
 		Channel:     reportingChannelID,
 		Text:        reportHeader,
 		Attachments: allReports,
-	}
+	})
 
-	return fmt.Sprintf(reportHeader, allReports), nil
+	return fmt.Sprintf(reportHeader, allReports), err
 }
 
 // displayWeeklyTeamReport generates report on users who submit standups
@@ -366,11 +369,14 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		attachments = bot.sortReportEntries(attachmentsPull)
 
 		if bot.properties.IndividualReportsOn {
-			bot.messageChan <- Message{
+			err := bot.send(&Message{
 				Type:        "message",
 				Channel:     channel.ChannelID,
 				Text:        reportHeaderWeekly,
 				Attachments: attachments,
+			})
+			if err != nil {
+				log.Error(err)
 			}
 		}
 		allReports = append(allReports, attachments...)
@@ -388,14 +394,14 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		}
 	}
 
-	bot.messageChan <- Message{
+	err = bot.send(&Message{
 		Type:        "message",
 		Channel:     reportingChannelID,
 		Text:        reportHeaderWeekly,
 		Attachments: allReports,
-	}
+	})
 
-	return fmt.Sprintf(reportHeaderWeekly, allReports), nil
+	return fmt.Sprintf(reportHeaderWeekly, allReports), err
 }
 
 func (bot *Bot) processWorklogs(totalWorklogs, projectWorklogs int) (string, int) {
