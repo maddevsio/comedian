@@ -14,7 +14,6 @@ import (
 )
 
 func (bot *Bot) notifyChannels() error {
-	log.Info("notifyChannels")
 	channels, err := bot.listTeamActiveChannels()
 	if err != nil {
 		return err

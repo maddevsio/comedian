@@ -102,7 +102,7 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 }
 
 func (bot *Bot) showCommand(command slack.SlashCommand) string {
-	var deadline string
+	var deadline, tz, submittionDays string
 	channel, err := bot.db.SelectChannel(command.ChannelID)
 	if err != nil {
 		ch, err := bot.slack.GetChannelInfo(command.ChannelID)
@@ -151,6 +151,40 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 		deadline = showStandupTime
 	}
 
+	tz, err = bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "showTZ",
+			Other: "Channel Time Zone is {{.TZ}}",
+		},
+		TemplateData: map[string]interface{}{"TZ": channel.TZ},
+	})
+	if err != nil {
+		log.Error(err)
+	}
+
+	if channel.SubmissionDays == "" {
+		submittionDays, err = bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "showNoSubmittionDays",
+				Other: "No submittion days",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+	} else {
+		submittionDays, err = bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "showSubmittionDays",
+				Other: "Submit standups on {{.SD}}",
+			},
+			TemplateData: map[string]interface{}{"SD": channel.SubmissionDays},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
 	members, err := bot.db.ListChannelStandupers(command.ChannelID)
 	if err != nil || len(members) == 0 {
 		listNoStandupers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
@@ -193,7 +227,7 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 		log.Error(err)
 	}
 
-	return listStandupers + "\n" + deadline
+	return listStandupers + "\n" + deadline + "\n" + tz + "\n" + submittionDays
 }
 
 func (bot *Bot) quitCommand(command slack.SlashCommand) string {
