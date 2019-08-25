@@ -38,6 +38,11 @@ func (bot *Bot) notify(channel model.Channel) error {
 		return nil
 	}
 
+	loc, err := time.LoadLocation(channel.TZ)
+	if err != nil {
+		return err
+	}
+
 	w := when.New(nil)
 	w.Add(en.All...)
 	w.Add(ru.All...)
@@ -51,12 +56,8 @@ func (bot *Bot) notify(channel model.Channel) error {
 
 	var message string
 
-	log.Info("time.Now ", time.Now())
-	log.Info("warningTime ", warningTime)
-	log.Info("alarmtime ", alarmtime)
-
 	switch {
-	case time.Now().Hour() == warningTime.Hour() && time.Now().Minute() == warningTime.Minute():
+	case time.Now().In(loc).Hour() == warningTime.Hour() && time.Now().In(loc).Minute() == warningTime.Minute():
 		nonReporters, err := bot.findChannelNonReporters(channel)
 		if err != nil {
 			return fmt.Errorf("could not get non reporters: %v", err)
@@ -67,21 +68,17 @@ func (bot *Bot) notify(channel model.Channel) error {
 			return fmt.Errorf("could not compose Warn Message: %v", err)
 		}
 
-	case time.Now().Hour() == alarmtime.Hour() && time.Now().Minute() == alarmtime.Minute():
-		log.Info("ALARM GROUP: ", channel)
+	case time.Now().In(loc).Hour() == alarmtime.Hour() && time.Now().In(loc).Minute() == alarmtime.Minute():
 		nonReporters, err := bot.findChannelNonReporters(channel)
 		if err != nil {
 			return fmt.Errorf("could not get non reporters: %v", err)
 		}
-
-		log.Info("nonReporters ", nonReporters)
 
 		message, err = bot.composeAlarmMessage(nonReporters)
 		if err != nil {
 			return fmt.Errorf("could not compose Alarm Message: %v", err)
 		}
 
-		log.Info("message ", message)
 	}
 
 	if message == "" {
