@@ -1,13 +1,14 @@
 package botuser
 
 import (
+	"testing"
+
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/text/language"
-	"testing"
 )
 
 var bot = setupBot()
@@ -20,7 +21,7 @@ func setupBot() *Bot {
 		return nil
 	}
 
-	db, err := storage.New(config)
+	db, err := storage.New(config.DatabaseURL)
 	if err != nil {
 		return nil
 	}

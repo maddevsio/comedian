@@ -35,13 +35,13 @@ type Message struct {
 
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
-	conf            *config.Config
-	db              *storage.DB
-	localizer       *i18n.Localizer
-	properties      *model.BotSettings
-	slack           *slack.Client
-	quitChan        chan struct{}
-	messageChan     chan Message
+	conf        *config.Config
+	db          *storage.DB
+	localizer   *i18n.Localizer
+	properties  *model.BotSettings
+	slack       *slack.Client
+	quitChan    chan struct{}
+	messageChan chan Message
 }
 
 //New creates new Bot instance
@@ -354,7 +354,9 @@ func (bot *Bot) analizeStandup(message string) string {
 
 // SendMessage posts a message in a specified channel visible for everyone
 func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachment) error {
-	_, _, err := bot.slack.PostMessage(channel, slack.MsgOptionText(message, true), slack.MsgOptionAttachments(attachments...))
+	msgParams := slack.NewPostMessageParameters()
+	msgParams.Attachments = attachments
+	_, _, err := bot.slack.PostMessage(channel, message, msgParams)
 	return err
 }
 
