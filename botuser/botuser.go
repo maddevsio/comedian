@@ -131,14 +131,17 @@ func (bot *Bot) Stop() {
 
 //HandleMessage handles slack message event
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
+	log.Info("NEW MESSAGE!")
 	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
 		return nil
 	}
+	log.Info("NEW MESSAGE!1")
 	msg.Team = bot.properties.TeamID
 	switch msg.SubType {
 	case typeMessage:
 		_, err := bot.handleNewMessage(msg)
 		if err != nil {
+			log.Error("NEW MESSAGE FAILED: ", err)
 			return err
 		}
 	case typeEditMessage:

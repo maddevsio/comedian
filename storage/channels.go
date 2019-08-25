@@ -11,7 +11,7 @@ func (m *DB) CreateChannel(ch model.Channel) (model.Channel, error) {
 		return ch, err
 	}
 	res, err := m.db.Exec(
-		`INSERT INTO 'channels' (
+		`INSERT INTO channels (
 			team_id, 
 			channel_name, 
 			channel_id, 

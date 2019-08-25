@@ -13,7 +13,7 @@ func (m *DB) CreateStandup(s model.Standup) (model.Standup, error) {
 		return s, err
 	}
 	res, err := m.db.Exec(
-		`INSERT INTO 'standups' (
+		`INSERT INTO standups (
 			team_id, 
 			created, 
 			modified, 

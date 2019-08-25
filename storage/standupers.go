@@ -11,7 +11,7 @@ func (m *DB) CreateStanduper(s model.Standuper) (model.Standuper, error) {
 		return s, err
 	}
 	res, err := m.db.Exec(
-		`INSERT INTO 'channel_members' (
+		`INSERT INTO channel_members (
 			team_id, 
 			user_id, 
 			channel_id, 

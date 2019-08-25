@@ -12,7 +12,7 @@ func (m *DB) CreateBotSettings(bs model.BotSettings) (model.BotSettings, error) 
 	}
 
 	res, err := m.db.Exec(
-		`INSERT INTO 'bot_settings' (
+		`INSERT INTO bot_settings (
 			notifier_interval, 
 			language, 
 			reminder_repeats_max, 
@@ -59,7 +59,7 @@ func (m *DB) UpdateBotSettings(settings model.BotSettings) (model.BotSettings, e
 	}
 
 	_, err = m.db.Exec(
-		`UPDATE 'bot_settings' set 
+		`UPDATE bot_settings set 
 		bot_access_token=?, 
 		user_id=?, 
 		notifier_interval=?, 

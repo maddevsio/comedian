@@ -89,7 +89,7 @@ func New(config *config.Config, db *storage.DB, bundle *i18n.Bundle) *ComedianAP
 	}
 
 	echo.GET("/healthcheck", api.healthcheck)
-	echo.POST("/login", api.login)
+	echo.GET("/login", api.login)
 	echo.POST("/event", api.handleEvent)
 	echo.POST("/service-message", api.handleServiceMessage)
 	echo.POST("/commands", api.handleCommands)
@@ -187,30 +187,40 @@ func (api *ComedianAPI) healthcheck(c echo.Context) error {
 }
 
 func (api *ComedianAPI) login(c echo.Context) error {
-	ld := new(LoginPayload)
-	if err := c.Bind(ld); err != nil {
+	logingPayload := new(LoginPayload)
+	if err := c.Bind(logingPayload); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
-	resp, err := slack.GetOAuthResponse(http.DefaultClient, api.config.SlackClientID, api.config.SlackClientSecret, ld.Code, ld.RedirectURI)
+	log.Infof("New login attempt with: %v", logingPayload)
+
+	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, logingPayload.Code, logingPayload.RedirectURI, false)
 	if err != nil {
+		log.Errorf("GetOAuthResponse failed: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
+
+	log.Infof("GetOAuthResponse: %v", resp)
 
 	slackClient := slack.New(resp.AccessToken)
 
 	userIdentity, err := slackClient.GetUserIdentity()
 	if err != nil {
+		log.Errorf("GetUserIdentity failed: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	log.Infof("GetUserIdentity: %v", userIdentity)
+
 	userInfo, err := slackClient.GetUserInfo(userIdentity.User.ID)
 	if err != nil {
+		log.Errorf("GetUserInfo failed: %v for userID %v", err, userIdentity.User.ID)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	bot, err := api.db.GetBotSettingsByTeamID(userIdentity.Team.ID)
 	if err != nil {
+		log.Errorf("GetBotSettingsByTeamID failed: %v for teamID %v", err, userIdentity.Team.ID)
 		return echo.NewHTTPError(http.StatusNotFound, "Comedian was not invited to your Slack. Please, add it and try again")
 	}
 
@@ -469,40 +479,66 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	urlValues, err := c.FormParams()
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, err)
+		log.WithFields(log.Fields(map[string]interface{}{"error": err})).Error("auth failed on c.FormParams()")
+		return c.String(http.StatusUnauthorized, err.Error())
 	}
 
 	code := urlValues.Get("code")
 
-	log.Info("CODE: ", code)
-
-	resp, err := slack.GetOAuthResponse(http.DefaultClient, api.config.SlackClientID, api.config.SlackClientSecret, code, "")
+	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
 	if err != nil {
-		log.Error("slack.GetOAuthResponse failed: ", err)
+		log.WithFields(log.Fields(map[string]interface{}{"config": api.config, "urlValues": urlValues, "error": err})).Error("auth failed on GetOAuthResponse")
 		return err
 	}
 
-	slackClient := slack.New(resp.AccessToken)
-
-	userIdentity, err := slackClient.GetUserIdentity()
+	botSettings, err := api.db.GetBotSettingsByTeamID(resp.TeamID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		cp, err := api.db.CreateBotSettings(model.BotSettings{
+			UserID:              resp.Bot.BotUserID,
+			NotifierInterval:    30,
+			Language:            "en",
+			ReminderRepeatsMax:  3,
+			ReminderTime:        10,
+			AccessToken:         resp.Bot.BotAccessToken,
+			TeamID:              resp.TeamID,
+			TeamName:            resp.TeamName,
+			ReportingChannel:    "",
+			ReportingTime:       "10am",
+			IndividualReportsOn: false,
+		})
+
+		if err != nil {
+			log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
+			return err
+		}
+
+		bot := botuser.New(api.config, api.bundle, &cp, api.db)
+
+		api.bots = append(api.bots, bot)
+
+		bot.Start()
+
+		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 	}
 
-	userInfo, err := slackClient.GetUserInfo(userIdentity.User.ID)
+	botSettings.AccessToken = resp.Bot.BotAccessToken
+	botSettings.UserID = resp.Bot.BotUserID
+
+	settings, err := api.db.UpdateBotSettings(botSettings)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
+		return err
 	}
 
-	bot, err := api.db.GetBotSettingsByTeamID(userIdentity.Team.ID)
+	bot, err := api.SelectBot(resp.TeamID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "Comedian was not invited to your Slack. Please, add it and try again")
+		log.Error(err)
+		return err
 	}
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"user": userInfo,
-		"bot":  bot,
-	})
+	bot.SetProperties(&settings)
+
+	return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 
 }
 
