@@ -15,9 +15,18 @@ func (m *DB) CreateChannel(ch model.Channel) (model.Channel, error) {
 			team_id, 
 			channel_name, 
 			channel_id, 
-			channel_standup_time
-		) VALUES (?, ?, ?, ?)`,
-		ch.TeamID, ch.ChannelName, ch.ChannelID, ch.StandupTime,
+			channel_standup_time,
+			tz,
+			onbording_message,
+			submittion_days
+		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		ch.TeamID,
+		ch.ChannelName,
+		ch.ChannelID,
+		ch.StandupTime,
+		ch.TZ,
+		ch.OnbordingMessage,
+		ch.SubmissionDays,
 	)
 	if err != nil {
 		return ch, err
@@ -38,8 +47,17 @@ func (m *DB) UpdateChannel(ch model.Channel) (model.Channel, error) {
 		return ch, err
 	}
 	_, err = m.db.Exec(
-		"UPDATE `channels` SET channel_standup_time=?  WHERE id=?",
-		ch.StandupTime, ch.ID,
+		`UPDATE channels SET 
+		channel_standup_time=?,
+		tz=?,
+		onbording_message=?,
+		submittion_days=? 
+		WHERE id=?`,
+		ch.StandupTime,
+		ch.TZ,
+		ch.OnbordingMessage,
+		ch.SubmissionDays,
+		ch.ID,
 	)
 	if err != nil {
 		return ch, err

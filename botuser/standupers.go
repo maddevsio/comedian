@@ -2,12 +2,13 @@ package botuser
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/maddevsio/comedian/model"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
 
 func (bot *Bot) joinCommand(command slack.SlashCommand) string {
@@ -62,10 +63,13 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 	channel, err := bot.db.SelectChannel(command.ChannelID)
 	if err != nil {
 		channel, err = bot.db.CreateChannel(model.Channel{
-			TeamID:      command.TeamID,
-			ChannelID:   command.ChannelID,
-			ChannelName: ch.Name,
-			StandupTime: "",
+			TeamID:           command.TeamID,
+			ChannelID:        command.ChannelID,
+			ChannelName:      ch.Name,
+			StandupTime:      "",
+			TZ:               "Asia/Bishkek",
+			OnbordingMessage: "Hello and welcome to " + ch.Name,
+			SubmissionDays:   "monday, tuesday, wednesday, thirsday, friday",
 		})
 	}
 
@@ -109,10 +113,13 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 		}
 
 		channel, err = bot.db.CreateChannel(model.Channel{
-			TeamID:      command.TeamID,
-			ChannelID:   command.ChannelID,
-			ChannelName: ch.Name,
-			StandupTime: "",
+			TeamID:           command.TeamID,
+			ChannelID:        command.ChannelID,
+			ChannelName:      ch.Name,
+			StandupTime:      "",
+			TZ:               "Asia/Bishkek",
+			OnbordingMessage: "Hello and welcome to " + ch.Name,
+			SubmissionDays:   "monday, tuesday, wednesday, thirsday, friday",
 		})
 		if err != nil {
 			log.Error("Failed to create channel in show command: ", err)

@@ -1,0 +1,77 @@
+package botuser
+
+import (
+	"strings"
+	"time"
+
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/nlopes/slack"
+	log "github.com/sirupsen/logrus"
+)
+
+func (bot *Bot) modifyTZ(command slack.SlashCommand) string {
+	tz := command.Text
+
+	if strings.TrimSpace(tz) == "" {
+		tz = "Asia/Bishkek"
+	}
+
+	_, err := time.LoadLocation(tz)
+	if err != nil {
+		msg, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "failedRecognizeTZ",
+				Other: "Failed to recognize new TZ you entered, double check the tz name and try again",
+			},
+		})
+
+		if err != nil {
+			log.Error(err)
+		}
+		return msg
+	}
+
+	channel, err := bot.db.SelectChannel(command.ChannelID)
+	if err != nil {
+		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "tzNotSet",
+				Other: "Could not change channel time zone",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		return deadlineNotSet
+	}
+
+	channel.TZ = tz
+
+	_, err = bot.db.UpdateChannel(channel)
+	if err != nil {
+		msg, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "failedUpdateTZ",
+				Other: "Failed to update Timezone",
+			},
+		})
+		if err != nil {
+			log.Error(err)
+		}
+		return msg
+	}
+
+	msg, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "updateTZ",
+			Other: "Channel timezone is updated, new TZ is {{.TZ}}",
+		},
+		TemplateData: map[string]interface{}{
+			"TZ": tz,
+		},
+	})
+	if err != nil {
+		log.Error(err)
+	}
+	return msg
+}

@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (bot *Bot) addDeadline(command slack.SlashCommand) string {
+func (bot *Bot) modifyDeadline(command slack.SlashCommand) string {
 
 	if command.Text == "" {
 		return bot.removeDeadline(command)

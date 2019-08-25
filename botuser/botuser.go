@@ -382,10 +382,13 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 		return newChannel, err
 	}
 	newChannel, err = bot.db.CreateChannel(model.Channel{
-		TeamID:      teamID,
-		ChannelName: channel.Name,
-		ChannelID:   channel.ID,
-		StandupTime: "",
+		TeamID:           teamID,
+		ChannelName:      channel.Name,
+		ChannelID:        channel.ID,
+		StandupTime:      "",
+		TZ:               "Asia/Bishkek",
+		OnbordingMessage: "Hello and welcome to " + channel.Name,
+		SubmissionDays:   "monday, tuesday, wednesday, thirsday, friday",
 	})
 	if err != nil {
 		return newChannel, err
@@ -402,8 +405,14 @@ func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
 		return bot.showCommand(command)
 	case "/quit":
 		return bot.quitCommand(command)
-	case "/update_deadline":
-		return bot.addDeadline(command)
+	case "/deadline":
+		return bot.modifyDeadline(command)
+	case "/tz":
+		return bot.modifyTZ(command)
+	case "/submittion_days":
+		return bot.modifySubmittionDays(command)
+	case "/onbording_message":
+		return bot.modifyOnbordingMessage(command)
 	default:
 		return ""
 	}

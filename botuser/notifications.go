@@ -35,7 +35,10 @@ func (bot *Bot) notifyChannels() error {
 }
 
 func (bot *Bot) notify(channel model.Channel) error {
-	log.Info("notify")
+	if !shouldSubmitStandupIn(&channel, time.Now()) {
+		return nil
+	}
+
 	w := when.New(nil)
 	w.Add(en.All...)
 	w.Add(ru.All...)
@@ -208,4 +211,12 @@ func (bot *Bot) composeAlarmMessage(nonReporters []string) (string, error) {
 	}
 
 	return alarmNonReporters, nil
+}
+
+func shouldSubmitStandupIn(channel *model.Channel, t time.Time) bool {
+	// TODO need to think of how to include translated versions
+	if strings.Contains(channel.SubmissionDays, strings.ToLower(t.Weekday().String())) {
+		return true
+	}
+	return false
 }

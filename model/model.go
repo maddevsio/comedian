@@ -2,8 +2,9 @@ package model
 
 import (
 	"errors"
-	"github.com/nlopes/slack"
 	"time"
+
+	"github.com/nlopes/slack"
 )
 
 // Standup model used for serialization/deserialization stored standups
@@ -20,11 +21,14 @@ type Standup struct {
 
 // Channel model used for serialization/deserialization stored Channels
 type Channel struct {
-	ID          int64  `db:"id" json:"id"`
-	TeamID      string `db:"team_id" json:"team_id"`
-	ChannelName string `db:"channel_name" json:"channel_name"`
-	ChannelID   string `db:"channel_id" json:"channel_id"`
-	StandupTime string `db:"channel_standup_time" json:"channel_standup_time"`
+	ID               int64  `db:"id" json:"id"`
+	TeamID           string `db:"team_id" json:"team_id"`
+	ChannelName      string `db:"channel_name" json:"channel_name"`
+	ChannelID        string `db:"channel_id" json:"channel_id"`
+	StandupTime      string `db:"channel_standup_time" json:"channel_standup_time"`
+	TZ               string `db:"tz" json:"tz"`
+	OnbordingMessage string `db:"onbording_message" json:"onbording_message,omitempty"`
+	SubmissionDays   string `db:"submission_days" json:"submission_days,omitempty"`
 }
 
 // Standuper model used for serialization/deserialization stored ChannelMembers
