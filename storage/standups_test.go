@@ -14,15 +14,14 @@ func TestCreateStandup(t *testing.T) {
 	assert.Error(t, err)
 
 	st, err := db.CreateStandup(model.Standup{
-		Created:   time.Now(),
-		Modified:  time.Now(),
-		TeamID:    "foo",
-		UserID:    "bar",
-		ChannelID: "bar12",
-		MessageTS: "12345",
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: "foo",
+		UserID:      "bar",
+		ChannelID:   "bar12",
+		MessageTS:   "12345",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, "foo", st.TeamID)
+	assert.Equal(t, "foo", st.WorkspaceID)
 
 	assert.NoError(t, db.DeleteStandup(st.ID))
 }
@@ -30,12 +29,11 @@ func TestCreateStandup(t *testing.T) {
 func TestGetStandups(t *testing.T) {
 
 	st, err := db.CreateStandup(model.Standup{
-		Created:   time.Now(),
-		Modified:  time.Now(),
-		TeamID:    "foo",
-		UserID:    "bar",
-		ChannelID: "bar12",
-		MessageTS: "12345",
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: "foo",
+		UserID:      "bar",
+		ChannelID:   "bar12",
+		MessageTS:   "12345",
 	})
 	assert.NoError(t, err)
 
@@ -61,14 +59,14 @@ func TestGetStandups(t *testing.T) {
 	_, err = db.GetStandup(st.ID)
 	assert.NoError(t, err)
 
-	res, err := db.GetStandupForPeriod("bar", "bar12", time.Now().Add(10*time.Second*(-1)), time.Now().Add(10*time.Second))
+	res, err := db.GetStandupForPeriod("bar", "bar12", time.Now().Add(10*time.Second*(-1)).Unix(), time.Now().Add(10*time.Second).Unix())
 	assert.NoError(t, err)
 	assert.Equal(t, "12345", res.MessageTS)
 
-	_, err = db.GetStandupForPeriod("foo", "bar12", time.Now().Add(10*time.Second*(-1)), time.Now().Add(10*time.Second))
+	_, err = db.GetStandupForPeriod("foo", "bar12", time.Now().Add(10*time.Second*(-1)).Unix(), time.Now().Add(10*time.Second).Unix())
 	assert.Error(t, err)
 
-	_, err = db.GetStandupForPeriod("foo", "bar12", time.Now().Add(10*time.Hour*(-1)), time.Now().Add(10*time.Second*(-1)))
+	_, err = db.GetStandupForPeriod("foo", "bar12", time.Now().Add(10*time.Hour*(-1)).Unix(), time.Now().Add(10*time.Second*(-1)).Unix())
 	assert.Error(t, err)
 
 	assert.NoError(t, db.DeleteStandup(st.ID))
@@ -77,12 +75,11 @@ func TestGetStandups(t *testing.T) {
 func TestUpdateStandup(t *testing.T) {
 
 	st, err := db.CreateStandup(model.Standup{
-		Created:   time.Now(),
-		Modified:  time.Now(),
-		TeamID:    "foo",
-		UserID:    "bar",
-		ChannelID: "bar12",
-		MessageTS: "12345",
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: "foo",
+		UserID:      "bar",
+		ChannelID:   "bar12",
+		MessageTS:   "12345",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, "", st.Comment)

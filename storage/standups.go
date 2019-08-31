@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"time"
-
 	"github.com/maddevsio/comedian/model"
 )
 
@@ -12,22 +10,21 @@ func (m *DB) CreateStandup(s model.Standup) (model.Standup, error) {
 	if err != nil {
 		return s, err
 	}
+
 	res, err := m.db.Exec(
 		`INSERT INTO standups (
-			team_id, 
-			created, 
-			modified, 
-			comment, 
+			created_at,
+			workspace_id, 
 			channel_id, 
 			user_id, 
+			comment, 
 			message_ts
-		) VALUES (?,?, ?, ?, ?, ?, ?)`,
-		s.TeamID,
-		s.Created,
-		s.Modified,
-		s.Comment,
+		) VALUES (?, ?, ?, ?, ?, ?)`,
+		s.CreatedAt,
+		s.WorkspaceID,
 		s.ChannelID,
 		s.UserID,
+		s.Comment,
 		s.MessageTS,
 	)
 	if err != nil {
@@ -48,9 +45,10 @@ func (m *DB) UpdateStandup(s model.Standup) (model.Standup, error) {
 	if err != nil {
 		return s, err
 	}
+
 	_, err = m.db.Exec(
-		"UPDATE `standups` SET modified=?, comment=?, message_ts=? WHERE id=?",
-		s.Modified, s.Comment, s.MessageTS, s.ID,
+		"UPDATE `standups` SET comment=?, message_ts=? WHERE id=?",
+		s.Comment, s.MessageTS, s.ID,
 	)
 	if err != nil {
 		return s, err
@@ -70,7 +68,7 @@ func (m *DB) ListStandups() ([]model.Standup, error) {
 // ListTeamStandups returns array of standup entries from database
 func (m *DB) ListTeamStandups(teamID string) ([]model.Standup, error) {
 	items := []model.Standup{}
-	err := m.db.Select(&items, "SELECT * FROM `standups` where team_id=? order by id desc", teamID)
+	err := m.db.Select(&items, "SELECT * FROM `standups` where workspace_id=? order by id desc", teamID)
 	return items, err
 }
 
@@ -110,12 +108,12 @@ func (m *DB) SelectLatestStandupByUser(userID, channelID string) (model.Standup,
 }
 
 // GetStandupForPeriod selects standup entry from database filtered by user
-func (m *DB) GetStandupForPeriod(userID, channelID string, timeFrom, timeTo time.Time) (*model.Standup, error) {
+func (m *DB) GetStandupForPeriod(userID, channelID string, timeFrom, timeTo int64) (*model.Standup, error) {
 	s := &model.Standup{}
 	err := m.db.Get(s,
 		`select * from standups 
 		where user_id=? and channel_id=? 
-		and created BETWEEN ? AND ? 
+		and created_at BETWEEN ? AND ? 
 		limit 1`,
 		userID,
 		channelID,

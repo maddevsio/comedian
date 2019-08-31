@@ -33,7 +33,7 @@ func (bot *Bot) notifyChannels() error {
 	return nil
 }
 
-func (bot *Bot) notify(channel model.Channel) error {
+func (bot *Bot) notify(channel model.Project) error {
 	if !shouldSubmitStandupIn(&channel, time.Now()) {
 		return nil
 	}
@@ -49,10 +49,10 @@ func (bot *Bot) notify(channel model.Channel) error {
 
 	//the error is ommited here since to get to this stage the channel
 	//needs to have proper standup time
-	r, _ := w.Parse(channel.StandupTime, time.Now())
+	r, _ := w.Parse(channel.Deadline, time.Now())
 
 	alarmtime := time.Unix(r.Time.Unix(), 0)
-	warningTime := time.Unix(r.Time.Unix()-bot.properties.ReminderTime*60, 0)
+	warningTime := time.Unix(r.Time.Unix()-bot.workspace.ReminderOffset*60, 0)
 
 	var message string
 
@@ -95,16 +95,16 @@ func (bot *Bot) notify(channel model.Channel) error {
 
 }
 
-func (bot *Bot) listTeamActiveChannels() ([]model.Channel, error) {
-	var channels []model.Channel
+func (bot *Bot) listTeamActiveChannels() ([]model.Project, error) {
+	var channels []model.Project
 
-	chs, err := bot.db.ListTeamChannels(bot.properties.TeamID)
+	chs, err := bot.db.ListWorkspaceProjects(bot.workspace.WorkspaceID)
 	if err != nil {
 		return channels, err
 	}
 
 	for _, channel := range chs {
-		if channel.StandupTime == "" {
+		if channel.Deadline == "" {
 			continue
 		}
 
@@ -114,10 +114,10 @@ func (bot *Bot) listTeamActiveChannels() ([]model.Channel, error) {
 	return channels, nil
 }
 
-func (bot *Bot) findChannelNonReporters(channel model.Channel) ([]string, error) {
+func (bot *Bot) findChannelNonReporters(project model.Project) ([]string, error) {
 	nonReporters := []string{}
 
-	standupers, err := bot.db.ListChannelStandupers(channel.ChannelID)
+	standupers, err := bot.db.ListProjectStandupers(project.ChannelID)
 	if err != nil {
 		return nonReporters, err
 	}
@@ -144,8 +144,8 @@ func (bot *Bot) composeWarnMessage(nonReporters []string) (string, error) {
 			Many:  "{{.time}} minutes",
 			Other: "{{.time}} minutes",
 		},
-		PluralCount:  int(bot.properties.ReminderTime),
-		TemplateData: map[string]interface{}{"time": bot.properties.ReminderTime},
+		PluralCount:  int(bot.workspace.ReminderOffset),
+		TemplateData: map[string]interface{}{"time": bot.workspace.ReminderOffset},
 	})
 	if err != nil {
 		return "", err
@@ -194,7 +194,7 @@ func (bot *Bot) composeAlarmMessage(nonReporters []string) (string, error) {
 	return alarmNonReporters, nil
 }
 
-func shouldSubmitStandupIn(channel *model.Channel, t time.Time) bool {
+func shouldSubmitStandupIn(channel *model.Project, t time.Time) bool {
 	// TODO need to think of how to include translated versions
 	if strings.Contains(channel.SubmissionDays, strings.ToLower(t.Weekday().String())) {
 		return true

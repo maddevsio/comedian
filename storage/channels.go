@@ -4,26 +4,29 @@ import (
 	"github.com/maddevsio/comedian/model"
 )
 
-// CreateChannel creates standup entry in database
-func (m *DB) CreateChannel(ch model.Channel) (model.Channel, error) {
+// CreateProject creates standup entry in database
+func (m *DB) CreateProject(ch model.Project) (model.Project, error) {
 	err := ch.Validate()
 	if err != nil {
 		return ch, err
 	}
+
 	res, err := m.db.Exec(
-		`INSERT INTO channels (
-			team_id, 
+		`INSERT INTO projects (
+			created_at,
+			workspace_id, 
 			channel_name, 
 			channel_id, 
-			channel_standup_time,
+			deadline,
 			tz,
 			onbording_message,
 			submission_days
-		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		ch.TeamID,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		ch.CreatedAt,
+		ch.WorkspaceID,
 		ch.ChannelName,
 		ch.ChannelID,
-		ch.StandupTime,
+		ch.Deadline,
 		ch.TZ,
 		ch.OnbordingMessage,
 		ch.SubmissionDays,
@@ -40,20 +43,20 @@ func (m *DB) CreateChannel(ch model.Channel) (model.Channel, error) {
 	return ch, nil
 }
 
-// UpdateChannel updates Channel entry in database
-func (m *DB) UpdateChannel(ch model.Channel) (model.Channel, error) {
+// UpdateProject updates Project entry in database
+func (m *DB) UpdateProject(ch model.Project) (model.Project, error) {
 	err := ch.Validate()
 	if err != nil {
 		return ch, err
 	}
 	_, err = m.db.Exec(
-		`UPDATE channels SET 
-		channel_standup_time=?,
+		`UPDATE projects SET 
+		deadline=?,
 		tz=?,
 		onbording_message=?,
 		submission_days=? 
 		WHERE id=?`,
-		ch.StandupTime,
+		ch.Deadline,
 		ch.TZ,
 		ch.OnbordingMessage,
 		ch.SubmissionDays,
@@ -65,42 +68,42 @@ func (m *DB) UpdateChannel(ch model.Channel) (model.Channel, error) {
 	return ch, nil
 }
 
-//ListChannels returns list of channels
-func (m *DB) ListChannels() ([]model.Channel, error) {
-	channels := []model.Channel{}
-	err := m.db.Select(&channels, "SELECT * FROM `channels`")
-	return channels, err
+//ListProjects returns list of projects
+func (m *DB) ListProjects() ([]model.Project, error) {
+	projects := []model.Project{}
+	err := m.db.Select(&projects, "SELECT * FROM `projects`")
+	return projects, err
 }
 
-//ListTeamChannels returns list of channels
-func (m *DB) ListTeamChannels(teamID string) ([]model.Channel, error) {
-	channels := []model.Channel{}
-	err := m.db.Select(&channels, "SELECT * FROM `channels` where team_id=?", teamID)
-	return channels, err
+//ListWorkspaceProjects returns list of projects
+func (m *DB) ListWorkspaceProjects(ws string) ([]model.Project, error) {
+	projects := []model.Project{}
+	err := m.db.Select(&projects, "SELECT * FROM `projects` where workspace_id=?", ws)
+	return projects, err
 }
 
-// SelectChannel selects Channel entry from database
-func (m *DB) SelectChannel(channelID string) (model.Channel, error) {
-	var c model.Channel
-	err := m.db.Get(&c, "SELECT * FROM `channels` WHERE channel_id=?", channelID)
+// SelectProject selects Project entry from database
+func (m *DB) SelectProject(channelID string) (model.Project, error) {
+	var c model.Project
+	err := m.db.Get(&c, "SELECT * FROM `projects` WHERE channel_id=?", channelID)
 	if err != nil {
 		return c, err
 	}
 	return c, err
 }
 
-// GetChannel selects Channel entry from database with specific id
-func (m *DB) GetChannel(id int64) (model.Channel, error) {
-	var c model.Channel
-	err := m.db.Get(&c, "SELECT * FROM `channels` where id=?", id)
+// GetProject selects Project entry from database with specific id
+func (m *DB) GetProject(id int64) (model.Project, error) {
+	var c model.Project
+	err := m.db.Get(&c, "SELECT * FROM `projects` where id=?", id)
 	if err != nil {
 		return c, err
 	}
 	return c, err
 }
 
-// DeleteChannel deletes Channel entry from database
-func (m *DB) DeleteChannel(id int64) error {
-	_, err := m.db.Exec("DELETE FROM `channels` WHERE id=?", id)
+// DeleteProject deletes Project entry from database
+func (m *DB) DeleteProject(id int64) error {
+	_, err := m.db.Exec("DELETE FROM `projects` WHERE id=?", id)
 	return err
 }

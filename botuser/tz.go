@@ -31,7 +31,7 @@ func (bot *Bot) modifyTZ(command slack.SlashCommand) string {
 		return msg
 	}
 
-	channel, err := bot.db.SelectChannel(command.ChannelID)
+	channel, err := bot.db.SelectProject(command.ChannelID)
 	if err != nil {
 		failed, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -47,7 +47,7 @@ func (bot *Bot) modifyTZ(command slack.SlashCommand) string {
 
 	channel.TZ = tz
 
-	_, err = bot.db.UpdateChannel(channel)
+	_, err = bot.db.UpdateProject(channel)
 	if err != nil {
 		log.Error(err)
 		msg, err := bot.localizer.Localize(&i18n.LocalizeConfig{

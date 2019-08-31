@@ -35,22 +35,22 @@ type Message struct {
 
 // Bot struct used for storing and communicating with slack api
 type Bot struct {
-	conf       *config.Config
-	db         *storage.DB
-	localizer  *i18n.Localizer
-	properties *model.BotSettings
-	slack      *slack.Client
-	quitChan   chan struct{}
+	conf      *config.Config
+	db        *storage.DB
+	localizer *i18n.Localizer
+	workspace *model.Workspace
+	slack     *slack.Client
+	quitChan  chan struct{}
 }
 
 //New creates new Bot instance
-func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings, db *storage.DB) *Bot {
+func New(config *config.Config, bundle *i18n.Bundle, settings *model.Workspace, db *storage.DB) *Bot {
 	bot := &Bot{
-		conf:       config,
-		db:         db,
-		slack:      slack.New(settings.AccessToken),
-		properties: settings,
-		localizer:  i18n.NewLocalizer(bundle, settings.Language),
+		conf:      config,
+		db:        db,
+		slack:     slack.New(settings.BotAccessToken),
+		workspace: settings,
+		localizer: i18n.NewLocalizer(bundle, settings.Language),
 	}
 
 	bot.quitChan = make(chan struct{})
@@ -62,7 +62,7 @@ func New(config *config.Config, bundle *i18n.Bundle, settings *model.BotSettings
 func (bot *Bot) Start() {
 	var wg sync.WaitGroup
 
-	log.Info("Bot started for ", bot.properties.TeamName)
+	log.Info("Bot started for ", bot.workspace.WorkspaceName)
 
 	wg.Add(1)
 	go func() {
@@ -125,11 +125,11 @@ func (bot *Bot) Stop() {
 //HandleMessage handles slack message event
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
 	log.Info("NEW MESSAGE!")
-	if !strings.Contains(msg.Msg.Text, bot.properties.UserID) {
+	if !strings.Contains(msg.Msg.Text, bot.workspace.BotUserID) {
 		return nil
 	}
 	log.Info("NEW MESSAGE!1")
-	msg.Team = bot.properties.TeamID
+	msg.Team = bot.workspace.WorkspaceID
 	switch msg.SubType {
 	case typeMessage:
 		_, err := bot.handleNewMessage(msg)
@@ -167,13 +167,12 @@ func (bot *Bot) handleNewMessage(msg *slack.MessageEvent) (string, error) {
 	}
 
 	_, err := bot.db.CreateStandup(model.Standup{
-		Created:   time.Now().UTC(),
-		Modified:  time.Now().UTC(),
-		TeamID:    msg.Team,
-		ChannelID: msg.Channel,
-		UserID:    msg.User,
-		Comment:   msg.Msg.Text,
-		MessageTS: msg.Msg.Timestamp,
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: msg.Team,
+		ChannelID:   msg.Channel,
+		UserID:      msg.User,
+		Comment:     msg.Msg.Text,
+		MessageTS:   msg.Msg.Timestamp,
 	})
 	if err != nil {
 		return "", err
@@ -206,7 +205,6 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) (string, error) {
 	standup, err := bot.db.SelectStandupByMessageTS(msg.SubMessage.Timestamp)
 	if err == nil {
 		standup.Comment = msg.SubMessage.Text
-		standup.Modified = time.Now().UTC()
 		_, err := bot.db.UpdateStandup(standup)
 		if err != nil {
 			return "", err
@@ -215,13 +213,12 @@ func (bot *Bot) handleEditMessage(msg *slack.MessageEvent) (string, error) {
 	}
 
 	standup, err = bot.db.CreateStandup(model.Standup{
-		Created:   time.Now().UTC(),
-		Modified:  time.Now().UTC(),
-		TeamID:    msg.Team,
-		ChannelID: msg.Channel,
-		UserID:    msg.SubMessage.User,
-		Comment:   msg.SubMessage.Text,
-		MessageTS: msg.SubMessage.Timestamp,
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: msg.Team,
+		ChannelID:   msg.Channel,
+		UserID:      msg.SubMessage.User,
+		Comment:     msg.SubMessage.Text,
+		MessageTS:   msg.SubMessage.Timestamp,
 	})
 	if err != nil {
 		return "", err
@@ -269,7 +266,7 @@ func (bot *Bot) submittedStandupToday(userID, channelID string) bool {
 
 	loc := time.FixedZone(userProfile.TZ, userProfile.TZOffset)
 
-	if standup.Created.In(loc).Day() == time.Now().UTC().In(loc).Day() {
+	if time.Unix(standup.CreatedAt, 0).Day() == time.Now().UTC().In(loc).Day() {
 		log.Info("not non reporter: ", userID)
 		return true
 	}
@@ -370,9 +367,9 @@ func (bot *Bot) SendUserMessage(userID, message string) error {
 }
 
 //HandleJoin handles comedian joining channel
-func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
-	newChannel := model.Channel{}
-	newChannel, err := bot.db.SelectChannel(channelID)
+func (bot *Bot) HandleJoin(channelID, teamID string) (model.Project, error) {
+	newChannel := model.Project{}
+	newChannel, err := bot.db.SelectProject(channelID)
 	if err == nil {
 		return newChannel, nil
 	}
@@ -381,11 +378,11 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Channel, error) {
 	if err != nil {
 		return newChannel, err
 	}
-	newChannel, err = bot.db.CreateChannel(model.Channel{
-		TeamID:           teamID,
+	newChannel, err = bot.db.CreateProject(model.Project{
+		WorkspaceID:      teamID,
 		ChannelName:      channel.Name,
 		ChannelID:        channel.ID,
-		StandupTime:      "",
+		Deadline:         "",
 		TZ:               "Asia/Bishkek",
 		OnbordingMessage: "Hello and welcome to " + channel.Name,
 		SubmissionDays:   "monday, tuesday, wednesday, thirsday, friday",
@@ -418,20 +415,20 @@ func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
 	}
 }
 
-//Suits returns true if found desired bot properties
+//Suits returns true if found desired bot workspace
 func (bot *Bot) Suits(team string) bool {
-	return strings.ToLower(team) == strings.ToLower(bot.properties.TeamID) || strings.ToLower(team) == strings.ToLower(bot.properties.TeamName)
+	return strings.ToLower(team) == strings.ToLower(bot.workspace.WorkspaceID) || strings.ToLower(team) == strings.ToLower(bot.workspace.WorkspaceName)
 }
 
 //Settings just returns bot settings
-func (bot *Bot) Settings() *model.BotSettings {
-	return bot.properties
+func (bot *Bot) Settings() *model.Workspace {
+	return bot.workspace
 }
 
 //SetProperties updates bot settings
-func (bot *Bot) SetProperties(settings *model.BotSettings) *model.BotSettings {
-	bot.properties = settings
-	return bot.properties
+func (bot *Bot) SetProperties(settings *model.Workspace) *model.Workspace {
+	bot.workspace = settings
+	return bot.workspace
 }
 
 func (bot *Bot) remindAboutWorklogs() error {
@@ -449,7 +446,7 @@ func (bot *Bot) remindAboutWorklogs() error {
 	}
 
 	for _, user := range users {
-		if user.TeamID != bot.properties.TeamID {
+		if user.TeamID != bot.workspace.WorkspaceID {
 			continue
 		}
 

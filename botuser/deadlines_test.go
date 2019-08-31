@@ -1,25 +1,26 @@
 package botuser
 
 import (
+	"testing"
+
 	"github.com/nlopes/slack"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestImplementDeadlineCommands(t *testing.T) {
 
 	resp := bot.ImplementCommands(slack.SlashCommand{
-		Command:     "/update_deadline",
+		Command:     "/deadline",
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",
 		ChannelName: "ChannelWithNoDeadline",
 		Text:        "12:00",
 	})
-	assert.Equal(t, "Updated standup deadline to 12:00", resp)
+	assert.Equal(t, "Updated standup deadline to 12:00 in  timezone", resp)
 
 	resp = bot.ImplementCommands(slack.SlashCommand{
-		Command:     "/update_deadline",
+		Command:     "/deadline",
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",
@@ -29,7 +30,7 @@ func TestImplementDeadlineCommands(t *testing.T) {
 	assert.Equal(t, "Could not recognize deadline time. Use 1pm or 13:00 formats", resp)
 
 	resp = bot.ImplementCommands(slack.SlashCommand{
-		Command:     "/update_deadline",
+		Command:     "/deadline",
 		TeamID:      "testTeam",
 		UserID:      "foo123",
 		ChannelID:   "CHAN123",

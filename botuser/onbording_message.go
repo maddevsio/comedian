@@ -9,7 +9,7 @@ import (
 func (bot *Bot) modifyOnbordingMessage(command slack.SlashCommand) string {
 	onbordingMessage := command.Text
 
-	channel, err := bot.db.SelectChannel(command.ChannelID)
+	channel, err := bot.db.SelectProject(command.ChannelID)
 	if err != nil {
 		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -25,7 +25,7 @@ func (bot *Bot) modifyOnbordingMessage(command slack.SlashCommand) string {
 
 	channel.OnbordingMessage = onbordingMessage
 
-	_, err = bot.db.UpdateChannel(channel)
+	_, err = bot.db.UpdateProject(channel)
 	if err != nil {
 		log.Error(err)
 		msg, err := bot.localizer.Localize(&i18n.LocalizeConfig{

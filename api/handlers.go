@@ -3,7 +3,6 @@ package api
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/labstack/echo"
 )
@@ -22,12 +21,12 @@ func (api *ComedianAPI) getBot(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
-	bot, err := api.db.GetBotSettings(id)
+	bot, err := api.db.GetWorkspace(id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
-	if bot.TeamID != c.Get("teamID") {
+	if bot.WorkspaceID != c.Get("teamID") {
 		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
@@ -40,25 +39,25 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
-	botSettings, err := api.db.GetBotSettings(id)
+	settings, err := api.db.GetWorkspace(id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
-	if err := c.Bind(&botSettings); err != nil {
+	if err := c.Bind(&settings); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
-	if botSettings.TeamID != c.Get("teamID") {
+	if settings.WorkspaceID != c.Get("teamID") {
 		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
-	res, err := api.db.UpdateBotSettings(botSettings)
+	res, err := api.db.UpdateWorkspace(settings)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	bot, err := api.SelectBot(botSettings.TeamName)
+	bot, err := api.SelectBot(settings.WorkspaceName)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -80,7 +79,7 @@ func (api *ComedianAPI) getStandup(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
-	if standup.TeamID != c.Get("teamID") {
+	if standup.WorkspaceID != c.Get("teamID") {
 		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
@@ -112,11 +111,9 @@ func (api *ComedianAPI) updateStandup(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
-	if standup.TeamID != c.Get("teamID") {
+	if standup.WorkspaceID != c.Get("teamID") {
 		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
-
-	standup.Modified = time.Now().UTC()
 
 	standup, err = api.db.UpdateStandup(standup)
 	if err != nil {
@@ -137,7 +134,7 @@ func (api *ComedianAPI) deleteStandup(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
-	if standup.TeamID != c.Get("teamID") {
+	if standup.WorkspaceID != c.Get("teamID") {
 		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
@@ -151,7 +148,7 @@ func (api *ComedianAPI) deleteStandup(c echo.Context) error {
 
 func (api *ComedianAPI) listChannels(c echo.Context) error {
 
-	channels, err := api.db.ListTeamChannels(c.Get("teamID").(string))
+	channels, err := api.db.ListWorkspaceProjects(c.Get("teamID").(string))
 	if err != nil {
 		echo.NewHTTPError(http.StatusInternalServerError, somethingWentWrong)
 	}
@@ -165,7 +162,7 @@ func (api *ComedianAPI) updateChannel(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
-	channel, err := api.db.GetChannel(id)
+	channel, err := api.db.GetProject(id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
@@ -174,11 +171,11 @@ func (api *ComedianAPI) updateChannel(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
-	if channel.TeamID != c.Get("teamID") {
+	if channel.WorkspaceID != c.Get("teamID") {
 		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
-	channel, err = api.db.UpdateChannel(channel)
+	channel, err = api.db.UpdateProject(channel)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -192,16 +189,16 @@ func (api *ComedianAPI) deleteChannel(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
-	channel, err := api.db.GetChannel(id)
+	channel, err := api.db.GetProject(id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
-	if channel.TeamID != c.Get("teamID") {
+	if channel.WorkspaceID != c.Get("teamID") {
 		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
-	err = api.db.DeleteChannel(id)
+	err = api.db.DeleteProject(id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, somethingWentWrong)
 	}
@@ -211,7 +208,7 @@ func (api *ComedianAPI) deleteChannel(c echo.Context) error {
 
 func (api *ComedianAPI) listStandupers(c echo.Context) error {
 
-	standupers, err := api.db.ListTeamStandupers(c.Get("teamID").(string))
+	standupers, err := api.db.ListWorkspaceStandupers(c.Get("teamID").(string))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, somethingWentWrong)
 	}
@@ -234,7 +231,7 @@ func (api *ComedianAPI) updateStanduper(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
-	if standuper.TeamID != c.Get("teamID") {
+	if standuper.WorkspaceID != c.Get("teamID") {
 		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 
@@ -257,7 +254,7 @@ func (api *ComedianAPI) deleteStanduper(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
-	if standuper.TeamID != c.Get("teamID") {
+	if standuper.WorkspaceID != c.Get("teamID") {
 		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
 	}
 

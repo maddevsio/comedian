@@ -128,12 +128,12 @@ func AuthPreRequest(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusUnauthorized, "Missing or incorrect Bot Access Token")
 		}
 
-		bot, err := dbService.GetBotSettingsByBotAccessToken(accessToken)
+		bot, err := dbService.GetWorkspaceByBotAccessToken(accessToken)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized, "Missing or incorrect Bot Access Token")
 		}
 
-		c.Set("teamID", bot.TeamID)
+		c.Set("teamID", bot.WorkspaceID)
 
 		return next(c)
 	}
@@ -166,7 +166,7 @@ func (api *ComedianAPI) removeBot(team string) {
 // Start starts http server
 func (api *ComedianAPI) Start() error {
 
-	settings, err := api.db.GetAllBotSettings()
+	settings, err := api.db.GetAllWorkspaces()
 	if err != nil {
 		return err
 	}
@@ -218,9 +218,9 @@ func (api *ComedianAPI) login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	bot, err := api.db.GetBotSettingsByTeamID(userIdentity.Team.ID)
+	bot, err := api.db.GetWorkspaceByWorkspaceID(userIdentity.Team.ID)
 	if err != nil {
-		log.Errorf("GetBotSettingsByTeamID failed: %v for teamID %v", err, userIdentity.Team.ID)
+		log.Errorf("GetWorkspaceByWorkspaceID failed: %v for teamID %v", err, userIdentity.Team.ID)
 		return echo.NewHTTPError(http.StatusNotFound, "Comedian was not invited to your Slack. Please, add it and try again")
 	}
 
@@ -344,7 +344,7 @@ func (api *ComedianAPI) HandleEvent(incomingEvent model.ServiceEvent) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	if bot.Settings().AccessToken != incomingEvent.AccessToken {
+	if bot.Settings().BotAccessToken != incomingEvent.AccessToken {
 		return errors.New("Wrong access token")
 	}
 
@@ -388,7 +388,7 @@ func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackE
 	case "app_uninstalled":
 		bot.Stop()
 		api.removeBot(event.TeamID)
-		return api.db.DeleteBotSettings(event.TeamID)
+		return api.db.DeleteWorkspace(event.TeamID)
 	default:
 		log.WithFields(log.Fields{"event": string(data)}).Warning("unrecognized event!")
 		return nil
@@ -410,7 +410,7 @@ func (api *ComedianAPI) showTeamWorklogs(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	standupers, err := api.db.ListChannelStandupers(slashCommand.ChannelID)
+	standupers, err := api.db.ListProjectStandupers(slashCommand.ChannelID)
 	if err != nil {
 		return c.JSON(http.StatusOK, "Could not retreve standupers of the project")
 	}
@@ -491,20 +491,20 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	botSettings, err := api.db.GetBotSettingsByTeamID(resp.TeamID)
+	workspaceSettings, err := api.db.GetWorkspaceByWorkspaceID(resp.TeamID)
 	if err != nil {
-		cp, err := api.db.CreateBotSettings(model.BotSettings{
-			UserID:              resp.Bot.BotUserID,
-			NotifierInterval:    30,
-			Language:            "en",
-			ReminderRepeatsMax:  3,
-			ReminderTime:        10,
-			AccessToken:         resp.Bot.BotAccessToken,
-			TeamID:              resp.TeamID,
-			TeamName:            resp.TeamName,
-			ReportingChannel:    "",
-			ReportingTime:       "10am",
-			IndividualReportsOn: false,
+		cp, err := api.db.CreateWorkspace(model.Workspace{
+			BotUserID:              resp.Bot.BotUserID,
+			NotifierInterval:       30,
+			Language:               "en",
+			MaxReminders:           3,
+			ReminderOffset:         10,
+			BotAccessToken:         resp.Bot.BotAccessToken,
+			WorkspaceID:            resp.TeamID,
+			WorkspaceName:          resp.TeamName,
+			ReportingChannel:       "",
+			ReportingTime:          "10am",
+			ProjectsReportsEnabled: false,
 		})
 
 		if err != nil {
@@ -521,10 +521,10 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 	}
 
-	botSettings.AccessToken = resp.Bot.BotAccessToken
-	botSettings.UserID = resp.Bot.BotUserID
+	workspaceSettings.BotAccessToken = resp.Bot.BotAccessToken
+	workspaceSettings.BotUserID = resp.Bot.BotUserID
 
-	settings, err := api.db.UpdateBotSettings(botSettings)
+	settings, err := api.db.UpdateWorkspace(workspaceSettings)
 	if err != nil {
 		log.WithFields(log.Fields(map[string]interface{}{"resp": resp, "error": err})).Error("auth failed on CreateBotSettings")
 		return err

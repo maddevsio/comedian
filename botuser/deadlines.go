@@ -39,7 +39,7 @@ func (bot *Bot) modifyDeadline(command slack.SlashCommand) string {
 		return wrongDeadlineFormat
 	}
 
-	channel, err := bot.db.SelectChannel(command.ChannelID)
+	channel, err := bot.db.SelectProject(command.ChannelID)
 	if err != nil {
 		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -53,9 +53,9 @@ func (bot *Bot) modifyDeadline(command slack.SlashCommand) string {
 		return deadlineNotSet
 	}
 
-	channel.StandupTime = r.Text
+	channel.Deadline = r.Text
 
-	_, err = bot.db.UpdateChannel(channel)
+	_, err = bot.db.UpdateProject(channel)
 	if err != nil {
 		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -86,7 +86,7 @@ func (bot *Bot) modifyDeadline(command slack.SlashCommand) string {
 }
 
 func (bot *Bot) removeDeadline(command slack.SlashCommand) string {
-	channel, err := bot.db.SelectChannel(command.ChannelID)
+	channel, err := bot.db.SelectProject(command.ChannelID)
 	if err != nil {
 		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -100,9 +100,9 @@ func (bot *Bot) removeDeadline(command slack.SlashCommand) string {
 		return deadlineNotSet
 	}
 
-	channel.StandupTime = ""
+	channel.Deadline = ""
 
-	_, err = bot.db.UpdateChannel(channel)
+	_, err = bot.db.UpdateProject(channel)
 	if err != nil {
 		deadlineNotSet, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{

@@ -9,23 +9,23 @@ import (
 
 // Standup model used for serialization/deserialization stored standups
 type Standup struct {
-	ID        int64     `db:"id" json:"id"`
-	TeamID    string    `db:"team_id" json:"team_id"`
-	Created   time.Time `db:"created" json:"created"`
-	Modified  time.Time `db:"modified" json:"modified"`
-	ChannelID string    `db:"channel_id" json:"channel_id"`
-	UserID    string    `db:"user_id" json:"user_id"`
-	Comment   string    `db:"comment" json:"comment"`
-	MessageTS string    `db:"message_ts" json:"message_ts"`
+	ID          int64  `db:"id" json:"id"`
+	CreatedAt   int64  `db:"created_at" json:"created_at"`
+	WorkspaceID string `db:"workspace_id" json:"workspace_id"`
+	ChannelID   string `db:"channel_id" json:"channel_id"`
+	UserID      string `db:"user_id" json:"user_id"`
+	Comment     string `db:"comment" json:"comment"`
+	MessageTS   string `db:"message_ts" json:"message_ts"`
 }
 
-// Channel model used for serialization/deserialization stored Channels
-type Channel struct {
+// Project model used for serialization/deserialization stored Projects
+type Project struct {
 	ID               int64  `db:"id" json:"id"`
-	TeamID           string `db:"team_id" json:"team_id"`
+	CreatedAt        int64  `db:"created_at" json:"created_at"`
+	WorkspaceID      string `db:"workspace_id" json:"workspace_id"`
 	ChannelName      string `db:"channel_name" json:"channel_name"`
 	ChannelID        string `db:"channel_id" json:"channel_id"`
-	StandupTime      string `db:"channel_standup_time" json:"channel_standup_time"`
+	Deadline         string `db:"deadline" json:"deadline"`
 	TZ               string `db:"tz" json:"tz"`
 	OnbordingMessage string `db:"onbording_message" json:"onbording_message,omitempty"`
 	SubmissionDays   string `db:"submission_days" json:"submission_days,omitempty"`
@@ -33,30 +33,31 @@ type Channel struct {
 
 // Standuper model used for serialization/deserialization stored ChannelMembers
 type Standuper struct {
-	ID            int64     `db:"id" json:"id"`
-	TeamID        string    `db:"team_id" json:"team_id"`
-	UserID        string    `db:"user_id" json:"user_id"`
-	ChannelID     string    `db:"channel_id" json:"channel_id"`
-	RoleInChannel string    `db:"role_in_channel" json:"role_in_channel"`
-	Created       time.Time `db:"created" json:"created"`
-	RealName      string    `db:"real_name" json:"real_name"`
-	ChannelName   string    `db:"channel_name" json:"channel_name"`
+	ID          int64  `db:"id" json:"id"`
+	CreatedAt   int64  `db:"created_at" json:"created_at"`
+	WorkspaceID string `db:"workspace_id" json:"workspace_id"`
+	UserID      string `db:"user_id" json:"user_id"`
+	ChannelID   string `db:"channel_id" json:"channel_id"`
+	Role        string `db:"role" json:"role"`
+	RealName    string `db:"real_name" json:"real_name"`
+	ChannelName string `db:"channel_name" json:"channel_name"`
 }
 
-// BotSettings is used for updating and storing different bot configuration parameters
-type BotSettings struct {
-	ID                  int64  `db:"id" json:"id"`
-	UserID              string `db:"user_id" json:"user_id"`
-	NotifierInterval    int    `db:"notifier_interval" json:"notifier_interval" `
-	Language            string `db:"language" json:"language" `
-	ReminderRepeatsMax  int    `db:"reminder_repeats_max" json:"reminder_repeats_max" `
-	ReminderTime        int64  `db:"reminder_time" json:"reminder_time" `
-	AccessToken         string `db:"bot_access_token" json:"bot_access_token" `
-	TeamID              string `db:"team_id" json:"team_id" `
-	TeamName            string `db:"team_name" json:"team_name" `
-	ReportingChannel    string `db:"reporting_channel" json:"reporting_channel"`
-	ReportingTime       string `db:"reporting_time" json:"reporting_time"`
-	IndividualReportsOn bool   `db:"individual_reports_on" json:"individual_reports_on"`
+// Workspace is used for updating and storing different bot configuration parameters
+type Workspace struct {
+	ID                     int64  `db:"id" json:"id"`
+	CreatedAt              int64  `db:"created_at" json:"created_at"`
+	BotUserID              string `db:"bot_user_id" json:"bot_user_id"`
+	NotifierInterval       int    `db:"notifier_interval" json:"notifier_interval" `
+	Language               string `db:"language" json:"language" `
+	MaxReminders           int    `db:"max_reminders" json:"max_reminders" `
+	ReminderOffset         int64  `db:"reminder_offset" json:"reminder_offset" `
+	BotAccessToken         string `db:"bot_access_token" json:"bot_access_token" `
+	WorkspaceID            string `db:"workspace_id" json:"workspace_id" `
+	WorkspaceName          string `db:"workspace_name" json:"workspace_name" `
+	ReportingChannel       string `db:"reporting_channel" json:"reporting_channel"`
+	ReportingTime          string `db:"reporting_time" json:"reporting_time"`
+	ProjectsReportsEnabled bool   `db:"projects_reports_enabled" json:"projects_reports_enabled"`
 }
 
 // ServiceEvent event coming from services
@@ -97,8 +98,8 @@ type AttachmentItem struct {
 
 // Validate validates Standup struct
 func (st Standup) Validate() error {
-	if st.TeamID == "" {
-		err := errors.New("team ID cannot be empty")
+	if st.WorkspaceID == "" {
+		err := errors.New("workspace ID cannot be empty")
 		return err
 	}
 	if st.UserID == "" {
@@ -116,30 +117,30 @@ func (st Standup) Validate() error {
 	return nil
 }
 
-// Validate validates BotSettings struct
-func (bs BotSettings) Validate() error {
-	if bs.TeamID == "" {
-		err := errors.New("team ID cannot be empty")
+// Validate validates Workspace struct
+func (bs Workspace) Validate() error {
+	if bs.WorkspaceID == "" {
+		err := errors.New("workspace ID cannot be empty")
 		return err
 	}
 
-	if bs.TeamName == "" {
+	if bs.WorkspaceName == "" {
 		err := errors.New("team name cannot be empty")
 		return err
 	}
 
-	if bs.AccessToken == "" {
+	if bs.BotAccessToken == "" {
 		err := errors.New("accessToken cannot be empty")
 		return err
 	}
 
-	if bs.ReminderTime <= 0 {
+	if bs.ReminderOffset <= 0 {
 		err := errors.New("reminder time cannot be zero or negative")
 		return err
 	}
 
-	if bs.ReminderRepeatsMax <= 0 {
-		err := errors.New("reminder repeats max cannot be zero or negative")
+	if bs.MaxReminders < 0 {
+		err := errors.New("reminder repeats max cannot be negative")
 		return err
 	}
 
@@ -156,10 +157,10 @@ func (bs BotSettings) Validate() error {
 	return nil
 }
 
-// Validate validates Channel struct
-func (ch Channel) Validate() error {
-	if ch.TeamID == "" {
-		err := errors.New("team ID cannot be empty")
+// Validate validates Project struct
+func (ch Project) Validate() error {
+	if ch.WorkspaceID == "" {
+		err := errors.New("workspace ID cannot be empty")
 		return err
 	}
 
@@ -178,8 +179,8 @@ func (ch Channel) Validate() error {
 
 // Validate validates Standuper struct
 func (s Standuper) Validate() error {
-	if s.TeamID == "" {
-		err := errors.New("team ID cannot be empty")
+	if s.WorkspaceID == "" {
+		err := errors.New("workspace ID cannot be empty")
 		return err
 	}
 
@@ -194,14 +195,4 @@ func (s Standuper) Validate() error {
 	}
 
 	return nil
-}
-
-//IsPM returns true if standuper has pm status
-func (s Standuper) IsPM() bool {
-	return s.RoleInChannel == "pm"
-}
-
-//IsDesigner returns true if standuper has designer status
-func (s Standuper) IsDesigner() bool {
-	return s.RoleInChannel == "designer"
 }

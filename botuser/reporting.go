@@ -31,7 +31,7 @@ type AttachmentItem struct {
 
 // CallDisplayYesterdayTeamReport calls displayYesterdayTeamReport
 func (bot *Bot) CallDisplayYesterdayTeamReport() error {
-	if bot.properties.ReportingTime == "" {
+	if bot.workspace.ReportingTime == "" {
 		return nil
 	}
 
@@ -39,7 +39,7 @@ func (bot *Bot) CallDisplayYesterdayTeamReport() error {
 	w.Add(en.All...)
 	w.Add(ru.All...)
 
-	r, err := w.Parse(bot.properties.ReportingTime, time.Now())
+	r, err := w.Parse(bot.workspace.ReportingTime, time.Now())
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (bot *Bot) CallDisplayWeeklyTeamReport() error {
 		return nil
 	}
 
-	if bot.properties.ReportingTime == "" {
+	if bot.workspace.ReportingTime == "" {
 		return nil
 	}
 
@@ -67,7 +67,7 @@ func (bot *Bot) CallDisplayWeeklyTeamReport() error {
 	w.Add(en.All...)
 	w.Add(ru.All...)
 
-	r, err := w.Parse(bot.properties.ReportingTime, time.Now())
+	r, err := w.Parse(bot.workspace.ReportingTime, time.Now())
 
 	if time.Now().Hour() != r.Time.Hour() || time.Now().Minute() != r.Time.Minute() {
 		return nil
@@ -81,7 +81,7 @@ func (bot *Bot) CallDisplayWeeklyTeamReport() error {
 func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 	var allReports []slack.Attachment
 
-	channels, err := bot.db.ListTeamChannels(bot.properties.TeamID)
+	channels, err := bot.db.ListWorkspaceProjects(bot.workspace.WorkspaceID)
 	if err != nil {
 		return "", err
 	}
@@ -101,9 +101,9 @@ func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 		var attachments []slack.Attachment
 		var attachmentsPull []AttachmentItem
 
-		standupers, err := bot.db.ListChannelStandupers(channel.ChannelID)
+		standupers, err := bot.db.ListProjectStandupers(channel.ChannelID)
 		if err != nil {
-			log.Errorf("ListChannelStandupers failed for channel %v: %v", channel.ChannelName, err)
+			log.Errorf("ListProjectStandupers failed for channel %v: %v", channel.ChannelName, err)
 			continue
 		}
 
@@ -124,7 +124,7 @@ func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 				commits, commitsPoints = bot.processCommits(dataOnUser.Commits, dataOnUserInProject.Commits)
 			}
 
-			if standuper.RoleInChannel == "pm" || standuper.RoleInChannel == "designer" {
+			if standuper.Role == "pm" || standuper.Role == "designer" {
 				commits = ""
 				commitsPoints++
 			}
@@ -208,7 +208,7 @@ func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 		}
 
 		attachments = bot.sortReportEntries(attachmentsPull)
-		if bot.properties.IndividualReportsOn {
+		if bot.workspace.ProjectsReportsEnabled {
 			err := bot.send(&Message{
 				Type:        "message",
 				Channel:     channel.ChannelID,
@@ -230,7 +230,7 @@ func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 	var reportingChannelID string
 
 	for _, ch := range channels {
-		if (ch.ChannelName == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) || (ch.ChannelID == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) {
+		if (ch.ChannelName == bot.workspace.ReportingChannel && ch.WorkspaceID == bot.workspace.WorkspaceID) || (ch.ChannelID == bot.workspace.ReportingChannel && ch.WorkspaceID == bot.workspace.WorkspaceID) {
 			reportingChannelID = ch.ChannelID
 		}
 	}
@@ -249,7 +249,7 @@ func (bot *Bot) displayYesterdayTeamReport() (string, error) {
 func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 	var allReports []slack.Attachment
 
-	channels, err := bot.db.ListChannels()
+	channels, err := bot.db.ListProjects()
 	if err != nil {
 		return "", err
 	}
@@ -268,9 +268,9 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 		var attachmentsPull []AttachmentItem
 		var attachments []slack.Attachment
 
-		standupers, err := bot.db.ListChannelStandupers(channel.ChannelID)
+		standupers, err := bot.db.ListProjectStandupers(channel.ChannelID)
 		if err != nil {
-			log.Errorf("ListChannelStandupers failed for channel %v: %v", channel.ChannelName, err)
+			log.Errorf("ListProjectStandupers failed for channel %v: %v", channel.ChannelName, err)
 			continue
 		}
 
@@ -291,7 +291,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 				commits, commitsPoints = bot.processCommits(dataOnUser.Commits, dataOnUserInProject.Commits)
 			}
 
-			if standuper.RoleInChannel == "pm" || standuper.RoleInChannel == "designer" {
+			if standuper.Role == "pm" || standuper.Role == "designer" {
 				commits = ""
 				commitsPoints++
 			}
@@ -368,7 +368,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 
 		attachments = bot.sortReportEntries(attachmentsPull)
 
-		if bot.properties.IndividualReportsOn {
+		if bot.workspace.ProjectsReportsEnabled {
 			err := bot.send(&Message{
 				Type:        "message",
 				Channel:     channel.ChannelID,
@@ -389,7 +389,7 @@ func (bot *Bot) displayWeeklyTeamReport() (string, error) {
 	var reportingChannelID string
 
 	for _, ch := range channels {
-		if (ch.ChannelName == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) || (ch.ChannelID == bot.properties.ReportingChannel && ch.TeamID == bot.properties.TeamID) {
+		if (ch.ChannelName == bot.workspace.ReportingChannel && ch.WorkspaceID == bot.workspace.WorkspaceID) || (ch.ChannelID == bot.workspace.ReportingChannel && ch.WorkspaceID == bot.workspace.WorkspaceID) {
 			reportingChannelID = ch.ChannelID
 		}
 	}
@@ -543,15 +543,15 @@ func (bot *Bot) processStandup(member model.Standuper) (string, int) {
 
 	t := time.Now().AddDate(0, 0, -1)
 
-	timeFrom := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
-	timeTo := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.Local)
+	timeFrom := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local).Unix()
+	timeTo := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.Local).Unix()
 
 	standup, err := bot.db.GetStandupForPeriod(member.UserID, member.ChannelID, timeFrom, timeTo)
 	if err != nil || standup == nil {
 		if time.Now().Weekday() == 0 || time.Now().Weekday() == 1 {
 			return "", points
 		}
-		if member.RoleInChannel == "pm" {
+		if member.Role == "pm" {
 			return "", 1
 		}
 		noStandup, err := bot.localizer.Localize(&i18n.LocalizeConfig{
@@ -624,7 +624,7 @@ func (bot *Bot) GetCollectorDataOnMember(member model.Standuper, startDate, endD
 	dateFrom := fmt.Sprintf("%d-%02d-%02d", startDate.Year(), startDate.Month(), startDate.Day())
 	dateTo := fmt.Sprintf("%d-%02d-%02d", endDate.Year(), endDate.Month(), endDate.Day())
 
-	project, err := bot.db.SelectChannel(member.ChannelID)
+	project, err := bot.db.SelectProject(member.ChannelID)
 	if err != nil {
 		return CollectorData{}, CollectorData{}, err
 	}
@@ -646,7 +646,7 @@ func (bot *Bot) GetCollectorDataOnMember(member model.Standuper, startDate, endD
 //GetCollectorData sends api request to collector servise and returns collector object
 func (bot *Bot) GetCollectorData(getDataOn, data, dateFrom, dateTo string) (CollectorData, error) {
 	var collectorData CollectorData
-	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", bot.conf.CollectorURL, bot.properties.TeamID, getDataOn, data, dateFrom, dateTo)
+	linkURL := fmt.Sprintf("%s/rest/api/v1/logger/%s/%s/%s/%s/%s/", bot.conf.CollectorURL, bot.workspace.WorkspaceID, getDataOn, data, dateFrom, dateTo)
 	req, err := http.NewRequest("GET", linkURL, nil)
 	if err != nil {
 		return collectorData, err

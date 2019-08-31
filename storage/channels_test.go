@@ -1,67 +1,70 @@
 package storage
 
 import (
+	"testing"
+	"time"
+
 	"github.com/maddevsio/comedian/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestCreateChannel(t *testing.T) {
-	_, err := db.CreateChannel(model.Channel{})
+func TestCreateProject(t *testing.T) {
+	_, err := db.CreateProject(model.Project{})
 	assert.Error(t, err)
 
-	ch, err := db.CreateChannel(model.Channel{
-		TeamID:      "foo",
+	ch, err := db.CreateProject(model.Project{
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: "foo",
 		ChannelName: "bar",
 		ChannelID:   "bar12",
-		StandupTime: "",
+		Deadline:    "",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, "foo", ch.TeamID)
+	assert.Equal(t, "foo", ch.WorkspaceID)
 
-	assert.NoError(t, db.DeleteChannel(ch.ID))
+	assert.NoError(t, db.DeleteProject(ch.ID))
 }
 
-func TestGetChannels(t *testing.T) {
-	ch, err := db.CreateChannel(model.Channel{
-		TeamID:      "foo",
+func TestGetProjects(t *testing.T) {
+	ch, err := db.CreateProject(model.Project{
+		WorkspaceID: "foo",
 		ChannelName: "bar",
 		ChannelID:   "bar12",
-		StandupTime: "",
+		Deadline:    "",
 	})
 	assert.NoError(t, err)
 
-	_, err = db.ListChannels()
+	_, err = db.ListProjects()
 	assert.NoError(t, err)
 
-	_, err = db.SelectChannel("")
+	_, err = db.SelectProject("")
 	assert.Error(t, err)
 
-	_, err = db.SelectChannel("bar12")
+	_, err = db.SelectProject("bar12")
 	assert.NoError(t, err)
 
-	_, err = db.GetChannel(int64(0))
+	_, err = db.GetProject(int64(0))
 	assert.Error(t, err)
 
-	_, err = db.GetChannel(ch.ID)
+	_, err = db.GetProject(ch.ID)
 	assert.NoError(t, err)
 
-	assert.NoError(t, db.DeleteChannel(ch.ID))
+	assert.NoError(t, db.DeleteProject(ch.ID))
 }
 
-func TestUpdateChannels(t *testing.T) {
-	ch, err := db.CreateChannel(model.Channel{
-		TeamID:      "foo",
+func TestUpdateProjects(t *testing.T) {
+	ch, err := db.CreateProject(model.Project{
+		WorkspaceID: "foo",
 		ChannelName: "bar",
 		ChannelID:   "bar12",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, "", ch.StandupTime)
+	assert.Equal(t, "", ch.Deadline)
 
-	ch.StandupTime = "10:00"
-	ch, err = db.UpdateChannel(ch)
+	ch.Deadline = "10:00"
+	ch, err = db.UpdateProject(ch)
 	assert.NoError(t, err)
-	assert.Equal(t, "10:00", ch.StandupTime)
+	assert.Equal(t, "10:00", ch.Deadline)
 
-	assert.NoError(t, db.DeleteChannel(ch.ID))
+	assert.NoError(t, db.DeleteProject(ch.ID))
 }

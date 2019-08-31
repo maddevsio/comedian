@@ -26,24 +26,26 @@ func setupBot() *Bot {
 		return nil
 	}
 
-	settings := &model.BotSettings{
-		TeamID:      "testTeam",
-		AccessToken: "foo",
+	settings := &model.Workspace{
+		WorkspaceID:    "testTeam",
+		BotAccessToken: "foo",
 	}
 
 	bot := New(config, bundle, settings, db)
 
-	bot.db.CreateChannel(model.Channel{
-		TeamID:      "testTeam",
+	bot.db.CreateProject(model.Project{
+		WorkspaceID: "testTeam",
 		ChannelID:   "CHAN123",
 		ChannelName: "ChannelWithNoDeadline",
+		TZ:          "Asia/Bishkek",
 	})
 
-	bot.db.CreateChannel(model.Channel{
-		TeamID:      "testTeam",
+	bot.db.CreateProject(model.Project{
+		WorkspaceID: "testTeam",
 		ChannelID:   "CHAN321",
 		ChannelName: "ChannelWithDeadline",
-		StandupTime: "12:00",
+		Deadline:    "12:00",
+		TZ:          "Asia/Bishkek",
 	})
 
 	return bot

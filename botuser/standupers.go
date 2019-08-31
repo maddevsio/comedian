@@ -38,13 +38,13 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 	}
 
 	_, err = bot.db.CreateStanduper(model.Standuper{
-		Created:       time.Now().UTC(),
-		TeamID:        command.TeamID,
-		UserID:        command.UserID,
-		ChannelID:     command.ChannelID,
-		ChannelName:   ch.Name,
-		RealName:      u.RealName,
-		RoleInChannel: command.Text,
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: command.TeamID,
+		UserID:      command.UserID,
+		ChannelID:   command.ChannelID,
+		ChannelName: ch.Name,
+		RealName:    u.RealName,
+		Role:        command.Text,
 	})
 	if err != nil {
 		createStanduperFailed, err := bot.localizer.Localize(&i18n.LocalizeConfig{
@@ -60,20 +60,20 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 		return createStanduperFailed
 	}
 
-	channel, err := bot.db.SelectChannel(command.ChannelID)
+	channel, err := bot.db.SelectProject(command.ChannelID)
 	if err != nil {
-		channel, err = bot.db.CreateChannel(model.Channel{
-			TeamID:           command.TeamID,
+		channel, err = bot.db.CreateProject(model.Project{
+			WorkspaceID:      command.TeamID,
 			ChannelID:        command.ChannelID,
 			ChannelName:      ch.Name,
-			StandupTime:      "",
+			Deadline:         "",
 			TZ:               "Asia/Bishkek",
 			OnbordingMessage: "Hello and welcome to " + ch.Name,
 			SubmissionDays:   "monday, tuesday, wednesday, thirsday, friday",
 		})
 	}
 
-	if channel.StandupTime == "" {
+	if channel.Deadline == "" {
 		welcomeWithNoDeadline, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "welcomeNoDedline",
@@ -92,7 +92,7 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 			Other: "Welcome to the standup team, please, submit your standups no later than {{.Deadline}}",
 		},
 		TemplateData: map[string]interface{}{
-			"Deadline": channel.StandupTime,
+			"Deadline": channel.Deadline,
 		},
 	})
 	if err != nil {
@@ -103,7 +103,7 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 
 func (bot *Bot) showCommand(command slack.SlashCommand) string {
 	var deadline, tz, submittionDays string
-	channel, err := bot.db.SelectChannel(command.ChannelID)
+	channel, err := bot.db.SelectProject(command.ChannelID)
 	if err != nil {
 		ch, err := bot.slack.GetChannelInfo(command.ChannelID)
 		if err != nil {
@@ -112,11 +112,11 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 			ch.Name = command.ChannelName
 		}
 
-		channel, err = bot.db.CreateChannel(model.Channel{
-			TeamID:           command.TeamID,
+		channel, err = bot.db.CreateProject(model.Project{
+			WorkspaceID:      command.TeamID,
 			ChannelID:        command.ChannelID,
 			ChannelName:      ch.Name,
-			StandupTime:      "",
+			Deadline:         "",
 			TZ:               "Asia/Bishkek",
 			OnbordingMessage: "Hello and welcome to " + ch.Name,
 			SubmissionDays:   "monday, tuesday, wednesday, thirsday, friday",
@@ -126,7 +126,7 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 		}
 	}
 
-	if channel.StandupTime == "" {
+	if channel.Deadline == "" {
 		showNoStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "showNoStandupTime",
@@ -143,7 +143,7 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 				ID:    "showStandupTime",
 				Other: "Standup deadline is {{.Deadline}}",
 			},
-			TemplateData: map[string]interface{}{"Deadline": channel.StandupTime},
+			TemplateData: map[string]interface{}{"Deadline": channel.Deadline},
 		})
 		if err != nil {
 			log.Error(err)
@@ -185,7 +185,7 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 		}
 	}
 
-	members, err := bot.db.ListChannelStandupers(command.ChannelID)
+	members, err := bot.db.ListProjectStandupers(command.ChannelID)
 	if err != nil || len(members) == 0 {
 		listNoStandupers, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -203,9 +203,9 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 
 	for _, member := range members {
 		var role string
-		role = member.RoleInChannel
+		role = member.Role
 
-		if member.RoleInChannel == "" {
+		if member.Role == "" {
 			role = "developer"
 		}
 		list = append(list, fmt.Sprintf("%s(%s)", member.RealName, role))

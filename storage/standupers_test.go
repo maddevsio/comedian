@@ -1,10 +1,11 @@
 package storage
 
 import (
-	"github.com/maddevsio/comedian/model"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/maddevsio/comedian/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateStanduper(t *testing.T) {
@@ -13,13 +14,13 @@ func TestCreateStanduper(t *testing.T) {
 	assert.Error(t, err)
 
 	s, err := db.CreateStanduper(model.Standuper{
-		Created:   time.Now(),
-		TeamID:    "foo",
-		UserID:    "bar",
-		ChannelID: "bar12",
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: "foo",
+		UserID:      "bar",
+		ChannelID:   "bar12",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, "foo", s.TeamID)
+	assert.Equal(t, "foo", s.WorkspaceID)
 
 	assert.NoError(t, db.DeleteStanduper(s.ID))
 }
@@ -27,32 +28,32 @@ func TestCreateStanduper(t *testing.T) {
 func TestGetStandupers(t *testing.T) {
 
 	s, err := db.CreateStanduper(model.Standuper{
-		Created:   time.Now(),
-		TeamID:    "foo",
-		UserID:    "bar",
-		ChannelID: "bar12",
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: "foo",
+		UserID:      "bar",
+		ChannelID:   "bar12",
 	})
 	assert.NoError(t, err)
 
 	v, err := db.CreateStanduper(model.Standuper{
-		Created:   time.Now(),
-		TeamID:    "foo",
-		UserID:    "bar",
-		ChannelID: "bar13",
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: "foo",
+		UserID:      "bar",
+		ChannelID:   "bar13",
 	})
 	assert.NoError(t, err)
 
 	_, err = db.ListStandupers()
 	assert.NoError(t, err)
 
-	res, err := db.ListStandupersByTeamID("foo")
+	res, err := db.ListStandupersByWorkspaceID("foo")
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(res))
 
-	_, err = db.ListChannelStandupers("")
+	_, err = db.ListProjectStandupers("")
 	assert.NoError(t, err)
 
-	_, err = db.ListChannelStandupers("bar12")
+	_, err = db.ListProjectStandupers("bar12")
 	assert.NoError(t, err)
 
 	_, err = db.GetStanduper(int64(0))
@@ -78,19 +79,19 @@ func TestGetStandupers(t *testing.T) {
 func TestUpdateStanduper(t *testing.T) {
 
 	s, err := db.CreateStanduper(model.Standuper{
-		Created:   time.Now(),
-		TeamID:    "foo",
-		UserID:    "bar",
-		ChannelID: "bar12",
+		CreatedAt:   time.Now().Unix(),
+		WorkspaceID: "foo",
+		UserID:      "bar",
+		ChannelID:   "bar12",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, "", s.RoleInChannel)
+	assert.Equal(t, "", s.Role)
 
-	s.RoleInChannel = "developer"
+	s.Role = "developer"
 
 	s, err = db.UpdateStanduper(s)
 	assert.NoError(t, err)
-	assert.Equal(t, "developer", s.RoleInChannel)
+	assert.Equal(t, "developer", s.Role)
 
 	assert.NoError(t, db.DeleteStanduper(s.ID))
 }
