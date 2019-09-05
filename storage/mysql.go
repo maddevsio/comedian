@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/pressly/goose"
 
@@ -16,7 +17,7 @@ type DB struct {
 }
 
 // New creates a new instance of database API
-func New(dbConn string) (*DB, error) {
+func New(dbConn, migrationsPathh string) (*DB, error) {
 	conn, err := sqlx.Connect("mysql", dbConn)
 	if err != nil {
 		conn, err = sqlx.Connect("mysql", "comedian:comedian@tcp(localhost:3306)/comedian?parseTime=true")
@@ -33,7 +34,12 @@ func New(dbConn string) (*DB, error) {
 		return nil, fmt.Errorf("failed to EnsureDBVersion: %v", err)
 	}
 
-	migrations, err := goose.CollectMigrations("migrations", current, 4)
+	files, err := ioutil.ReadDir(migrationsPathh)
+	if err != nil {
+		return nil, err
+	}
+
+	migrations, err := goose.CollectMigrations(migrationsPathh, current, int64(len(files)))
 	if err != nil {
 		return nil, err
 	}

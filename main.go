@@ -17,7 +17,7 @@ func main() {
 		log.Fatal("Failed to get config : ", err)
 	}
 
-	db, err := storage.New(cnf.DatabaseURL)
+	db, err := storage.New(cnf.DatabaseURL, "migrations")
 	if err != nil {
 		log.Fatal("Failed to connect to db: ", err)
 	}

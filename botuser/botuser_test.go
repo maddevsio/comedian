@@ -21,7 +21,7 @@ func setupBot() *Bot {
 		return nil
 	}
 
-	db, err := storage.New(config.DatabaseURL)
+	db, err := storage.New(config.DatabaseURL, "../migrations")
 	if err != nil {
 		return nil
 	}

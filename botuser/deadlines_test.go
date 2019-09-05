@@ -17,7 +17,7 @@ func TestImplementDeadlineCommands(t *testing.T) {
 		ChannelName: "ChannelWithNoDeadline",
 		Text:        "12:00",
 	})
-	assert.Equal(t, "Updated standup deadline to 12:00 in  timezone", resp)
+	assert.Equal(t, "Updated standup deadline to 12:00 in Asia/Bishkek timezone", resp)
 
 	resp = bot.ImplementCommands(slack.SlashCommand{
 		Command:     "/deadline",

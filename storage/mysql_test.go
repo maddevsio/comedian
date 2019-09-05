@@ -14,7 +14,7 @@ func setupDB() *DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db, err := New(c.DatabaseURL)
+	db, err := New(c.DatabaseURL, "../migrations")
 	if err != nil {
 		log.Fatal(err)
 	}
