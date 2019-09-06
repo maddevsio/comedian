@@ -546,14 +546,22 @@ func (bot *Bot) processStandup(member model.Standuper) (string, int) {
 	timeFrom := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local).Unix()
 	timeTo := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.Local).Unix()
 
+	channel, err := bot.db.SelectProject(member.ChannelID)
+	if err != nil {
+		log.Error("reporting SelectProject failed: ", err)
+		return "", points
+	}
+
 	standup, err := bot.db.GetStandupForPeriod(member.UserID, member.ChannelID, timeFrom, timeTo)
-	if err != nil || standup == nil {
-		if time.Now().Weekday() == 0 || time.Now().Weekday() == 1 {
-			return "", points
+	if err != nil {
+		log.Error("GetStandupForPeriod failed: ", err)
+		return "", points
+	}
+	if standup == nil {
+		if !shouldSubmitStandupIn(&channel, t) {
+			return "", points + 1
 		}
-		if member.Role == "pm" {
-			return "", 1
-		}
+
 		noStandup, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "noStandup",
