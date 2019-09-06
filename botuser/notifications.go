@@ -123,7 +123,7 @@ func (bot *Bot) findChannelNonReporters(project model.Project) ([]string, error)
 	}
 	for _, standuper := range standupers {
 		if !bot.submittedStandupToday(standuper.UserID, standuper.ChannelID) {
-			nonReporters = append(nonReporters, "<@"+standuper.UserID+">")
+			nonReporters = append(nonReporters, standuper.UserID)
 		}
 	}
 
@@ -133,6 +133,10 @@ func (bot *Bot) findChannelNonReporters(project model.Project) ([]string, error)
 func (bot *Bot) composeWarnMessage(nonReporters []string) (string, error) {
 	if len(nonReporters) == 0 {
 		return "", nil
+	}
+
+	for i, nr := range nonReporters {
+		nonReporters[i] = "<@" + nr + ">"
 	}
 
 	minutes, err := bot.localizer.Localize(&i18n.LocalizeConfig{
@@ -173,6 +177,10 @@ func (bot *Bot) composeWarnMessage(nonReporters []string) (string, error) {
 func (bot *Bot) composeAlarmMessage(nonReporters []string) (string, error) {
 	if len(nonReporters) == 0 {
 		return "", nil
+	}
+
+	for i, nr := range nonReporters {
+		nonReporters[i] = "<@" + nr + ">"
 	}
 
 	alarmNonReporters, err := bot.localizer.Localize(&i18n.LocalizeConfig{
