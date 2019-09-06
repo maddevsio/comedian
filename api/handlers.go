@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -36,25 +37,50 @@ func (api *ComedianAPI) getBot(c echo.Context) error {
 func (api *ComedianAPI) updateBot(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 0, 64)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error":    err,
+			"fucntion": "strconv.ParseInt",
+			"data":     c.Param("id")},
+		).Error("updateBot failed")
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectID)
 	}
 
 	settings, err := api.db.GetWorkspace(id)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error":    err,
+			"fucntion": "api.db.GetWorkspace",
+			"data":     id},
+		).Error("updateBot failed")
 		return echo.NewHTTPError(http.StatusNotFound, doesNotExist)
 	}
 
-	if err := c.Bind(&settings); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
+	if settings.WorkspaceID != c.Get("teamID") {
+
+		return echo.NewHTTPError(http.StatusForbidden, accessDenied)
 	}
 
-	if settings.WorkspaceID != c.Get("teamID") {
-		return echo.NewHTTPError(http.StatusUnauthorized, accessDenied)
+	if err := c.Bind(&settings); err != nil {
+		log.WithFields(log.Fields{
+			"error":    err,
+			"fucntion": "c.Bind(&settings)",
+			"data":     settings},
+		).Error("updateBot failed")
+		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
 	res, err := api.db.UpdateWorkspace(settings)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error":    err,
+			"fucntion": "api.db.UpdateWorkspace",
+			"data":     settings},
+		).Error("updateBot failed")
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	for _, b := range api.bots {
+		log.Info("Bot languages before update: ", b.Settings())
 	}
 
 	bot, err := api.SelectBot(settings.WorkspaceName)
@@ -64,7 +90,11 @@ func (api *ComedianAPI) updateBot(c echo.Context) error {
 
 	bot.SetProperties(&res)
 
-	return c.JSON(http.StatusOK, map[string]interface{}{"bot": bot})
+	for _, b := range api.bots {
+		log.Info("Bot languages after update: ", b.Settings())
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{"bot": res})
 }
 
 func (api *ComedianAPI) getStandup(c echo.Context) error {

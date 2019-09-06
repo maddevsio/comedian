@@ -383,7 +383,7 @@ func (api *ComedianAPI) HandleCallbackEvent(event slackevents.EventsAPICallbackE
 		if err := json.Unmarshal(data, join); err != nil {
 			return err
 		}
-		_, err := bot.HandleJoin(join.Channel, join.Team)
+		_, err := bot.HandleJoin(join)
 		return err
 	case "app_uninstalled":
 		bot.Stop()
@@ -494,6 +494,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 	workspaceSettings, err := api.db.GetWorkspaceByWorkspaceID(resp.TeamID)
 	if err != nil {
 		cp, err := api.db.CreateWorkspace(model.Workspace{
+			CreatedAt:              time.Now().Unix(),
 			BotUserID:              resp.Bot.BotUserID,
 			NotifierInterval:       30,
 			Language:               "en",

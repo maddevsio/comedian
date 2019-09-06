@@ -63,13 +63,14 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 	channel, err := bot.db.SelectProject(command.ChannelID)
 	if err != nil {
 		channel, err = bot.db.CreateProject(model.Project{
+			CreatedAt:        time.Now().Unix(),
 			WorkspaceID:      command.TeamID,
 			ChannelID:        command.ChannelID,
 			ChannelName:      ch.Name,
 			Deadline:         "",
 			TZ:               "Asia/Bishkek",
 			OnbordingMessage: "Hello and welcome to " + ch.Name,
-			SubmissionDays:   "monday, tuesday, wednesday, thirsday, friday",
+			SubmissionDays:   "monday, tuesday, wednesday, thursday, friday",
 		})
 	}
 
@@ -113,13 +114,14 @@ func (bot *Bot) showCommand(command slack.SlashCommand) string {
 		}
 
 		channel, err = bot.db.CreateProject(model.Project{
+			CreatedAt:        time.Now().Unix(),
 			WorkspaceID:      command.TeamID,
 			ChannelID:        command.ChannelID,
 			ChannelName:      ch.Name,
 			Deadline:         "",
 			TZ:               "Asia/Bishkek",
 			OnbordingMessage: "Hello and welcome to " + ch.Name,
-			SubmissionDays:   "monday, tuesday, wednesday, thirsday, friday",
+			SubmissionDays:   "monday, tuesday, wednesday, thursday, friday",
 		})
 		if err != nil {
 			log.Error("Failed to create channel in show command: ", err)

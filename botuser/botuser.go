@@ -40,6 +40,7 @@ type Bot struct {
 	localizer *i18n.Localizer
 	workspace *model.Workspace
 	slack     *slack.Client
+	bundle    *i18n.Bundle
 	quitChan  chan struct{}
 }
 
@@ -50,11 +51,10 @@ func New(config *config.Config, bundle *i18n.Bundle, settings *model.Workspace, 
 		db:        db,
 		slack:     slack.New(settings.BotAccessToken),
 		workspace: settings,
+		bundle:    bundle,
 		localizer: i18n.NewLocalizer(bundle, settings.Language),
 	}
-
 	bot.quitChan = make(chan struct{})
-
 	return bot
 }
 
@@ -124,11 +124,9 @@ func (bot *Bot) Stop() {
 
 //HandleMessage handles slack message event
 func (bot *Bot) HandleMessage(msg *slack.MessageEvent) error {
-	log.Info("NEW MESSAGE!")
 	if !strings.Contains(msg.Msg.Text, bot.workspace.BotUserID) {
 		return nil
 	}
-	log.Info("NEW MESSAGE!1")
 	msg.Team = bot.workspace.WorkspaceID
 	switch msg.SubType {
 	case typeMessage:
@@ -367,25 +365,30 @@ func (bot *Bot) SendUserMessage(userID, message string) error {
 }
 
 //HandleJoin handles comedian joining channel
-func (bot *Bot) HandleJoin(channelID, teamID string) (model.Project, error) {
+func (bot *Bot) HandleJoin(joinEvent *slack.MemberJoinedChannelEvent) (model.Project, error) {
 	newChannel := model.Project{}
-	newChannel, err := bot.db.SelectProject(channelID)
+	newChannel, err := bot.db.SelectProject(joinEvent.Channel)
 	if err == nil {
+		err := bot.SendUserMessage(joinEvent.User, newChannel.OnbordingMessage)
+		if err != nil {
+			return newChannel, err
+		}
 		return newChannel, nil
 	}
 
-	channel, err := bot.slack.GetConversationInfo(channelID, true)
+	channel, err := bot.slack.GetConversationInfo(joinEvent.Channel, true)
 	if err != nil {
 		return newChannel, err
 	}
 	newChannel, err = bot.db.CreateProject(model.Project{
-		WorkspaceID:      teamID,
+		CreatedAt:        time.Now().Unix(),
+		WorkspaceID:      joinEvent.Team,
 		ChannelName:      channel.Name,
 		ChannelID:        channel.ID,
 		Deadline:         "",
 		TZ:               "Asia/Bishkek",
 		OnbordingMessage: "Hello and welcome to " + channel.Name,
-		SubmissionDays:   "monday, tuesday, wednesday, thirsday, friday",
+		SubmissionDays:   "monday, tuesday, wednesday, thursday, friday",
 	})
 	if err != nil {
 		return newChannel, err
@@ -395,6 +398,8 @@ func (bot *Bot) HandleJoin(channelID, teamID string) (model.Project, error) {
 
 //ImplementCommands implements slash commands such as adding users and managing deadlines
 func (bot *Bot) ImplementCommands(command slack.SlashCommand) string {
+	log.Info("Bot to implement command: ", bot.workspace)
+
 	switch command.Command {
 	case "/start":
 		return bot.joinCommand(command)
@@ -428,6 +433,7 @@ func (bot *Bot) Settings() *model.Workspace {
 //SetProperties updates bot settings
 func (bot *Bot) SetProperties(settings *model.Workspace) *model.Workspace {
 	bot.workspace = settings
+	bot.localizer = i18n.NewLocalizer(bot.bundle, settings.Language)
 	return bot.workspace
 }
 
