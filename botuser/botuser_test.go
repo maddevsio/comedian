@@ -26,7 +26,7 @@ func setupBot() *Bot {
 		return nil
 	}
 
-	settings := &model.Workspace{
+	settings := model.Workspace{
 		WorkspaceID:    "testTeam",
 		BotAccessToken: "foo",
 	}

@@ -28,11 +28,13 @@ func (bot *Bot) joinCommand(command slack.SlashCommand) string {
 
 	u, err := bot.slack.GetUserInfo(command.UserID)
 	if err != nil {
+		log.Error("joinCommand bot.slack.GetUserInfo failed: ", err)
 		u = &slack.User{RealName: command.UserName}
 	}
 
-	ch, err := bot.slack.GetChannelInfo(command.ChannelID)
+	ch, err := bot.slack.GetConversationInfo(command.ChannelID, true)
 	if err != nil {
+		log.Error("joinCommand bot.slack.GetChannelInfo failed: ", err)
 		ch = &slack.Channel{}
 		ch.Name = command.ChannelName
 	}

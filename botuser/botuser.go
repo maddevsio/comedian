@@ -45,12 +45,12 @@ type Bot struct {
 }
 
 //New creates new Bot instance
-func New(config *config.Config, bundle *i18n.Bundle, settings *model.Workspace, db *storage.DB) *Bot {
+func New(config *config.Config, bundle *i18n.Bundle, settings model.Workspace, db *storage.DB) *Bot {
 	bot := &Bot{
 		conf:      config,
 		db:        db,
 		slack:     slack.New(settings.BotAccessToken),
-		workspace: settings,
+		workspace: &settings,
 		bundle:    bundle,
 		localizer: i18n.NewLocalizer(bundle, settings.Language),
 	}

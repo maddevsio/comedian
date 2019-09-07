@@ -172,12 +172,10 @@ func (api *ComedianAPI) Start() error {
 	}
 
 	for _, bs := range settings {
-		bot := botuser.New(api.config, api.bundle, &bs, api.db)
+		bot := botuser.New(api.config, api.bundle, bs, api.db)
 		api.bots = append(api.bots, bot)
 		bot.Start()
 	}
-
-	log.Info("Bots after append: ", api.bots)
 
 	return api.echo.Start(api.config.HTTPBindAddr)
 }
@@ -301,6 +299,11 @@ func (api *ComedianAPI) handleCommands(c echo.Context) error {
 
 	bot, err := api.SelectBot(slashCommand.TeamID)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error":    err,
+			"fucntion": "select bot",
+			"data":     slashCommand},
+		).Error("handleCommands failed")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -513,7 +516,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 			return err
 		}
 
-		bot := botuser.New(api.config, api.bundle, &cp, api.db)
+		bot := botuser.New(api.config, api.bundle, cp, api.db)
 
 		api.bots = append(api.bots, bot)
 
