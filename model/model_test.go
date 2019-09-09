@@ -123,3 +123,31 @@ func TestStanduper(t *testing.T) {
 		}
 	}
 }
+
+func TestNotificationThread(t *testing.T) {
+	testCases := []struct {
+		channelid        string
+		userid           string
+		notificationTime int64
+		reminderCounter  int
+		errorMessage     string
+	}{
+		{"", "1", int64(2), 0, "Field ChannelID is empty"},
+		{"12", "", int64(2), 0, "Field UserID is empty"},
+		{"12", "1", -1, -1, "Field NotificationTime cannot be negative"},
+		{"12", "1", int64(2), -1, "Field ReminderCounter cannot be negative"},
+		{"12", "1", int64(2), 1, ""},
+	}
+	for _, e := range testCases {
+		nt := NotificationThread{
+			ChannelID:        e.channelid,
+			UserID:           e.userid,
+			NotificationTime: e.notificationTime,
+			ReminderCounter:  e.reminderCounter,
+		}
+		err := nt.Validate()
+		if err != nil {
+			assert.Equal(t, errors.New(e.errorMessage), err)
+		}
+	}
+}
