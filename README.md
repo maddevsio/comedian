@@ -23,7 +23,7 @@
 - [x] Support English and Russian languages
 
 
-Comedian works with Slack apps only, if you do not have a slack app configured follow [slack installations guide](docs/translations.md), otherwise: 
+Comedian works with Slack apps only, if you do not have a slack app configured follow [slack installations guide](docs/slack.md), otherwise: 
 
 ### Run Comedian locally
 
