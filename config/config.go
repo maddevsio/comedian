@@ -14,6 +14,7 @@ type Config struct {
 	SlackClientSecret      string `envconfig:"SLACK_CLIENT_SECRET" required:"false"`
 	SlackVerificationToken string `envconfig:"SLACK_VERIFICATION_TOKEN" required:"false"`
 	UIurl                  string `envconfig:"UI_URL" required:"false"`
+	NotificationTime       int64  `envconfig:"NOTIFICATION_TIME" default:"1"`
 }
 
 // Get method processes env variables and fills Config struct
