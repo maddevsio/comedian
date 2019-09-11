@@ -190,15 +190,11 @@ func (api *ComedianAPI) login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
-	log.Infof("New login attempt with: %v", logingPayload)
-
 	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, logingPayload.Code, logingPayload.RedirectURI, false)
 	if err != nil {
 		log.Errorf("GetOAuthResponse failed: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-
-	log.Infof("GetOAuthResponse: %v", resp)
 
 	slackClient := slack.New(resp.AccessToken)
 
@@ -208,16 +204,23 @@ func (api *ComedianAPI) login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	log.Infof("GetUserIdentity: %v", userIdentity)
-
 	bot, err := api.db.GetWorkspaceByWorkspaceID(userIdentity.Team.ID)
 	if err != nil {
 		log.Errorf("GetWorkspaceByWorkspaceID failed: %v for teamID %v", err, userIdentity.Team.ID)
 		return echo.NewHTTPError(http.StatusNotFound, "Comedian was not invited to your Slack. Please, add it and try again")
 	}
 
+	slackClient = slack.New(bot.BotAccessToken)
+
+	user, err := slackClient.GetUserInfo(userIdentity.User.ID)
+	if err != nil {
+		log.Errorf("GetUserInfo failed: %v for userID %v", err, userIdentity.User.ID)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"bot": bot,
+		"user": user,
+		"bot":  bot,
 	})
 }
 
