@@ -210,12 +210,6 @@ func (api *ComedianAPI) login(c echo.Context) error {
 
 	log.Infof("GetUserIdentity: %v", userIdentity)
 
-	userInfo, err := slackClient.GetUserInfo(userIdentity.User.ID)
-	if err != nil {
-		log.Errorf("GetUserInfo failed: %v for userID %v", err, userIdentity.User.ID)
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
 	bot, err := api.db.GetWorkspaceByWorkspaceID(userIdentity.Team.ID)
 	if err != nil {
 		log.Errorf("GetWorkspaceByWorkspaceID failed: %v for teamID %v", err, userIdentity.Team.ID)
@@ -223,8 +217,7 @@ func (api *ComedianAPI) login(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"user": userInfo,
-		"bot":  bot,
+		"bot": bot,
 	})
 }
 
