@@ -78,7 +78,7 @@ func (bot *Bot) notify(channel model.Project) error {
 		}
 
 		if len(nonReporters) > 0 {
-			usersNonReport := strings.Join(nonReporters, ", ")
+			usersNonReport := strings.Join(nonReporters, ",")
 
 			_, err = bot.db.CreateNotificationThread(model.NotificationThread{
 				ChannelID:        channel.ChannelID,
@@ -95,9 +95,6 @@ func (bot *Bot) notify(channel model.Project) error {
 			return fmt.Errorf("could not compose Alarm Message: %v", err)
 		}
 	}
-	/* 	if message == "" {
-		return nil
-	} */
 
 	bot.send(&Message{
 		Type:    "message",
@@ -109,14 +106,6 @@ func (bot *Bot) notify(channel model.Project) error {
 	if err != nil {
 		log.Error("Error on executing SelectNotificationsThread! ", err, "ChannelID: ", channel.ChannelID, "ChannelName: ", channel.ChannelName)
 		return nil
-	}
-
-	if strings.TrimSpace(channel.Deadline) == "" {
-		err = bot.db.DeleteNotificationThread(thread.ID)
-		if err != nil {
-			log.Error("Error on executing DeleteNotificationsThread! ", err, "Thread ID: ", thread.ID)
-			return nil
-		}
 	}
 
 	var remindTime time.Time
@@ -137,15 +126,20 @@ func (bot *Bot) notify(channel model.Project) error {
 
 	stillNonReporters := strings.Split(thread.UserIDs, ",")
 
-	if len(stillNonReporters) == 0 {
-		err = bot.db.DeleteNotificationThread(thread.ID)
-		if err != nil {
-			log.Error("Error on executing DeleteNotificationsThread! ", err, "Thread ID: ", thread.ID)
-		}
-	}
+	var updatedNonReporters string
+
 	for i, nonReport := range stillNonReporters {
 		if bot.submittedStandupToday(nonReport, thread.ChannelID) {
 			stillNonReporters = append(stillNonReporters[:i], stillNonReporters[i+1:]...)
+		}
+	}
+	updatedNonReporters = strings.Join(stillNonReporters, ",")
+
+	if len(updatedNonReporters) == 0 {
+		err = bot.db.DeleteNotificationThread(thread.ID)
+		if err != nil {
+			log.Error("Error on executing DeleteNotificationsThread! ", err, "Thread ID: ", thread.ID)
+			return nil
 		}
 	}
 
@@ -166,7 +160,7 @@ func (bot *Bot) notify(channel model.Project) error {
 
 	thread.NotificationTime = thread.NotificationTime + bot.conf.NotificationTime*60
 
-	return bot.db.UpdateNotificationThread(thread.ID, thread.ChannelID, thread.NotificationTime)
+	return bot.db.UpdateNotificationThread(thread.ID, thread.ChannelID, thread.NotificationTime, updatedNonReporters)
 }
 
 func (bot *Bot) listTeamActiveChannels() ([]model.Project, error) {
@@ -178,16 +172,6 @@ func (bot *Bot) listTeamActiveChannels() ([]model.Project, error) {
 	}
 
 	for _, channel := range chs {
-		thread, err := bot.db.SelectNotificationsThread(channel.ChannelID)
-		if err != nil {
-			log.Error("error SelectNotificationsThread")
-		}
-		if channel.Deadline == "" && thread.ChannelID == channel.ChannelID {
-			err = bot.db.DeleteNotificationThread(thread.ID)
-			if err != nil {
-				log.Error("error DeleteNotificationThread")
-			}
-		}
 		if channel.Deadline == "" {
 			continue
 		}
@@ -305,7 +289,7 @@ func (bot *Bot) composeRemindMessage(nonReporters []string) (string, error) {
 			Other: "{{.users}} you still haven't written a standup! Write a standup!",
 		},
 		PluralCount:  len(nonReporters),
-		TemplateData: map[string]interface{}{"user": nonReporters[0], "users": strings.Join(nonReporters, ", ")},
+		TemplateData: map[string]interface{}{"user": nonReporters[0], "users": strings.Join(nonReporters, ",")},
 	})
 	if err != nil {
 		return "", err
