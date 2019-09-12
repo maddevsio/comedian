@@ -35,7 +35,7 @@ func (m *DB) SelectNotificationsThread(channelID string) (model.NotificationThre
 }
 
 // UpdateNotificationThread update field reminder counter
-func (m *DB) UpdateNotificationThread(id int64, channelID string, t int64) error {
-	_, err := m.db.Exec("UPDATE `notifications_thread` SET reminder_counter=reminder_counter+1, notification_time=? WHERE id=? AND channel_id=?", t, id, channelID)
+func (m *DB) UpdateNotificationThread(id int64, channelID string, t int64, nonReporters string) error {
+	_, err := m.db.Exec("UPDATE `notifications_thread` SET user_ids=?, reminder_counter=reminder_counter+1, notification_time=? WHERE id=? AND channel_id=?", nonReporters, t, id, channelID)
 	return err
 }

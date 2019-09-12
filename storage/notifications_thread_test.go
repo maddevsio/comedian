@@ -48,12 +48,14 @@ func TestNotification(t *testing.T) {
 	nt, err := db.CreateNotificationThread(n)
 	require.NoError(t, err)
 
-	err = db.UpdateNotificationThread(nt.ID, nt.ChannelID, tt)
+	nt.UserIDs = nt.UserIDs + ", User2"
+	err = db.UpdateNotificationThread(nt.ID, nt.ChannelID, tt, nt.UserIDs)
 	require.NoError(t, err)
 
 	thread, err = db.SelectNotificationsThread(nt.ChannelID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, thread.ReminderCounter)
+	assert.Equal(t, nt.UserIDs, thread.UserIDs)
 
 	err = db.DeleteNotificationThread(nt.ID)
 	require.NoError(t, err)
