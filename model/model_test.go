@@ -141,7 +141,7 @@ func TestNotificationThread(t *testing.T) {
 	for _, e := range testCases {
 		nt := NotificationThread{
 			ChannelID:        e.channelid,
-			UserID:           e.userid,
+			UserIDs:          e.userid,
 			NotificationTime: e.notificationTime,
 			ReminderCounter:  e.reminderCounter,
 		}

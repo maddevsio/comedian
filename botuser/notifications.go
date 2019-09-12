@@ -72,21 +72,17 @@ func (bot *Bot) notify(channel model.Project) error {
 		threadTime := time.Now().Unix() + bot.conf.NotificationTime*60
 
 		nonReporters, err := bot.findChannelNonReporters(channel)
-		fmt.Println("NON REPORTERS", nonReporters)
+
 		if err != nil {
 			return fmt.Errorf("could not get non reporters: %v", err)
 		}
 
-		message, err = bot.composeAlarmMessage(nonReporters)
-		if err != nil {
-			return fmt.Errorf("could not compose Alarm Message: %v", err)
-		}
-		log.Println("nonReporters LEN", nonReporters)
 		if len(nonReporters) > 0 {
 			usersNonReport := strings.Join(nonReporters, ", ")
+
 			_, err = bot.db.CreateNotificationThread(model.NotificationThread{
 				ChannelID:        channel.ChannelID,
-				UserID:           usersNonReport,
+				UserIDs:          usersNonReport,
 				NotificationTime: threadTime,
 				ReminderCounter:  0,
 			})
@@ -94,11 +90,25 @@ func (bot *Bot) notify(channel model.Project) error {
 				log.Error("Error on executing CreateNotificationThread ", err, "ChannelID: ", channel.ChannelID)
 			}
 		}
+		message, err = bot.composeAlarmMessage(nonReporters)
+		if err != nil {
+			return fmt.Errorf("could not compose Alarm Message: %v", err)
+		}
 	}
+	/* 	if message == "" {
+		return nil
+	} */
+
+	bot.send(&Message{
+		Type:    "message",
+		Channel: channel.ChannelID,
+		Text:    message,
+	})
 
 	thread, err := bot.db.SelectNotificationsThread(channel.ChannelID)
 	if err != nil {
-		log.Error("Error on executing ListNotificationThread! ", err, "ChannelID: ", channel.ChannelID, "ChannelName: ", channel.ChannelName)
+		log.Error("Error on executing SelectNotificationsThread! ", err, "ChannelID: ", channel.ChannelID, "ChannelName: ", channel.ChannelName)
+		return nil
 	}
 
 	if strings.TrimSpace(channel.Deadline) == "" {
@@ -112,16 +122,11 @@ func (bot *Bot) notify(channel model.Project) error {
 	var remindTime time.Time
 
 	remindTime = time.Unix(thread.NotificationTime, 0)
-	log.Println(remindTime, "REMIND TIME")
-	log.Println(time.Now().In(loc).Hour(), "time.Now().In(loc).Hour()")
-	log.Println(remindTime.Hour(), "remindTime.Hour()")
-	log.Println(time.Now().In(loc).Minute(), "time.Now().In(loc).Minute()")
-	log.Println(remindTime.Minute(), "remindTime.Minuteeee()")
-	log.Println("=================================")
 
-	if time.Now().In(loc).Hour() != remindTime.Hour() && time.Now().In(loc).Minute() == remindTime.Minute() {
+	if time.Now().In(loc).Hour() != remindTime.Hour() || time.Now().In(loc).Minute() != remindTime.Minute() {
 		return nil
 	}
+
 	if thread.ReminderCounter >= bot.workspace.MaxReminders {
 		err = bot.db.DeleteNotificationThread(thread.ID)
 		if err != nil {
@@ -129,27 +134,26 @@ func (bot *Bot) notify(channel model.Project) error {
 		}
 		return nil
 	}
-	log.Println(thread.UserID, "USERS ID NON REPORT")
 
-	stillNonReporters := strings.Split(thread.UserID, ",")
-	log.Println(stillNonReporters, "STILL NON REPORTS")
-	for i, nonReport := range stillNonReporters {
-		if bot.submittedStandupToday(nonReport, thread.ChannelID) {
-			stillNonReporters = append(stillNonReporters[:i], stillNonReporters[i+1:]...)
-		}
-	}
-	log.Println(len(stillNonReporters), "LEN STILL NON REPORTS")
+	stillNonReporters := strings.Split(thread.UserIDs, ",")
+
 	if len(stillNonReporters) == 0 {
 		err = bot.db.DeleteNotificationThread(thread.ID)
 		if err != nil {
 			log.Error("Error on executing DeleteNotificationsThread! ", err, "Thread ID: ", thread.ID)
 		}
 	}
+	for i, nonReport := range stillNonReporters {
+		if bot.submittedStandupToday(nonReport, thread.ChannelID) {
+			stillNonReporters = append(stillNonReporters[:i], stillNonReporters[i+1:]...)
+		}
+	}
+
 	message, err = bot.composeRemindMessage(stillNonReporters)
 	if err != nil {
 		return fmt.Errorf("could not compose Remind Message: %v", err)
 	}
-	log.Println(message, "MESSAGE ALARM")
+
 	if message == "" {
 		return nil
 	}
@@ -159,17 +163,10 @@ func (bot *Bot) notify(channel model.Project) error {
 		Channel: channel.ChannelID,
 		Text:    message,
 	})
-	log.Println(thread.NotificationTime, "NOOOOOOOOOOOOOOOOO BEFORE")
 
 	thread.NotificationTime = thread.NotificationTime + bot.conf.NotificationTime*60
 
-	log.Println(thread.NotificationTime, "NOOOOOOOOOOOOOOOOO AFTER")
-	err = bot.db.UpdateNotificationThread(thread.ID, thread.ChannelID, thread.NotificationTime)
-	if err != nil {
-		log.Error("Error on executing UpdateNotificationThread! ", err, "Thread ID: ", thread.ID)
-	}
-
-	return nil
+	return bot.db.UpdateNotificationThread(thread.ID, thread.ChannelID, thread.NotificationTime)
 }
 
 func (bot *Bot) listTeamActiveChannels() ([]model.Project, error) {
@@ -181,6 +178,16 @@ func (bot *Bot) listTeamActiveChannels() ([]model.Project, error) {
 	}
 
 	for _, channel := range chs {
+		thread, err := bot.db.SelectNotificationsThread(channel.ChannelID)
+		if err != nil {
+			log.Error("error SelectNotificationsThread")
+		}
+		if channel.Deadline == "" && thread.ChannelID == channel.ChannelID {
+			err = bot.db.DeleteNotificationThread(thread.ID)
+			if err != nil {
+				log.Error("error DeleteNotificationThread")
+			}
+		}
 		if channel.Deadline == "" {
 			continue
 		}
@@ -313,8 +320,4 @@ func shouldSubmitStandupIn(channel *model.Project, t time.Time) bool {
 		return true
 	}
 	return false
-}
-
-func execThread() {
-
 }

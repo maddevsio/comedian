@@ -13,7 +13,7 @@ func TestNotification(t *testing.T) {
 	tt := time.Now().Unix() + 30*60
 	n := model.NotificationThread{
 		ChannelID:        "1",
-		UserID:           "1",
+		UserIDs:          "1",
 		NotificationTime: tt,
 		ReminderCounter:  0,
 	}
@@ -21,7 +21,7 @@ func TestNotification(t *testing.T) {
 	notification, err := db.CreateNotificationThread(n)
 	require.NoError(t, err)
 	assert.Equal(t, "1", notification.ChannelID)
-	assert.Equal(t, "1", notification.UserID)
+	assert.Equal(t, "1", notification.UserIDs)
 	assert.Equal(t, tt, notification.NotificationTime)
 	assert.Equal(t, 0, notification.ReminderCounter)
 
@@ -34,13 +34,13 @@ func TestNotification(t *testing.T) {
 
 	thread, err = db.SelectNotificationsThread(notification.ChannelID)
 	assert.Equal(t, 0, thread.ReminderCounter)
-	assert.Equal(t, "", thread.UserID)
+	assert.Equal(t, "", thread.UserIDs)
 	assert.Equal(t, int64(0), thread.NotificationTime)
 	assert.Equal(t, "", thread.ChannelID)
 
 	n = model.NotificationThread{
 		ChannelID:        "1",
-		UserID:           "User1",
+		UserIDs:          "User1",
 		NotificationTime: tt,
 		ReminderCounter:  0,
 	}
