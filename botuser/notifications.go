@@ -161,7 +161,7 @@ func (bot *Bot) notify(channel model.Project) error {
 
 	thread.NotificationTime = thread.NotificationTime + bot.conf.NotificationTime*60
 
-	return bot.db.UpdateNotificationThread(thread.ID, thread.ChannelID, thread.NotificationTime, updatedNonReporters)
+	return bot.db.UpdateNotificationThread(thread.ID, thread.NotificationTime, updatedNonReporters)
 }
 
 func (bot *Bot) listTeamActiveChannels() ([]model.Project, error) {

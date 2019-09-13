@@ -49,7 +49,7 @@ func TestNotification(t *testing.T) {
 	require.NoError(t, err)
 
 	nt.UserIDs = nt.UserIDs + ", User2"
-	err = db.UpdateNotificationThread(nt.ID, nt.ChannelID, tt, nt.UserIDs)
+	err = db.UpdateNotificationThread(nt.ID, tt, nt.UserIDs)
 	require.NoError(t, err)
 
 	thread, err = db.SelectNotificationsThread(nt.ChannelID)

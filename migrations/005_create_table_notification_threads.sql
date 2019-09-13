@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE `notifications_thread` (
+CREATE TABLE `notification_threads` (
     `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `channel_id` VARCHAR(255) NOT NULL,
     `user_ids` VARCHAR(1000) NOT NULL,
@@ -11,5 +11,5 @@ CREATE TABLE `notifications_thread` (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE `notifications_thread`;
+DROP TABLE `notification_threads`;
 -- +goose StatementEnd
