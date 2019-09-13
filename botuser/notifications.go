@@ -88,6 +88,7 @@ func (bot *Bot) notify(channel model.Project) error {
 			})
 			if err != nil {
 				log.Error("Error on executing CreateNotificationThread ", err, "ChannelID: ", channel.ChannelID)
+				return err
 			}
 		}
 		message, err = bot.composeAlarmMessage(nonReporters)
@@ -105,7 +106,7 @@ func (bot *Bot) notify(channel model.Project) error {
 	thread, err := bot.db.SelectNotificationsThread(channel.ChannelID)
 	if err != nil {
 		log.Error("Error on executing SelectNotificationsThread! ", err, "ChannelID: ", channel.ChannelID, "ChannelName: ", channel.ChannelName)
-		return nil
+		return err
 	}
 
 	var remindTime time.Time
@@ -120,8 +121,8 @@ func (bot *Bot) notify(channel model.Project) error {
 		err = bot.db.DeleteNotificationThread(thread.ID)
 		if err != nil {
 			log.Error("Error on executing DeleteNotificationsThread! ", err, "Thread ID: ", thread.ID)
+			return err
 		}
-		return nil
 	}
 
 	stillNonReporters := strings.Split(thread.UserIDs, ",")
@@ -139,7 +140,7 @@ func (bot *Bot) notify(channel model.Project) error {
 		err = bot.db.DeleteNotificationThread(thread.ID)
 		if err != nil {
 			log.Error("Error on executing DeleteNotificationsThread! ", err, "Thread ID: ", thread.ID)
-			return nil
+			return err
 		}
 	}
 
