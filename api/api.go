@@ -218,9 +218,16 @@ func (api *ComedianAPI) login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	channels, err := api.db.ListWorkspaceProjects(bot.WorkspaceID)
+	if err != nil {
+		log.Errorf("ListWorkspaceProjects failed: %v for workspace %v", err, bot.WorkspaceID)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"user": user,
-		"bot":  bot,
+		"user":      user,
+		"channels:": channels,
+		"bot":       bot,
 	})
 }
 

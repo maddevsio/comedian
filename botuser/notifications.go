@@ -104,7 +104,7 @@ func (bot *Bot) notify(channel model.Project) error {
 	})
 
 	thread, err := bot.db.SelectNotificationsThread(channel.ChannelID)
-	if err != nil {
+	if err != nil && err.Error() != "sql: no rows in result set" {
 		log.Error("Error on executing SelectNotificationsThread! ", err, "ChannelID: ", channel.ChannelID, "ChannelName: ", channel.ChannelName)
 		return err
 	}
