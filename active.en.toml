@@ -56,3 +56,10 @@ many = "{{.users}} you may miss the deadline in {{.minutes}}"
 one = "{{.user}}, you are the only one to miss standup, in {{.minutes}}, hurry up!"
 other = "{{.users}} you may miss the deadline in {{.minutes}}"
 two = "{{.users}} you may miss the deadline in {{.minutes}}"
+
+[tagStillNonReporters]
+one = "{{.user}},you still haven't written a standup! Write a standup!"
+two = "{{.users}} you still haven't written a standup! Write a standup!"
+few = "{{.users}} you still haven't written a standup! Write a standup!"
+many = "{{.users}} you still haven't written a standup! Write a standup!"
+other = "{{.users}} you still haven't written a standup! Write a standup!"

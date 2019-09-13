@@ -115,7 +115,16 @@ func (bot *Bot) removeDeadline(command slack.SlashCommand) string {
 		}
 		return deadlineNotSet
 	}
-
+	thread, err := bot.db.SelectNotificationsThread(channel.ChannelID)
+	if err != nil {
+		log.Error("Error on executing SelectNotificatioinsThread. ", "ChannelID: ", channel.ChannelID)
+	}
+	if thread.ChannelID == channel.ChannelID {
+		err = bot.db.DeleteNotificationThread(thread.ID)
+		if err != nil {
+			log.Error("Error on executing DeleteNotificationThread! ", "ThreadID: ", thread.ID)
+		}
+	}
 	removeStandupTime, err := bot.localizer.Localize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "removeStandupTime",

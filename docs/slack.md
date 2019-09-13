@@ -24,7 +24,7 @@ From the left sidebar select "Slash Commands". Create slash command with request
 | /quit | - | Removes user with selected role from standup team |
 | /show | - | Shows users assigned to standup in the current chat |
 | /show_deadline | - | Show standup time in current channel |
-| /update_deadline | - | Update or delete standup time in current channel |
+| /deadline | - | Update or delete standup time in current channel |
 
 ### **Step 5**: Add Redirect URL in OAuth & Permissions tab
 Add a new redirect url `http://<ngrok https URL>/auth`. Save it! This is where Slack will redirect when you install bot into a workspace

@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/nlopes/slack"
@@ -94,6 +95,15 @@ type ReportBodyContent struct {
 type AttachmentItem struct {
 	SlackAttachment slack.Attachment
 	Points          int
+}
+
+//NotificationThread ...
+type NotificationThread struct {
+	ID               int64  `db:"id" json:"id"`
+	ChannelID        string `db:"channel_id" json:"channel_id"`
+	UserIDs          string `db:"user_ids" json:"user_ids"`
+	NotificationTime int64  `db:"notification_time" json:"notification_time"`
+	ReminderCounter  int    `db:"reminder_counter" json:"reminder_counter"`
 }
 
 // Validate validates Standup struct
@@ -194,5 +204,22 @@ func (s Standuper) Validate() error {
 		return err
 	}
 
+	return nil
+}
+
+// Validate validates NotificationsThread struct
+func (nt NotificationThread) Validate() error {
+	if strings.TrimSpace(nt.ChannelID) == "" {
+		return errors.New("Field ChannelID is empty")
+	}
+	if strings.TrimSpace(nt.UserIDs) == "" {
+		return errors.New("Field UserIDs is empty")
+	}
+	if nt.NotificationTime < 0 {
+		return errors.New("Field NotificationTime cannot be negative")
+	}
+	if nt.ReminderCounter < 0 {
+		return errors.New("Field ReminderCounter cannot be negative")
+	}
 	return nil
 }

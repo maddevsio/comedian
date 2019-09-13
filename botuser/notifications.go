@@ -69,16 +69,84 @@ func (bot *Bot) notify(channel model.Project) error {
 		}
 
 	case time.Now().In(loc).Hour() == alarmtime.Hour() && time.Now().In(loc).Minute() == alarmtime.Minute():
+		threadTime := time.Now().Unix() + bot.conf.NotificationTime*60
+
 		nonReporters, err := bot.findChannelNonReporters(channel)
+
 		if err != nil {
 			return fmt.Errorf("could not get non reporters: %v", err)
 		}
 
+		if len(nonReporters) > 0 {
+			usersNonReport := strings.Join(nonReporters, ",")
+
+			_, err = bot.db.CreateNotificationThread(model.NotificationThread{
+				ChannelID:        channel.ChannelID,
+				UserIDs:          usersNonReport,
+				NotificationTime: threadTime,
+				ReminderCounter:  0,
+			})
+			if err != nil {
+				log.Error("Error on executing CreateNotificationThread ", err, "ChannelID: ", channel.ChannelID)
+				return err
+			}
+		}
 		message, err = bot.composeAlarmMessage(nonReporters)
 		if err != nil {
 			return fmt.Errorf("could not compose Alarm Message: %v", err)
 		}
+	}
 
+	bot.send(&Message{
+		Type:    "message",
+		Channel: channel.ChannelID,
+		Text:    message,
+	})
+
+	thread, err := bot.db.SelectNotificationsThread(channel.ChannelID)
+	if err != nil {
+		log.Error("Error on executing SelectNotificationsThread! ", err, "ChannelID: ", channel.ChannelID, "ChannelName: ", channel.ChannelName)
+		return err
+	}
+
+	var remindTime time.Time
+
+	remindTime = time.Unix(thread.NotificationTime, 0)
+
+	if time.Now().In(loc).Hour() != remindTime.Hour() || time.Now().In(loc).Minute() != remindTime.Minute() {
+		return nil
+	}
+
+	if thread.ReminderCounter >= bot.workspace.MaxReminders {
+		err = bot.db.DeleteNotificationThread(thread.ID)
+		if err != nil {
+			log.Error("Error on executing DeleteNotificationsThread! ", err, "Thread ID: ", thread.ID)
+			return err
+		}
+	}
+
+	stillNonReporters := strings.Split(thread.UserIDs, ",")
+
+	var updatedNonReporters string
+
+	for i, nonReport := range stillNonReporters {
+		if bot.submittedStandupToday(nonReport, thread.ChannelID) {
+			stillNonReporters = append(stillNonReporters[:i], stillNonReporters[i+1:]...)
+		}
+	}
+	updatedNonReporters = strings.Join(stillNonReporters, ",")
+
+	if len(updatedNonReporters) == 0 {
+		err = bot.db.DeleteNotificationThread(thread.ID)
+		if err != nil {
+			log.Error("Error on executing DeleteNotificationsThread! ", err, "Thread ID: ", thread.ID)
+			return err
+		}
+	}
+
+	message, err = bot.composeRemindMessage(stillNonReporters)
+	if err != nil {
+		return fmt.Errorf("could not compose Remind Message: %v", err)
 	}
 
 	if message == "" {
@@ -91,8 +159,9 @@ func (bot *Bot) notify(channel model.Project) error {
 		Text:    message,
 	})
 
-	return nil
+	thread.NotificationTime = thread.NotificationTime + bot.conf.NotificationTime*60
 
+	return bot.db.UpdateNotificationThread(thread.ID, thread.ChannelID, thread.NotificationTime, updatedNonReporters)
 }
 
 func (bot *Bot) listTeamActiveChannels() ([]model.Project, error) {
@@ -200,6 +269,34 @@ func (bot *Bot) composeAlarmMessage(nonReporters []string) (string, error) {
 	}
 
 	return alarmNonReporters, nil
+}
+
+func (bot *Bot) composeRemindMessage(nonReporters []string) (string, error) {
+	if len(nonReporters) == 0 {
+		return "", nil
+	}
+
+	for i, nr := range nonReporters {
+		nonReporters[i] = "<@" + nr + ">"
+	}
+
+	remindNonReporters, err := bot.localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "tagStillNonReporters",
+			One:   "{{.user}}, you still haven't written a standup! Write a standup!",
+			Two:   "{{.users}} you still haven't written a standup! Write a standup!",
+			Few:   "{{.users}} you still haven't written a standup! Write a standup!",
+			Many:  "{{.users}} you still haven't written a standup! Write a standup!",
+			Other: "{{.users}} you still haven't written a standup! Write a standup!",
+		},
+		PluralCount:  len(nonReporters),
+		TemplateData: map[string]interface{}{"user": nonReporters[0], "users": strings.Join(nonReporters, ",")},
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return remindNonReporters, nil
 }
 
 func shouldSubmitStandupIn(channel *model.Project, t time.Time) bool {
