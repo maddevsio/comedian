@@ -19,9 +19,9 @@ import (
 	"github.com/maddevsio/comedian/config"
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
-	"github.com/nlopes/slack"
-	"github.com/nlopes/slack/slackevents"
 	log "github.com/sirupsen/logrus"
+	"github.com/slack-go/slack"
+	"github.com/slack-go/slack/slackevents"
 )
 
 // ComedianAPI struct used to handle slack requests (slash commands)
@@ -190,7 +190,7 @@ func (api *ComedianAPI) login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, incorrectDataFormat)
 	}
 
-	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, logingPayload.Code, logingPayload.RedirectURI, false)
+	resp, err := slack.GetOAuthV2Response(&http.Client{}, api.config.SlackClientID, api.config.SlackClientSecret, logingPayload.Code, logingPayload.RedirectURI)
 	if err != nil {
 		log.Errorf("GetOAuthResponse failed: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -491,24 +491,24 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 
 	code := urlValues.Get("code")
 
-	resp, err := slack.GetOAuthResponse(api.config.SlackClientID, api.config.SlackClientSecret, code, "", false)
+	resp, err := slack.GetOAuthV2Response(&http.Client{}, api.config.SlackClientID, api.config.SlackClientSecret, code, "")
 	if err != nil {
 		log.WithFields(log.Fields(map[string]interface{}{"config": api.config, "urlValues": urlValues, "error": err})).Error("auth failed on GetOAuthResponse")
 		return err
 	}
 
-	workspaceSettings, err := api.db.GetWorkspaceByWorkspaceID(resp.TeamID)
+	workspaceSettings, err := api.db.GetWorkspaceByWorkspaceID(resp.Team.ID)
 	if err != nil {
 		cp, err := api.db.CreateWorkspace(model.Workspace{
 			CreatedAt:              time.Now().Unix(),
-			BotUserID:              resp.Bot.BotUserID,
+			BotUserID:              resp.BotUserID,
 			NotifierInterval:       30,
 			Language:               "en",
 			MaxReminders:           3,
 			ReminderOffset:         10,
-			BotAccessToken:         resp.Bot.BotAccessToken,
-			WorkspaceID:            resp.TeamID,
-			WorkspaceName:          resp.TeamName,
+			BotAccessToken:         resp.AccessToken,
+			WorkspaceID:            resp.Team.ID,
+			WorkspaceName:          resp.Team.Name,
 			ReportingChannel:       "",
 			ReportingTime:          "10am",
 			ProjectsReportsEnabled: false,
@@ -528,8 +528,8 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, api.config.UIurl)
 	}
 
-	workspaceSettings.BotAccessToken = resp.Bot.BotAccessToken
-	workspaceSettings.BotUserID = resp.Bot.BotUserID
+	workspaceSettings.BotAccessToken = resp.AccessToken
+	workspaceSettings.BotUserID = resp.BotUserID
 
 	settings, err := api.db.UpdateWorkspace(workspaceSettings)
 	if err != nil {
@@ -537,7 +537,7 @@ func (api *ComedianAPI) auth(c echo.Context) error {
 		return err
 	}
 
-	bot, err := api.SelectBot(resp.TeamID)
+	bot, err := api.SelectBot(resp.Team.ID)
 	if err != nil {
 		log.Error(err)
 		return err

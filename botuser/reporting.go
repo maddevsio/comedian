@@ -10,7 +10,7 @@ import (
 
 	"github.com/maddevsio/comedian/model"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules/en"
 	"github.com/olebedev/when/rules/ru"

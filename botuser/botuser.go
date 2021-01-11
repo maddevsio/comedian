@@ -10,7 +10,7 @@ import (
 	"github.com/maddevsio/comedian/model"
 	"github.com/maddevsio/comedian/storage"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -345,7 +345,7 @@ func (bot *Bot) analizeStandup(message string) string {
 
 // SendMessage posts a message in a specified channel visible for everyone
 func (bot *Bot) SendMessage(channel, message string, attachments []slack.Attachment) error {
-	_, _, err := bot.slack.PostMessage(channel, message, slack.PostMessageParameters{Attachments: attachments})
+	_, _, err := bot.slack.PostMessage(channel, slack.MsgOptionText(message,true), slack.MsgOptionAttachments(attachments...))
 	return err
 }
 

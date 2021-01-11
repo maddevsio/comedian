@@ -2,8 +2,8 @@ package botuser
 
 import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
+	"github.com/slack-go/slack"
 )
 
 func (bot *Bot) modifyOnbordingMessage(command slack.SlashCommand) string {

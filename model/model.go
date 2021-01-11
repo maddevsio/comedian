@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 )
 
 // Standup model used for serialization/deserialization stored standups
